@@ -1,0 +1,29 @@
+{
+  "name": "framed",
+  "version": "0.1.0",
+  "description": "A TypeScript Discord bot framework.",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "clean": "# DOESN'T WORK ON WINDOWS -> pnpm recursive exec -- rm -rf node_modules; rm shrinkwrap.yaml; rm -rf node_modules",
+    "build": "pnpm run build --filter shared && pnpm recursive run build",
+    "start": "cross-env NODE_ENV=\"development\" pnpm recursive run start",
+    "be:start": "cross-env NODE_ENV=\"development\" pnpm recursive run start --filter back-end",
+    "be:dev": "cross-env NODE_ENV=\"development\" pnpm recursive run dev --filter back-end",
+    "fe:start": "cross-env NODE_ENV=\"development\" pnpm recursive run start --filter front-end",
+    "fe:dev": "cross-env NODE_ENV=\"development\" pnpm recursive run start --filter front-end"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^4.4.0",
+    "@typescript-eslint/parser": "^4.4.0",
+    "cross-env": "^7.0.2",
+    "eslint": "^7.11.0",
+    "eslint-config-node": "^4.1.0",
+    "eslint-config-prettier": "^6.12.0",
+    "eslint-plugin-jest": "^24.1.0",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-prettier": "^3.1.4",
+    "jest": "^26.5.2",
+    "prettier": "^2.1.2"
+  }
+}
