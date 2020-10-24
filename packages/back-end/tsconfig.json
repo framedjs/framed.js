@@ -8,5 +8,5 @@
     "experimentalDecorators": true,
   },
   "include": ["src"],
-  "exclude": ["node_modlues"]
+  "exclude": ["node_modules", "dist"]
 }

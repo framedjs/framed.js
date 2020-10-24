@@ -9,18 +9,11 @@
 // const user: User = createUser('t7yang', 18);
 // showUser(user);
 
-// Platforms
-import * as Discord from "discord.js";
-
-// Database and JSON imports
-import * as TypeORM from "typeorm";
-
-import * as Shared from "shared";
+import { logger } from "shared";
 import FramedClient from "./FramedClient";
 import settings from "../../../settings.json";
 import { version } from "../../../package.json";
 
-const logger = Shared.logger;
 logger.info(`Launching Framed version ${version}...`);
 
 export const framedClient = new FramedClient();

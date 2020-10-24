@@ -1,4 +1,4 @@
-import CommandClass, { CommandExecutor } from "./Command";
+import { CommandExecutor } from "./Command";
 import { framedClient } from "../index";
 
 // Platform

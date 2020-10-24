@@ -15,4 +15,7 @@ npm i pnpm -g
 
 ```bash
 pnpm install
+pnpm build
 ```
+
+You will also need to create `settings.json`, from the `settings.example.json` file, and fill in a Discord token.
