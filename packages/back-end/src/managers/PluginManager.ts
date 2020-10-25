@@ -1,23 +1,21 @@
-import fs from "fs";
 import path from "path";
-import util from "util";
 
 // Platform
 import * as Discord from "discord.js";
 
 // Plugin-related
 // import Command from "../structures/Command";
-import PluginClass, { PluginConfig } from "../structures/Plugin";
 // import Message from "../structures/Message";
+import { PluginClass } from "../structures/Plugin";
 import { logger } from "shared";
+import { CommandClass } from "../structures/Command";
 import Utils from "../util/Utils";
-import { CommandExecutor, CommandProp } from "../structures/Command";
 
 export default class PluginManager {
 	public plugins = new Map<string, PluginClass>();
 	// public commands = new Map<string, Command>();
 	// testCollection = new Discord.Collection<string, Command>();
-	public importingCommand?: CommandProp;
+	public importingCommand?: CommandClass;
 
 	constructor() {
 		// this.commands = new Discord.Collection<string, Command>();
@@ -30,7 +28,7 @@ export default class PluginManager {
 		logger.info("Importing plugins...");
 
 		const pluginPath = path.join(__dirname, "..", "..", "plugins");
-		logger.debug(`path: ${pluginPath}`);
+		logger.debug(`Using plugin path: ${pluginPath}`);
 
 		this.plugins = new Map<string, PluginClass>();
 
@@ -49,17 +47,13 @@ export default class PluginManager {
 		}
 	}
 
-	loadPlugin(config: PluginConfig, plugin: PluginClass): void {
-		if (this.plugins.get(config.info.id)) {
-			logger.error(`Plugin with id ${config.info.id} already exists!`);
+	loadPlugin(plugin: PluginClass): void {
+		if (this.plugins.get(plugin.config.info.id)) {
+			logger.error(`Plugin with id ${plugin.config.info.id} already exists!`);
 			return;
 		}
-		this.plugins.set(config.info.id, plugin);
-		plugin.importCommands(config.paths.commands, plugin);
-		logger.debug(`Finished loading plugin ${config.info.name} v${config.info.version}.`);
-	}
-
-	async runCommand(): Promise<void> {
-		//
+		this.plugins.set(plugin.config.info.id, plugin);
+		plugin.importCommands(plugin.config.paths.commands);
+		logger.debug(`Finished loading plugin ${plugin.config.info.name} v${plugin.config.info.version}.`);
 	}
 }

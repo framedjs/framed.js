@@ -68,15 +68,40 @@ export default class FramedClient {
 		});
 
 		this.client.on("message", async discordMsg => {
-			let msg = new Message(discordMsg);
+			if (discordMsg.author.bot) return;
+			const msg = new Message(discordMsg);
+			this.processMsg(msg);
 		});
 
 		this.client.on("rateLimit", info => {
 			logger.warn(`We're being rate-limited! ${util.inspect(info)}`);
 		});
 
-		this.client.on("messageUpdate", async msg => {
-			// Empty
+		this.client.on("messageUpdate", async partial => {
+			try {
+				const discordMsg = await partial.channel.messages.fetch(partial.id);
+				const msg = new Message(discordMsg);
+				this.processMsg(msg);
+			} catch (error) {
+				logger.error(error.stack);
+			}
 		});
+	}
+
+	async processMsg(msg: Message): Promise<void> {
+		logger.debug(`command -> ${msg.command}`)
+		if (msg.command) {
+			logger.debug(`${msg.content}`);
+			// TypeScript can't see inside the forEach loop that msg.command is defintiely
+			// not undefined, so we're doing this unnessesary variable.
+			const cmdString = msg.command;
+			
+			this.pluginManager.plugins.forEach(element => {
+				const cmd = element.commands.get(cmdString);
+				if (cmd) {
+					cmd.run(msg);
+				}
+			});
+		}
 	}
 }

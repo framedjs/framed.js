@@ -14,9 +14,7 @@ import FramedClient from "./FramedClient";
 import settings from "../../../settings.json";
 import { version } from "../../../package.json";
 
-logger.info(`Launching Framed version ${version}...`);
+logger.info(`Launching Framed v${version}.`);
 
 export const framedClient = new FramedClient();
-// import util from "util";
-// logger.info(util.inspect(framedClient));
 framedClient.login(settings.token);
