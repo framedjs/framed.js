@@ -17,7 +17,8 @@
     "resolveJsonModule": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "sourceMap": true,
+    // "sourceMap": true, // Breaks with back-end plugin system
+    "inlineSourceMap": true,
     "baseUrl": ".",
 
     /* Advanced Options (that i don't understand) */

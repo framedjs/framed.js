@@ -1,10 +1,6 @@
 import { CommandClass } from "./Command";
 import { framedClient } from "../index";
-
-// Platform
-import Utils from "../util/Utils";
-import util from "util";
-import { logger } from "shared";
+import { Utils, logger } from "shared";
 
 export function Plugin() {
 	return function (target: { new (): PluginClass }): void {
@@ -40,7 +36,9 @@ export interface PluginConfig {
 		githubRepo?: string;
 		githubRaw?: string;
 	};
-	changelog?: {};
+	changelog?: [{
+		version: string;
+	}];
 	paths: {
 		commands: string;
 	};
@@ -77,15 +75,14 @@ export abstract class PluginClass {
 						importedCommand.plugin = this;
 					}
 					framedClient.pluginManager.importingCommand = undefined;
+					logger.debug(`Finished loading from ${commandString}`);
 				} else {
 					logger.error(
 						`Failed to import: Script ${commandString} may not be a valid Command?`
 					);
-					continue;
 				}
-				logger.debug(`Finished loading from ${commandString}`);
 			} catch (error) {
-				logger.error(`Found a command, but failed to import.\n${error.stack}`);
+				logger.error(`Found a command, but failed to import it:\n${error.stack}`);
 			}
 		}
 

@@ -1,8 +1,13 @@
 import fs from "fs";
 import path from "path";
 
-export default class Utils {
-	static findFileNested(
+export class Utils {
+	/**
+	 * Returns a list of files, found inside folder. Also searches inside folder of folders.
+	 * @param pathString
+	 * @param filter
+	 */
+	public static findFileNested(
 		pathString: string,
 		filter: (file: string) => boolean
 	): string[] {
@@ -27,5 +32,14 @@ export default class Utils {
 		}
 
 		return results;
+	}
+
+	/**
+	 * Generates a random number, as an integer
+	 * @param min - Minimum number
+	 * @param max - Maxiumum number (inclusive)
+	 */
+	public static randomNumber(min: number, max: number): number {
+		return Math.floor(Math.random() * (max + 1 - min) + min);
 	}
 }

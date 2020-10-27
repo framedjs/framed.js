@@ -1,8 +1,8 @@
-import Colors from "colors";
-import Discord from "discord.js";
-import Winston from "winston";
+export * from "./user"; // test
+export { Utils } from "./Utils";
 
-export * from './user'; // test
+import Colors from "colors";
+import Winston from "winston";
 
 // https://github.com/winstonjs/winston#logging-levels
 export const logger = Winston.createLogger({

@@ -1,15 +1,9 @@
 import path from "path";
 
-// Platform
-import * as Discord from "discord.js";
-
 // Plugin-related
-// import Command from "../structures/Command";
-// import Message from "../structures/Message";
 import { PluginClass } from "../structures/Plugin";
-import { logger } from "shared";
+import { logger, Utils } from "shared";
 import { CommandClass } from "../structures/Command";
-import Utils from "../util/Utils";
 
 export default class PluginManager {
 	public plugins = new Map<string, PluginClass>();
@@ -42,7 +36,7 @@ export default class PluginManager {
 				// eslint-disable-next-line @typescript-eslint/no-var-requires
 				require(pluginString);
 			} catch (error) {
-				logger.error(`Found a plugin, but failed to import:\n${error.stack}`);
+				logger.error(`Found a plugin, but failed to import it:\n${error.stack}`);
 			}
 		}
 	}

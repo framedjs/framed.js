@@ -5,34 +5,29 @@
 // }
 // console.log(dotenv.parsed);
 
-// import { createUser, showUser, User } from 'shared';
-// const user: User = createUser('t7yang', 18);
-// showUser(user);
-
 // Platforms
 import * as Discord from "discord.js";
 
 // Database and JSON imports
-import * as TypeORM from "typeorm";
+// import * as TypeORM from "typeorm";
+import { version } from "../../../package.json";
 
 // Other important imports
-import * as Shared from "shared";
+import { logger, Utils } from "shared";
 import Message from "./structures/Message";
 
 // Other utilities
 import util from "util";
-import Utils from "./util/Utils";
 import PluginManager from "./managers/PluginManager";
-
-const logger = Shared.logger;
 
 export default class FramedClient {
 	public readonly pluginManager = new PluginManager();
 	public readonly utils = new Utils();
 	public readonly client = new Discord.Client();
+	public readonly version: string;
 
 	constructor() {
-		// Empty
+		this.version = version;
 	}
 
 	async login(token: string): Promise<void> {
@@ -69,7 +64,7 @@ export default class FramedClient {
 
 		this.client.on("message", async discordMsg => {
 			if (discordMsg.author.bot) return;
-			const msg = new Message(discordMsg);
+			const msg = new Message(discordMsg, this);
 			this.processMsg(msg);
 		});
 
@@ -80,7 +75,7 @@ export default class FramedClient {
 		this.client.on("messageUpdate", async partial => {
 			try {
 				const discordMsg = await partial.channel.messages.fetch(partial.id);
-				const msg = new Message(discordMsg);
+				const msg = new Message(discordMsg, this);
 				this.processMsg(msg);
 			} catch (error) {
 				logger.error(error.stack);
@@ -89,7 +84,7 @@ export default class FramedClient {
 	}
 
 	async processMsg(msg: Message): Promise<void> {
-		logger.debug(`command -> ${msg.command}`)
+		// logger.debug(`command -> ${msg.command}`)
 		if (msg.command) {
 			logger.debug(`${msg.content}`);
 			// TypeScript can't see inside the forEach loop that msg.command is defintiely

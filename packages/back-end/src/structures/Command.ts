@@ -1,22 +1,23 @@
 import Message from "./Message";
 import { framedClient } from "../index";
-import { logger } from "shared";
 import { PluginClass } from "./Plugin";
 
 export function Command() {
-	return function (target: { new(): CommandClass }): void {
+	return function (target: { new (): CommandClass }): void {
 		// logger.debug("Command decorator called");
 		const command = new target();
 		framedClient.pluginManager.importingCommand = command;
-	}
+	};
 }
 
 export interface CommandInfo {
-	id: string,
-	fullId: string,
-	name: string,
-	about?: string,
-	description?: string
+	id: string;
+	fullId: string;
+	defaultPrefix: string;
+	name: string;
+	about?: string;
+	description?: string;
+	usage?: string;
 }
 
 export abstract class CommandClass {
@@ -28,5 +29,5 @@ export abstract class CommandClass {
 		this.info = info;
 	}
 
-	async abstract run(msg: Message): Promise<boolean>;
+	abstract async run(msg: Message): Promise<boolean>;
 }

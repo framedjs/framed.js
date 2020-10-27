@@ -7,11 +7,11 @@
   "scripts": {
     "clean": "# DOESN'T WORK ON WINDOWS -> pnpm recursive exec -- rm -rf node_modules; rm shrinkwrap.yaml; rm -rf node_modules",
     "build": "pnpm run build --filter shared && pnpm recursive run build",
-    "start": "cross-env NODE_ENV=\"development\" pnpm recursive run start",
-    "be:start": "cross-env NODE_ENV=\"development\" pnpm recursive run start --filter back-end",
-    "be:dev": "cross-env NODE_ENV=\"development\" pnpm recursive run dev --filter back-end",
-    "fe:start": "cross-env NODE_ENV=\"development\" pnpm recursive run start --filter front-end",
-    "fe:dev": "cross-env NODE_ENV=\"development\" pnpm recursive run start --filter front-end"
+    "start": "cross-env NODE_ENV=\"production\" pnpm recursive run start",
+    "be:start": "cross-env NODE_ENV=\"production\" pnpm start --filter back-end",
+    "be:dev": "cross-env NODE_ENV=\"development\" pnpm dev --filter back-end",
+    "fe:start": "cross-env NODE_ENV=\"production\" pnpm start --filter front-end",
+    "fe:dev": "cross-env NODE_ENV=\"development\" pnpm start --filter front-end"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^4.4.0",

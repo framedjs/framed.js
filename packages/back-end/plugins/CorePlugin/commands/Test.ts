@@ -2,11 +2,12 @@ import Message from "../../../src/structures/Message";
 import { Command, CommandClass } from "../../../src/structures/Command";
 
 @Command()
-class extends CommandClass {
+default class extends CommandClass {
 	constructor() {
 		super({
 			id: "test",
 			fullId: "core.bot.main.test",
+			defaultPrefix: ".",
 			name: "Test Command",
 			about: "A test command.",
 		});
@@ -16,7 +17,7 @@ class extends CommandClass {
 		if (msg.discord) {
 			const discordMsg = msg.discord.msg;
 			await discordMsg.channel.send("test");
-			return true;
 		}
+		return true;
 	}
 }

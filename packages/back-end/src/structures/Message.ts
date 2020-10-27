@@ -1,9 +1,12 @@
 import Discord from "discord.js";
+import FramedClient from "../FramedClient";
 
 export default class Message {
 	public discord?: {
 		readonly msg: Discord.Message;
 	};
+
+	public readonly framedClient;
 
 	public content?: string;
 
@@ -11,7 +14,7 @@ export default class Message {
 	public readonly command?: string;
 	public readonly args?: Array<string>;
 
-	constructor(msg: Discord.Message) {
+	constructor(msg: Discord.Message, framedClient: FramedClient) {
 		if (msg) {
 			this.discord = {
 				msg: msg,
@@ -21,7 +24,7 @@ export default class Message {
 				this.content = msg.content;
 			}
 		}
-
+		this.framedClient = framedClient;
 		this.prefix = this.getPrefix();
 		this.args = this.getArgs();
 		this.command = this.getCommand();
