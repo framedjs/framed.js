@@ -4,6 +4,17 @@ import * as DiscordUtils from "../../../src/util/DiscordUtils";
 import { Command, CommandClass } from "../../../src/structures/Command";
 import { framedClient } from "../../../src/index";
 import FramedClient from "packages/back-end/src/FramedClient";
+import { logger } from "shared";
+
+interface HelpCategory {
+	category: string;
+	command: HelpInfo[];
+}
+
+interface HelpInfo {
+	emote: string;
+	command: string;
+}
 
 const cmdList = ["help", "ping"];
 
@@ -12,7 +23,6 @@ default class extends CommandClass {
 	constructor() {
 		super({
 			id: "help",
-			fullId: "core.bot.main.help",
 			defaultPrefix: ".",
 			name: "help",
 			about: "View help for certain commands and extra info.",
@@ -29,34 +39,39 @@ default class extends CommandClass {
 
 			// Checks for a parameter
 			if (lookUpCmd) {
+				const embed = DiscordUtils.applyEmbedTemplate(
+					discordMsg,
+					this.info.id,
+					cmdList
+				);
+
 				if (this.plugin) {
-					const plugin = this.plugin;
-					const command = plugin.commands.get(lookUpCmd);
+					const matchingCommands: CommandClass[] = [];
 
-					if (command) {
-						// const plugins = msg.framedClient.pluginManager.plugins;
-						// const pluginList = Array.from(plugins.values());
-						// pluginList.forEach(element => {
-						// 	const commands = Array.from(element.commands.values());
-						// });
+					const plugins = msg.framedClient.pluginManager.plugins;
+					const pluginList = Array.from(plugins.values());
+					pluginList.forEach(plugin => {
+						const command = plugin.commands.get(lookUpCmd);
+						if (command) {
+							matchingCommands.push(command);
+						}
+					});
 
-						discordMsg.channel.send(
-							DiscordUtils.applyEmbedTemplate(
-								discordMsg,
-								this.info.id,
-								cmdList
-							)
-								// .setTitle("Command Info")
-								.addField(
-									`Command: ${command.info.name}`,
-									`\`${command.info.defaultPrefix}${command.info.id}\`\n${command.info.about}`
-								)
+					matchingCommands.forEach(command => {
+						embed.addField(
+							`Command Help`,
+							`\`${command.info.defaultPrefix}${command.info.id}\`\n${command.info.about}`
 						);
-					} else {
-						discordMsg.channel.send(
-							`${discordMsg.author}, Couldn't find the command "${lookUpCmd}"!`
-						);
+					});
+
+					if (matchingCommands.length > 0) {
+						discordMsg.channel.send(embed);
 					}
+					// else {
+					// 	discordMsg.channel.send(
+					// 		`${discordMsg.author}, Couldn't find the command "${lookUpCmd}"!`
+					// 	);
+					// }
 				}
 			} else {
 				let embed = DiscordUtils.applyEmbedTemplate(
@@ -81,11 +96,11 @@ default class extends CommandClass {
 					// 	"`<>` means it isn't, and is a placeholder for some value.\n" +
 					// 	"`[A | B]` means you can choose either A or B."
 					// )
-					.addFields(this.createMainHelpFields(msg.framedClient))
-					.addField(
-						"Streaks",
-						`🕒 \`.streaks [@user | user ID | top | all]\` - View streak stats.`
-					);
+					.addFields(this.createMainHelpFields(msg.framedClient));
+				// .addField(
+				// 	"Streaks",
+				// 	`🕒 \`.streaks [@user | user ID | top | all]\` - View streak stats.`
+				// );
 				discordMsg.channel.send(embed);
 			}
 
@@ -100,7 +115,7 @@ default class extends CommandClass {
 
 		const helpList: HelpCategory[] = [
 			{
-				category: "General",
+				category: "Info",
 				command: [
 					{
 						emote: "❓",
@@ -111,8 +126,17 @@ default class extends CommandClass {
 						command: "ping",
 					},
 					{
-						emote: "❤",
-						command: "fail",
+						emote: "⌚",
+						command: "uptime",
+					},
+				],
+			},
+			{
+				category: "Fun",
+				command: [
+					{
+						emote: "👍",
+						command: "poll",
 					},
 				],
 			},
@@ -125,7 +149,9 @@ default class extends CommandClass {
 			let section = "";
 
 			plugins.forEach(plugin => {
+				logger.debug("plugin");
 				plugin.commands.forEach(command => {
+					logger.debug("command");
 					helpElement.command.forEach(cmdElement => {
 						if (command.info.id == cmdElement.command) {
 							const usage = command.info.usage
@@ -145,14 +171,4 @@ default class extends CommandClass {
 
 		return fields;
 	}
-}
-
-interface HelpCategory {
-	category: string;
-	command: HelpInfo[];
-}
-
-interface HelpInfo {
-	emote: string;
-	command: string;
 }

@@ -6,7 +6,6 @@ default class extends CommandClass {
 	constructor() {
 		super({
 			id: "test",
-			fullId: "core.bot.main.test",
 			defaultPrefix: ".",
 			name: "Test Command",
 			about: "A test command.",

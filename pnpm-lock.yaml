@@ -26,8 +26,10 @@ importers:
       prettier: ^2.1.2
   packages/back-end:
     dependencies:
+      '@types/node-emoji': 1.8.1
       discord.js: 12.3.1
       dotenv: 8.2.0
+      node-emoji: 1.10.0
       shared: 'link:../shared'
       sqlite3: 5.0.0
       twitch-js: 2.0.0-beta.33
@@ -38,8 +40,10 @@ importers:
       tsconfig-paths: 3.9.0
       typescript: 4.0.3
     specifiers:
+      '@types/node-emoji': ^1.8.1
       discord.js: ^12.3.1
       dotenv: ^8.2.0
+      node-emoji: ^1.10.0
       shared: shared
       sqlite3: ^5.0.0
       ts-node-dev: ^1.0.0-pre.63
@@ -59,7 +63,7 @@ importers:
       colors: ^1.4.0
       discord.js: ^12.3.1
       winston: ^3.3.3
-lockfileVersion: 5.1
+lockfileVersion: 5.2
 packages:
   /@babel/code-frame/7.10.4:
     dependencies:
@@ -695,6 +699,10 @@ packages:
     dev: false
     resolution:
       integrity: sha512-EP6O3Jkr7bXvZZSZYlsgt5DIjiGr0dXP1/jVEwVLTFgg0d+3lWVQkRavYVQszV7dYUwvg0B8R0MBDpcmXg7XIA==
+  /@types/node-emoji/1.8.1:
+    dev: false
+    resolution:
+      integrity: sha512-0fRfA90FWm6KJfw6P9QGyo0HDTCmthZ7cWaBQndITlaWLTZ6njRyKwrwpzpg+n6kBXBIGKeUHEQuBx7bphGJkA==
   /@types/node-fetch/2.5.7:
     dependencies:
       '@types/node': 14.11.8
@@ -3982,6 +3990,10 @@ packages:
     dev: true
     resolution:
       integrity: sha1-7dFMgk4sycHgsKG0K7UhBRakJDg=
+  /lodash.toarray/4.4.0:
+    dev: false
+    resolution:
+      integrity: sha1-JMS/zWsvuji/0FlNsRedjptlZWE=
   /lodash/4.17.20:
     resolution:
       integrity: sha512-PlhdFcillOINfeV7Ni6oF1TAEayyZBoZ8bcshTHqOYJYlrqzRK5hagpagky5o4HfCzzd1TRkXPMFq6cKk9rGmA==
@@ -4238,6 +4250,12 @@ packages:
     dev: false
     resolution:
       integrity: sha512-ASCL5U13as7HhOExbT6OlWJJUV/lLzL2voOSP1UVehpRD8FbSrSDjfScK/KwAvVTI5AS6r4VwbOMlIqtvRidnA==
+  /node-emoji/1.10.0:
+    dependencies:
+      lodash.toarray: 4.4.0
+    dev: false
+    resolution:
+      integrity: sha512-Yt3384If5H6BYGVHiHwTL+99OzJKHhgp82S8/dktEK73T26BazdgZ4JZh92xSVtGNJvz9UbXdNAc5hcrXV42vw==
   /node-fetch/2.6.1:
     dev: false
     engines:

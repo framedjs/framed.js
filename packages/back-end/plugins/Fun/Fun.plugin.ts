@@ -5,20 +5,20 @@ import path from "path";
 
 @Plugin()
 export default class extends PluginClass {
-	public testVar = "owo";
-
 	constructor() {
 		super({
 			info: {
-				id: "core.bot.main",
-				name: "Framed Core",
-				description: "A core plugin of Framed, which includes commands.",
+				id: "default.bot.fun",
+				name: "Fun",
+				description:
+					"Fun commands.",
 				version: "0.1.0",
 			},
 			paths: {
 				commands: path.join(__dirname, "commands"),
+				events: path.join(__dirname, "events"),
 			},
 		});
-		logger.debug("Core plugin class constructor was called");
+		logger.debug("plugin class constructor was called");
 	}
 }

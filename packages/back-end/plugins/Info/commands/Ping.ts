@@ -6,7 +6,6 @@ default class extends CommandClass {
 	constructor() {
 		super({
 			id: "ping",
-			fullId: "core.bot.main.ping",
 			defaultPrefix: ".",
 			name: "Ping",
 			about:

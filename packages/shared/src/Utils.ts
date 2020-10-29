@@ -14,7 +14,7 @@ export class Utils {
 		let results: string[] = [];
 
 		if (!fs.existsSync(pathString)) {
-			throw new Error();
+			throw new Error(`Path "${pathString}" doesn't exist!`);
 		}
 
 		const files = fs.readdirSync(pathString);

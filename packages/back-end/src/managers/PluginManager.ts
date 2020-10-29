@@ -33,7 +33,6 @@ export default class PluginManager {
 		// Imports all the plugins
 		for (const pluginString of plugins) {
 			try {
-				// eslint-disable-next-line @typescript-eslint/no-var-requires
 				require(pluginString);
 			} catch (error) {
 				logger.error(`Found a plugin, but failed to import it:\n${error.stack}`);
@@ -48,6 +47,7 @@ export default class PluginManager {
 		}
 		this.plugins.set(plugin.config.info.id, plugin);
 		plugin.importCommands(plugin.config.paths.commands);
+		plugin.importEvents(plugin.config.paths.events);
 		logger.debug(`Finished loading plugin ${plugin.config.info.name} v${plugin.config.info.version}.`);
 	}
 }

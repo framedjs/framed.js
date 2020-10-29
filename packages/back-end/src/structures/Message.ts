@@ -1,4 +1,5 @@
 import Discord from "discord.js";
+import { logger } from "shared";
 import FramedClient from "../FramedClient";
 
 export default class Message {
@@ -36,7 +37,7 @@ export default class Message {
 	getPrefix(): string | undefined {
 		// Loops through potential prefixes, and gets a valid one into a variable called "prefix"
 		// let prefixes = [process.env.PREFIX!, `<@!${client.user?.id}>`];
-		const prefixes = ["-", ".", "!"];
+		const prefixes = [".", "!"];
 		let prefix: string | undefined;
 		for (let i = 0; i < prefixes.length; i++) {
 			const element = prefixes[i];
@@ -55,6 +56,17 @@ export default class Message {
 		return this.prefix
 			? this.content?.slice(this.prefix.length).trim().split(/ +/g)
 			: undefined;
+	}
+
+	parseQuotesInArgs(args?: string[]): string[] | undefined {
+		if (!args) return undefined;
+		const argsContent = args.join(' ');
+
+		logger.debug("from parseQuotesInArgs")
+		logger.debug(`argsContent: ${argsContent}`);
+		logger.debug(`${argsContent.split("\"")}`);
+		
+
 	}
 
 	/**
