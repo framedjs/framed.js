@@ -1,10 +1,10 @@
-import Message from "../../../src/structures/Message";
-import { Command, CommandClass } from "../../../src/structures/Command";
+import FramedMessage from "../../../src/structures/FramedMessage";
+import { BaseCommand } from "../../../src/structures/BaseCommand";
+import { BasePlugin } from "packages/back-end/src/structures/BasePlugin";
 
-@Command()
-default class extends CommandClass {
-	constructor() {
-		super({
+export default class extends BaseCommand {
+	constructor(plugin: BasePlugin) {
+		super(plugin, {
 			id: "ping",
 			defaultPrefix: ".",
 			name: "Ping",
@@ -13,7 +13,7 @@ default class extends CommandClass {
 		});
 	}
 
-	async run(msg: Message): Promise<boolean> {
+	async run(msg: FramedMessage): Promise<boolean> {
 		if (msg.discord) {
 			const discordMsg = msg.discord.msg;
 

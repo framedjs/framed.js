@@ -1,8 +1,8 @@
 import Discord from "discord.js";
 import { logger } from "shared";
-import FramedClient from "../FramedClient";
+import FramedClient from "./FramedClient";
 
-export default class Message {
+export default class FramedMessage {
 	public discord?: {
 		readonly msg: Discord.Message;
 	};
@@ -12,8 +12,8 @@ export default class Message {
 	public content?: string;
 
 	public readonly prefix?: string;
-	public readonly command?: string;
 	public readonly args?: Array<string>;
+	public readonly command?: string;
 
 	constructor(msg: Discord.Message, framedClient: FramedClient) {
 		if (msg) {
@@ -65,8 +65,6 @@ export default class Message {
 		logger.debug("from parseQuotesInArgs")
 		logger.debug(`argsContent: ${argsContent}`);
 		logger.debug(`${argsContent.split("\"")}`);
-		
-
 	}
 
 	/**

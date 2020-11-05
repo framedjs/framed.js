@@ -1,10 +1,10 @@
-import Message from "packages/back-end/src/structures/Message";
-import { Command, CommandClass } from "../../../src/structures/Command";
+import { BasePlugin } from "packages/back-end/src/structures/BasePlugin";
+import FramedMessage from "packages/back-end/src/structures/FramedMessage";
+import { BaseCommand } from "../../../src/structures/BaseCommand";
 
-@Command()
-default class extends CommandClass {
-	constructor() {
-		super({
+export default class extends BaseCommand {
+	constructor(plugin: BasePlugin) {
+		super(plugin, {
 			id: "template",
 			defaultPrefix: ".",
 			name: "Command Template",
@@ -14,7 +14,7 @@ default class extends CommandClass {
 	}
 	
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	async run(msg: Message): Promise<boolean> {
+	async run(msg: FramedMessage): Promise<boolean> {
 		return true;
 	}
 }

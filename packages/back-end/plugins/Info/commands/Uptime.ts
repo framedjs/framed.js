@@ -1,14 +1,14 @@
-import Message from "../../../src/structures/Message";
-import { Command, CommandClass } from "../../../src/structures/Command";
-import * as DiscordUtils from "../../../src/util/DiscordUtils";
+import FramedMessage from "../../../src/structures/FramedMessage";
+import { BaseCommand } from "../../../src/structures/BaseCommand";
+import * as DiscordUtils from "../../../src/utils/DiscordUtils";
 import { framedClient } from "packages/back-end/src";
+import { BasePlugin } from "packages/back-end/src/structures/BasePlugin";
 
 const cmdList = ["help", "ping"];
 
-@Command()
-default class extends CommandClass {
-	constructor() {
-		super({
+export default class extends BaseCommand {
+	constructor(plugin: BasePlugin) {
+		super(plugin, {
 			id: "uptime",
 			defaultPrefix: ".",
 			name: "Uptime",
@@ -16,7 +16,7 @@ default class extends CommandClass {
 		});
 	}
 
-	async run(msg: Message): Promise<boolean> {
+	async run(msg: FramedMessage): Promise<boolean> {
 		const framedUser = framedClient.client.user;
 		const discordMsg = msg.discord?.msg;
 

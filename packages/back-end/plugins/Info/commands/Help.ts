@@ -1,10 +1,11 @@
-import Message from "../../../src/structures/Message";
+import FramedMessage from "../../../src/structures/FramedMessage";
 import Discord from "discord.js";
-import * as DiscordUtils from "../../../src/util/DiscordUtils";
-import { Command, CommandClass } from "../../../src/structures/Command";
+import * as DiscordUtils from "../../../src/utils/DiscordUtils";
+import { BaseCommand } from "../../../src/structures/BaseCommand";
 import { framedClient } from "../../../src/index";
-import FramedClient from "packages/back-end/src/FramedClient";
+import FramedClient from "packages/back-end/src/structures/FramedClient";
 import { logger } from "shared";
+import { BasePlugin } from "packages/back-end/src/structures/BasePlugin";
 
 interface HelpCategory {
 	category: string;
@@ -18,19 +19,18 @@ interface HelpInfo {
 
 const cmdList = ["help", "ping"];
 
-@Command()
-default class extends CommandClass {
-	constructor() {
-		super({
+export default class extends BaseCommand {
+	constructor(plugin: BasePlugin) {
+		super(plugin, {
 			id: "help",
 			defaultPrefix: ".",
-			name: "help",
+			name: "Help",
 			about: "View help for certain commands and extra info.",
 			usage: "[command]",
 		});
 	}
 
-	async run(msg: Message): Promise<boolean> {
+	async run(msg: FramedMessage): Promise<boolean> {
 		const discordMsg = msg.discord?.msg;
 		const framedUser = framedClient.client.user;
 
@@ -46,7 +46,7 @@ default class extends CommandClass {
 				);
 
 				if (this.plugin) {
-					const matchingCommands: CommandClass[] = [];
+					const matchingCommands: BaseCommand[] = [];
 
 					const plugins = msg.framedClient.pluginManager.plugins;
 					const pluginList = Array.from(plugins.values());

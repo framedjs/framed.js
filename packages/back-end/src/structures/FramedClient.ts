@@ -1,37 +1,37 @@
-// Tries to get environmental variables if it doesn't exist
-// const dotenv = require("dotenv").config({ path: `${process.cwd()}/../.env` });
-// if (dotenv.error) {
-// 	throw dotenv.error;
-// }
-// console.log(dotenv.parsed);
-
 // Platforms
-import * as Discord from "discord.js";
+import Discord from "discord.js";
 
-// Database and JSON imports
+// File data related imports
 // import * as TypeORM from "typeorm";
-import { version } from "../../../package.json";
+import { version } from "../../../../package.json";
+import path from "path";
 
 // Other important imports
 import { logger, Utils } from "shared";
-import Message from "./structures/Message";
+import FramedMessage from "./FramedMessage";
+import PluginManager from "../managers/PluginManager";
+import { EventEmitter } from "events";
 
-// Other utilities
-import PluginManager from "./managers/PluginManager";
-
-export default class FramedClient {
-	public readonly pluginManager = new PluginManager();
-	public readonly utils = new Utils();
-	public readonly client = new Discord.Client();
-	public readonly version: string;
+export default class FramedClient extends EventEmitter {
+	readonly pluginManager = new PluginManager(this);
+	readonly utils = new Utils();
+	readonly client = new Discord.Client();
+	readonly version: string;
 
 	constructor() {
+		// I have no idea what capture rejections does, but I assume it's a good thing.
+		super({ captureRejections: true });
 		this.version = version;
 	}
 
 	async login(token: string): Promise<void> {
 		this.client.login(token);
-		this.pluginManager.loadPlugins();
+		// this.pluginManager.loadPlugins();
+
+		this.pluginManager.loadPluginsIn({
+			dirname: path.join(__dirname, "..", "..", "plugins"),
+			filter: /^(.+plugin)\.(js|ts)$/,
+		});
 
 		this.client.on("ready", async () => {
 			logger.info(`Logged in as ${this.client.user?.tag}!`);
@@ -63,13 +63,15 @@ export default class FramedClient {
 
 		this.client.on("message", async discordMsg => {
 			if (discordMsg.author.bot) return;
-			const msg = new Message(discordMsg, this);
+			const msg = new FramedMessage(discordMsg, this);
 			this.processMsg(msg);
 		});
 
 		this.client.on("rateLimit", info => {
 			// logger.warn(`We're being rate-limited! ${util.inspect(info)}`);
-			logger.warn(`Rate limit ${info.method} ${info.timeout} ${info.limit}`);
+			logger.warn(
+				`Rate limit: ${info.method} ${info.timeout} ${info.limit}`
+			);
 		});
 
 		this.client.on("messageUpdate", async partial => {
@@ -77,7 +79,7 @@ export default class FramedClient {
 				const discordMsg = await partial.channel.messages.fetch(
 					partial.id
 				);
-				const msg = new Message(discordMsg, this);
+				const msg = new FramedMessage(discordMsg, this);
 				this.processMsg(msg);
 			} catch (error) {
 				logger.error(error.stack);
@@ -97,7 +99,7 @@ export default class FramedClient {
 			let user = this.client.users.cache.get(packet.d.user_id);
 			if (!user) {
 				try {
-					user = await this.client.users.fetch(packet.d.user_id);	
+					user = await this.client.users.fetch(packet.d.user_id);
 				} catch (error) {
 					return logger.error(
 						`Wasn't able to find user from Raw event ${error.stack}`
@@ -105,7 +107,7 @@ export default class FramedClient {
 				}
 			}
 			// console.log("packet: " + util.inspect(packet))
-			console.log("bot: " + user.bot)
+			// console.log("bot: " + user.bot)
 
 			// Grab the channel to check the message from
 			const channel = this.client.channels.cache.get(
@@ -131,7 +133,7 @@ export default class FramedClient {
 				let user = this.client.users.cache.get(packet.d.user_id);
 				if (!user) {
 					try {
-						user = await this.client.users.fetch(packet.d.user_id);	
+						user = await this.client.users.fetch(packet.d.user_id);
 					} catch (error) {
 						return logger.error(
 							`Wasn't able to find user from Raw event ${error.stack}`
@@ -147,7 +149,11 @@ export default class FramedClient {
 						logger.debug("!! EMITTING messageReactionAdd");
 						this.client.emit("messageReactionAdd", reaction, user);
 					} else if (packet.t === "MESSAGE_REACTION_REMOVE") {
-						this.client.emit("messageReactionRemove", reaction, user);
+						this.client.emit(
+							"messageReactionRemove",
+							reaction,
+							user
+						);
 					}
 				} else {
 					logger.error("unable to find reaction");
@@ -156,7 +162,7 @@ export default class FramedClient {
 		});
 	}
 
-	async processMsg(msg: Message): Promise<void> {
+	async processMsg(msg: FramedMessage): Promise<void> {
 		// logger.debug(`command -> ${msg.command}`)
 		if (msg.command) {
 			logger.debug(`${msg.content}`);

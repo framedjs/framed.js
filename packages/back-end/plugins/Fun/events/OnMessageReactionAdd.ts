@@ -1,7 +1,7 @@
-import { Event, EventListener } from "../../../src/structures/Events";
+import { Event, EventListener } from "../../../src/structures/BaseEvents";
 import Discord from "discord.js";
 import { logger } from "shared";
-import { emotes } from "../shared";
+import { emotes } from "../shared/shared";
 import Emoji from "node-emoji"; // Doing this only because Windows can't render emotes for some reason
 
 @Event("messageReactionAdd")
@@ -43,7 +43,6 @@ default class implements EventListener {
 					emotes.includes(reactionElement.emoji.name) &&
 					reactionElement != reaction
 			);
-	
 	
 			try {
 				logger.debug(

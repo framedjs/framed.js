@@ -1,53 +1,74 @@
-import path from "path";
+import util from "util";
+import { BasePlugin as BasePlugin } from "../structures/BasePlugin";
+import { logger } from "shared";
+import { BaseCommand } from "../structures/BaseCommand";
+import FramedClient from "../structures/FramedClient";
+import * as DiscordUtils from "../utils/DiscordUtils";
 
-// Plugin-related
-import { PluginClass } from "../structures/Plugin";
-import { logger, Utils } from "shared";
-import { CommandClass } from "../structures/Command";
 
 export default class PluginManager {
-	public plugins = new Map<string, PluginClass>();
-	// public commands = new Map<string, Command>();
-	// testCollection = new Discord.Collection<string, Command>();
-	public importingCommand?: CommandClass;
+	public readonly framedClient: FramedClient;
+	public plugins = new Map<string, BasePlugin>();
+	// public importingCommand?: BaseCommand;
 
-	constructor() {
-		// this.commands = new Discord.Collection<string, Command>();
-		// for (const command of Array.from(this.commands.values())) {
-		// 	command.
-		// }
+	/**
+	 * 
+	 * @param framedClient 
+	 */
+	constructor(framedClient: FramedClient) {
+		this.framedClient = framedClient;
 	}
 
-	loadPlugins(): void {
-		logger.info("Importing plugins...");
+	/**
+	 *
+	 * @param options
+	 */
+	loadPluginsIn(options: DiscordUtils.Options): void {
+		const plugins = DiscordUtils.importScripts(options);
+		logger.debug(`Plugins: ${util.inspect(plugins)}`);
+		this.loadPlugins(plugins);
+	}
 
-		const pluginPath = path.join(__dirname, "..", "..", "plugins");
-		logger.debug(`Using plugin path: ${pluginPath}`);
-
-		this.plugins = new Map<string, PluginClass>();
-
-		const filter = (file: string) =>
-			file.endsWith("plugin.ts") || file.endsWith("plugin.js");
-		const plugins = Utils.findFileNested(pluginPath, filter);
-
-		// Imports all the plugins
-		for (const pluginString of plugins) {
-			try {
-				require(pluginString);
-			} catch (error) {
-				logger.error(`Found a plugin, but failed to import it:\n${error.stack}`);
-			}
+	/**
+	 * 
+	 * @param plugins 
+	 */
+	loadPlugins<T extends BasePlugin>(
+		plugins: (new (framedClient: FramedClient) => T)[]
+	): void {
+		for (const plugin of plugins) {
+			const initPlugin = new plugin(this.framedClient);
+			// logger.debug(`initPlugin: ${util.inspect(initPlugin)}`);
+			this.loadPlugin(initPlugin);
 		}
 	}
 
-	loadPlugin(plugin: PluginClass): void {
-		if (this.plugins.get(plugin.config.info.id)) {
-			logger.error(`Plugin with id ${plugin.config.info.id} already exists!`);
+	/**
+	 * 
+	 * @param plugin 
+	 */
+	loadPlugin<T extends BasePlugin>(plugin: T): void {
+		if (this.plugins.get(plugin.id)) {
+			logger.error(
+				`Plugin with id ${plugin.id} already exists!`
+			);
 			return;
 		}
-		this.plugins.set(plugin.config.info.id, plugin);
-		plugin.importCommands(plugin.config.paths.commands);
-		plugin.importEvents(plugin.config.paths.events);
-		logger.debug(`Finished loading plugin ${plugin.config.info.name} v${plugin.config.info.version}.`);
+
+		this.plugins.set(plugin.id, plugin);
+
+		// Import commands
+		if (plugin.paths.commands) {
+			plugin.loadCommandsIn({
+				dirname: plugin.paths.commands,
+				filter: /^(.*)\.(js|ts)$/,
+			});
+		}
+
+		// plugin.importCommands(plugin.config.paths.commands);
+		plugin.importEvents(plugin.paths.events);
+		logger.verbose(
+			`Finished loading plugin ${plugin.name} v${plugin.version}.`
+		);
 	}
 }

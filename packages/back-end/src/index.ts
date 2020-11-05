@@ -10,9 +10,9 @@
 // showUser(user);
 
 import { logger } from "shared";
-import FramedClient from "./FramedClient";
-import settings from "../../../settings.json";
 import { version } from "../../../package.json";
+import FramedClient from "./structures/FramedClient";
+import settings from "../../../settings.json";
 
 logger.info(`Launching Framed v${version}.`);
 
