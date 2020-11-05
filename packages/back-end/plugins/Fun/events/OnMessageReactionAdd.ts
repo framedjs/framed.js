@@ -1,4 +1,4 @@
-import { Event, EventListener } from "../../../src/structures/BaseEvents";
+import { Event, EventListener } from "../../../src/structures/BaseEvent";
 import Discord from "discord.js";
 import { logger } from "shared";
 import { emotes } from "../shared/shared";

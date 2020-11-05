@@ -1,5 +1,4 @@
-import FramedMessage from "packages/back-end/src/structures/FramedMessage"
-import { Event, EventListener } from "../../../src/structures/BaseEvents"
+import { Event, EventListener } from "../../../src/structures/BaseEvent"
 import Discord from "discord.js";
 
 @Event('message')

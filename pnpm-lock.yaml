@@ -39,10 +39,12 @@ importers:
       typeorm: 0.3.0-alpha.24
       winston: 3.3.3
     devDependencies:
+      '@types/common-tags': 1.8.0
       ts-node-dev: 1.0.0-pre.63_typescript@4.0.3
       tsconfig-paths: 3.9.0
       typescript: 4.0.3
     specifiers:
+      '@types/common-tags': ^1.8.0
       '@types/node-emoji': ^1.8.1
       '@types/require-all': ^3.0.1
       common-tags: ^1.8.0
@@ -657,6 +659,10 @@ packages:
     dev: true
     resolution:
       integrity: sha512-Pzh9O3sTK8V6I1olsXpCfj2k/ygO2q1X0vhhnDrEQyYLHZesWz+zMZMVcwXLCYf0U36EtmyYaFGPfXlTtDHe3A==
+  /@types/common-tags/1.8.0:
+    dev: true
+    resolution:
+      integrity: sha512-htRqZr5qn8EzMelhX/Xmx142z218lLyGaeZ3YR8jlze4TATRU9huKKvuBmAJEW4LCC4pnY1N6JAm6p85fMHjhg==
   /@types/events/3.0.0:
     dev: false
     resolution:

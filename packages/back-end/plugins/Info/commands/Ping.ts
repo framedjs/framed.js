@@ -1,6 +1,7 @@
 import FramedMessage from "../../../src/structures/FramedMessage";
 import { BaseCommand } from "../../../src/structures/BaseCommand";
 import { BasePlugin } from "packages/back-end/src/structures/BasePlugin";
+import { stripIndent } from "common-tags";
 
 export default class extends BaseCommand {
 	constructor(plugin: BasePlugin) {
@@ -23,9 +24,7 @@ export default class extends BaseCommand {
 					? discordMsg.createdTimestamp
 					: discordMsg.editedTimestamp;
 
-			const newDiscordMsg = await discordMsg.channel.send(
-				`Pong!`
-			);
+			const newDiscordMsg = await discordMsg.channel.send(`Pong!`);
 
 			const botDateNumber =
 				newDiscordMsg.editedTimestamp == 0 ||
@@ -33,11 +32,11 @@ export default class extends BaseCommand {
 					? newDiscordMsg.createdTimestamp
 					: newDiscordMsg.editedTimestamp;
 
-			await newDiscordMsg.edit(
-				`Pong!\n` +
-				`🏓 \`Message Latency\` - ${botDateNumber - userDateNumber}ms\n` + 
-				`🤖 \`API Latency\` - ${Math.round(discordMsg.client.ws.ping)}ms`
-			);
+			await newDiscordMsg.edit(stripIndent`
+				Pong!
+				🏓 \`Message Latency\` - ${botDateNumber - userDateNumber}ms
+				🤖 \`API Latency\` - ${Math.round(discordMsg.client.ws.ping)}ms
+				`);
 
 			return true;
 		}
