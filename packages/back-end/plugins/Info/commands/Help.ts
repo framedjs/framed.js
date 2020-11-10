@@ -1,11 +1,13 @@
-import FramedMessage from "../../../src/structures/FramedMessage";
 import Discord from "discord.js";
 import * as DiscordUtils from "../../../src/utils/DiscordUtils";
-import { BaseCommand } from "../../../src/structures/BaseCommand";
-import { framedClient } from "../../../src/index";
 import FramedClient from "packages/back-end/src/structures/FramedClient";
+import FramedMessage from "../../../src/structures/FramedMessage";
+import { framedClient } from "../../../src/index";
 import { logger } from "shared";
 import { BasePlugin } from "packages/back-end/src/structures/BasePlugin";
+import { BaseCommand } from "../../../src/structures/BaseCommand";
+import { cmdList } from "../shared/Shared";
+import { oneLine, stripIndent } from "common-tags";
 
 interface HelpCategory {
 	category: string;
@@ -17,8 +19,6 @@ interface HelpInfo {
 	command: string;
 }
 
-const cmdList = ["help", "ping"];
-
 export default class extends BaseCommand {
 	constructor(plugin: BasePlugin) {
 		super(plugin, {
@@ -26,6 +26,9 @@ export default class extends BaseCommand {
 			defaultPrefix: ".",
 			name: "Help",
 			about: "View help for certain commands and extra info.",
+			description: stripIndent`
+				The help command can show a list of useful commands, or detail specific commands for you.
+			`,
 			usage: "[command]",
 		});
 	}
@@ -41,9 +44,15 @@ export default class extends BaseCommand {
 			if (lookUpCmd) {
 				const embed = DiscordUtils.applyEmbedTemplate(
 					discordMsg,
-					this.info.id,
+					this.id,
 					cmdList
 				);
+
+				// embed.setDescription(stripIndent`
+				// 	\`[]\` means it is optional.
+				// 	\`<>\` means it isn't, and is a placeholder for some value.
+				// 	\`[A | B]\` means you can choose either A or B.
+				// `)
 
 				if (this.plugin) {
 					const matchingCommands: BaseCommand[] = [];
@@ -57,10 +66,18 @@ export default class extends BaseCommand {
 						}
 					});
 
-					matchingCommands.forEach(command => {
+					matchingCommands.forEach(command => {						
+						let description = command.description;
+						if (!description) {
+							if (command.about) {
+								description = command.about;
+							} else {
+								description = `*No description set for command.*`;
+							}
+						}
 						embed.addField(
-							`Command Help`,
-							`\`${command.info.defaultPrefix}${command.info.id}\`\n${command.info.about}`
+							`${command.plugin.name} Plugin`,
+							`\`${command.defaultPrefix}${command.id}\`\n${description}`
 						);
 					});
 
@@ -76,7 +93,7 @@ export default class extends BaseCommand {
 			} else {
 				let embed = DiscordUtils.applyEmbedTemplate(
 					discordMsg,
-					this.info.id,
+					this.id,
 					cmdList
 				);
 				embed = DiscordUtils.applyVersionInFooter(
@@ -86,22 +103,20 @@ export default class extends BaseCommand {
 				);
 				embed
 					.setDescription(
-						"Pixel Pete is a custom bot system maintained by <@200340393596944384> and <@359521958519504926>, " +
-							"specifically for Game Dev Underground. " +
-							"Bot created partly with the [Framed](https://github.com/som1chan/Framed) bot framework."
+						oneLine`Pixel Pete is a custom bot system maintained by <@200340393596944384> 
+						and <@359521958519504926>, specifically for Game Dev Underground. 
+						Bot created partly with the [Framed](https://github.com/som1chan/Framed) bot framework.`
 					)
-					// .addField(
-					// 	"Usage Syntax",
-					// 	"`[]` means it is optional.\n" +
-					// 	"`<>` means it isn't, and is a placeholder for some value.\n" +
-					// 	"`[A | B]` means you can choose either A or B."
-					// )
-					.addFields(this.createMainHelpFields(msg.framedClient));
+					.addFields(this.createMainHelpFields(msg.framedClient))
+					.addField("Other Bots", stripIndent`
+						<@159985870458322944> \`!help\` - Bot generally used for \`!levels\` and \`!rank\`.
+						<@234395307759108106> \`-help\` - Used for music in <#760622055384547368>.
+					`);
 				// .addField(
 				// 	"Streaks",
 				// 	`🕒 \`.streaks [@user | user ID | top | all]\` - View streak stats.`
 				// );
-				discordMsg.channel.send(embed);
+				await discordMsg.channel.send(embed);
 			}
 
 			return true;
@@ -153,11 +168,11 @@ export default class extends BaseCommand {
 				plugin.commands.forEach(command => {
 					logger.debug("command");
 					helpElement.command.forEach(cmdElement => {
-						if (command.info.id == cmdElement.command) {
-							const usage = command.info.usage
-								? ` ${command.info.usage}`
+						if (command.id == cmdElement.command) {
+							const usage = command.usage
+								? ` ${command.usage}`
 								: "";
-							section += `${cmdElement.emote} \`${command.info.defaultPrefix}${command.info.id}${usage}\` - ${command.info.about}\n`;
+							section += `${cmdElement.emote} \`${command.defaultPrefix}${command.id}${usage}\` - ${command.about}\n`;
 						}
 					});
 				});

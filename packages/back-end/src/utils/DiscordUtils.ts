@@ -183,7 +183,7 @@ export function applyVersionInFooter(
 ): Discord.MessageEmbed {
 	const environment = process.env.NODE_ENV ? process.env.NODE_ENV : "";
 	return new Discord.MessageEmbed(embed).setFooter(
-		embed.footer?.text + `\nRunning ${name} - v${version} ${environment}`,
+		embed.footer?.text + `\nUsing ${name} v${version} ${environment}`,
 		// embed.footer?.text + `\n${name} ${version} ${environment}`,
 		embed.footer?.iconURL
 	);

@@ -8,7 +8,6 @@ export abstract class BaseCommand {
 	readonly framedClient: FramedClient;
 	plugin: BasePlugin;
 
-	readonly info: CommandInfo;
 	id: string;
 	fullId: string;
 	defaultPrefix?: string;
@@ -18,14 +17,16 @@ export abstract class BaseCommand {
 	usage?: string;
 
 	constructor(plugin: BasePlugin, info: CommandInfo) {
-		info = { ...info, id: info.id.toLocaleLowerCase() };
-		this.info = info;
 		this.framedClient = plugin.framedClient;
 		this.plugin = plugin;
 
 		this.id = info.id.toLocaleLowerCase();
 		this.defaultPrefix = info.defaultPrefix;
 		this.name = info.name;
+		this.defaultPrefix = info.defaultPrefix;
+		this.about = info.about;
+		this.description = info.description;
+		this.usage = info.usage;
 
 		this.fullId = `${this.plugin.id}.command.${this.id}`;
 	}

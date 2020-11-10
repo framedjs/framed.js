@@ -59,6 +59,14 @@ export default class FramedClient extends EventEmitter {
 				])
 				.then(link => logger.info(`Generated bot invite link: ${link}`))
 				.catch(logger.error);
+
+			this.client.user?.setPresence({
+				activity: {
+					name: `.help | Maintaining Streaks`,
+				}
+			})
+				.then(logger.debug)
+				.catch(logger.error);
 		});
 
 		this.client.on("message", async discordMsg => {

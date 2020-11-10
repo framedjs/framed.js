@@ -1,7 +1,7 @@
 import { Event, EventListener } from "../../../src/structures/BaseEvent";
 import Discord from "discord.js";
 import { logger } from "shared";
-import { emotes } from "../shared/shared";
+import { emotes } from "../shared/Shared";
 import Emoji from "node-emoji"; // Doing this only because Windows can't render emotes for some reason
 
 @Event("messageReactionAdd")

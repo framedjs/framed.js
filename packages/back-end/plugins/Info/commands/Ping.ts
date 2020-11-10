@@ -2,6 +2,8 @@ import FramedMessage from "../../../src/structures/FramedMessage";
 import { BaseCommand } from "../../../src/structures/BaseCommand";
 import { BasePlugin } from "packages/back-end/src/structures/BasePlugin";
 import { stripIndent } from "common-tags";
+import { cmdList } from "../shared/Shared";
+import * as DiscordUtils from "../../../src/utils/DiscordUtils"
 
 export default class extends BaseCommand {
 	constructor(plugin: BasePlugin) {
@@ -32,11 +34,12 @@ export default class extends BaseCommand {
 					? newDiscordMsg.createdTimestamp
 					: newDiscordMsg.editedTimestamp;
 
-			await newDiscordMsg.edit(stripIndent`
-				Pong!
+			const embed = DiscordUtils.applyEmbedTemplate(discordMsg, "ping", cmdList);
+			embed.setDescription(stripIndent`
 				🏓 \`Message Latency\` - ${botDateNumber - userDateNumber}ms
-				🤖 \`API Latency\` - ${Math.round(discordMsg.client.ws.ping)}ms
-				`);
+				🤖 \`API Latency\` - ${Math.round(discordMsg.client.ws.ping)}ms`
+			)
+			await newDiscordMsg.edit(newDiscordMsg.content, embed);
 
 			return true;
 		}

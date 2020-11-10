@@ -3,8 +3,7 @@ import { BaseCommand } from "../../../src/structures/BaseCommand";
 import * as DiscordUtils from "../../../src/utils/DiscordUtils";
 import { framedClient } from "packages/back-end/src";
 import { BasePlugin } from "packages/back-end/src/structures/BasePlugin";
-
-const cmdList = ["help", "ping"];
+import { cmdList } from "../shared/Shared";
 
 export default class extends BaseCommand {
 	constructor(plugin: BasePlugin) {
@@ -23,7 +22,7 @@ export default class extends BaseCommand {
 		if (discordMsg && framedUser) {
 			const embed = DiscordUtils.applyEmbedTemplate(
 				discordMsg,
-				this.info.id,
+				this.id,
 				cmdList
 			).setDescription(
 				`${
