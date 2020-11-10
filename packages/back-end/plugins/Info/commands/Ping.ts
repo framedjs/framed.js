@@ -9,7 +9,7 @@ export default class extends BaseCommand {
 	constructor(plugin: BasePlugin) {
 		super(plugin, {
 			id: "ping",
-			defaultPrefix: ".",
+			defaultPrefix: "-",
 			name: "Ping",
 			about:
 				"Sends a response back to the user, replying with latency info.",

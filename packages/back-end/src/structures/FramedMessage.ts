@@ -37,7 +37,10 @@ export default class FramedMessage {
 	getPrefix(): string | undefined {
 		// Loops through potential prefixes, and gets a valid one into a variable called "prefix"
 		// let prefixes = [process.env.PREFIX!, `<@!${client.user?.id}>`];
-		const prefixes = [".", "!"];
+		const prefixes = [
+			this.framedClient.defaultPrefix,
+			...this.framedClient.pluginManager.prefixesArray,
+		];
 		let prefix: string | undefined;
 		for (let i = 0; i < prefixes.length; i++) {
 			const element = prefixes[i];
@@ -60,19 +63,19 @@ export default class FramedMessage {
 
 	parseQuotesInArgs(args?: string[]): string[] | undefined {
 		if (!args) return undefined;
-		const argsContent = args.join(' ');
+		const argsContent = args.join(" ");
 
-		logger.debug("from parseQuotesInArgs")
+		logger.debug("from parseQuotesInArgs");
 		logger.debug(`argsContent: ${argsContent}`);
-		logger.debug(`${argsContent.split("\"")}`);
+		logger.debug(`${argsContent.split('"')}`);
 	}
 
 	/**
 	 * Gets the command of the message.
 	 */
 	getCommand(): string | undefined {
-		return this.prefix && this.args 
+		return this.prefix && this.args
 			? this.args.shift()?.toLocaleLowerCase()
-			: undefined
+			: undefined;
 	}
 }

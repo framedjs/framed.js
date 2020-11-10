@@ -16,5 +16,5 @@ import settings from "../../../settings.json";
 
 logger.info(`Launching Framed v${version}.`);
 
-export const framedClient = new FramedClient();
+export const framedClient = new FramedClient({ defaultPrefix: "." });
 framedClient.login(settings.token);

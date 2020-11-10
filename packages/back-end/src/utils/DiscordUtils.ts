@@ -22,15 +22,15 @@ export interface Options {
  * @param options RequireAll Options
  */
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-export function importScripts(options: Options) {
+/* eslint-disable @typescript-eslint/no-explicit-any */
+export function importScripts(options: Options): any[] {
 	// I have no idea how the hell this code is supposed to work in TypeScript
-	/* eslint-disable @typescript-eslint/no-explicit-any */
+
 	const requiredScripts: {
 		[key: number]: { key: number; value: { default: any } };
 	} = RequireAll(options);
 	logger.debug(`requiredScripts: ${util.inspect(requiredScripts)}`);
 	const scripts: any[] = [];
-	/* eslint-enable @typescript-eslint/no-explicit-any */
 
 	const requiredScriptsValues = Object.values(requiredScripts);
 	logger.debug(
@@ -69,7 +69,7 @@ export function importScripts(options: Options) {
 
 	return scripts;
 }
-
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
 //#region Embed functions
 

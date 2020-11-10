@@ -9,7 +9,6 @@ export default class extends BaseCommand {
 	constructor(plugin: BasePlugin) {
 		super(plugin, {
 			id: "uptime",
-			defaultPrefix: ".",
 			name: "Uptime",
 			about: "Gets the uptime of the bot.",
 		});

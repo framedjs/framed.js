@@ -11,17 +11,24 @@ import { logger, Utils } from "shared";
 import FramedMessage from "./FramedMessage";
 import PluginManager from "../managers/PluginManager";
 import { EventEmitter } from "events";
+import { FramedClientInfo } from "../interfaces/FramedClientInfo";
 
 export default class FramedClient extends EventEmitter {
-	readonly pluginManager = new PluginManager(this);
-	readonly utils = new Utils();
-	readonly client = new Discord.Client();
-	readonly version: string;
+	public readonly pluginManager = new PluginManager(this);
+	public readonly utils = new Utils();
+	public readonly client = new Discord.Client();
+	public readonly version: string;
 
-	constructor() {
+	public defaultPrefix = "!";
+
+	constructor(info?: FramedClientInfo) {
 		// I have no idea what capture rejections does, but I assume it's a good thing.
 		super({ captureRejections: true });
 		this.version = version;
+
+		if (info) {
+			if (info.defaultPrefix) this.defaultPrefix = info?.defaultPrefix;
+		}
 	}
 
 	async login(token: string): Promise<void> {
@@ -60,11 +67,12 @@ export default class FramedClient extends EventEmitter {
 				.then(link => logger.info(`Generated bot invite link: ${link}`))
 				.catch(logger.error);
 
-			this.client.user?.setPresence({
-				activity: {
-					name: `.help | Maintaining Streaks`,
-				}
-			})
+			this.client.user
+				?.setPresence({
+					activity: {
+						name: `.help | Maintaining Streaks`,
+					},
+				})
 				.then(logger.debug)
 				.catch(logger.error);
 		});
@@ -174,16 +182,7 @@ export default class FramedClient extends EventEmitter {
 		// logger.debug(`command -> ${msg.command}`)
 		if (msg.command) {
 			logger.debug(`${msg.content}`);
-			// TypeScript can't see inside the forEach loop that msg.command is defintiely
-			// not undefined, so we're doing this unnessesary variable.
-			const cmdString = msg.command;
-
-			this.pluginManager.plugins.forEach(element => {
-				const cmd = element.commands.get(cmdString);
-				if (cmd) {
-					cmd.run(msg);
-				}
-			});
+			this.pluginManager.runCommand(msg);
 		}
 	}
 }

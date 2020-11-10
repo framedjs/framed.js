@@ -1,5 +1,6 @@
 export interface PluginInfo {
 	id: string;
+	defaultPrefix?: string;
 	name: string;
 	description: string;
 	version: string;

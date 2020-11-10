@@ -10,6 +10,7 @@ export abstract class BasePlugin {
 	readonly framedClient: FramedClient;
 
 	id: string;
+	defaultPrefix: string;
 	name: string;
 	description: string;
 	version: string;
@@ -46,6 +47,10 @@ export abstract class BasePlugin {
 		this.framedClient = framedClient;
 
 		this.id = info.id;
+		this.defaultPrefix =
+			info.defaultPrefix != undefined
+				? info.defaultPrefix
+				: framedClient.defaultPrefix;
 		this.name = info.name;
 		this.description = info.description;
 		this.version = info.version;
@@ -57,8 +62,8 @@ export abstract class BasePlugin {
 	}
 
 	/**
-	 * 
-	 * @param options 
+	 *
+	 * @param options
 	 */
 	loadCommandsIn(options: DiscordUtils.Options): void {
 		const commands = DiscordUtils.importScripts(options);
@@ -67,8 +72,8 @@ export abstract class BasePlugin {
 	}
 
 	/**
-	 * 
-	 * @param commands 
+	 *
+	 * @param commands
 	 */
 	loadCommands<T extends BaseCommand>(
 		commands: (new (plugin: BasePlugin) => T)[]
@@ -78,24 +83,20 @@ export abstract class BasePlugin {
 			this.loadCommand(initPlugin);
 		}
 	}
-	
+
 	/**
-	 * 
-	 * @param command 
+	 *
+	 * @param command
 	 */
 	loadCommand<T extends BaseCommand>(command: T): void {
 		if (this.commands.get(command.id)) {
-			logger.error(
-				`Command with id ${command.id} already exists!`
-			);
+			logger.error(`Command with id ${command.id} already exists!`);
 			return;
 		}
 
 		this.commands.set(command.id, command);
 
-		logger.verbose(
-			`Finished loading command ${command.name}.`
-		);
+		logger.verbose(`Finished loading command ${command.name}.`);
 	}
 
 	async importCommands(commandPath?: string): Promise<void> {
@@ -122,7 +123,9 @@ export abstract class BasePlugin {
 							importedCommand.plugin = this;
 						}
 						// framedClient.pluginManager.importingCommand = undefined;
-						logger.verbose(`Finished loading from ${commandString}`);
+						logger.verbose(
+							`Finished loading from ${commandString}`
+						);
 					} else {
 						logger.error(
 							`Failed to import: Script ${commandString} may not be a valid Command?`
@@ -140,9 +143,7 @@ export abstract class BasePlugin {
 			);
 			// logger.debug(`Commands: ${util.inspect(this.commands)}`);
 		} else {
-			logger.verbose(
-				`No commands to import from plugin ${this.name}.`
-			);
+			logger.verbose(`No commands to import from plugin ${this.name}.`);
 		}
 	}
 
@@ -167,12 +168,12 @@ export abstract class BasePlugin {
 					}
 				}
 			} catch (error) {
-				logger.error(`Error importing event, likely because the path doesn't exist: ${error.stack}`);
+				logger.error(
+					`Error importing event, likely because the path doesn't exist: ${error.stack}`
+				);
 			}
 		} else {
-			logger.verbose(
-				`No events to import from plugin ${this.name}.`
-			);
+			logger.verbose(`No events to import from plugin ${this.name}.`);
 		}
 	}
 }

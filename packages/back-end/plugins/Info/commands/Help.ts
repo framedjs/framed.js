@@ -23,7 +23,6 @@ export default class extends BaseCommand {
 	constructor(plugin: BasePlugin) {
 		super(plugin, {
 			id: "help",
-			defaultPrefix: ".",
 			name: "Help",
 			about: "View help for certain commands and extra info.",
 			description: stripIndent`
@@ -58,8 +57,7 @@ export default class extends BaseCommand {
 					const matchingCommands: BaseCommand[] = [];
 
 					const plugins = msg.framedClient.pluginManager.plugins;
-					const pluginList = Array.from(plugins.values());
-					pluginList.forEach(plugin => {
+					plugins.forEach(plugin => {
 						const command = plugin.commands.get(lookUpCmd);
 						if (command) {
 							matchingCommands.push(command);
@@ -77,7 +75,7 @@ export default class extends BaseCommand {
 						}
 						embed.addField(
 							`${command.plugin.name} Plugin`,
-							`\`${command.defaultPrefix}${command.id}\`\n${description}`
+							`\`${command.prefix}${command.id}\`\n${description}`
 						);
 					});
 
@@ -172,7 +170,7 @@ export default class extends BaseCommand {
 							const usage = command.usage
 								? ` ${command.usage}`
 								: "";
-							section += `${cmdElement.emote} \`${command.defaultPrefix}${command.id}${usage}\` - ${command.about}\n`;
+							section += `${cmdElement.emote} \`${command.prefix}${command.id}${usage}\` - ${command.about}\n`;
 						}
 					});
 				});

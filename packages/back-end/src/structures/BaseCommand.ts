@@ -10,7 +10,8 @@ export abstract class BaseCommand {
 
 	id: string;
 	fullId: string;
-	defaultPrefix?: string;
+	aliases?: string[];
+	prefix: string;
 	name: string;
 	about?: string;
 	description?: string;
@@ -21,14 +22,16 @@ export abstract class BaseCommand {
 		this.plugin = plugin;
 
 		this.id = info.id.toLocaleLowerCase();
-		this.defaultPrefix = info.defaultPrefix;
+		this.fullId = `${this.plugin.id}.command.${this.id}`;
+		this.aliases = info.aliases;
+		this.prefix =
+			info.defaultPrefix != undefined
+				? info.defaultPrefix
+				: plugin.defaultPrefix;
 		this.name = info.name;
-		this.defaultPrefix = info.defaultPrefix;
 		this.about = info.about;
 		this.description = info.description;
 		this.usage = info.usage;
-
-		this.fullId = `${this.plugin.id}.command.${this.id}`;
 	}
 
 	abstract async run(msg: FramedMessage): Promise<boolean>;

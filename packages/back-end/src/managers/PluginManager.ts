@@ -3,6 +3,8 @@ import { BasePlugin } from "../structures/BasePlugin";
 import { logger } from "shared";
 import FramedClient from "../structures/FramedClient";
 import * as DiscordUtils from "../utils/DiscordUtils";
+import FramedMessage from "../structures/FramedMessage";
+import { BaseCommand } from "../structures/BaseCommand";
 
 export default class PluginManager {
 	public readonly framedClient: FramedClient;
@@ -66,5 +68,47 @@ export default class PluginManager {
 		logger.verbose(
 			`Finished loading plugin ${plugin.name} v${plugin.version}.`
 		);
+	}
+
+	get pluginsArray(): BasePlugin[] {
+		return Array.from(this.plugins.values());
+	}
+
+	get commandsArray(): BaseCommand[] {
+		const commands: BaseCommand[] = [];
+		this.plugins.forEach(plugin => {
+			commands.push(...Array.from(plugin.commands.values()));
+		});
+		return commands;
+	}
+
+	get prefixesArray(): string[] {
+		const prefixes: string[] = [this.framedClient.defaultPrefix];
+
+		// Goes through each plugin to get a prefix
+		this.commandsArray.forEach(command => {
+			if (command.prefix) {
+				if (!prefixes.includes(command.prefix)) {
+					prefixes.push(command.prefix);
+				}
+			}
+		});
+
+		// console.log("prefixes from pluginmanager.ts -> " + prefixes);
+		return prefixes;
+	}
+
+	runCommand(msg: FramedMessage): void {
+		if (msg.command) {
+			const commandString = msg.command;
+			const commandList: BaseCommand[] = [];
+			this.plugins.forEach(element => {
+				const cmd = element.commands.get(commandString);
+				if (cmd && cmd.prefix == msg.prefix) {
+					cmd.run(msg);
+					commandList.push(cmd);
+				}
+			});
+		}
 	}
 }
