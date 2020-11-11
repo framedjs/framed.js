@@ -5,7 +5,6 @@ import FramedClient from "../structures/FramedClient";
 import * as DiscordUtils from "../utils/DiscordUtils";
 import FramedMessage from "../structures/FramedMessage";
 import { BaseCommand } from "../structures/BaseCommand";
-import { BaseEvent } from "../structures/BaseEvent";
 
 export default class PluginManager {
 	public readonly framedClient: FramedClient;

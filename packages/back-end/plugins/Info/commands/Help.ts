@@ -1,5 +1,5 @@
-import Discord, { DMChannel, TextChannel } from "discord.js";
-import * as Pagination from "discord-paginationembed";
+import Discord from "discord.js";
+// import * as Pagination from "discord-paginationembed";
 import * as DiscordUtils from "../../../src/utils/DiscordUtils";
 import FramedClient from "packages/back-end/src/structures/FramedClient";
 import FramedMessage from "../../../src/structures/FramedMessage";
@@ -25,6 +25,7 @@ export default class extends BaseCommand {
 		super(plugin, {
 			id: "help",
 			name: "Help",
+			aliases: ["h"],
 			about: "View help for certain commands and extra info.",
 			description: stripIndent`
 				The help command can show a list of useful commands, or detail specific commands for you.

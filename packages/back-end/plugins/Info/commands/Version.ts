@@ -3,7 +3,7 @@ import { BaseCommand } from "../../../src/structures/BaseCommand";
 import { BasePlugin } from "packages/back-end/src/structures/BasePlugin";
 import * as DiscordUtils from "../../../src/utils/DiscordUtils";
 import { cmdList } from "../shared/Shared";
-import { oneLine, stripIndent } from "common-tags";
+import { oneLine } from "common-tags";
 
 export default class extends BaseCommand {
 	constructor(plugin: BasePlugin) {
