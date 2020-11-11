@@ -1,15 +1,17 @@
-import { framedClient } from "..";
+/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ClientEvents } from "discord.js";
+import { EventInfo } from "../interfaces/EventInfo";
+import FramedClient from "./FramedClient";
 
-type EventType = keyof ClientEvents;
+export abstract class BaseEvent {
+	public readonly name: keyof ClientEvents;
+	public readonly description?: string;
 
-export interface EventListener {
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	listen: (...args: any) => Promise<any>;
-}
+	constructor(public readonly client: FramedClient, info: EventInfo) {
+		this.name = info.name;
+		this.description = info.description;
+	}
 
-export function Event(event: EventType | string) {
-	return function (target: { new (): EventListener }): void {
-		framedClient.client.on(event, new target().listen);
-	};
+	abstract run(...args: any): Promise<void>;
 }

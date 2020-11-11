@@ -1,22 +1,28 @@
-import { Event, EventListener } from "../../../src/structures/BaseEvent";
 import Discord from "discord.js";
 import { logger } from "shared";
 import { emotes } from "../shared/Shared";
+import { BaseEvent } from "packages/back-end/src/structures/BaseEvent";
+import FramedClient from "packages/back-end/src/structures/FramedClient";
 import Emoji from "node-emoji"; // Doing this only because Windows can't render emotes for some reason
 
-@Event("messageReactionAdd")
-default class implements EventListener {
-	listen = async (
+export default class extends BaseEvent {
+	constructor(client: FramedClient) {
+		super(client, {
+			name: "messageReactionAdd",
+		});
+	}
+
+	async run(
 		reaction: Discord.MessageReaction,
 		user: Discord.User | Discord.PartialUser
-	) => {
+	): Promise<void> {
 		logger.debug(`Reaction Add From: ${user.id}`);
 		if (user.bot) return;
 
 		// https://discordjs.guide/popular-topics/reactions.html#listening-for-reactions-on-old-messages
 		// When we receive a reaction we check if the reaction is partial or not
 		if (reaction.partial) {
-			// If the message this reaction belongs to was removed the fetching 
+			// If the message this reaction belongs to was removed the fetching
 			// might result in an API error, which we need to handle
 			try {
 				await reaction.fetch();
@@ -34,7 +40,7 @@ default class implements EventListener {
 		// reaction.message.content.startsWith("+poll") ||
 		// reaction.message.content.startsWith("poll:") ||
 		// reaction.message.author.id == "298673420181438465"; // This last one is for Poll Bot#0082
-	
+
 		if (isPollCommand) {
 			// https://discordjs.guide/popular-topics/reactions.html#removing-reactions-by-user
 			const extraUserReactions = reaction.message.reactions.cache.filter(
@@ -43,24 +49,21 @@ default class implements EventListener {
 					emotes.includes(reactionElement.emoji.name) &&
 					reactionElement != reaction
 			);
-	
+
 			try {
 				logger.debug(
 					`Current reaction: ${Emoji.unemojify(reaction.emoji.name)}`
 				);
-	
+
 				for await (const reaction of extraUserReactions.values()) {
 					logger.debug(
-						`Removing ${Emoji.unemojify(
-							reaction.emoji.name
-						)}`
+						`Removing ${Emoji.unemojify(reaction.emoji.name)}`
 					);
 					await reaction.users.remove(user.id);
 				}
-	
 			} catch (error) {
 				logger.error("Failed to remove reactions.");
 			}
 		}
-	};
+	}
 }

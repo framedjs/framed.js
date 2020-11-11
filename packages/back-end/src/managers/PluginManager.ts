@@ -5,6 +5,7 @@ import FramedClient from "../structures/FramedClient";
 import * as DiscordUtils from "../utils/DiscordUtils";
 import FramedMessage from "../structures/FramedMessage";
 import { BaseCommand } from "../structures/BaseCommand";
+import { BaseEvent } from "../structures/BaseEvent";
 
 export default class PluginManager {
 	public readonly framedClient: FramedClient;
@@ -43,6 +44,7 @@ export default class PluginManager {
 		}
 	}
 
+
 	/**
 	 *
 	 * @param plugin
@@ -55,7 +57,7 @@ export default class PluginManager {
 
 		this.plugins.set(plugin.id, plugin);
 
-		// Import commands
+		// Load commands
 		if (plugin.paths.commands) {
 			plugin.loadCommandsIn({
 				dirname: plugin.paths.commands,
@@ -63,8 +65,16 @@ export default class PluginManager {
 			});
 		}
 
+		// Load events
+		if (plugin.paths.events) {
+			plugin.loadEventsIn({
+				dirname: plugin.paths.events,
+				filter: /^(.*)\.(js|ts)$/,
+			});
+		}
+
 		// plugin.importCommands(plugin.config.paths.commands);
-		plugin.importEvents(plugin.paths.events);
+		// plugin.importEvents(plugin.paths.events);
 		logger.verbose(
 			`Finished loading plugin ${plugin.name} v${plugin.version}.`
 		);

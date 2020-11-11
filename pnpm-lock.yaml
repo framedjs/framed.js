@@ -29,6 +29,7 @@ importers:
       '@types/node-emoji': 1.8.1
       '@types/require-all': 3.0.1
       common-tags: 1.8.0
+      discord-paginationembed: 2.1.0_discord.js@12.3.1
       discord.js: 12.3.1
       dotenv: 8.2.0
       node-emoji: 1.10.0
@@ -48,6 +49,7 @@ importers:
       '@types/node-emoji': ^1.8.1
       '@types/require-all': ^3.0.1
       common-tags: ^1.8.0
+      discord-paginationembed: ^2.1.0
       discord.js: ^12.3.1
       dotenv: ^8.2.0
       node-emoji: ^1.10.0
@@ -1884,6 +1886,16 @@ packages:
       node: '>=8'
     resolution:
       integrity: sha512-WkrWp9GR4KXfKGYzOLmTuGVi1UWFfws377n9cc55/tb6DuqyF6pcQ5AbiHEshaDpY9v6oaSr2XCDidGmMwdzIA==
+  /discord-paginationembed/2.1.0_discord.js@12.3.1:
+    dependencies:
+      discord.js: 12.3.1
+    dev: false
+    engines:
+      node: '>= 12.0.0'
+    peerDependencies:
+      discord.js: ^12.0.0
+    resolution:
+      integrity: sha512-a89oag1wm42MNiwwMO2U/NCOh3TFd8VkL3duUB18g4dTIqG6leXIKmgze8ZOALfdpXsvFyhC7Ox45CUa1TIsFA==
   /discord.js/12.3.1:
     dependencies:
       '@discordjs/collection': 0.1.6

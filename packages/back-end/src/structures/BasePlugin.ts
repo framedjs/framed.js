@@ -1,10 +1,10 @@
 import { BaseCommand } from "./BaseCommand";
-import { framedClient } from "../index";
 import { Utils, logger } from "shared";
 import FramedClient from "./FramedClient";
 import * as DiscordUtils from "../utils/DiscordUtils";
 import util from "util";
 import { PluginInfo } from "../interfaces/PluginInfo";
+import { BaseEvent } from "./BaseEvent";
 
 export abstract class BasePlugin {
 	readonly framedClient: FramedClient;
@@ -61,6 +61,8 @@ export abstract class BasePlugin {
 		this.paths = info.paths;
 	}
 
+	//#region Command loading
+
 	/**
 	 *
 	 * @param options
@@ -99,53 +101,9 @@ export abstract class BasePlugin {
 		logger.verbose(`Finished loading command ${command.name}.`);
 	}
 
-	async importCommands(commandPath?: string): Promise<void> {
-		if (commandPath) {
-			const filter = (file: string) =>
-				file.endsWith(".ts") || file.endsWith(".js");
-			const commands = Utils.findFileNested(commandPath, filter);
+	//#endregion
 
-			for (const commandString of commands) {
-				try {
-					const { default: Command } = await import(commandString);
-					const importedCommand: BaseCommand = new Command();
-
-					if (importedCommand) {
-						if (this.commands.get(importedCommand.id)) {
-							logger.error(
-								"Failed to import: imported command ID already exists."
-							);
-						} else {
-							this.commands.set(
-								importedCommand.id,
-								importedCommand
-							);
-							importedCommand.plugin = this;
-						}
-						// framedClient.pluginManager.importingCommand = undefined;
-						logger.verbose(
-							`Finished loading from ${commandString}`
-						);
-					} else {
-						logger.error(
-							`Failed to import: Script ${commandString} may not be a valid Command?`
-						);
-					}
-				} catch (error) {
-					logger.error(
-						`Found a command, but failed to import it:\n${error.stack}`
-					);
-				}
-			}
-
-			logger.verbose(
-				`Finished loading commands from plugin ${this.name}.`
-			);
-			// logger.debug(`Commands: ${util.inspect(this.commands)}`);
-		} else {
-			logger.verbose(`No commands to import from plugin ${this.name}.`);
-		}
-	}
+	//#region Event loading
 
 	importEvents(eventsPath?: string): void {
 		if (eventsPath) {
@@ -176,4 +134,38 @@ export abstract class BasePlugin {
 			logger.verbose(`No events to import from plugin ${this.name}.`);
 		}
 	}
+
+	/**
+	 *
+	 * @param options
+	 */
+	loadEventsIn(options: DiscordUtils.Options): void {
+		const events = DiscordUtils.importScripts(options);
+		logger.debug(`Events: ${util.inspect(events)}`);
+		this.loadEvents(events);
+	}
+
+	/**
+	 *
+	 * @param events
+	 */
+	loadEvents<T extends BaseEvent>(
+		events: (new (framedClient: FramedClient) => T)[]
+	): void {
+		for (const event of events) {
+			const initEvent = new event(this.framedClient);
+			this.loadEvent(initEvent);
+		}
+	}
+
+	/**
+	 *
+	 * @param event
+	 */
+	loadEvent<T extends BaseEvent>(event: T): void {
+		this.framedClient.client.on(event.name, event.run.bind(null));
+		logger.verbose(`Finished loading event ${event.name}.`);
+	}
+
+	//#endregion
 }

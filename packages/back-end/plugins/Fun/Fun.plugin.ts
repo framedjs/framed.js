@@ -16,6 +16,5 @@ export default class extends BasePlugin {
 				events: path.join(__dirname, "events"),
 			},
 		});
-		logger.debug("plugin class constructor was called");
 	}
 }

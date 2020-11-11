@@ -1,4 +1,5 @@
-import Discord from "discord.js";
+import Discord, { DMChannel, TextChannel } from "discord.js";
+import * as Pagination from "discord-paginationembed";
 import * as DiscordUtils from "../../../src/utils/DiscordUtils";
 import FramedClient from "packages/back-end/src/structures/FramedClient";
 import FramedMessage from "../../../src/structures/FramedMessage";
@@ -64,7 +65,7 @@ export default class extends BaseCommand {
 						}
 					});
 
-					matchingCommands.forEach(command => {						
+					matchingCommands.forEach(command => {
 						let description = command.description;
 						if (!description) {
 							if (command.about) {
@@ -89,32 +90,49 @@ export default class extends BaseCommand {
 					// }
 				}
 			} else {
-				let embed = DiscordUtils.applyEmbedTemplate(
+				// const embeds: Discord.MessageEmbed[] = [];
+
+				const mainEmbed = DiscordUtils.applyEmbedTemplate(
 					discordMsg,
 					this.id,
 					cmdList
 				);
-				embed = DiscordUtils.applyVersionInFooter(
-					embed,
-					framedUser.username,
-					framedClient.version
-				);
-				embed
+
+				mainEmbed
 					.setDescription(
 						oneLine`Pixel Pete is a custom bot system maintained by <@200340393596944384> 
 						and <@359521958519504926>, specifically for Game Dev Underground. 
 						Bot created partly with the [Framed](https://github.com/som1chan/Framed) bot framework.`
 					)
+					// .addField(
+					// 	"View More",
+					// 	oneLine`To view more commands, press the ▶️ button to go forward.
+					// 	This will only work for ${discordMsg.author}, who triggered the command.`
+					// )
 					.addFields(this.createMainHelpFields(msg.framedClient))
-					.addField("Other Bots", stripIndent`
+					.addField(
+						"Other Bots",
+						stripIndent`
 						<@159985870458322944> \`!help\` - Bot generally used for \`!levels\` and \`!rank\`.
 						<@234395307759108106> \`-help\` - Used for music in <#760622055384547368>.
-					`);
+					`)
+
+				// embeds.push(embedPage1, embedPage2, embedPage3);
+
 				// .addField(
 				// 	"Streaks",
 				// 	`🕒 \`.streaks [@user | user ID | top | all]\` - View streak stats.`
 				// );
-				await discordMsg.channel.send(embed);
+
+				// const pageEmbed = new Pagination.Embeds()
+				// 	.setArray(embeds)
+				// 	.setAuthorizedUsers([discordMsg.author.id])
+				// 	.setDeleteOnTimeout(false)
+				// 	.setChannel(discordMsg.channel as TextChannel | DMChannel);
+
+				await discordMsg.channel.send(mainEmbed);
+
+				// pageEmbed.build();
 			}
 
 			return true;
