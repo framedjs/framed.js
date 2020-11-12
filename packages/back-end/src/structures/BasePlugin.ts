@@ -150,10 +150,10 @@ export abstract class BasePlugin {
 	 * @param events
 	 */
 	loadEvents<T extends BaseEvent>(
-		events: (new (framedClient: FramedClient) => T)[]
+		events: (new (plugin: BasePlugin) => T)[]
 	): void {
 		for (const event of events) {
-			const initEvent = new event(this.framedClient);
+			const initEvent = new event(this);
 			this.loadEvent(initEvent);
 		}
 	}

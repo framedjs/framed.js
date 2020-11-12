@@ -2,13 +2,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ClientEvents } from "discord.js";
 import { EventInfo } from "../interfaces/EventInfo";
-import FramedClient from "./FramedClient";
+import { BasePlugin } from "./BasePlugin";
 
 export abstract class BaseEvent {
 	public readonly name: keyof ClientEvents;
 	public readonly description?: string;
 
-	constructor(public readonly client: FramedClient, info: EventInfo) {
+	constructor(
+		public readonly plugin: BasePlugin,
+		info: EventInfo
+	) {
 		this.name = info.name;
 		this.description = info.description;
 	}
