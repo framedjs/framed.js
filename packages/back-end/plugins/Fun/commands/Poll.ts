@@ -25,15 +25,21 @@ export default class extends BaseCommand {
 	async run(msg: FramedMessage): Promise<boolean> {
 		if (msg.discord) {
 			const discordMsg = msg.discord.msg;
+			const regex = msg.content.match(/"/g);
 
-			msg.parseQuotesInArgs(msg.args);
-
-			const msgReact: Promise<MessageReaction>[] = [];
-			emotes.forEach(element => {
-				msgReact.push(discordMsg.react(element));
-			});
-
-			await Promise.all(msgReact);
+			// If quotes have happened more than twice
+			if ((regex || []).length >= 2) {
+				// Create embed poll
+				// TODO
+				
+			} else {
+				const msgReact: Promise<MessageReaction>[] = [];
+				emotes.forEach(element => {
+					msgReact.push(discordMsg.react(element));
+				});
+	
+				await Promise.all(msgReact);	
+			}
 		}
 		return true;
 	}

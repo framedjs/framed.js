@@ -9,7 +9,7 @@ export default class FramedMessage {
 
 	public readonly framedClient;
 
-	public content?: string;
+	public content = "";
 
 	public readonly prefix?: string;
 	public readonly args?: Array<string>;
@@ -25,6 +25,7 @@ export default class FramedMessage {
 				this.content = msg.content;
 			}
 		}
+
 		this.framedClient = framedClient;
 		this.prefix = this.getPrefix();
 		this.args = this.getArgs();
@@ -44,7 +45,7 @@ export default class FramedMessage {
 		let prefix: string | undefined;
 		for (let i = 0; i < prefixes.length; i++) {
 			const element = prefixes[i];
-			if (this.content?.indexOf(element) === 0) {
+			if (this.content.indexOf(element) === 0) {
 				prefix = element;
 				break;
 			}
@@ -54,26 +55,82 @@ export default class FramedMessage {
 
 	/**
 	 * Gets the arguments of the message.
+	 * 
+	 * Example: `.test "woah spaces" that is 2 cool "aaaa"`
+	 * would return the following arguments:
+	 * 
+	 * ```ts
+	 * ["test", "woah spaces", "that", "is", 2, "cool", "aaa"]
+	 * ```
 	 */
-	getArgs(): string[] | undefined {
-		return this.prefix
-			? this.content?.slice(this.prefix.length).trim().split(/ +/g)
-			: undefined;
-	}
+	private getArgs(): string[] | undefined {
+		if (this.prefix) {
+			// Note that this content will still include the command inside
+			// the arguments, and will be removed when getCommand() is called
+			const content = this.content.slice(this.prefix.length).trim();
+			const args: string[] = [];
 
-	parseQuotesInArgs(args?: string[]): string[] | undefined {
-		if (!args) return undefined;
-		const argsContent = args.join(" ");
+			// Stores whether there was a quote character
+			// that has happened, and is waiting to be closed
+			let hasDoubleQuote = false;
 
-		logger.debug("from parseQuotesInArgs");
-		logger.debug(`argsContent: ${argsContent}`);
-		logger.debug(`${argsContent.split('"')}`);
+			// Contains the string between the two quote characters
+			// or for anything other type of argument
+			let quotedString = "";
+
+			// Goes through all the arguments
+			for (let i = 0; i < content.length; i++) {
+				const element = content[i];
+				const isDoubleQuote = element == `"`;
+				const isSpace = element == " ";
+
+				// Does the argument that we're trying to make
+				// have a quote mark before this, and hasn't closed?
+				if (hasDoubleQuote) {
+					if (!isDoubleQuote) {
+						// Adds to the quoted string
+						quotedString += element;
+						hasDoubleQuote = true;
+					} else if (isDoubleQuote) {
+						// Stops adding to the quoted string
+						args.push(quotedString);
+						hasDoubleQuote = false;
+						quotedString = "";
+					}
+				} else if (isDoubleQuote) {
+					// Set it to check for the string between quotes
+					hasDoubleQuote = true;
+				} else {
+					// Parses other kind of argument
+					if (!isSpace)
+						// Adds to the argument text
+						quotedString += element;
+					else if (quotedString.length > 0 || i - 1 == content.length) {
+						// If it's the last character, or there's content in 
+						// the quoted string, close it off
+						
+						// Pushes the string as an argument, if it's not empty
+						args.push(quotedString);
+						quotedString = "";
+					}
+				}
+			}
+
+			logger.debug(`Args -> ${args}`);
+			return args;
+		} else {
+			return undefined;
+		}
+
+		// return this.prefix
+		// 	? this.content.slice(this.prefix.length).trim().split(/ +/g)
+		// 	: undefined;
 	}
 
 	/**
 	 * Gets the command of the message.
 	 */
-	getCommand(): string | undefined {
+	private getCommand(): string | undefined {
 		return this.prefix && this.args
 			? this.args.shift()?.toLocaleLowerCase()
 			: undefined;
