@@ -6,7 +6,6 @@ import { BasePlugin } from "packages/back-end/src/structures/BasePlugin";
 import { oneLine, stripIndent } from "common-tags";
 import * as DiscordUtils from "../../../src/utils/DiscordUtils";
 import { logger } from "shared";
-import Fun from "../Fun.plugin";
 
 export default class extends BaseCommand {
 	constructor(plugin: BasePlugin) {
@@ -50,7 +49,7 @@ export default class extends BaseCommand {
 				} else {
 					// Gets the argument between the command and the quoted options
 					// TODO
-					const unquotedContent = msg.content
+					let unquotedContent = msg.content
 						.replace(msg.prefix, "")
 						.replace(msg.command, "")
 						.trim()
@@ -60,33 +59,53 @@ export default class extends BaseCommand {
 						.replace(msg.command, "")
 						.replace(unquotedContent, "")
 						.trim();
+					const newArgs = FramedMessage.getArgs(optionsContent);
+
 					logger.debug(
-						`getArgs = ${FramedMessage.getArgs(optionsContent)}`
+						`newArgs = ${newArgs}`
 					);
 
-					const newArgs = FramedMessage.getArgs(optionsContent);
-					
 					// Create the description with results
 					const reactionEmotes: string[] = [];
 					let description = "";
-					let extraNewLine = "\n";
 
-					// If there's more than 7 elements
-					// then make sure there is no new line for each element.
-					if (newArgs.length > 7) {
-						extraNewLine = "";
+					if (unquotedContent == "") {
+						const shiftedArgs = newArgs.shift();
+						if (shiftedArgs) {
+							unquotedContent = shiftedArgs;
+						}
 					}
+
+					let hasCodeBlock = false;
 
 					for (let i = 0; i < newArgs.length; i++) {
 						const element = newArgs[i];
+						hasCodeBlock = element.endsWith("```");
 						if (element) {
-							// If it's the last element, remove the extra new line
-							if (i + 1 == newArgs.length) {
-								extraNewLine = "";
+							const reactionEmote = optionEmotes[i];
+							description += `${reactionEmote}  ${element}`;
+							// logger.warn(`${i} + 1 = ${newArgs.length}`);
+							// If it's not the last element,
+							// If there's more than 7 elements
+							// If there isn't a codeblock to finish it off
+							// Remove the extra new line
+							if (
+								i + 1 <
+								newArgs.length //&&
+								// !element.endsWith("```")
+							) {
+								description += "\n";
+								if (
+									// Is the amount of options less than 8
+									newArgs.length < 8 &&
+									// Is the end of this option not a codeblock
+									!hasCodeBlock &&
+									// Is this option not the last one
+									i + 1 != newArgs.length
+								)
+									description += "\n";
 							}
 
-							const reactionEmote = optionEmotes[i];
-							description += `${reactionEmote} ${element}\n${extraNewLine}`;
 							reactionEmotes.push(reactionEmote);
 						}
 					}
@@ -98,7 +117,9 @@ export default class extends BaseCommand {
 						)
 						.setTitle(unquotedContent)
 						.setDescription(
-							`${description}\nPoll by ${discordMsg.author}`
+							`${description}${
+								hasCodeBlock ? "" : "\n"
+							}\nPoll by ${discordMsg.author}`
 						);
 					const newMsg = await discordMsg.channel.send(embed);
 

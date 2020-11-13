@@ -110,8 +110,17 @@ export default class FramedMessage {
 			: undefined;
 	}
 
+	/**
+	 * Voodoo magic that grabs parameters off of string, by grouping
+	 * (properly) quoted strings in text, excluding codeblocks and escaped characters.
+	 *
+	 * @param content Message content
+	 */
 	static getArgs(content: string): string[] {
 		const args: string[] = [];
+
+		// Stores whether if we're in a codebloack or not
+		let hasCodeBlock = false;
 
 		// Stores whether there was a quote character
 		// that has happened, and is waiting to be closed
@@ -126,38 +135,85 @@ export default class FramedMessage {
 			const element = content[i];
 			const isDoubleQuote = element == `"`;
 			const isSpace = element == " ";
+			const isCodeBlock = element == "`";
+			const isEndOfString = i + 1 == content.length;
+			const isEscaped = content[i - 1] == "\\";
 
-			// Does the argument that we're trying to make
-			// have a quote mark before this, and hasn't closed?
+			// hasCodeBlock will be true when the message has codeblocks
+			if (isCodeBlock) {
+				hasCodeBlock = !hasCodeBlock;
+			}
+			// console.log(
+			// 	`hasCodeBlock: ${hasCodeBlock} | hasDoubleQuote: ${hasDoubleQuote} | isEndOfString: ${isEndOfString}`
+			// );
+
 			if (hasDoubleQuote) {
-				if (!isDoubleQuote) {
-					// Adds to the quoted string
+				// We are inside a double quote
+				if (isDoubleQuote && !isEscaped) {
+					// If it isn't in a codeblock
+					if (!hasCodeBlock) {
+						// Closes double quote
+						hasDoubleQuote = false;
+
+						// Stops adding to the quoted string
+						args.push(quotedString);
+						// console.log(`END: "${quotedString}"\n`);
+						quotedString = "";
+					}
+				} else if (!isDoubleQuote || hasCodeBlock) {
+					// Adds to the quoted string, if it isn't a quote, or it is
+					// but it's suppsoed to be escaped in some way
 					quotedString += element;
 					hasDoubleQuote = true;
-				} else if (isDoubleQuote) {
-					// Stops adding to the quoted string
-					args.push(quotedString);
-					hasDoubleQuote = false;
-					quotedString = "";
+					// console.log(`Add: ${quotedString}` + "\n");
+
+					// If it's the end of the string, and the user forgot
+					// to add a closing ", we close it for them
+					if (isEndOfString) {
+						args.push(quotedString);
+						quotedString = "";
+					}
 				}
-			} else if (isDoubleQuote) {
-				// Set it to check for the string between quotes
-				hasDoubleQuote = true;
-			} else {
-				// Parses other kind of argument
-				if (!isSpace) {
-					// Adds to the argument text
+			} else if (isDoubleQuote && !isEscaped) {
+				// We are starting a double quote potentially
+				if (!hasCodeBlock) {
+					// Set it to check for the string between quotes
+					hasDoubleQuote = true;
+
+					// Add to arguments of what happened before, if anything
+					// was contained in quotedString
+					if (quotedString.length > 0) {
+						args.push(quotedString);
+						quotedString = "";
+					}
+				} else if (hasCodeBlock) {
+					// If there's a codeblock, make sure we add codeblock characters
+					// it in, since it doesn't add it otherwise.
+					// We also don't enter into a "real" double quote.
 					quotedString += element;
 				}
+			} else {
+				// Where we're not going into a quote, nor are in one currently
+
+				// Will add to the quotedString if a space 
+				// that splits things apart doesn't exist
+				if (!isSpace || (isSpace && hasCodeBlock)) {
+					// Adds to the argument text
+					quotedString += element;
+					// console.log("else: " + quotedString + "\n");
+				}
+
+				// console.log(`else: ${(!isSpace || hasCodeBlock)}`)
 
 				if (
-					(isSpace && quotedString.length > 0) ||
-					(!isSpace && i + 1 == content.length)
+					// Checks if there's a space, but there's content in
+					// quotedString and not in a codeblock
+					(isSpace && quotedString.length > 0 && !hasCodeBlock) ||
+					// Checks if there's no space and it's the last character
+					(!isSpace && isEndOfString)
 				) {
-					// If it's the last character, or there's content in
-					// the quoted string, close it off
-
 					// Pushes the string as an argument, if it's not empty
+					// console.log(`ELSE END: "${quotedString}"\n`);
 					args.push(quotedString);
 					quotedString = "";
 				}
