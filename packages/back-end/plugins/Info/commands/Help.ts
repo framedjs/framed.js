@@ -120,11 +120,6 @@ export default class extends BaseCommand {
 
 				// embeds.push(embedPage1, embedPage2, embedPage3);
 
-				// .addField(
-				// 	"Streaks",
-				// 	`🕒 \`.streaks [@user | user ID | top | all]\` - View streak stats.`
-				// );
-
 				// const pageEmbed = new Pagination.Embeds()
 				// 	.setArray(embeds)
 				// 	.setAuthorizedUsers([discordMsg.author.id])
@@ -145,27 +140,42 @@ export default class extends BaseCommand {
 	createMainHelpFields(framedClient: FramedClient): Discord.EmbedFieldData[] {
 		const fields: Discord.EmbedFieldData[] = [];
 
+		// const helpList: HelpCategory[] = [
+		// 	{
+		// 		category: "Info",
+		// 		command: [
+		// 			{
+		// 				emote: "❓",
+		// 				command: "help",
+		// 			},
+		// 			{
+		// 				emote: "🏓",
+		// 				command: "ping",
+		// 			},
+		// 			{
+		// 				emote: "⌚",
+		// 				command: "uptime",
+		// 			},
+		// 		],
+		// 	},
+		// 	{
+		// 		category: "Fun",
+		// 		command: [
+		// 			{
+		// 				emote: "👍",
+		// 				command: "poll",
+		// 			},
+		// 		],
+		// 	},
+		// ];
 		const helpList: HelpCategory[] = [
 			{
-				category: "Info",
+				category: "Commands",
 				command: [
 					{
 						emote: "❓",
 						command: "help",
 					},
-					{
-						emote: "🏓",
-						command: "ping",
-					},
-					{
-						emote: "⌚",
-						command: "uptime",
-					},
-				],
-			},
-			{
-				category: "Fun",
-				command: [
 					{
 						emote: "👍",
 						command: "poll",
@@ -173,33 +183,59 @@ export default class extends BaseCommand {
 				],
 			},
 		];
-
+		const sectionMap = new Map<string, string>();
 		const plugins = framedClient.pluginManager.plugins;
 
-		// Loops through all of the help elements
+		// Loops through all of the help elements, 
+		// in order to find the right data
 		helpList.forEach(helpElement => {
-			let section = "";
-
+			// Searches through plugins
 			plugins.forEach(plugin => {
-				logger.debug("plugin");
+				// Searches through commands inside the plugins
 				plugin.commands.forEach(command => {
-					logger.debug("command");
+					// Searches through command text options
 					helpElement.command.forEach(cmdElement => {
+						// If there's a matching one, add it to the Map
 						if (command.id == cmdElement.command) {
 							const usage = command.usage
 								? ` ${command.usage}`
 								: "";
-							section += `${cmdElement.emote} \`${command.prefix}${command.id}${usage}\` - ${command.about}\n`;
+							sectionMap.set(cmdElement.command, oneLine`
+								${cmdElement.emote} \`${command.prefix}${command.id}
+								${usage}\` - ${command.about}
+							`)
 						}
 					});
 				});
 			});
 
+
+		});
+
+		// Loops through all of the help elements,
+		// in order to sort them properly like in the data
+		helpList.forEach(helpElement => {
+			let categoryText = "";
+
+			// Goes through each command in help, and finds matches in order
+			helpElement.command.forEach(cmdElement => {
+				const cmdText = sectionMap.get(cmdElement.command);
+				if (cmdText) {
+					categoryText += `${cmdText}\n`;
+				}
+			});
+
+			// Push everything from this category into a Embed field
 			fields.push({
 				name: helpElement.category,
-				value: section,
+				value: categoryText,
 			});
 		});
+		
+		// fields.push({
+		// 	"Streaks",
+		// 	`🕒 \`.streaks [@user | user ID | top | all]\` - View streak stats.`
+		// });
 
 		return fields;
 	}
