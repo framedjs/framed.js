@@ -43,4 +43,14 @@ export interface CommandInfo {
 	 */
 	usage?: string;
 	// args?: Argument[];
+
+	/**
+	 * Examples on how to use the command.
+	 */
+	examples?: string;
+
+	/**
+	 * Emoji icon
+	 */
+	emojiIcon?: string;
 }

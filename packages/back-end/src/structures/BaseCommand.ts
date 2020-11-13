@@ -16,6 +16,8 @@ export abstract class BaseCommand {
 	about?: string;
 	description?: string;
 	usage?: string;
+	examples?: string;
+	emojiIcon?: string;
 
 	constructor(plugin: BasePlugin, info: CommandInfo) {
 		this.framedClient = plugin.framedClient;
@@ -32,6 +34,12 @@ export abstract class BaseCommand {
 		this.about = info.about;
 		this.description = info.description;
 		this.usage = info.usage;
+		this.examples = info.examples;
+		this.emojiIcon = info.emojiIcon;
+
+		if (this.examples) {
+			this.examples = this.examples?.replace(/{{prefix}}/gi, this.prefix);
+		}
 	}
 
 	abstract async run(msg: FramedMessage): Promise<boolean>;

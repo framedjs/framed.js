@@ -1,6 +1,5 @@
 // import Command, { CommandClass } from "../../src/structures/Command";
 import { BasePlugin } from "../../src/structures/BasePlugin";
-import { logger } from "shared";
 import path from "path";
 import FramedClient from "packages/back-end/src/structures/FramedClient";
 

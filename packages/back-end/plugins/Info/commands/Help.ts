@@ -4,7 +4,6 @@ import * as DiscordUtils from "../../../src/utils/DiscordUtils";
 import FramedClient from "packages/back-end/src/structures/FramedClient";
 import FramedMessage from "../../../src/structures/FramedMessage";
 import { framedClient } from "../../../src/index";
-import { logger } from "shared";
 import { BasePlugin } from "packages/back-end/src/structures/BasePlugin";
 import { BaseCommand } from "../../../src/structures/BaseCommand";
 import { cmdList } from "../shared/Shared";
@@ -28,9 +27,13 @@ export default class extends BaseCommand {
 			aliases: ["h"],
 			about: "View help for certain commands and extra info.",
 			description: stripIndent`
-				The help command can show a list of useful commands, or detail specific commands for you.
+				Shows a list of useful commands, or detail specific commands for you.
 			`,
 			usage: "[command]",
+			examples: stripIndent`
+				\`{{prefix}}help\`
+				\`{{prefix}}help poll\`
+			`,
 		});
 	}
 
@@ -43,12 +46,6 @@ export default class extends BaseCommand {
 
 			// Checks for a parameter
 			if (lookUpCmd) {
-				const embed = DiscordUtils.applyEmbedTemplate(
-					discordMsg,
-					this.id,
-					cmdList
-				);
-
 				// embed.setDescription(stripIndent`
 				// 	\`[]\` means it is optional.
 				// 	\`<>\` means it isn't, and is a placeholder for some value.
@@ -66,7 +63,8 @@ export default class extends BaseCommand {
 						}
 					});
 
-					matchingCommands.forEach(command => {
+					for await (const command of matchingCommands) {
+						// Get the description
 						let description = command.description;
 						if (!description) {
 							if (command.about) {
@@ -75,14 +73,32 @@ export default class extends BaseCommand {
 								description = `*No description set for command.*`;
 							}
 						}
-						embed.addField(
-							`${command.plugin.name} Plugin`,
-							`\`${command.prefix}${command.id}\`\n${description}`
-						);
-					});
 
-					if (matchingCommands.length > 0) {
-						discordMsg.channel.send(embed);
+						// Creates the embed
+						const embed = DiscordUtils.applyEmbedTemplate(
+							discordMsg,
+							this.id,
+							cmdList
+						)
+							.setTitle(`${command.prefix}${command.id}`)
+							.setDescription(description);
+						// .addField(
+						// 	`${command.plugin.name} Plugin`,
+						// 	`\`${command.prefix}${command.id}\`\n${description}`
+						// );
+
+						if (command.usage) {
+							embed.addField(
+								"Usage",
+								`\`${command.prefix}${command.id} ${command.usage}\``
+							);
+						}
+
+						if (command.examples) {
+							embed.addField("Examples", command.examples);
+						}
+
+						await discordMsg.channel.send(embed);
 					}
 					// else {
 					// 	discordMsg.channel.send(
@@ -91,8 +107,6 @@ export default class extends BaseCommand {
 					// }
 				}
 			} else {
-				// const embeds: Discord.MessageEmbed[] = [];
-
 				const mainEmbed = DiscordUtils.applyEmbedTemplate(
 					discordMsg,
 					this.id,
@@ -105,30 +119,16 @@ export default class extends BaseCommand {
 						and <@359521958519504926>, specifically for Game Dev Underground. 
 						Bot created partly with the [Framed](https://github.com/som1chan/Framed) bot framework.`
 					)
-					// .addField(
-					// 	"View More",
-					// 	oneLine`To view more commands, press the ▶️ button to go forward.
-					// 	This will only work for ${discordMsg.author}, who triggered the command.`
-					// )
 					.addFields(this.createMainHelpFields(msg.framedClient))
 					.addField(
 						"Other Bots",
 						stripIndent`
 						<@159985870458322944> \`!help\` - Bot generally used for \`!levels\` and \`!rank\`.
 						<@234395307759108106> \`-help\` - Used for music in <#760622055384547368>.
-					`)
-
-				// embeds.push(embedPage1, embedPage2, embedPage3);
-
-				// const pageEmbed = new Pagination.Embeds()
-				// 	.setArray(embeds)
-				// 	.setAuthorizedUsers([discordMsg.author.id])
-				// 	.setDeleteOnTimeout(false)
-				// 	.setChannel(discordMsg.channel as TextChannel | DMChannel);
+					`
+					);
 
 				await discordMsg.channel.send(mainEmbed);
-
-				// pageEmbed.build();
 			}
 
 			return true;
@@ -186,7 +186,7 @@ export default class extends BaseCommand {
 		const sectionMap = new Map<string, string>();
 		const plugins = framedClient.pluginManager.plugins;
 
-		// Loops through all of the help elements, 
+		// Loops through all of the help elements,
 		// in order to find the right data
 		helpList.forEach(helpElement => {
 			// Searches through plugins
@@ -200,16 +200,17 @@ export default class extends BaseCommand {
 							const usage = command.usage
 								? ` ${command.usage}`
 								: "";
-							sectionMap.set(cmdElement.command, oneLine`
+							sectionMap.set(
+								cmdElement.command,
+								oneLine`
 								${cmdElement.emote} \`${command.prefix}${command.id}
 								${usage}\` - ${command.about}
-							`)
+							`
+							);
 						}
 					});
 				});
 			});
-
-
 		});
 
 		// Loops through all of the help elements,
@@ -231,7 +232,7 @@ export default class extends BaseCommand {
 				value: categoryText,
 			});
 		});
-		
+
 		// fields.push({
 		// 	"Streaks",
 		// 	`🕒 \`.streaks [@user | user ID | top | all]\` - View streak stats.`

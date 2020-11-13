@@ -2,11 +2,8 @@ import Discord from "discord.js";
 import { logger } from "shared";
 import { emotes, optionEmotes } from "../shared/Shared";
 import { BaseEvent } from "packages/back-end/src/structures/BaseEvent";
-import FramedClient from "packages/back-end/src/structures/FramedClient";
 import Emoji from "node-emoji"; // Doing this only because Windows can't render emotes for some reason
-import Fun from "../Fun.plugin";
 import { BasePlugin } from "packages/back-end/src/structures/BasePlugin";
-import util from "util";
 import { oneLine } from "common-tags";
 
 export default class extends BaseEvent {
@@ -48,6 +45,7 @@ export default class extends BaseEvent {
 
 		const isPollCommand =
 			reaction.message.content.startsWith(".poll") || isPollEmbed;
+			
 		//; // ||
 		// reaction.message.content.startsWith("+poll") ||
 		// reaction.message.content.startsWith("poll:") ||

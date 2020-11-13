@@ -13,14 +13,16 @@ export default class extends BaseCommand {
 			id: "poll",
 			defaultPrefix: ".",
 			name: "Poll",
-			about: "Creates a poll.",
+			about: "Create a poll.",
 			description: stripIndent`
-				Creates a poll!
-				Examples:
-				\`.poll Is Tim a murderer?\` Vote with 👍 👎 or 🤷‍♀️
-				\`.poll Is Tim a murderer? "Yes" "Absolutely" "Definitely"\` Custom text options to vote for.
+				Create a simple, reaction-based poll through Discord.
 			`,
 			usage: '<question> ["option 1"] ["option 2"]',
+			examples: stripIndent`
+				Simple Poll: \`{{prefix}}poll Is Tim a Murderer?\`
+				Custom Options: \`{{prefix}}poll Is Tim a Murderer? "For Sure" "Absolutely"\`
+			`,
+			emojiIcon: "👍",
 		});
 	}
 
@@ -61,9 +63,7 @@ export default class extends BaseCommand {
 						.trim();
 					const newArgs = FramedMessage.getArgs(optionsContent);
 
-					logger.debug(
-						`newArgs = ${newArgs}`
-					);
+					logger.debug(`newArgs = ${newArgs}`);
 
 					// Create the description with results
 					const reactionEmotes: string[] = [];
