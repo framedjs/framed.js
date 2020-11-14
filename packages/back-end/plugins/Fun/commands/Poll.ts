@@ -41,105 +41,109 @@ export default class extends BaseCommand {
 				msg.prefix &&
 				msg.command
 			) {
-				// If we go over the Discord reaction limit,
-				// We tell the user we can't do that
-				if (msg.args.length > 21) {
-					discordMsg.reply(oneLine`
+				// Gets the argument between the command and the quoted options
+				// TODO
+				let unquotedContent = msg.content
+					.replace(msg.prefix, "")
+					.replace(msg.command, "")
+					.trim()
+					.split(`"`)[0];
+				const optionsContent = msg.content
+					.replace(msg.prefix, "")
+					.replace(msg.command, "")
+					.replace(unquotedContent, "")
+					.trim();
+				const newArgs = FramedMessage.getArgs(optionsContent);
+
+				logger.debug(`newArgs = ${newArgs}`);
+
+				// Does some checks to see if the amount of options is correct
+				if (newArgs.length > 20) {
+					await discordMsg.reply(oneLine`
 						Too many options! The max number of options is 20 due to Discord reactions.
 					`);
 					return false;
-				} else {
-					// Gets the argument between the command and the quoted options
-					// TODO
-					let unquotedContent = msg.content
-						.replace(msg.prefix, "")
-						.replace(msg.command, "")
-						.trim()
-						.split(`"`)[0];
-					const optionsContent = msg.content
-						.replace(msg.prefix, "")
-						.replace(msg.command, "")
-						.replace(unquotedContent, "")
-						.trim();
-					const newArgs = FramedMessage.getArgs(optionsContent);
-
-					logger.debug(`newArgs = ${newArgs}`);
-
-					// Create the description with results
-					const reactionEmotes: string[] = [];
-					let description = "";
-
-					if (unquotedContent == "") {
-						const shiftedArgs = newArgs.shift();
-						if (shiftedArgs) {
-							unquotedContent = shiftedArgs;
-						}
-					}
-
-					let hasCodeBlock = false;
-
-					for (let i = 0; i < newArgs.length; i++) {
-						const element = newArgs[i];
-						hasCodeBlock = element.endsWith("```");
-						if (element) {
-							const reactionEmote = optionEmotes[i];
-							description += `${reactionEmote}  ${element}`;
-							// logger.warn(`${i} + 1 = ${newArgs.length}`);
-							// If it's not the last element,
-							// If there's more than 7 elements
-							// If there isn't a codeblock to finish it off
-							// Remove the extra new line
-							if (
-								i + 1 <
-								newArgs.length //&&
-								// !element.endsWith("```")
-							) {
-								description += "\n";
-								if (
-									// Is the amount of options less than 8
-									newArgs.length < 8 &&
-									// Is the end of this option not a codeblock
-									!hasCodeBlock &&
-									// Is this option not the last one
-									i + 1 != newArgs.length
-								)
-									description += "\n";
-							}
-
-							reactionEmotes.push(reactionEmote);
-						}
-					}
-
-					// Sends and creates the embed
-					const embed = new Discord.MessageEmbed()
-						.setColor(
-							DiscordUtils.getEmbedColorWithFallback(discordMsg)
-						)
-						.setTitle(unquotedContent)
-						.setDescription(
-							`${description}${
-								hasCodeBlock ? "" : "\n"
-							}\nPoll by ${discordMsg.author}`
-						);
-					const newMsg = await discordMsg.channel.send(embed);
-
-					// Does the reactions
-					const msgReact: Promise<Discord.MessageReaction>[] = [];
-					reactionEmotes.forEach(element => {
-						msgReact.push(newMsg.react(element));
-					});
-					try {
-						await Promise.all(msgReact);
-					} catch (error) {
-						if (error == "Unknown Message") {
-							logger.warn(error);
-						} else {
-							logger.error(error.stack);
-						}
-					}
-
-					return true;
+				} else if (newArgs.length < 2) {
+					await discordMsg.reply(oneLine`
+						You need at least more than 1 option!
+					`);
+					return false;
 				}
+
+				// Create the description with results
+				const reactionEmotes: string[] = [];
+				let description = "";
+
+				if (unquotedContent == "") {
+					const shiftedArgs = newArgs.shift();
+					if (shiftedArgs) {
+						unquotedContent = shiftedArgs;
+					}
+				}
+
+				let hasCodeBlock = false;
+
+				for (let i = 0; i < newArgs.length; i++) {
+					const element = newArgs[i];
+					hasCodeBlock = element.endsWith("```");
+					if (element) {
+						const reactionEmote = optionEmotes[i];
+						description += `${reactionEmote}  ${element}`;
+						// logger.warn(`${i} + 1 = ${newArgs.length}`);
+						// If it's not the last element,
+						// If there's more than 7 elements
+						// If there isn't a codeblock to finish it off
+						// Remove the extra new line
+						if (
+							i + 1 <
+							newArgs.length //&&
+							// !element.endsWith("```")
+						) {
+							description += "\n";
+							if (
+								// Is the amount of options less than 8
+								newArgs.length < 8 &&
+								// Is the end of this option not a codeblock
+								!hasCodeBlock &&
+								// Is this option not the last one
+								i + 1 != newArgs.length
+							)
+								description += "\n";
+						}
+
+						reactionEmotes.push(reactionEmote);
+					}
+				}
+
+				// Sends and creates the embed
+				const embed = new Discord.MessageEmbed()
+					.setColor(
+						DiscordUtils.getEmbedColorWithFallback(discordMsg)
+					)
+					.setTitle(unquotedContent)
+					.setDescription(
+						`${description}${hasCodeBlock ? "" : "\n"}\nPoll by ${
+							discordMsg.author
+						}`
+					);
+				const newMsg = await discordMsg.channel.send(embed);
+
+				// Does the reactions
+				const msgReact: Promise<Discord.MessageReaction>[] = [];
+				reactionEmotes.forEach(element => {
+					msgReact.push(newMsg.react(element));
+				});
+				try {
+					await Promise.all(msgReact);
+				} catch (error) {
+					if (error == "Unknown Message") {
+						logger.warn(error);
+					} else {
+						logger.error(error.stack);
+					}
+				}
+
+				return true;
 			} else {
 				const msgReact: Promise<Discord.MessageReaction>[] = [];
 				emotes.forEach(element => {
