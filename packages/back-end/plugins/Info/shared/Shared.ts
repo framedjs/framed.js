@@ -1,1 +1,1 @@
-export const cmdList = ["help", "ping", "uptime"];
+export const cmdList = ["help", "ping", "poll"];

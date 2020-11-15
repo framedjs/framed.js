@@ -121,8 +121,8 @@ export default class extends BaseCommand {
 
 				mainEmbed
 					.setDescription(
-						oneLine`Pixel Pete is a custom bot system maintained by <@200340393596944384> 
-						and <@359521958519504926>, specifically for Game Dev Underground. 
+						oneLine`Pixel Pete is a collection of custom bots by <@200340393596944384> and 
+						<@359521958519504926> for Game Dev Underground. 
 						Bot created partly with the [Framed](https://github.com/som1chan/Framed) bot framework.`
 					)
 					.addFields(this.createMainHelpFields(msg.framedClient))
