@@ -18,6 +18,7 @@ export default class FramedClient extends EventEmitter {
 	public readonly utils = new Utils();
 	public readonly client = new Discord.Client();
 	public readonly version: string;
+	public readonly backEndVersion: string;
 
 	public defaultPrefix = "!";
 
@@ -25,7 +26,8 @@ export default class FramedClient extends EventEmitter {
 		// I have no idea what capture rejections does, but I assume it's a good thing.
 		super({ captureRejections: true });
 		this.version = version;
-
+		this.backEndVersion = info?.backEndVersion ? info.backEndVersion : "unknown";
+		
 		if (info) {
 			if (info.defaultPrefix) this.defaultPrefix = info?.defaultPrefix;
 		}

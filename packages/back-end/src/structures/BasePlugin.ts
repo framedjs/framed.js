@@ -42,6 +42,7 @@ export abstract class BasePlugin {
 	};
 
 	commands = new Map<string, BaseCommand>();
+	aliases = new Map<string, BaseCommand>();
 
 	constructor(framedClient: FramedClient, info: PluginInfo) {
 		this.framedClient = framedClient;
@@ -91,12 +92,23 @@ export abstract class BasePlugin {
 	 * @param command
 	 */
 	loadCommand<T extends BaseCommand>(command: T): void {
+		// Sets up some commands
 		if (this.commands.get(command.id)) {
 			logger.error(`Command with id ${command.id} already exists!`);
 			return;
 		}
-
 		this.commands.set(command.id, command);
+
+		// Sets up some aliases
+		if (command.aliases) {
+			for (const alias of command.aliases) {
+				if (this.aliases.get(alias)) {
+					logger.error(`Alias "${alias}" from command id ${command.id} already exists!`);
+					continue;
+				}
+				this.aliases.set(alias, command);
+			}
+		}
 
 		logger.verbose(`Finished loading command ${command.name}.`);
 	}

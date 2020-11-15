@@ -11,9 +11,9 @@ export default class FramedMessage {
 
 	public content = "";
 
-	public readonly prefix?: string;
-	public readonly args?: Array<string>;
-	public readonly command?: string;
+	public prefix?: string;
+	public args?: Array<string>;
+	public command?: string;
 
 	constructor(msg: Discord.Message, framedClient: FramedClient) {
 		if (msg) {
@@ -84,21 +84,10 @@ export default class FramedMessage {
 	/**
 	 * If an argument parameter is empty, it will be removed.
 	 */
-	trimmedArgs(): string[] | undefined {
-		if (this.args) {
-			const newArgs = this.args;
-
-			// Clean-up message args to remove no characters
-			for (let i = 0; i < newArgs.length; i++) {
-				const element = newArgs[i];
-				if (element.length < 1) {
-					newArgs.splice(i);
-				}
-			}
-			return newArgs;
-		} else {
-			return undefined;
-		}
+	static trimArgs(args: string[]): string[] {
+		return args.filter(function (e) {
+			return e;
+		});
 	}
 
 	/**
@@ -195,7 +184,7 @@ export default class FramedMessage {
 			} else {
 				// Where we're not going into a quote, nor are in one currently
 
-				// Will add to the quotedString if a space 
+				// Will add to the quotedString if a space
 				// that splits things apart doesn't exist
 				if (!isSpace || (isSpace && hasCodeBlock)) {
 					// Adds to the argument text

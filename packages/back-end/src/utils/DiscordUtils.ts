@@ -275,3 +275,82 @@ export function getMemberFromUserMsg(
 
 	return member;
 }
+
+// interface CodeBlockTable {
+// 	rows: CodeBlockRow[];
+// }
+
+// interface CodeBlockRow {
+// 	columns: string[];
+// }
+
+// export function createCodeBlockTable(rows: CodeBlockRow[]): CodeBlockTable {
+// 	const newRows: CodeBlockRow[] = [];
+// 	const newColumns: string[] = [];
+
+// 	const largestColumnElementAmount = getLargestColumnElementAmount(rows)
+// 		.columns.length;
+
+// 	// Goes through all the rows
+// 	for (let i = 0; i < rows.length; i++) {
+// 		const row = rows[i];
+
+// 		// Goes through all the columns
+// 		for (let j = 0; j < largestColumnElementAmount; j++) {
+// 			let column = row.columns[i];
+// 			if (!column) column = "";
+// 			newColumns.push(column);
+// 		}
+
+// 		// Gets the largest column string in length
+// 		const largestColumnString = getLargestString(newColumns);
+// 		const maxColumnStringLength = largestColumnString.length;
+
+// 		// Goes through all the columns once more to add spacing
+// 		for (let j = 0; j < newColumns.length; j++) {
+// 			const column = row.columns[j];
+// 			newColumns.push(
+// 				column.padEnd(maxColumnStringLength - column.length)
+// 			);
+// 		}
+// 	}
+
+// 	return {
+// 		rows: newRows,
+// 	};
+// }
+
+// export function renderCodeBlockTable(table: CodeBlockTable): string {
+// 	let tableOutput = "";
+// 	for (const row of table.rows) {
+		
+// 	}
+// }
+
+// /**
+//  * Gets the row array that has the most column elements.
+//  * @param rows
+//  */
+// function getLargestColumnElementAmount(rows: CodeBlockRow[]): CodeBlockRow {
+// 	let largestRow: CodeBlockRow = {
+// 		columns: [],
+// 	};
+// 	rows.forEach(element => {
+// 		if (element.columns.length > largestRow.columns.length) {
+// 			largestRow = element;
+// 		}
+// 	});
+
+// 	return largestRow;
+// }
+
+// function getLargestString(array: string[]) {
+// 	// https://stackoverflow.com/questions/52989099/finding-the-largest-string-in-an-array-of-strings
+// 	const reducer = (array: string[]) =>
+// 		array.reduce(
+// 			(largest, comparing) =>
+// 				largest.length >= comparing.length ? largest : comparing,
+// 			""
+// 		);
+// 	return reducer(array);
+// }

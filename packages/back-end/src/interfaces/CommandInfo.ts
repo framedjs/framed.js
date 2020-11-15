@@ -3,11 +3,11 @@
  */
 export interface CommandInfo {
 	/**
-	 * The ID of the command, which cannot use spaces. All plugin IDs should try to be unique, 
+	 * The ID of the command, which cannot use spaces. All plugin IDs should try to be unique,
 	 * to make sure that no plugin from different developers would overlap.
 	 *
 	 * Commands will use the ID to be able to be triggered.
-	 * 
+	 *
 	 * For example, if the ID was "test", then one way to be able to trigger it would
 	 * be !test if the default prefix was "!".
 	 */
@@ -37,12 +37,16 @@ export interface CommandInfo {
 	 * A description of what the command does. This is encouraged to span multiple lines
 	 */
 	description?: string;
-	
+
 	/**
 	 * Info on how to use the command.
 	 */
 	usage?: string;
-	// args?: Argument[];
+
+	/**
+	 * Should this command hide its usage instructions on the help embed?
+	 */
+	hideUsageInHelp?: boolean;
 
 	/**
 	 * Examples on how to use the command.
@@ -53,4 +57,9 @@ export interface CommandInfo {
 	 * Emoji icon
 	 */
 	emojiIcon?: string;
+
+	/**
+	 * The embed inline character limit, before it becomes not inline in the help embed.
+	 */
+	inlineCharacterLimit?: number;
 }

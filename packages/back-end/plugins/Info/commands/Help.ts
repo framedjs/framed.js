@@ -34,6 +34,7 @@ export default class extends BaseCommand {
 				\`{{prefix}}help\`
 				\`{{prefix}}help poll\`
 			`,
+			inlineCharacterLimit: 25
 		});
 	}
 
@@ -46,66 +47,71 @@ export default class extends BaseCommand {
 
 			// Checks for a parameter
 			if (lookUpCmd) {
-				// embed.setDescription(stripIndent`
-				// 	\`[]\` means it is optional.
-				// 	\`<>\` means it isn't, and is a placeholder for some value.
-				// 	\`[A | B]\` means you can choose either A or B.
-				// `)
+				const matchingCommands: BaseCommand[] = [];
 
-				if (this.plugin) {
-					const matchingCommands: BaseCommand[] = [];
-
-					const plugins = msg.framedClient.pluginManager.plugins;
-					plugins.forEach(plugin => {
-						const command = plugin.commands.get(lookUpCmd);
-						if (command) {
-							matchingCommands.push(command);
-						}
-					});
-
-					for await (const command of matchingCommands) {
-						// Get the description
-						let description = command.description;
-						if (!description) {
-							if (command.about) {
-								description = command.about;
-							} else {
-								description = `*No description set for command.*`;
-							}
-						}
-
-						// Creates the embed
-						const embed = DiscordUtils.applyEmbedTemplate(
-							discordMsg,
-							this.id,
-							cmdList
-						)
-							.setTitle(`${command.prefix}${command.id}`)
-							.setDescription(description);
-						// .addField(
-						// 	`${command.plugin.name} Plugin`,
-						// 	`\`${command.prefix}${command.id}\`\n${description}`
-						// );
-
-						if (command.usage) {
-							embed.addField(
-								"Usage",
-								`\`${command.prefix}${command.id} ${command.usage}\``
-							);
-						}
-
-						if (command.examples) {
-							embed.addField("Examples", command.examples);
-						}
-
-						await discordMsg.channel.send(embed);
+				const plugins = msg.framedClient.pluginManager.plugins;
+				plugins.forEach(plugin => {
+					const command = plugin.commands.get(lookUpCmd);
+					if (command) {
+						matchingCommands.push(command);
 					}
-					// else {
-					// 	discordMsg.channel.send(
-					// 		`${discordMsg.author}, Couldn't find the command "${lookUpCmd}"!`
-					// 	);
-					// }
+				});
+
+				for await (const command of matchingCommands) {
+					// Get the description
+					let description = command.description;
+					if (!description) {
+						if (command.about) {
+							description = command.about;
+						} else {
+							description = `*No description set for command.*`;
+						}
+					}
+
+					// Creates the embed
+					const embed = DiscordUtils.applyEmbedTemplate(
+						discordMsg,
+						this.id,
+						cmdList
+					)
+						.setTitle(`${command.prefix}${command.id}`)
+						.setDescription(description);
+					// .addField(
+					// 	`${command.plugin.name} Plugin`,
+					// 	`\`${command.prefix}${command.id}\`\n${description}`
+					// );
+
+					// Sets the inline character limit, for when it should become not inline
+					// if it exceeds this value
+					let inlineCharacterLimit = 25;
+					if (command.inlineCharacterLimit) {
+						inlineCharacterLimit = command.inlineCharacterLimit;
+					}
+
+					if (command.usage) {
+						const usageMsg = `\`${command.prefix}${command.id} ${command.usage}\``;
+						embed.addField(
+							"Usage",
+							usageMsg,
+							usageMsg.length <= inlineCharacterLimit
+						);
+					}
+
+					if (command.examples) {
+						embed.addField(
+							"Examples",
+							command.examples,
+							command.examples.length <= inlineCharacterLimit
+						);
+					}
+
+					await discordMsg.channel.send(embed);
 				}
+				// else {
+				// 	discordMsg.channel.send(
+				// 		`${discordMsg.author}, Couldn't find the command "${lookUpCmd}"!`
+				// 	);
+				// }
 			} else {
 				const mainEmbed = DiscordUtils.applyEmbedTemplate(
 					discordMsg,
@@ -177,6 +183,14 @@ export default class extends BaseCommand {
 						command: "help",
 					},
 					{
+						emote: "📄",
+						command: "usage",
+					},
+					{
+						emote: "🏓",
+						command: "ping",
+					},
+					{
 						emote: "👍",
 						command: "poll",
 					},
@@ -197,14 +211,17 @@ export default class extends BaseCommand {
 					helpElement.command.forEach(cmdElement => {
 						// If there's a matching one, add it to the Map
 						if (command.id == cmdElement.command) {
-							const usage = command.usage
-								? ` ${command.usage}`
-								: "";
+							const usage =
+								command.usage && !command.hideUsageInHelp
+									? ` ${command.usage}`
+									: "";
+
 							sectionMap.set(
 								cmdElement.command,
 								oneLine`
-								${cmdElement.emote} \`${command.prefix}${command.id}
-								${usage}\` - ${command.about}
+								${cmdElement.emote}
+								\`${command.prefix}${command.id}${usage}\`
+								- ${command.about}
 							`
 							);
 						}

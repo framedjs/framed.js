@@ -1,5 +1,6 @@
 {
   "name": "back-end",
+  "version": "0.1.0",
   "scripts": {
     "build": "tsc --build",
     "start": "pnpm build && node dist/packages/back-end/src/index.js",

@@ -1,3 +1,4 @@
+import { stripIndent } from "common-tags";
 import { BasePlugin } from "packages/back-end/src/structures/BasePlugin";
 import FramedMessage from "packages/back-end/src/structures/FramedMessage";
 import { BaseCommand } from "../../../src/structures/BaseCommand";
@@ -9,7 +10,7 @@ export default class extends BaseCommand {
 		super(plugin, {
 			id: "usage",
 			name: "Usage Cheatsheet",
-			about: "Shows a cheatsheet of what the `[]` and `<>` means.",
+			about: "Shows what the `[]` and `<>` brackets means, along other syntax.",
 		});
 	}
 
@@ -20,8 +21,20 @@ export default class extends BaseCommand {
 				discordMsg,
 				this.id,
 				cmdList
+			).addField(
+				"Usage",
+				stripIndent`
+				\`[]\` means it is optional.
+				\`<>\` means it is mandatory.
+				\`[A | B]\` means you can choose either A or B.
+			`
+			).addField(
+				"Example",
+				stripIndent`
+				\`.poll <question> ["option 1"] ["option 2"]\`
+				
+				`
 			);
-
 			await discordMsg.channel.send(embed);
 		}
 

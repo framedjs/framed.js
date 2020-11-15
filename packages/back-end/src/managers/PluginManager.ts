@@ -43,7 +43,6 @@ export default class PluginManager {
 		}
 	}
 
-
 	/**
 	 *
 	 * @param plugin
@@ -107,7 +106,7 @@ export default class PluginManager {
 		return prefixes;
 	}
 
-	runCommand(msg: FramedMessage): void {
+	async runCommand(msg: FramedMessage): Promise<void> {
 		if (msg.command) {
 			const commandString = msg.command;
 			const commandList: BaseCommand[] = [];
@@ -116,6 +115,12 @@ export default class PluginManager {
 				if (cmd && cmd.prefix == msg.prefix) {
 					cmd.run(msg);
 					commandList.push(cmd);
+				} else {
+					const alias = element.aliases.get(commandString);
+					if (alias && alias.prefix == msg.prefix) {
+						alias.run(msg);
+						commandList.push(alias);
+					}
 				}
 			});
 		}

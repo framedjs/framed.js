@@ -11,10 +11,15 @@
 
 import { logger } from "shared";
 import { version } from "../../../package.json";
+import { version as backEndVersion } from "../package.json";
+
 import FramedClient from "./structures/FramedClient";
 import settings from "../../../settings.json";
 
-logger.info(`Launching Framed v${version}.`);
+logger.info(`Launching Framed v${version}, back-end v${backEndVersion}.`);
 
-export const framedClient = new FramedClient({ defaultPrefix: "." });
+export const framedClient = new FramedClient({
+	defaultPrefix: ".",
+	backEndVersion: backEndVersion,
+});
 framedClient.login(settings.token);
