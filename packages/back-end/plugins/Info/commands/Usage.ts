@@ -24,17 +24,23 @@ export default class extends BaseCommand {
 			).addField(
 				"Usage",
 				stripIndent`
-				\`[]\` means it is optional.
-				\`<>\` means it is mandatory.
+				\`[]\` means the field is optional.
+				\`<>\` means the field is mandatory.
 				\`[A | B]\` means you can choose either A or B.
 			`
-			).addField(
-				"Example",
-				stripIndent`
-				\`.poll <question> ["option 1"] ["option 2"]\`
+			)
+			// ).addField(
+			// 	"Example",
+			// 	stripIndent`
+			// 	Take the sample usage text for \`.poll\`: \`.poll <question> ["option 1"] ["option 2"]\`
+
+			// 	\`<question>\` means that you have to type your question in here.
+			// 	\`.poll Should Bim be Server Owner?\`, with "Should Bim be Server Owner?" would be valid.
 				
-				`
-			);
+			// 	\`["option 1"]\` means we could decide not to put something in here.
+
+			// 	`
+			// );
 			await discordMsg.channel.send(embed);
 		}
 
