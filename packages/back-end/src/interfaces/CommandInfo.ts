@@ -62,4 +62,9 @@ export interface CommandInfo {
 	 * The embed inline character limit, before it becomes not inline in the help embed.
 	 */
 	inlineCharacterLimit?: number;
+
+	/**
+	 * 
+	 */
+	useInline?: boolean
 }

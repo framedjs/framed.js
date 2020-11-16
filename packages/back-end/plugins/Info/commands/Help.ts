@@ -34,7 +34,7 @@ export default class extends BaseCommand {
 				\`{{prefix}}help\`
 				\`{{prefix}}help poll\`
 			`,
-			inlineCharacterLimit: 25
+			inlineCharacterLimit: 40,
 		});
 	}
 
@@ -87,12 +87,18 @@ export default class extends BaseCommand {
 					if (command.inlineCharacterLimit) {
 						inlineCharacterLimit = command.inlineCharacterLimit;
 					}
+					console.log("AAAAAAAAAAAAAA " + inlineCharacterLimit);
 
 					if (command.usage) {
-						const usageMsg = `\`${command.prefix}${command.id} ${command.usage}\``;
+						const guideMsg = stripIndent`
+							*Type \`.usage\` for more info.*
+						`;
+						const usageMsg = stripIndent`
+							\`${command.prefix}${command.id} ${command.usage}\`
+						`;
 						embed.addField(
 							"Usage",
-							usageMsg,
+							`${guideMsg}\n${usageMsg}`,
 							usageMsg.length <= inlineCharacterLimit
 						);
 					}
