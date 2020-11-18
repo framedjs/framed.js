@@ -1,16 +1,21 @@
 import Discord from "discord.js";
 import { logger } from "shared";
-import { emotes, optionEmotes } from "../shared/Shared";
+import { emotes, oneOptionMsg, optionEmotes } from "../shared/Shared";
 import { BaseEvent } from "packages/back-end/src/structures/BaseEvent";
 import Emoji from "node-emoji"; // Doing this only because Windows can't render emotes for some reason
 import { BasePlugin } from "packages/back-end/src/structures/BasePlugin";
 import { oneLine } from "common-tags";
+import Poll from "../commands/Poll";
+import FramedMessage from "packages/back-end/src/structures/FramedMessage";
+import util from "util";
 
 export default class extends BaseEvent {
 	constructor(plugin: BasePlugin) {
 		super(plugin, {
 			name: "messageReactionAdd",
 		});
+		logger.debug("OnMsg: This is a test");
+		logger.debug(util.inspect(this.framedClient));
 	}
 
 	async run(
@@ -18,6 +23,8 @@ export default class extends BaseEvent {
 		user: Discord.User | Discord.PartialUser
 	): Promise<void> {
 		logger.debug(`Reaction Add From: ${user.id}`);
+		logger.debug(`OnMsg: ${util.inspect(this)}`);
+
 		if (user.bot) return;
 
 		// https://discordjs.guide/popular-topics/reactions.html#listening-for-reactions-on-old-messages
@@ -37,21 +44,32 @@ export default class extends BaseEvent {
 			}
 		}
 
-		const isPollEmbed:
-			| boolean
-			| undefined = reaction.message.embeds[0]?.description
-			?.toLocaleLowerCase()
-			.includes("poll by <@");
+		const embedDescription:
+			| string
+			| undefined = reaction.message.embeds[0]?.description?.toLocaleLowerCase();
+
+		const isPollEmbed: boolean | undefined = embedDescription?.includes(
+			"poll by <@"
+		);
+
+		const parsedResults = await Poll.customParse(
+			new FramedMessage(reaction.message, this.framedClient),
+			true
+		);
+
+		const singleVoteOnly: boolean | undefined =
+			embedDescription?.endsWith(oneOptionMsg.toLocaleLowerCase()) ||
+			parsedResults?.askingForSingle;
 
 		const isPollCommand =
 			reaction.message.content.startsWith(".poll") || isPollEmbed;
-			
+
 		//; // ||
 		// reaction.message.content.startsWith("+poll") ||
 		// reaction.message.content.startsWith("poll:") ||
 		// reaction.message.author.id == "298673420181438465"; // This last one is for Poll Bot#0082
 
-		if (isPollCommand) {
+		if (isPollCommand && singleVoteOnly) {
 			// https://discordjs.guide/popular-topics/reactions.html#removing-reactions-by-user
 			const extraUserReactions = reaction.message.reactions.cache.filter(
 				reactionElement =>

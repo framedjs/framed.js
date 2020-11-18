@@ -54,6 +54,15 @@ export default class FramedMessage {
 	}
 
 	/**
+	 * Gets the command of the message.
+	 */
+	private getCommand(): string | undefined {
+		return this.prefix && this.args
+			? this.args.shift()?.toLocaleLowerCase()
+			: undefined;
+	}
+
+	/**
 	 * Gets the arguments of the message.
 	 *
 	 * Example: `.test "woah spaces" that is 2 cool "aaaa"`
@@ -91,12 +100,30 @@ export default class FramedMessage {
 	}
 
 	/**
-	 * Gets the command of the message.
+	 * Removes unescaped quotes from arguments
+	 * @param args Message arguments
 	 */
-	private getCommand(): string | undefined {
-		return this.prefix && this.args
-			? this.args.shift()?.toLocaleLowerCase()
-			: undefined;
+	static removeQuotesFromArgs(args: string[]): string[] {
+		const newArgs: string[] = [];
+		for (const arg of args) {
+			let newArg = "";
+
+			// Scans through the string
+			for (let i = 0; i < arg.length; i++) {
+				const lastChar = arg[i - 1];
+				const char = arg[i];
+				
+				// Checks if this current char is not a ", and before that wasn't escaping it
+				if (char != `"` || lastChar == "\\") {
+					newArg += char;
+				}
+			}	
+
+			// Push results
+			newArgs.push(newArg);
+		}
+
+		return newArgs;
 	}
 
 	/**
@@ -104,8 +131,9 @@ export default class FramedMessage {
 	 * (properly) quoted strings in text, excluding codeblocks and escaped characters.
 	 *
 	 * @param content Message content
+	 * @param showWrapperQuotes
 	 */
-	static getArgs(content: string): string[] {
+	static getArgs(content: string, showWrapperQuotes?: boolean): string[] {
 		const args: string[] = [];
 
 		// Stores whether if we're in a codebloack or not
@@ -137,18 +165,20 @@ export default class FramedMessage {
 			// );
 
 			if (hasDoubleQuote) {
-				// We are inside a double quote
-				if (isDoubleQuote && !isEscaped) {
-					// If it isn't in a codeblock
-					if (!hasCodeBlock) {
-						// Closes double quote
-						hasDoubleQuote = false;
+				if (isDoubleQuote && !isEscaped && !hasCodeBlock) {
+					// We are inside a double quote, and are about to seemingly close it
+					// Closes double quote
+					hasDoubleQuote = false;
 
-						// Stops adding to the quoted string
-						args.push(quotedString);
-						// console.log(`END: "${quotedString}"\n`);
-						quotedString = "";
+					// Adds the quote if it's set as an option to
+					if (showWrapperQuotes) {
+						quotedString += element;
 					}
+
+					// Stops adding to the quoted string
+					args.push(quotedString);
+					// console.log(`END: "${quotedString}"\n`);
+					quotedString = "";
 				} else if (!isDoubleQuote || hasCodeBlock) {
 					// Adds to the quoted string, if it isn't a quote, or it is
 					// but it's suppsoed to be escaped in some way
@@ -174,6 +204,11 @@ export default class FramedMessage {
 					if (quotedString.length > 0) {
 						args.push(quotedString);
 						quotedString = "";
+					}
+
+					// Adds the quote if it's set as an option to
+					if (showWrapperQuotes) {
+						quotedString += element;
 					}
 				} else if (hasCodeBlock) {
 					// If there's a codeblock, make sure we add codeblock characters

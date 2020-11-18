@@ -1,5 +1,5 @@
 import { BaseCommand } from "./BaseCommand";
-import { Utils, logger } from "shared";
+import { logger } from "shared";
 import FramedClient from "./FramedClient";
 import * as DiscordUtils from "../utils/DiscordUtils";
 import util from "util";
@@ -82,8 +82,8 @@ export abstract class BasePlugin {
 		commands: (new (plugin: BasePlugin) => T)[]
 	): void {
 		for (const command of commands) {
-			const initPlugin = new command(this);
-			this.loadCommand(initPlugin);
+			const initCommand = new command(this);
+			this.loadCommand(initCommand);
 		}
 	}
 
@@ -117,36 +117,6 @@ export abstract class BasePlugin {
 
 	//#region Event loading
 
-	importEvents(eventsPath?: string): void {
-		if (eventsPath) {
-			logger.verbose("Importing events...");
-
-			try {
-				const filter = (file: string) =>
-					file.endsWith(".ts") || file.endsWith(".js");
-				const events = Utils.findFileNested(eventsPath, filter);
-
-				// Imports all the events
-				for (const eventsString of events) {
-					try {
-						require(eventsString);
-						logger.verbose(`Finished loading from ${eventsString}`);
-					} catch (error) {
-						logger.error(
-							`Found an event, but failed to import it:\n${error.stack}`
-						);
-					}
-				}
-			} catch (error) {
-				logger.error(
-					`Error importing event, likely because the path doesn't exist: ${error.stack}`
-				);
-			}
-		} else {
-			logger.verbose(`No events to import from plugin ${this.name}.`);
-		}
-	}
-
 	/**
 	 *
 	 * @param options
@@ -177,6 +147,7 @@ export abstract class BasePlugin {
 	loadEvent<T extends BaseEvent>(event: T): void {
 		this.framedClient.client.on(event.name, event.run.bind(null));
 		logger.verbose(`Finished loading event ${event.name}.`);
+		logger.debug(event.framedClient != undefined)
 	}
 
 	//#endregion

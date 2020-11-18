@@ -18,7 +18,7 @@ import settings from "../../../settings.json";
 
 logger.info(`Launching Framed v${version}, back-end v${backEndVersion}.`);
 
-export const framedClient = new FramedClient({
+const framedClient = new FramedClient({
 	defaultPrefix: ".",
 	backEndVersion: backEndVersion,
 });

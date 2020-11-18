@@ -1,13 +1,14 @@
+/* eslint-disable no-mixed-spaces-and-tabs */
 import FramedMessage from "../../../src/structures/FramedMessage";
 import { BaseCommand } from "../../../src/structures/BaseCommand";
-import { emotes, optionEmotes } from "../shared/Shared";
+import { emotes, oneOptionMsg, optionEmotes } from "../shared/Shared";
 import Discord from "discord.js";
 import { BasePlugin } from "packages/back-end/src/structures/BasePlugin";
 import { oneLine, stripIndent } from "common-tags";
 import * as DiscordUtils from "../../../src/utils/DiscordUtils";
 import { logger } from "shared";
 
-export default class extends BaseCommand {
+export default class Poll extends BaseCommand {
 	constructor(plugin: BasePlugin) {
 		super(plugin, {
 			id: "poll",
@@ -17,7 +18,7 @@ export default class extends BaseCommand {
 			description: stripIndent`
 				Create a simple, reaction-based poll through Discord.
 			`,
-			usage: '[# of options] <question> ["option 1"] ["option 2"]',
+			usage: '[single|multiple] <question> ["option 1"] ["option 2"]',
 			hideUsageInHelp: true,
 			examples: stripIndent`
 				Simple Poll: \`{{prefix}}poll Is Tim a Murderer?\`
@@ -30,74 +31,22 @@ export default class extends BaseCommand {
 	async run(msg: FramedMessage): Promise<boolean> {
 		if (msg.discord) {
 			const discordMsg = msg.discord.msg;
-			const regex = msg.content.match(/"/g);
-			const min = 1;
-			const max = 20;
 
-			if (!msg.args || !msg.prefix || !msg.command)
-				return false;
+			const parseResults = await Poll.customParse(msg);
+			if (!parseResults) return false;
+			const askingForSingle = parseResults.askingForSingle;
+			const pollOptionArgs = parseResults.pollOptionArgs;
+			const questionContent = parseResults.questionContent;
 
-			// If quotes have happened more than twice
-			if ((regex || []).length >= 2 && msg.prefix && msg.command) {
-				// Gets the argument between the command and the quoted options
-				// TODO
-				let unquotedContent = msg.content
-					.replace(msg.prefix, "")
-					.replace(msg.command, "")
-					.trim()
-					.split(`"`)[0];
-				const optionsContent = msg.content
-					.replace(msg.prefix, "")
-					.replace(msg.command, "")
-					.replace(unquotedContent, "")
-					.trim();
-				const newArgs = FramedMessage.trimArgs(FramedMessage.getArgs(optionsContent));
-
-				// If a user quotes the beginning question,
-				// this causes the unquoted content value be empty.
-				// We shift it back to as if it was never an "option", 
-				// but rather the question itself
-				if (unquotedContent == "") {
-					const shiftedArgs = newArgs.shift();
-					if (shiftedArgs) {
-						unquotedContent = shiftedArgs;
-					}
-				}
-
-				// Potentially parses out a number at the beginning of the question
-				const questionArgs = FramedMessage.getArgs(unquotedContent);
-				const optionsNum = Number(questionArgs[0]);
-
-				// If it can confirm this is a number, and hasn't been escaped by quotes
-				if (!Number.isNaN(optionsNum) && unquotedContent[0] != `"`) {
-					if (optionsNum < min || optionsNum > max) {
-						discordMsg.reply(`Please make sure that the options number is between ${min} and ${max}!`);
-					}
-				}
-
-				logger.debug(`newArgs = ${newArgs}`);
-
-				// Does some checks to see if the amount of options is correct
-				if (newArgs.length > max) {
-					await discordMsg.reply(oneLine`
-						Too many options! The max number of options is 20 due to the Discord reaction limit.
-					`);
-					return false;
-				} else if (newArgs.length <= min) {
-					await discordMsg.reply(oneLine`
-						You need at least more than 1 option!
-					`);
-					return false;
-				}
-
+			// If there some poll options
+			if (pollOptionArgs.length >= 1) {
 				// Create the description with results
 				const reactionEmotes: string[] = [];
 				let description = "";
-
 				let hasCodeBlock = false;
 
-				for (let i = 0; i < newArgs.length; i++) {
-					const element = newArgs[i];
+				for (let i = 0; i < pollOptionArgs.length; i++) {
+					const element = pollOptionArgs[i];
 					hasCodeBlock = element.endsWith("```");
 					if (element) {
 						const reactionEmote = optionEmotes[i];
@@ -107,19 +56,15 @@ export default class extends BaseCommand {
 						// If there's more than 7 elements
 						// If there isn't a codeblock to finish it off
 						// Remove the extra new line
-						if (
-							i + 1 <
-							newArgs.length //&&
-							// !element.endsWith("```")
-						) {
+						if (i + 1 < pollOptionArgs.length) {
 							description += "\n";
 							if (
 								// Is the amount of options less than 8
-								newArgs.length < 8 &&
+								pollOptionArgs.length < 8 &&
 								// Is the end of this option not a codeblock
 								!hasCodeBlock &&
 								// Is this option not the last one
-								i + 1 != newArgs.length
+								i + 1 != pollOptionArgs.length
 							)
 								description += "\n";
 						}
@@ -133,13 +78,9 @@ export default class extends BaseCommand {
 					.setColor(
 						DiscordUtils.getEmbedColorWithFallback(discordMsg)
 					)
-					.setTitle(unquotedContent)
-					.setDescription(stripIndent`
-						${description}${hasCodeBlock ? "" : "\n"}\nPoll by ${
-							discordMsg.author
-						}
-						You can choose a maximum of x option(s).`
-					);
+					.setTitle(questionContent).setDescription(stripIndent`
+						${description}${hasCodeBlock ? "" : "\n"}\nPoll by ${discordMsg.author}
+						${askingForSingle ? oneOptionMsg : ""}`);
 				const newMsg = await discordMsg.channel.send(embed);
 
 				// Does the reactions
@@ -158,8 +99,7 @@ export default class extends BaseCommand {
 				}
 
 				return true;
-			} else if (msg.args.length > 0) {
-				logger.debug(`"Doing the reactions" ${msg.args}`);
+			} else if (questionContent.length > 0) {
 				const msgReact: Promise<Discord.MessageReaction>[] = [];
 				emotes.forEach(element => {
 					msgReact.push(discordMsg.react(element));
@@ -168,7 +108,7 @@ export default class extends BaseCommand {
 			} else {
 				// If the user just tried to do .poll by itself, it'll show a help message
 				//
-				// NOTE: if the client prefix is different from the help command prefix, 
+				// NOTE: if the client prefix is different from the help command prefix,
 				// the help command code doesn't work, or the parameter gets
 				// incorrectly read, this thing *will* break.
 				msg.discord.msg.content = `${this.framedClient.defaultPrefix}help ${this.id}`;
@@ -180,5 +120,120 @@ export default class extends BaseCommand {
 			}
 		}
 		return true;
+	}
+
+	static async customParse(
+		msg: FramedMessage,
+		silent?: boolean
+	): Promise<
+		| {
+				askingForSingle: boolean;
+				singleMultipleOption: string;
+				questionContent: string;
+				questionArgs: string[];
+				pollOptionArgs: string[];
+		  }
+		| undefined
+	> {
+		// Makes sure prefix, command, and args exist
+		if (!msg.args || !msg.prefix || !msg.command) {
+			if (!silent)
+				logger.error(
+					`Poll.ts: Important elements (prefix, command, and/or args) not found`
+				);
+			return;
+		}
+
+		const contentNotSplit = msg.content
+			.replace(msg.prefix, "")
+			.replace(msg.command, "")
+			.trim();
+		let questionContent = contentNotSplit.split(`"`)[0];
+		const optionsContent = msg.content
+			.replace(msg.prefix, "")
+			.replace(msg.command, "")
+			.replace(questionContent, "")
+			.trim();
+		const pollOptionArgs = FramedMessage.trimArgs(
+			FramedMessage.getArgs(optionsContent)
+		);
+
+		// If a user quotes the beginning question,
+		// this causes the question content value be empty.
+		// We shift it back to as if it was never an "option",
+		// but rather the question itself
+		if (questionContent == "") {
+			const shiftedArgs = pollOptionArgs.shift();
+			if (shiftedArgs) {
+				questionContent = shiftedArgs;
+			}
+		}
+
+		// Potentially parses out a number at the beginning of the question
+		const questionArgs = FramedMessage.getArgs(questionContent);
+		const singleMultipleOption = questionArgs[0];
+		logger.debug(stripIndent`
+			Poll.ts: 
+			singleMultipleOption: ${singleMultipleOption}
+			questionArgs: [${questionArgs}]
+			pollOptionsArgs: [${pollOptionArgs}]
+			questionContentNotSplit: '${contentNotSplit}'
+			questionContent: '${questionContent}'
+		`);
+
+		// Does some checks to see if the amount of options is correct
+		const discordMsg = msg.discord?.msg;
+		const min = 1;
+		const max = 20;
+		if (pollOptionArgs.length > max) {
+			if (discordMsg && !silent)
+				await discordMsg.reply(oneLine`
+						there are too many options! The max number of options is 
+						${max} due to the Discord reaction limit.
+					`);
+			return;
+		} else if (pollOptionArgs.length <= min && pollOptionArgs.length != 0) {
+			// != 0 exclusion exists to make sure that there's an
+			// option to have no options, and just create a simple poll
+			if (discordMsg && !silent)
+				await discordMsg.reply(oneLine`
+						there needs to be at least more than 1 option!
+					`);
+			return;
+		}
+
+		// If it can confirm this is a number, and hasn't been escaped by quotes
+
+		// Is the option valid?
+		const optionLowerCase = singleMultipleOption?.toLocaleLowerCase();
+		const askingForSingle =
+			optionLowerCase == "single" || optionLowerCase == "singl";
+		const askingForMultiple =
+			optionLowerCase == "multiple" ||
+			optionLowerCase == "multi" ||
+			optionLowerCase == "mult";
+
+		if (askingForSingle || askingForMultiple) {
+			// Since the option is valid, the mention is not part of the question.
+			// Therefore, it gets removed
+			questionArgs.splice(0, 1);
+			questionContent = questionContent
+				.replace(singleMultipleOption, "")
+				.trim();
+			logger.debug(stripIndent`
+				Poll.ts: Detected single/multiple flag!
+				new questionArgs: [${questionArgs}]
+				new questionContent: "${questionContent}"
+				replaced w/ "${singleMultipleOption}"
+				`);
+		}
+
+		return {
+			askingForSingle,
+			singleMultipleOption,
+			questionContent,
+			questionArgs,
+			pollOptionArgs,
+		};
 	}
 }

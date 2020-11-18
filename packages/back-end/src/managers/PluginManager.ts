@@ -7,7 +7,6 @@ import FramedMessage from "../structures/FramedMessage";
 import { BaseCommand } from "../structures/BaseCommand";
 
 export default class PluginManager {
-	public readonly framedClient: FramedClient;
 	public plugins = new Map<string, BasePlugin>();
 	// public importingCommand?: BaseCommand;
 
@@ -15,13 +14,11 @@ export default class PluginManager {
 	 *
 	 * @param framedClient
 	 */
-	constructor(framedClient: FramedClient) {
-		this.framedClient = framedClient;
-	}
+	constructor(public readonly framedClient: FramedClient) {}
 
 	/**
-	 *
-	 * @param options
+	 * Loads the plugins
+	 * @param options RequireAll options
 	 */
 	loadPluginsIn(options: DiscordUtils.Options): void {
 		const plugins = DiscordUtils.importScripts(options);

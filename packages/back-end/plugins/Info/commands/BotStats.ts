@@ -1,7 +1,6 @@
 import FramedMessage from "../../../src/structures/FramedMessage";
 import { BaseCommand } from "../../../src/structures/BaseCommand";
 import * as DiscordUtils from "../../../src/utils/DiscordUtils";
-import { framedClient } from "packages/back-end/src";
 import { BasePlugin } from "packages/back-end/src/structures/BasePlugin";
 import { cmdList } from "../shared/Shared";
 import { stripIndent } from "common-tags";
@@ -17,7 +16,7 @@ export default class extends BaseCommand {
 	}
 
 	async run(msg: FramedMessage): Promise<boolean> {
-		const framedUser = framedClient.client.user;
+		const framedUser = msg.framedClient.client.user;
 		const discordMsg = msg.discord?.msg;
 		const environment = process.env.NODE_ENV
 			? ` ${process.env.NODE_ENV}`

@@ -37,6 +37,7 @@ export default class FramedClient extends EventEmitter {
 		this.client.login(token);
 		// this.pluginManager.loadPlugins();
 
+		// Loads the plugins, which loads commands and events
 		this.pluginManager.loadPluginsIn({
 			dirname: path.join(__dirname, "..", "..", "plugins"),
 			filter: /^(.+plugin)\.(js|ts)$/,

@@ -3,7 +3,6 @@ import Discord from "discord.js";
 import * as DiscordUtils from "../../../src/utils/DiscordUtils";
 import FramedClient from "packages/back-end/src/structures/FramedClient";
 import FramedMessage from "../../../src/structures/FramedMessage";
-import { framedClient } from "../../../src/index";
 import { BasePlugin } from "packages/back-end/src/structures/BasePlugin";
 import { BaseCommand } from "../../../src/structures/BaseCommand";
 import { cmdList } from "../shared/Shared";
@@ -40,7 +39,7 @@ export default class extends BaseCommand {
 
 	async run(msg: FramedMessage): Promise<boolean> {
 		const discordMsg = msg.discord?.msg;
-		const framedUser = framedClient.client.user;
+		const framedUser = this.framedClient.client.user;
 
 		if (msg.args && discordMsg && framedUser) {
 			const lookUpCmd = msg.args[0];
@@ -49,7 +48,7 @@ export default class extends BaseCommand {
 			if (lookUpCmd) {
 				const matchingCommands: BaseCommand[] = [];
 
-				const plugins = msg.framedClient.pluginManager.plugins;
+				const plugins = this.framedClient.pluginManager.plugins;
 				plugins.forEach(plugin => {
 					const command = plugin.commands.get(lookUpCmd);
 					if (command) {
@@ -91,14 +90,14 @@ export default class extends BaseCommand {
 
 					if (command.usage) {
 						const guideMsg = stripIndent`
-							*Type \`.usage\` for more info.*
+							Type \`.usage\` for more info.
 						`;
 						const usageMsg = stripIndent`
 							\`${command.prefix}${command.id} ${command.usage}\`
 						`;
 						embed.addField(
 							"Usage",
-							`${guideMsg}\n${usageMsg}`,
+							`${usageMsg}\n${guideMsg}`,
 							usageMsg.length <= inlineCharacterLimit
 						);
 					}
