@@ -1,7 +1,7 @@
 /* eslint-disable no-mixed-spaces-and-tabs */
 import FramedMessage from "../../../src/structures/FramedMessage";
 import { BaseCommand } from "../../../src/structures/BaseCommand";
-import { emotes, oneOptionMsg, optionEmotes } from "../shared/Shared";
+import { emotes, oneOptionMsg, optionEmotes } from "../shared/Shared_";
 import Discord from "discord.js";
 import { BasePlugin } from "packages/back-end/src/structures/BasePlugin";
 import { oneLine, stripIndent } from "common-tags";
@@ -30,8 +30,6 @@ export default class Poll extends BaseCommand {
 
 	async run(msg: FramedMessage): Promise<boolean> {
 		if (msg.discord) {
-			const discordMsg = msg.discord.msg;
-
 			const parseResults = await Poll.customParse(msg);
 			if (!parseResults) return false;
 			const askingForSingle = parseResults.askingForSingle;
@@ -76,12 +74,12 @@ export default class Poll extends BaseCommand {
 				// Sends and creates the embed
 				const embed = new Discord.MessageEmbed()
 					.setColor(
-						DiscordUtils.getEmbedColorWithFallback(discordMsg)
+						DiscordUtils.getEmbedColorWithFallback(msg.discord.guild)
 					)
 					.setTitle(questionContent).setDescription(stripIndent`
-						${description}${hasCodeBlock ? "" : "\n"}\nPoll by ${discordMsg.author}
+						${description}${hasCodeBlock ? "" : "\n"}\nPoll by ${msg.discord.author}
 						${askingForSingle ? oneOptionMsg : ""}`);
-				const newMsg = await discordMsg.channel.send(embed);
+				const newMsg = await msg.discord.channel.send(embed);
 
 				// Does the reactions
 				const msgReact: Promise<Discord.MessageReaction>[] = [];
@@ -100,23 +98,37 @@ export default class Poll extends BaseCommand {
 
 				return true;
 			} else if (questionContent.length > 0) {
-				const msgReact: Promise<Discord.MessageReaction>[] = [];
-				emotes.forEach(element => {
-					msgReact.push(discordMsg.react(element));
-				});
-				await Promise.all(msgReact);
+				if (msg.discord.msg) {
+					const newMsg = msg.discord.msg;
+					const msgReact: Promise<Discord.MessageReaction>[] = [];
+					emotes.forEach(element => {
+						msgReact.push(newMsg.react(element));
+					});
+					await Promise.all(msgReact);
+				} else {
+					// Cannot be called through scripts, as there is no real message to react to
+					return false;
+				}
 			} else {
 				// If the user just tried to do .poll by itself, it'll show a help message
 				//
 				// NOTE: if the client prefix is different from the help command prefix,
 				// the help command code doesn't work, or the parameter gets
 				// incorrectly read, this thing *will* break.
-				msg.discord.msg.content = `${this.framedClient.defaultPrefix}help ${this.id}`;
 				const newMsg = new FramedMessage(
-					msg.discord.msg,
-					msg.framedClient
+					{
+						framedClient: this.framedClient,
+						discord: {
+							client: msg.discord.client,
+							channel: msg.discord.channel,
+							content: `${this.framedClient.defaultPrefix}help ${this.id}`,
+							author: msg.discord.author,
+							guild: msg.discord.guild,
+						}
+					}
 				);
 				await msg.framedClient.pluginManager.runCommand(newMsg);
+				logger.debug("Poll.ts: Sent help command");
 			}
 		}
 		return true;

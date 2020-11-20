@@ -5,9 +5,11 @@ import * as DiscordUtils from "../utils/DiscordUtils";
 import util from "util";
 import { PluginInfo } from "../interfaces/PluginInfo";
 import { BaseEvent } from "./BaseEvent";
+import PluginManager from "../managers/PluginManager";
 
 export abstract class BasePlugin {
 	readonly framedClient: FramedClient;
+	readonly pluginManager: PluginManager;
 
 	id: string;
 	defaultPrefix: string;
@@ -43,9 +45,15 @@ export abstract class BasePlugin {
 
 	commands = new Map<string, BaseCommand>();
 	aliases = new Map<string, BaseCommand>();
+	/**
+	 * To get an event, put in its 
+	 */
+	// events = new Map<string, BaseEvent>();
+	events: BaseEvent[] = [];
 
 	constructor(framedClient: FramedClient, info: PluginInfo) {
 		this.framedClient = framedClient;
+		this.pluginManager = framedClient.pluginManager;
 
 		this.id = info.id;
 		this.defaultPrefix =
@@ -145,9 +153,9 @@ export abstract class BasePlugin {
 	 * @param event
 	 */
 	loadEvent<T extends BaseEvent>(event: T): void {
-		this.framedClient.client.on(event.name, event.run.bind(null));
-		logger.verbose(`Finished loading event ${event.name}.`);
-		logger.debug(event.framedClient != undefined)
+		this.events.push(event);
+		this.framedClient.client.on(event.name, event.run.bind(event));
+		logger.verbose(`Finished loading event "${event.name}".`);
 	}
 
 	//#endregion

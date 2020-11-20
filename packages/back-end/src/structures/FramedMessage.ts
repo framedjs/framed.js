@@ -1,13 +1,22 @@
+import { oneLine } from "common-tags";
 import Discord from "discord.js";
 import { logger } from "shared";
-import FramedClient from "./FramedClient";
+import { FramedMessageInfo } from "../interfaces/FramedMessageInfo";
 
 export default class FramedMessage {
-	public discord?: {
-		readonly msg: Discord.Message;
-	};
-
 	public readonly framedClient;
+
+	public discord?: {
+		readonly msg?: Discord.Message;
+		readonly client: Discord.Client;
+		readonly id?: string;
+		readonly channel:
+			| Discord.TextChannel
+			| Discord.DMChannel
+			| Discord.NewsChannel;
+		readonly author: Discord.User;
+		readonly guild: Discord.Guild | null;
+	};
 
 	public content = "";
 
@@ -15,18 +24,86 @@ export default class FramedMessage {
 	public args?: Array<string>;
 	public command?: string;
 
-	constructor(msg: Discord.Message, framedClient: FramedClient) {
-		if (msg) {
-			this.discord = {
-				msg: msg,
-			};
+	constructor(info: FramedMessageInfo) {
+		if (info.discord) {
+			if (info.discord.msg) {
+				// If there's an msg object, we set all the relevant values here
+				this.discord = {
+					msg: info.discord.msg,
+					client: info.discord.msg.client,
+					id: info.discord.msg.id,
+					channel: info.discord.msg.channel,
+					author: info.discord.msg.author,
+					guild: info.discord.msg.guild,
+				};
 
-			if (msg.content) {
-				this.content = msg.content;
+				this.content = info.discord.msg.content;
+			} else {
+				// If there isn't an msg object, we check to see if they've been
+				// inputted into the data manually.
+
+				// Gets client or throws error
+				const discordClient = info.discord.client;
+				if (!discordClient) {
+					throw new Error(
+						oneLine`Parameter discord.client wasn't set when creating FramedMessage!
+						This value should be set if the discord.msg parameter hasn't been set.`
+					);
+				}
+
+				// Gets message ID or throws error
+				const id = info.discord.id;
+				// if (!id) {
+				// 	throw new Error(
+				// 		oneLine`Parameter discord.id wasn't set when creating FramedMessage!
+				// 		This value should be set if the discord.msg parameter hasn't been set.`
+				// 	);
+				// }
+
+				// Gets channel or throws error
+				const channel = info.discord.channel;
+				if (!channel) {
+					throw new Error(
+						oneLine`Parameter discord.channel wasn't set when creating FramedMessage!
+						This value should be set if the discord.msg parameter hasn't been set.`
+					);
+				}
+
+				// Gets author or throws error
+				const author = info.discord.author
+					? info.discord.author
+					: discordClient.user;
+				if (!author) {
+					throw new Error(
+						oneLine`discordClient.user is null, and discord.author is undefined.`
+					);
+				}
+
+				// Gets content or throws error
+				const content = info.discord.content
+					? info.discord.content
+					: id ? channel.messages.cache.get(id)?.content : undefined;
+				logger.debug(`FramedMessage content: ${content}`);
+				if (!content) {
+					throw new Error(
+						oneLine`Parameter discord.content wasn't set when creating FramedMessage!
+						This value should be set if the discord.msg or discord.id parameter hasn't been set.`
+					);
+				}
+				this.content = content;
+
+				// Sets Discord-specific data
+				this.discord = {
+					client: discordClient,
+					id: info.discord.id,
+					channel: channel,
+					author: author,
+					guild: info.discord.guild ? info.discord.guild : null,
+				};
 			}
 		}
 
-		this.framedClient = framedClient;
+		this.framedClient = info.framedClient;
 		this.prefix = this.getPrefix();
 		this.args = this.getArgs();
 		this.command = this.getCommand();
@@ -36,17 +113,11 @@ export default class FramedMessage {
 	 * Gets the prefix of the message.
 	 */
 	getPrefix(): string | undefined {
-		// Loops through potential prefixes, and gets a valid one into a variable called "prefix"
-		// let prefixes = [process.env.PREFIX!, `<@!${client.user?.id}>`];
-		const prefixes = [
-			this.framedClient.defaultPrefix,
-			...this.framedClient.pluginManager.prefixesArray,
-		];
+		const prefixes = [...this.framedClient.pluginManager.prefixesArray];
 		let prefix: string | undefined;
-		for (let i = 0; i < prefixes.length; i++) {
-			const element = prefixes[i];
-			if (this.content.indexOf(element) === 0) {
-				prefix = element;
+		for (const testPrefix of prefixes) {
+			if (this.content.startsWith(testPrefix)) {
+				prefix = testPrefix;
 				break;
 			}
 		}
@@ -112,12 +183,12 @@ export default class FramedMessage {
 			for (let i = 0; i < arg.length; i++) {
 				const lastChar = arg[i - 1];
 				const char = arg[i];
-				
+
 				// Checks if this current char is not a ", and before that wasn't escaping it
 				if (char != `"` || lastChar == "\\") {
 					newArg += char;
 				}
-			}	
+			}
 
 			// Push results
 			newArgs.push(newArg);

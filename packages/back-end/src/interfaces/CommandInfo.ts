@@ -24,6 +24,11 @@ export interface CommandInfo {
 	defaultPrefix?: string;
 
 	/**
+	 * A list of all possible prefixes.
+	 */
+	prefixes?: string[];
+
+	/**
 	 * The name of the command.
 	 */
 	name: string;

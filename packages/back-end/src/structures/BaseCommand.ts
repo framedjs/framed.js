@@ -1,6 +1,5 @@
 import FramedMessage from "./FramedMessage";
 import { BasePlugin } from "./BasePlugin";
-import { Argument } from "./Argument";
 import FramedClient from "./FramedClient";
 import { CommandInfo } from "../interfaces/CommandInfo";
 
@@ -34,9 +33,14 @@ export abstract class BaseCommand {
 	aliases?: string[];
 
 	/**
-	 * The prefix of the command
+	 * The default prefix of the command. This will be seen on the help embed.
 	 */
-	prefix: string;
+	defaultPrefix: string;
+
+	/**
+	 * A list of all possible prefixes.
+	 */
+	prefixes: string[];
 
 	/**
 	 * The name of the command.
@@ -90,10 +94,25 @@ export abstract class BaseCommand {
 		this.id = info.id.toLocaleLowerCase();
 		this.fullId = `${this.plugin.id}.command.${this.id}`;
 		this.aliases = info.aliases;
-		this.prefix =
+		this.defaultPrefix =
 			info.defaultPrefix != undefined
 				? info.defaultPrefix
 				: plugin.defaultPrefix;
+
+		// Prefixes array logic
+		if (!info.prefixes) {
+			// Info.prefixes will have a value, and cannot be undefined
+			info.prefixes = [];
+		}
+		
+		this.prefixes = info.prefixes;
+		
+		// If this list doesn't include the default prefix, add it
+		if (!this.prefixes.includes(this.defaultPrefix))
+		{
+			this.prefixes.push(this.defaultPrefix);
+		}
+
 		this.name = info.name;
 		this.about = info.about;
 		this.description = info.description;
@@ -104,7 +123,7 @@ export abstract class BaseCommand {
 		this.inlineCharacterLimit = info.inlineCharacterLimit;
 
 		if (this.examples) {
-			this.examples = this.examples?.replace(/{{prefix}}/gi, this.prefix);
+			this.examples = this.examples?.replace(/{{prefix}}/gi, this.defaultPrefix);
 		}
 	}
 

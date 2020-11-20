@@ -1,6 +1,6 @@
 import Discord from "discord.js";
 // import * as Pagination from "discord-paginationembed";
-import * as DiscordUtils from "../../../src/utils/DiscordUtils";
+import EmbedHelper from "../../../src/utils/discord/EmbedHelper";
 import FramedClient from "packages/back-end/src/structures/FramedClient";
 import FramedMessage from "../../../src/structures/FramedMessage";
 import { BasePlugin } from "packages/back-end/src/structures/BasePlugin";
@@ -38,10 +38,8 @@ export default class extends BaseCommand {
 	}
 
 	async run(msg: FramedMessage): Promise<boolean> {
-		const discordMsg = msg.discord?.msg;
 		const framedUser = this.framedClient.client.user;
-
-		if (msg.args && discordMsg && framedUser) {
+		if (msg.discord && msg.args && framedUser) {
 			const lookUpCmd = msg.args[0];
 
 			// Checks for a parameter
@@ -68,12 +66,16 @@ export default class extends BaseCommand {
 					}
 
 					// Creates the embed
-					const embed = DiscordUtils.applyEmbedTemplate(
-						discordMsg,
+					const embed = EmbedHelper.applyEmbedTemplate(
+						{
+							client: msg.discord.client,
+							author: msg.discord.author,
+							guild: msg.discord.guild,
+						},
 						this.id,
 						cmdList
 					)
-						.setTitle(`${command.prefix}${command.id}`)
+						.setTitle(`${command.defaultPrefix}${command.id}`)
 						.setDescription(description);
 					// .addField(
 					// 	`${command.plugin.name} Plugin`,
@@ -93,7 +95,7 @@ export default class extends BaseCommand {
 							Type \`.usage\` for more info.
 						`;
 						const usageMsg = stripIndent`
-							\`${command.prefix}${command.id} ${command.usage}\`
+							\`${command.defaultPrefix}${command.id} ${command.usage}\`
 						`;
 						embed.addField(
 							"Usage",
@@ -110,7 +112,7 @@ export default class extends BaseCommand {
 						);
 					}
 
-					await discordMsg.channel.send(embed);
+					await msg.discord.channel.send(embed);
 				}
 				// else {
 				// 	discordMsg.channel.send(
@@ -118,8 +120,12 @@ export default class extends BaseCommand {
 				// 	);
 				// }
 			} else {
-				const mainEmbed = DiscordUtils.applyEmbedTemplate(
-					discordMsg,
+				const mainEmbed = EmbedHelper.applyEmbedTemplate(
+					{
+						client: msg.discord.client,
+						author: msg.discord.author,
+						guild: msg.discord.guild,
+					},
 					this.id,
 					cmdList
 				);
@@ -139,7 +145,7 @@ export default class extends BaseCommand {
 					`
 					);
 
-				await discordMsg.channel.send(mainEmbed);
+				await msg.discord.channel.send(mainEmbed);
 			}
 
 			return true;
@@ -225,7 +231,7 @@ export default class extends BaseCommand {
 								cmdElement.command,
 								oneLine`
 								${cmdElement.emote}
-								\`${command.prefix}${command.id}${usage}\`
+								\`${command.defaultPrefix}${command.id}${usage}\`
 								- ${command.about}
 							`
 							);

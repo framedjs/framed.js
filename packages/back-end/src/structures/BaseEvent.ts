@@ -6,8 +6,8 @@ import { BasePlugin } from "./BasePlugin";
 import FramedClient from "./FramedClient";
 
 export abstract class BaseEvent {
-	readonly framedClient: FramedClient;
-	readonly plugin: BasePlugin
+	public readonly framedClient: FramedClient;
+	public readonly plugin: BasePlugin
 	public readonly name: keyof ClientEvents;
 	public readonly description?: string;
 
@@ -19,14 +19,13 @@ export abstract class BaseEvent {
 	constructor(plugin: BasePlugin, info: EventInfo) {
 		this.framedClient = plugin.framedClient;
 		this.plugin = plugin;
+		this.name = info.name;
+		this.description = info.description;
 
 		// console.log("BaseEvent.ts: ");
 		// console.log(this.framedClient != undefined);
 		// console.log(plugin != undefined);
 		// console.log(plugin.framedClient != undefined);
-
-		this.name = info.name;
-		this.description = info.description;
 	}
 
 	/**

@@ -16,7 +16,7 @@ export default class extends BaseCommand {
 	}
 
 	async run(msg: FramedMessage): Promise<boolean> {
-		if (msg.discord) {
+		if (msg.discord?.msg) {
 			const discordMsg = msg.discord.msg;
 
 			const userDateNumber =
@@ -42,6 +42,6 @@ export default class extends BaseCommand {
 
 			return true;
 		}
-		return true;
+		return false;
 	}
 }

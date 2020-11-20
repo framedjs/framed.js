@@ -5,6 +5,7 @@ import FramedClient from "../structures/FramedClient";
 import * as DiscordUtils from "../utils/DiscordUtils";
 import FramedMessage from "../structures/FramedMessage";
 import { BaseCommand } from "../structures/BaseCommand";
+import { BaseEvent } from "../structures/BaseEvent";
 
 export default class PluginManager {
 	public plugins = new Map<string, BasePlugin>();
@@ -68,8 +69,6 @@ export default class PluginManager {
 			});
 		}
 
-		// plugin.importCommands(plugin.config.paths.commands);
-		// plugin.importEvents(plugin.paths.events);
 		logger.verbose(
 			`Finished loading plugin ${plugin.name} v${plugin.version}.`
 		);
@@ -88,38 +87,67 @@ export default class PluginManager {
 	}
 
 	get prefixesArray(): string[] {
-		const prefixes: string[] = [this.framedClient.defaultPrefix];
+		const prefixes: string[] = [
+			this.framedClient.defaultPrefix,
+			`${this.framedClient.client.user}`,
+			`<@!${this.framedClient.client.user?.id}>`,
+		];
 
-		// Goes through each plugin to get a prefix
+		// Adds to the list of potential prefixes
 		this.commandsArray.forEach(command => {
-			if (command.prefix) {
-				if (!prefixes.includes(command.prefix)) {
-					prefixes.push(command.prefix);
+			command.prefixes.forEach(element => {
+				if (!prefixes.includes(element)) {
+					prefixes.push(element);
 				}
-			}
+			});
 		});
 
-		// console.log("prefixes from pluginmanager.ts -> " + prefixes);
+		// logger.debug(`PluginManager.ts: Prefixes: ${prefixes}`);
 		return prefixes;
 	}
 
+	get eventsArray(): BaseEvent[] {
+		const events: BaseEvent[] = [];
+		this.plugins.forEach(plugin => {
+			events.push(...plugin.events);
+		});
+		return events;
+	}
+
 	async runCommand(msg: FramedMessage): Promise<void> {
-		if (msg.command) {
+		if (msg.command && msg.prefix) {
+			logger.warn(`- ${msg.prefix}${msg.command}`);
+
+			// Removes undefined type
 			const commandString = msg.command;
+			const prefix = msg.prefix;
+
 			const commandList: BaseCommand[] = [];
-			this.plugins.forEach(element => {
-				const cmd = element.commands.get(commandString);
-				if (cmd && cmd.prefix == msg.prefix) {
-					cmd.run(msg);
-					commandList.push(cmd);
+
+			for await (const pluginElement of this.plugins) {
+				const plugin = pluginElement[1];
+				// Gets a command from the plugin
+				const command = plugin.commands.get(commandString);
+
+				const hasMatchingPrefix = this.prefixesArray.includes(prefix);
+
+				// First tries to find the command from the command map
+				if (command && hasMatchingPrefix) {
+					await command.run(msg);
+					commandList.push(command);
+					logger.warn(`B ${msg.prefix}${command.id}`);
 				} else {
-					const alias = element.aliases.get(commandString);
-					if (alias && alias.prefix == msg.prefix) {
+					// Tries to find the command from an alias
+					const alias = plugin.aliases.get(commandString);
+					if (alias && hasMatchingPrefix) {
 						alias.run(msg);
 						commandList.push(alias);
+						logger.warn("b");
 					}
 				}
-			});
+			}
+
+			logger.warn("C");
 		}
 	}
 }

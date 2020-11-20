@@ -26,8 +26,10 @@ export default class FramedClient extends EventEmitter {
 		// I have no idea what capture rejections does, but I assume it's a good thing.
 		super({ captureRejections: true });
 		this.version = version;
-		this.backEndVersion = info?.backEndVersion ? info.backEndVersion : "unknown";
-		
+		this.backEndVersion = info?.backEndVersion
+			? info.backEndVersion
+			: "unknown";
+
 		if (info) {
 			if (info.defaultPrefix) this.defaultPrefix = info?.defaultPrefix;
 		}
@@ -82,7 +84,13 @@ export default class FramedClient extends EventEmitter {
 
 		this.client.on("message", async discordMsg => {
 			if (discordMsg.author.bot) return;
-			const msg = new FramedMessage(discordMsg, this);
+			const msg = new FramedMessage({
+				framedClient: this,
+				discord: {
+					msg: discordMsg,
+				},
+			});
+			logger.warn("new msg");
 			this.processMsg(msg);
 		});
 
@@ -98,7 +106,12 @@ export default class FramedClient extends EventEmitter {
 				const discordMsg = await partial.channel.messages.fetch(
 					partial.id
 				);
-				const msg = new FramedMessage(discordMsg, this);
+				const msg = new FramedMessage({
+					framedClient: this,
+					discord: {
+						msg: discordMsg,
+					},
+				});
 				this.processMsg(msg);
 			} catch (error) {
 				logger.error(error.stack);
@@ -133,7 +146,7 @@ export default class FramedClient extends EventEmitter {
 				packet.d.channel_id
 			) as Discord.TextChannel;
 
-			console.log(channel?.messages.cache.has(packet.d.message_id));
+			// console.log(channel?.messages.cache.has(packet.d.message_id));
 
 			// There's no need to emit if the message is cached, because the event will fire anyway for that
 			if (channel?.messages.cache.has(packet.d.message_id)) return;
@@ -182,9 +195,11 @@ export default class FramedClient extends EventEmitter {
 	}
 
 	async processMsg(msg: FramedMessage): Promise<void> {
-		// logger.debug(`command -> ${msg.command}`)
+		logger.debug(`Message: "${msg.content}" | command -> ${msg.command}`);
 		if (msg.command) {
-			logger.debug(`${msg.content}`);
+			logger.debug(
+				`FramedClient.ts: Found command! Contents are: "${msg.content}"`
+			);
 			this.pluginManager.runCommand(msg);
 		}
 	}

@@ -75,35 +75,34 @@ export function importScripts(options: Options): any[] {
 
 /**
  * Gets a color for generating embeds
- * @param msg - Discord message object
+ * @param guild - Discord message object
  */
-export function getEmbedColorWithFallback(msg: Discord.Message): string {
-	const client = msg.client;
+export function getEmbedColorWithFallback(
+	guild: Discord.Guild | null | undefined,
+	defaultColor = "#000000"
+): string {
+	// If guild doesn't exist, just return any value
+	if (!guild) {
+		return defaultColor;
+	}
 
-	// Sets a bot color
+	const client = guild.client;
 	let botColor = "";
 
 	if (client.user) {
-		if (msg.guild?.available) {
+		if (guild?.available) {
 			// Grabs the primary role's color the bot has
-			const member = msg.guild.members.cache.get(client.user.id);
+			const member = guild.members.cache.get(client.user.id);
 			if (member) {
 				botColor = member.displayHexColor;
-				logger.debug(`botColor: ${botColor}`);
-
-				if (process.env.FALLBACK_COLOR && botColor == "#000000") {
-					botColor = process.env.FALLBACK_COLOR;
-				}
 			} else {
-				logger.warn(`Unable to find member of self on guild??`);
+				logger.warn(`Unable to find member of self on guild?`);
 			}
 		}
 
 		// If the guild isn't availiable (or in DMs), we fallback to a preset color
-		if (botColor == "") {
-			if (process.env.FALLBACK_COLOR)
-				botColor = process.env.FALLBACK_COLOR;
-			else return "#000000";
+		if (botColor == "#000000" || botColor == "") {
+			botColor = defaultColor;	
 		}
 	}
 
@@ -128,7 +127,7 @@ export function applyEmbedTemplate(
 			msg.client.user?.username,
 			msg.client.user?.displayAvatarURL({ dynamic: true })
 		)
-		.setColor(getEmbedColorWithFallback(msg))
+		.setColor(getEmbedColorWithFallback(msg.guild))
 		.setFooter(
 			getCheckOutText(commandUsed, commands),
 			msg.author.displayAvatarURL({ dynamic: true })
@@ -276,6 +275,27 @@ export function getMemberFromUserMsg(
 	return member;
 }
 
+/**
+ * https://discordjs.guide/miscellaneous/parsing-mention-arguments.html#implementation
+ * @param mention Message content, that contains the message
+ */
+export function getUserFromMention(
+	client: Discord.Client,
+	mention: string
+): Discord.User | undefined {
+	if (!mention) return;
+
+	if (mention.startsWith("<@") && mention.endsWith(">")) {
+		mention = mention.slice(2, -1);
+
+		if (mention.startsWith("!")) {
+			mention = mention.slice(1);
+		}
+
+		return client.users.cache.get(mention);
+	}
+}
+
 // interface CodeBlockTable {
 // 	rows: CodeBlockRow[];
 // }
@@ -323,7 +343,7 @@ export function getMemberFromUserMsg(
 // export function renderCodeBlockTable(table: CodeBlockTable): string {
 // 	let tableOutput = "";
 // 	for (const row of table.rows) {
-		
+
 // 	}
 // }
 

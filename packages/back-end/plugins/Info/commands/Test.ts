@@ -13,9 +13,9 @@ export default class extends BaseCommand {
 
 	async run(msg: FramedMessage): Promise<boolean> {
 		if (msg.discord) {
-			const discordMsg = msg.discord.msg;
-			await discordMsg.channel.send("test");
+			await msg.discord.channel.send("test");
+			return true;
 		}
-		return true;
+		return false;
 	}
 }

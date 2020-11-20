@@ -1,21 +1,19 @@
 import Discord from "discord.js";
 import { logger } from "shared";
-import { emotes, oneOptionMsg, optionEmotes } from "../shared/Shared";
+import { emotes, oneOptionMsg, optionEmotes } from "../shared/Shared_";
 import { BaseEvent } from "packages/back-end/src/structures/BaseEvent";
 import Emoji from "node-emoji"; // Doing this only because Windows can't render emotes for some reason
 import { BasePlugin } from "packages/back-end/src/structures/BasePlugin";
 import { oneLine } from "common-tags";
 import Poll from "../commands/Poll";
 import FramedMessage from "packages/back-end/src/structures/FramedMessage";
-import util from "util";
+// import util from "util";
 
 export default class extends BaseEvent {
 	constructor(plugin: BasePlugin) {
 		super(plugin, {
 			name: "messageReactionAdd",
 		});
-		logger.debug("OnMsg: This is a test");
-		logger.debug(util.inspect(this.framedClient));
 	}
 
 	async run(
@@ -23,7 +21,7 @@ export default class extends BaseEvent {
 		user: Discord.User | Discord.PartialUser
 	): Promise<void> {
 		logger.debug(`Reaction Add From: ${user.id}`);
-		logger.debug(`OnMsg: ${util.inspect(this)}`);
+		// logger.debug(`OnMsgRA: ${util.inspect(this)}`);
 
 		if (user.bot) return;
 
@@ -53,7 +51,12 @@ export default class extends BaseEvent {
 		);
 
 		const parsedResults = await Poll.customParse(
-			new FramedMessage(reaction.message, this.framedClient),
+			new FramedMessage({
+				framedClient: this.framedClient,
+				discord: {
+					msg: reaction.message,
+				},
+			}),
 			true
 		);
 
@@ -82,12 +85,12 @@ export default class extends BaseEvent {
 			try {
 				logger.debug(oneLine`
 					Current reaction: ${reaction.emoji.name} 
-					/ ${Emoji.unemojify(reaction.emoji.name)} unemojified`);
+					(${Emoji.unemojify(reaction.emoji.name)} unemojified)`);
 
 				for await (const reaction of extraUserReactions.values()) {
 					logger.debug(oneLine`
 						Removing ${reaction.emoji.name} 
-						/ ${Emoji.unemojify(reaction.emoji.name)} unemojified`);
+						(${Emoji.unemojify(reaction.emoji.name)} unemojified)`);
 					await reaction.users.remove(user.id);
 				}
 			} catch (error) {
