@@ -1,11 +1,12 @@
 import { BaseCommand } from "./BaseCommand";
 import { logger } from "shared";
 import FramedClient from "./FramedClient";
-import * as DiscordUtils from "../utils/DiscordUtils";
+import DiscordUtils from "../utils/discord/DiscordUtils";
 import util from "util";
 import { PluginInfo } from "../interfaces/PluginInfo";
 import { BaseEvent } from "./BaseEvent";
 import PluginManager from "../managers/PluginManager";
+import Options from "../interfaces/RequireAllOptions";
 
 export abstract class BasePlugin {
 	readonly framedClient: FramedClient;
@@ -76,7 +77,7 @@ export abstract class BasePlugin {
 	 *
 	 * @param options
 	 */
-	loadCommandsIn(options: DiscordUtils.Options): void {
+	loadCommandsIn(options: Options): void {
 		const commands = DiscordUtils.importScripts(options);
 		logger.debug(`Commands: ${util.inspect(commands)}`);
 		this.loadCommands(commands);
@@ -129,7 +130,7 @@ export abstract class BasePlugin {
 	 *
 	 * @param options
 	 */
-	loadEventsIn(options: DiscordUtils.Options): void {
+	loadEventsIn(options: Options): void {
 		const events = DiscordUtils.importScripts(options);
 		logger.debug(`Events: ${util.inspect(events)}`);
 		this.loadEvents(events);

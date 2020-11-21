@@ -54,7 +54,14 @@ export default class extends BaseEvent {
 			new FramedMessage({
 				framedClient: this.framedClient,
 				discord: {
-					msg: reaction.message,
+					client: reaction.message.client,
+					id: reaction.message.id,
+					channel: reaction.message.channel,
+					content: `${reaction.message.content
+						.replace("poll:", ".poll")
+						.trim()}`,
+					author: reaction.message.author,
+					guild: reaction.message.guild,
 				},
 			}),
 			true
@@ -65,12 +72,9 @@ export default class extends BaseEvent {
 			parsedResults?.askingForSingle;
 
 		const isPollCommand =
-			reaction.message.content.startsWith(".poll") || isPollEmbed;
-
-		//; // ||
-		// reaction.message.content.startsWith("+poll") ||
-		// reaction.message.content.startsWith("poll:") ||
-		// reaction.message.author.id == "298673420181438465"; // This last one is for Poll Bot#0082
+			reaction.message.content.startsWith(".poll") ||
+			reaction.message.content.startsWith("poll:") ||
+			isPollEmbed;
 
 		if (isPollCommand && singleVoteOnly) {
 			// https://discordjs.guide/popular-topics/reactions.html#removing-reactions-by-user

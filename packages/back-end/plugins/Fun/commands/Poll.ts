@@ -98,13 +98,22 @@ export default class Poll extends BaseCommand {
 
 				return true;
 			} else if (questionContent.length > 0) {
-				if (msg.discord.msg) {
-					const newMsg = msg.discord.msg;
+				// Reacts to a message
+				// newMsg obtains a message by either msg.discord.msg, or 
+				// by getting the message through message ID
+				const newMsg = msg.discord.msg
+					? msg.discord.msg
+					: msg.discord.id
+					? msg.discord.channel.messages.cache.get(msg.discord.id)
+					: undefined;
+				if (newMsg) {
 					const msgReact: Promise<Discord.MessageReaction>[] = [];
-					emotes.forEach(element => {
-						msgReact.push(newMsg.react(element));
-					});
-					await Promise.all(msgReact);
+					if (newMsg) {
+						emotes.forEach(element => {
+							msgReact.push(newMsg.react(element));
+						});
+						await Promise.all(msgReact);
+					}
 				} else {
 					// Cannot be called through scripts, as there is no real message to react to
 					return false;
@@ -173,7 +182,9 @@ export default class Poll extends BaseCommand {
 		);
 
 		// First, we parse out the beginning single or multiple, out of question content
-		const singleMultipleOption = questionContent.split(" ")[0].toLocaleLowerCase();
+		const singleMultipleOption = questionContent
+			.split(" ")[0]
+			.toLocaleLowerCase();
 		const isSingle = singleMultipleOption == "single";
 		const isMultiple = singleMultipleOption == "multiple";
 

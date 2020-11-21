@@ -2,10 +2,11 @@ import util from "util";
 import { BasePlugin } from "../structures/BasePlugin";
 import { logger } from "shared";
 import FramedClient from "../structures/FramedClient";
-import * as DiscordUtils from "../utils/DiscordUtils";
+import DiscordUtils from "../utils/discord/DiscordUtils";
 import FramedMessage from "../structures/FramedMessage";
 import { BaseCommand } from "../structures/BaseCommand";
 import { BaseEvent } from "../structures/BaseEvent";
+import Options from "../interfaces/RequireAllOptions";
 
 export default class PluginManager {
 	public plugins = new Map<string, BasePlugin>();
@@ -21,7 +22,7 @@ export default class PluginManager {
 	 * Loads the plugins
 	 * @param options RequireAll options
 	 */
-	loadPluginsIn(options: DiscordUtils.Options): void {
+	loadPluginsIn(options: Options): void {
 		const plugins = DiscordUtils.importScripts(options);
 		logger.debug(`Plugins: ${util.inspect(plugins)}`);
 		this.loadPlugins(plugins);
@@ -116,7 +117,7 @@ export default class PluginManager {
 
 	async runCommand(msg: FramedMessage): Promise<void> {
 		if (msg.command && msg.prefix) {
-			logger.warn(`- ${msg.prefix}${msg.command}`);
+			logger.warn(`PluginManager.ts: runCommand() - ${msg.prefix}${msg.command}`);
 
 			// Removes undefined type
 			const commandString = msg.command;
