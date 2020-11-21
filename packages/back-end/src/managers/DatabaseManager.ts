@@ -16,21 +16,21 @@ export class DatabaseManager {
 		"database",
 		"entities",
 		"**",
-		"*.ts"
+		"*.{ts,js}"
 	);
 	static readonly defaultMigrationsPath = path.join(
 		__dirname,
 		"database",
 		"migrations",
 		"**",
-		"*.ts"
+		"*.{ts,js}"
 	);
 	static readonly defaultSubscribersPath = path.join(
 		__dirname,
 		"database",
 		"subscribers",
 		"**",
-		"*.ts"
+		"*.{ts,js}"
 	);
 
 	public options: TypeORM.ConnectionOptions;

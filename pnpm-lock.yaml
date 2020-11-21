@@ -33,6 +33,7 @@ importers:
       discord.js: 12.3.1
       dotenv: 8.2.0
       node-emoji: 1.10.0
+      reflect-metadata: 0.1.13
       require-all: 3.0.0
       shared: 'link:../shared'
       sqlite3: 5.0.0
@@ -53,6 +54,7 @@ importers:
       discord.js: ^12.3.1
       dotenv: ^8.2.0
       node-emoji: ^1.10.0
+      reflect-metadata: ^0.1.13
       require-all: ^3.0.0
       shared: shared
       sqlite3: ^5.0.0
@@ -62,31 +64,6 @@ importers:
       typeorm: ^0.3.0-alpha.24
       typescript: ^4.0.3
       winston: ^3.3.3
-  packages/back-end/dist:
-    devDependencies:
-      '@typescript-eslint/eslint-plugin': 4.4.0_53d003680cfc959d8c0c77ecb6016eb4
-      '@typescript-eslint/parser': 4.4.0_eslint@7.11.0
-      cross-env: 7.0.2
-      eslint: 7.11.0
-      eslint-config-node: 4.1.0
-      eslint-config-prettier: 6.12.0_eslint@7.11.0
-      eslint-plugin-jest: 24.1.0_eslint@7.11.0
-      eslint-plugin-node: 11.1.0_eslint@7.11.0
-      eslint-plugin-prettier: 3.1.4_eslint@7.11.0+prettier@2.1.2
-      jest: 26.5.2
-      prettier: 2.1.2
-    specifiers:
-      '@typescript-eslint/eslint-plugin': ^4.4.0
-      '@typescript-eslint/parser': ^4.4.0
-      cross-env: ^7.0.2
-      eslint: ^7.11.0
-      eslint-config-node: ^4.1.0
-      eslint-config-prettier: ^6.12.0
-      eslint-plugin-jest: ^24.1.0
-      eslint-plugin-node: ^11.1.0
-      eslint-plugin-prettier: ^3.1.4
-      jest: ^26.5.2
-      prettier: ^2.1.2
   packages/front-end:
     specifiers: {}
   packages/shared:

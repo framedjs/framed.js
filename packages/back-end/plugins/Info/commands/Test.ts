@@ -1,6 +1,6 @@
 import FramedMessage from "../../../src/structures/FramedMessage";
 import { BaseCommand } from "../../../src/structures/BaseCommand";
-import { BasePlugin } from "packages/back-end/src/structures/BasePlugin";
+import { BasePlugin } from "../../../src/structures/BasePlugin";
 
 export default class extends BaseCommand {
 	constructor(plugin: BasePlugin) {

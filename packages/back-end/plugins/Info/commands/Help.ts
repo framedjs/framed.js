@@ -1,9 +1,9 @@
 import Discord from "discord.js";
 // import * as Pagination from "discord-paginationembed";
 import EmbedHelper from "../../../src/utils/discord/EmbedHelper";
-import FramedClient from "packages/back-end/src/structures/FramedClient";
+import FramedClient from "../../../src/structures/FramedClient";
 import FramedMessage from "../../../src/structures/FramedMessage";
-import { BasePlugin } from "packages/back-end/src/structures/BasePlugin";
+import { BasePlugin } from "../../../src/structures/BasePlugin";
 import { BaseCommand } from "../../../src/structures/BaseCommand";
 import { cmdList } from "../Info.plugin";
 import { oneLine, stripIndent } from "common-tags";

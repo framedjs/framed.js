@@ -2,11 +2,11 @@
 import FramedMessage from "../../../src/structures/FramedMessage";
 import { BaseCommand } from "../../../src/structures/BaseCommand";
 import Discord from "discord.js";
-import { BasePlugin } from "packages/back-end/src/structures/BasePlugin";
+import { BasePlugin } from "../../../src/structures/BasePlugin";
 import { emotes, oneOptionMsg, optionEmotes } from "../Fun.plugin";
 import { oneLine, stripIndent } from "common-tags";
 import { logger } from "shared";
-import EmbedHelper from "packages/back-end/src/utils/discord/EmbedHelper";
+import EmbedHelper from "../../../src/utils/discord/EmbedHelper";
 
 export default class Poll extends BaseCommand {
 	constructor(plugin: BasePlugin) {
@@ -20,9 +20,9 @@ export default class Poll extends BaseCommand {
 			usage: '[single|multiple] <question> ["option 1"] ["option 2"]',
 			hideUsageInHelp: true,
 			examples: stripIndent`
-				Simple Poll: \`{{prefix}}poll Do you like Pineapple on Pizza?\`
-				Custom Options: \`{{prefix}}poll Ban Bim? "Yes" "Sure" "Why Not"\`
-				Single Option: \`{{prefix}}poll single PC or Console? "PC" "Console"\`
+				\`{{prefix}}poll Do you like Pineapple on Pizza?\` - Simple Poll
+				\`{{prefix}}poll Ban Bim? "Yes" "Sure" "Why Not"\` - Custom Options
+				\`{{prefix}}poll single PC or Console? "PC" "Console"\` - Single Option
 			`,
 			emojiIcon: "👍",
 		});

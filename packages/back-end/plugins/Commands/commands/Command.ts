@@ -1,14 +1,14 @@
 import FramedMessage from "../../../src/structures/FramedMessage";
 import { BaseCommand } from "../../../src/structures/BaseCommand";
-import { BasePlugin } from "packages/back-end/src/structures/BasePlugin";
+import { BasePlugin } from "../../../src/structures/BasePlugin";
 import { stripIndent } from "common-tags";
-import EmbedHelper from "packages/back-end/src/utils/discord/EmbedHelper";
+import EmbedHelper from "../../../src/utils/discord/EmbedHelper";
 import { logger } from "shared";
 import * as TypeORM from "typeorm";
-import PluginManager from "packages/back-end/src/managers/PluginManager";
-import Command from "packages/back-end/src/managers/database/entities/Command";
-import Prefix from "packages/back-end/src/managers/database/entities/Prefix";
-import Response from "packages/back-end/src/managers/database/entities/Response";
+import PluginManager from "../../../src/managers/PluginManager";
+import Command from "../../../src/managers/database/entities/Command";
+import Prefix from "../../../src/managers/database/entities/Prefix";
+import Response from "../../../src/managers/database/entities/Response";
 import util from "util";
 
 export default class extends BaseCommand {

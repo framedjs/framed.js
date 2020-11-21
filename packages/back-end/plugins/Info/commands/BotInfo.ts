@@ -1,9 +1,9 @@
 import FramedMessage from "../../../src/structures/FramedMessage";
 import { BaseCommand } from "../../../src/structures/BaseCommand";
-import { BasePlugin } from "packages/back-end/src/structures/BasePlugin";
+import { BasePlugin } from "../../../src/structures/BasePlugin";
 import { cmdList } from "../Info.plugin";
 import { stripIndent } from "common-tags";
-import EmbedHelper from "packages/back-end/src/utils/discord/EmbedHelper";
+import EmbedHelper from "../../../src/utils/discord/EmbedHelper";
 
 export default class extends BaseCommand {
 	constructor(plugin: BasePlugin) {

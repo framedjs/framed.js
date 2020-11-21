@@ -1,8 +1,8 @@
 import Discord from "discord.js";
 import { logger } from "shared";
-import { BaseEvent } from "packages/back-end/src/structures/BaseEvent";
-import { BasePlugin } from "packages/back-end/src/structures/BasePlugin";
-import FramedMessage from "packages/back-end/src/structures/FramedMessage";
+import { BaseEvent } from "../../../src/structures/BaseEvent";
+import { BasePlugin } from "../../../src/structures/BasePlugin";
+import FramedMessage from "../../../src/structures/FramedMessage";
 import util from "util";
 
 export default class extends BaseEvent {

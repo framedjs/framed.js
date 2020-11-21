@@ -1,12 +1,12 @@
 import Discord from "discord.js";
 import { logger } from "shared";
 import { emotes, oneOptionMsg, optionEmotes } from ".././Fun.plugin";
-import { BaseEvent } from "packages/back-end/src/structures/BaseEvent";
+import { BaseEvent } from "../../../src/structures/BaseEvent";
 import Emoji from "node-emoji"; // Doing this only because Windows can't render emotes for some reason
-import { BasePlugin } from "packages/back-end/src/structures/BasePlugin";
+import { BasePlugin } from "../../../src/structures/BasePlugin";
 import { oneLine } from "common-tags";
 import Poll from "../commands/Poll";
-import FramedMessage from "packages/back-end/src/structures/FramedMessage";
+import FramedMessage from "../../../src/structures/FramedMessage";
 // import util from "util";
 
 export default class extends BaseEvent {
