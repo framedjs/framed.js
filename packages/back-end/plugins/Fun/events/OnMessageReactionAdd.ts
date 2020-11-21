@@ -1,6 +1,6 @@
 import Discord from "discord.js";
 import { logger } from "shared";
-import { emotes, oneOptionMsg, optionEmotes } from "../shared/Shared_";
+import { emotes, oneOptionMsg, optionEmotes } from ".././Fun.plugin";
 import { BaseEvent } from "packages/back-end/src/structures/BaseEvent";
 import Emoji from "node-emoji"; // Doing this only because Windows can't render emotes for some reason
 import { BasePlugin } from "packages/back-end/src/structures/BasePlugin";

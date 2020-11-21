@@ -1,9 +1,9 @@
 import FramedMessage from "../../../src/structures/FramedMessage";
 import { BaseCommand } from "../../../src/structures/BaseCommand";
-import * as DiscordUtils from "../../../src/utils/DiscordUtils";
 import { BasePlugin } from "packages/back-end/src/structures/BasePlugin";
 import { cmdList } from "../shared/Shared";
 import { stripIndent } from "common-tags";
+import EmbedHelper from "packages/back-end/src/utils/discord/EmbedHelper";
 
 export default class extends BaseCommand {
 	constructor(plugin: BasePlugin) {
@@ -29,7 +29,7 @@ export default class extends BaseCommand {
 
 		if (discordMsg && framedUser) {
 			const codeblock = "```";
-			const embed = DiscordUtils.applyEmbedTemplate(
+			const embed = EmbedHelper.applyEmbedTemplate(
 				discordMsg,
 				this.id,
 				cmdList

@@ -1,12 +1,12 @@
 /* eslint-disable no-mixed-spaces-and-tabs */
 import FramedMessage from "../../../src/structures/FramedMessage";
 import { BaseCommand } from "../../../src/structures/BaseCommand";
-import { emotes, oneOptionMsg, optionEmotes } from "../shared/Shared_";
 import Discord from "discord.js";
 import { BasePlugin } from "packages/back-end/src/structures/BasePlugin";
+import { emotes, oneOptionMsg, optionEmotes } from "../Fun.plugin";
 import { oneLine, stripIndent } from "common-tags";
-import * as DiscordUtils from "../../../src/utils/DiscordUtils";
 import { logger } from "shared";
+import EmbedHelper from "packages/back-end/src/utils/discord/EmbedHelper";
 
 export default class Poll extends BaseCommand {
 	constructor(plugin: BasePlugin) {
@@ -74,7 +74,7 @@ export default class Poll extends BaseCommand {
 				// Sends and creates the embed
 				const embed = new Discord.MessageEmbed()
 					.setColor(
-						DiscordUtils.getEmbedColorWithFallback(msg.discord.guild)
+						EmbedHelper.getEmbedColorWithFallback(msg.discord.guild)
 					)
 					.setTitle(questionContent).setDescription(stripIndent`
 						${description}${hasCodeBlock ? "" : "\n"}\nPoll by ${msg.discord.author}
@@ -115,18 +115,16 @@ export default class Poll extends BaseCommand {
 				// NOTE: if the client prefix is different from the help command prefix,
 				// the help command code doesn't work, or the parameter gets
 				// incorrectly read, this thing *will* break.
-				const newMsg = new FramedMessage(
-					{
-						framedClient: this.framedClient,
-						discord: {
-							client: msg.discord.client,
-							channel: msg.discord.channel,
-							content: `${this.framedClient.defaultPrefix}help ${this.id}`,
-							author: msg.discord.author,
-							guild: msg.discord.guild,
-						}
-					}
-				);
+				const newMsg = new FramedMessage({
+					framedClient: this.framedClient,
+					discord: {
+						client: msg.discord.client,
+						channel: msg.discord.channel,
+						content: `${this.framedClient.defaultPrefix}help ${this.id}`,
+						author: msg.discord.author,
+						guild: msg.discord.guild,
+					},
+				});
 				await msg.framedClient.pluginManager.runCommand(newMsg);
 				logger.debug("Poll.ts: Sent help command");
 			}
@@ -134,6 +132,11 @@ export default class Poll extends BaseCommand {
 		return true;
 	}
 
+	/**
+	 * Does a custom parse, specifically for the Poll parameters
+	 * @param msg Framed message
+	 * @param silent Should the bot send an error?
+	 */
 	static async customParse(
 		msg: FramedMessage,
 		silent?: boolean
@@ -142,7 +145,6 @@ export default class Poll extends BaseCommand {
 				askingForSingle: boolean;
 				singleMultipleOption: string;
 				questionContent: string;
-				questionArgs: string[];
 				pollOptionArgs: string[];
 		  }
 		| undefined
@@ -170,28 +172,37 @@ export default class Poll extends BaseCommand {
 			FramedMessage.getArgs(optionsContent)
 		);
 
+		// First, we parse out the beginning single or multiple, out of question content
+		const singleMultipleOption = questionContent.split(" ")[0].toLocaleLowerCase();
+		const isSingle = singleMultipleOption == "single";
+		const isMultiple = singleMultipleOption == "multiple";
+
+		// Potentially removes "single" or "multiple" from the content
+		if (isSingle || isMultiple) {
+			// Since the option is valid, the mention is not part of the question.
+			// Therefore, it gets removed
+			questionContent = questionContent
+				.replace(singleMultipleOption, "")
+				.trim();
+			logger.debug(stripIndent`
+				Poll.ts: Detected single/multiple flag!
+				New questionContent: "${questionContent}"
+				Replaced the "${singleMultipleOption}" out of the string.
+				`);
+		}
+
 		// If a user quotes the beginning question,
 		// this causes the question content value be empty.
 		// We shift it back to as if it was never an "option",
 		// but rather the question itself
 		if (questionContent == "") {
-			const shiftedArgs = pollOptionArgs.shift();
-			if (shiftedArgs) {
-				questionContent = shiftedArgs;
+			const shifted = pollOptionArgs.shift();
+			logger.debug("a");
+			if (shifted) {
+				logger.debug("Replaced question content");
+				questionContent = shifted;
 			}
 		}
-
-		// Potentially parses out a number at the beginning of the question
-		const questionArgs = FramedMessage.getArgs(questionContent);
-		const singleMultipleOption = questionArgs[0];
-		logger.debug(stripIndent`
-			Poll.ts: 
-			singleMultipleOption: ${singleMultipleOption}
-			questionArgs: [${questionArgs}]
-			pollOptionsArgs: [${pollOptionArgs}]
-			questionContentNotSplit: '${contentNotSplit}'
-			questionContent: '${questionContent}'
-		`);
 
 		// Does some checks to see if the amount of options is correct
 		const discordMsg = msg.discord?.msg;
@@ -214,37 +225,18 @@ export default class Poll extends BaseCommand {
 			return;
 		}
 
-		// If it can confirm this is a number, and hasn't been escaped by quotes
-
-		// Is the option valid?
-		const optionLowerCase = singleMultipleOption?.toLocaleLowerCase();
-		const askingForSingle =
-			optionLowerCase == "single" || optionLowerCase == "singl";
-		const askingForMultiple =
-			optionLowerCase == "multiple" ||
-			optionLowerCase == "multi" ||
-			optionLowerCase == "mult";
-
-		if (askingForSingle || askingForMultiple) {
-			// Since the option is valid, the mention is not part of the question.
-			// Therefore, it gets removed
-			questionArgs.splice(0, 1);
-			questionContent = questionContent
-				.replace(singleMultipleOption, "")
-				.trim();
-			logger.debug(stripIndent`
-				Poll.ts: Detected single/multiple flag!
-				new questionArgs: [${questionArgs}]
-				new questionContent: "${questionContent}"
-				replaced w/ "${singleMultipleOption}"
-				`);
-		}
+		logger.debug(stripIndent`
+			Poll.ts: 
+			singleMultipleOption: ${singleMultipleOption}
+			pollOptionsArgs: [${pollOptionArgs}]
+			questionContentNotSplit: '${contentNotSplit}'
+			questionContent: '${questionContent}'
+		`);
 
 		return {
-			askingForSingle,
+			askingForSingle: isSingle,
 			singleMultipleOption,
 			questionContent,
-			questionArgs,
 			pollOptionArgs,
 		};
 	}

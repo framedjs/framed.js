@@ -3,7 +3,7 @@ import { BaseCommand } from "../../../src/structures/BaseCommand";
 import { BasePlugin } from "packages/back-end/src/structures/BasePlugin";
 import { stripIndent } from "common-tags";
 import { cmdList } from "../shared/Shared";
-import * as DiscordUtils from "../../../src/utils/DiscordUtils"
+import EmbedHelper from "packages/back-end/src/utils/discord/EmbedHelper";
 
 export default class extends BaseCommand {
 	constructor(plugin: BasePlugin) {
@@ -33,7 +33,7 @@ export default class extends BaseCommand {
 					? newDiscordMsg.createdTimestamp
 					: newDiscordMsg.editedTimestamp;
 
-			const embed = DiscordUtils.applyEmbedTemplate(discordMsg, "ping", cmdList);
+			const embed = EmbedHelper.applyEmbedTemplate(discordMsg, "ping", cmdList);
 			embed.setDescription(stripIndent`
 				🏓 \`Message Latency\` - ${botDateNumber - userDateNumber}ms
 				🤖 \`API Latency\` - ${Math.round(discordMsg.client.ws.ping)}ms`

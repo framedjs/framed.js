@@ -1,8 +1,8 @@
 import { stripIndent } from "common-tags";
 import { BasePlugin } from "packages/back-end/src/structures/BasePlugin";
 import FramedMessage from "packages/back-end/src/structures/FramedMessage";
+import EmbedHelper from "packages/back-end/src/utils/discord/EmbedHelper";
 import { BaseCommand } from "../../../src/structures/BaseCommand";
-import * as DiscordUtils from "../../../src/utils/DiscordUtils";
 import { cmdList } from "../shared/Shared";
 
 export default class extends BaseCommand {
@@ -16,9 +16,12 @@ export default class extends BaseCommand {
 
 	async run(msg: FramedMessage): Promise<boolean> {
 		if (msg.discord) {
-			const discordMsg = msg.discord.msg;
-			const embed = DiscordUtils.applyEmbedTemplate(
-				discordMsg,
+			const embed = EmbedHelper.applyEmbedTemplate(
+				{
+					client: msg.discord.client,
+					author: msg.discord.author,
+					guild: msg.discord.guild
+				},
 				this.id,
 				cmdList
 			).addField(
@@ -41,7 +44,7 @@ export default class extends BaseCommand {
 
 			// 	`
 			// );
-			await discordMsg.channel.send(embed);
+			await msg.discord.channel.send(embed);
 		}
 
 		return true;

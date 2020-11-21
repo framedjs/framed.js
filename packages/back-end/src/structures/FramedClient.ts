@@ -90,7 +90,6 @@ export default class FramedClient extends EventEmitter {
 					msg: discordMsg,
 				},
 			});
-			logger.warn("new msg");
 			this.processMsg(msg);
 		});
 
