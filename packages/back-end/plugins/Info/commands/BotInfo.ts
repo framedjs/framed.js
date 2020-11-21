@@ -8,7 +8,8 @@ import EmbedHelper from "packages/back-end/src/utils/discord/EmbedHelper";
 export default class extends BaseCommand {
 	constructor(plugin: BasePlugin) {
 		super(plugin, {
-			id: "botstats",
+			id: "botinfo",
+			aliases: ["botstats"],
 			name: "Bot Stats",
 			about:
 				"Gets various stats from the bot, including Framed version and uptime.",
@@ -17,31 +18,33 @@ export default class extends BaseCommand {
 
 	async run(msg: FramedMessage): Promise<boolean> {
 		const framedUser = msg.framedClient.client.user;
-		const discordMsg = msg.discord?.msg;
 		const environment = process.env.NODE_ENV
 			? ` ${process.env.NODE_ENV}`
 			: "";
-		
+
 		// For debugging
 		// eslint-disable-next-line prefer-const
 		let uptime = process.uptime();
 		// uptime = 216120;
 
-		if (discordMsg && framedUser) {
+		if (msg.discord && framedUser) {
 			const codeblock = "```";
 			const embed = EmbedHelper.applyEmbedTemplate(
-				discordMsg,
+				{
+					client: msg.discord.client,
+					author: msg.discord.author,
+					guild: msg.discord.guild,
+				},
 				this.id,
 				cmdList
 			).setDescription(stripIndent`
-				[Framed](https://github.com/som1chan/Framed)
 				${codeblock}
 				Uptime:           ${this.secondsToDhms(uptime)}
 				Framed Version:   v${msg.framedClient.version}
 				Back-End Version: v${msg.framedClient.backEndVersion}${environment}
 				${codeblock}
 				`);
-			discordMsg.channel.send(embed);
+			msg.discord.channel.send(embed);
 		}
 		return true;
 	}
@@ -58,10 +61,10 @@ export default class extends BaseCommand {
 		// const mDisplay = m > 0 ? m + (m == 1 ? " minute, " : " minutes ") : "";
 		// const sDisplay = s > 0 ? s + (s == 1 ? " second" : " seconds") : "";
 		const dDisplay = d > 0 ? `${d}d ` : "";
-		const hDisplay = h > 0 ? `${h}hr `: "";
+		const hDisplay = h > 0 ? `${h}hr ` : "";
 		const mDisplay = m > 0 ? `${m}m ` : "";
 		const sDisplay = s > 0 ? `${s}s ` : "";
-		
+
 		// const dDisplay = d > 0 ? `${d}d ` : "";
 		// const hDisplay = h > 0 ? `${h}:`: "";
 		// const mDisplay = m > 0 ? `${m < 10 ? "0" : ""}${m}:` : "00:";

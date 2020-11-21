@@ -1,3 +1,5 @@
+import "reflect-metadata";
+
 // Platforms
 import Discord from "discord.js";
 
@@ -12,9 +14,11 @@ import FramedMessage from "./FramedMessage";
 import PluginManager from "../managers/PluginManager";
 import { EventEmitter } from "events";
 import { FramedClientInfo } from "../interfaces/FramedClientInfo";
+import { DatabaseManager } from "../managers/DatabaseManager";
 
 export default class FramedClient extends EventEmitter {
 	public readonly pluginManager = new PluginManager(this);
+	public readonly databaseManager: DatabaseManager;
 	public readonly utils = new Utils();
 	public readonly client = new Discord.Client();
 	public readonly version: string;
@@ -33,6 +37,20 @@ export default class FramedClient extends EventEmitter {
 		if (info) {
 			if (info.defaultPrefix) this.defaultPrefix = info?.defaultPrefix;
 		}
+		
+		logger.verbose(
+			`Using database path: ${DatabaseManager.defaultDbPath}`
+		);
+		logger.verbose(
+			`Using entities path: ${DatabaseManager.defaultEntitiesPath}`
+		)
+		this.databaseManager = new DatabaseManager({
+			type: "sqlite",
+			database: DatabaseManager.defaultDbPath,
+			synchronize: true,
+			logging: true,
+			entities: [DatabaseManager.defaultEntitiesPath],
+		});
 	}
 
 	async login(token: string): Promise<void> {
@@ -44,6 +62,9 @@ export default class FramedClient extends EventEmitter {
 			dirname: path.join(__dirname, "..", "..", "plugins"),
 			filter: /^(.+plugin)\.(js|ts)$/,
 		});
+
+		// Loads the database
+		await this.databaseManager.start();
 
 		this.client.on("ready", async () => {
 			logger.info(`Logged in as ${this.client.user?.tag}!`);

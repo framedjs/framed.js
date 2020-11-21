@@ -21,8 +21,9 @@ export default class Poll extends BaseCommand {
 			usage: '[single|multiple] <question> ["option 1"] ["option 2"]',
 			hideUsageInHelp: true,
 			examples: stripIndent`
-				Simple Poll: \`{{prefix}}poll Is Tim a Murderer?\`
+				Simple Poll: \`{{prefix}}poll Pineapple on Pizza?\`
 				Custom Options: \`{{prefix}}poll Is Tim a Murderer? "For Sure" "Absolutely"\`
+				Single-Option: \`{{prefix}}poll single Should Bim be Banned? "Yes" "Why Not"\`
 			`,
 			emojiIcon: "👍",
 		});

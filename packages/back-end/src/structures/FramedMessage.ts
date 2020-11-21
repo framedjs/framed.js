@@ -82,15 +82,15 @@ export default class FramedMessage {
 				// Gets content or throws error
 				const content = info.discord.content
 					? info.discord.content
-					: id ? channel.messages.cache.get(id)?.content : undefined;
-				logger.debug(`FramedMessage content: ${content}`);
-				if (!content) {
-					throw new Error(
-						oneLine`Parameter discord.content wasn't set when creating FramedMessage!
-						This value should be set if the discord.msg or discord.id parameter hasn't been set.`
-					);
-				}
-				this.content = content;
+					: id ? channel.messages.cache.get(id)?.content : "";
+				logger.debug(`FramedMessage content: "${content}"`);
+				// if (!content) {
+				// 	throw new Error(
+				// 		oneLine`Parameter discord.content wasn't set when creating FramedMessage!
+				// 		This value should be set if the discord.msg or discord.id parameter hasn't been set.`
+				// 	);
+				// }
+				this.content = content ? content : "";
 
 				// Sets Discord-specific data
 				this.discord = {

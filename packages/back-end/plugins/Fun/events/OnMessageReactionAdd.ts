@@ -50,6 +50,10 @@ export default class extends BaseEvent {
 			"poll by <@"
 		);
 
+		const newContent = `${reaction.message.content
+			.replace("poll:", ".poll")
+			.trim()}`;
+
 		const parsedResults = await Poll.customParse(
 			new FramedMessage({
 				framedClient: this.framedClient,
