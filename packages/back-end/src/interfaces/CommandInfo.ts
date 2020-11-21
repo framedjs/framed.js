@@ -29,11 +29,6 @@ export interface CommandInfo {
 	prefixes?: string[];
 
 	/**
-	 * The name of the command.
-	 */
-	name: string;
-
-	/**
 	 * A brief, one-liner about section to talk about what the command does.
 	 */
 	about?: string;

@@ -9,7 +9,6 @@ export default class extends BaseCommand {
 	constructor(plugin: BasePlugin) {
 		super(plugin, {
 			id: "usage",
-			name: "Usage Cheatsheet",
 			about: "Shows what the `[]` and `<>` brackets means, along other syntax.",
 		});
 	}

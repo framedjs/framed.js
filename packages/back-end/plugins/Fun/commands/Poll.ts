@@ -13,7 +13,6 @@ export default class Poll extends BaseCommand {
 		super(plugin, {
 			id: "poll",
 			defaultPrefix: ".",
-			name: "Poll",
 			about: "Create a simple, reaction-based poll through Discord.",
 			description: stripIndent`
 				Create a simple, reaction-based poll through Discord.
@@ -21,9 +20,9 @@ export default class Poll extends BaseCommand {
 			usage: '[single|multiple] <question> ["option 1"] ["option 2"]',
 			hideUsageInHelp: true,
 			examples: stripIndent`
-				Simple Poll: \`{{prefix}}poll Pineapple on Pizza?\`
-				Custom Options: \`{{prefix}}poll Is Tim a Murderer? "For Sure" "Absolutely"\`
-				Single-Option: \`{{prefix}}poll single Should Bim be Banned? "Yes" "Why Not"\`
+				Simple Poll: \`{{prefix}}poll Do you like Pineapple on Pizza?\`
+				Custom Options: \`{{prefix}}poll Ban Bim? "Yes" "Sure" "Why Not"\`
+				Single Option: \`{{prefix}}poll single PC or Console? "PC" "Console"\`
 			`,
 			emojiIcon: "👍",
 		});

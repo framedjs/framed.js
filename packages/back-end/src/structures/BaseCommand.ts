@@ -43,11 +43,6 @@ export abstract class BaseCommand {
 	prefixes: string[];
 
 	/**
-	 * The name of the command.
-	 */
-	name: string;
-
-	/**
 	 * A brief, one-liner about section to talk about what the command does.
 	 */
 	about?: string;
@@ -113,7 +108,6 @@ export abstract class BaseCommand {
 			this.prefixes.push(this.defaultPrefix);
 		}
 
-		this.name = info.name;
 		this.about = info.about;
 		this.description = info.description;
 		this.usage = info.usage;

@@ -10,9 +10,8 @@ export default class extends BaseCommand {
 		super(plugin, {
 			id: "botinfo",
 			aliases: ["botstats"],
-			name: "Bot Stats",
 			about:
-				"Gets various stats from the bot, including Framed version and uptime.",
+				"Gets various stats from the bot, including versions and uptime.",
 		});
 	}
 

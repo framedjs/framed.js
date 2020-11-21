@@ -6,7 +6,6 @@ export default class extends BaseCommand {
 	constructor(plugin: BasePlugin) {
 		super(plugin, {
 			id: "test",
-			name: "Test Command",
 			about: "A test command.",
 		});
 	}

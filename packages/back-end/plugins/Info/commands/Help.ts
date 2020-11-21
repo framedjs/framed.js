@@ -22,7 +22,6 @@ export default class extends BaseCommand {
 	constructor(plugin: BasePlugin) {
 		super(plugin, {
 			id: "help",
-			name: "Help",
 			aliases: ["h"],
 			about: "View help for certain commands and extra info.",
 			description: stripIndent`
@@ -51,6 +50,11 @@ export default class extends BaseCommand {
 					const command = plugin.commands.get(lookUpCmd);
 					if (command) {
 						matchingCommands.push(command);
+					} else {
+						const alias = plugin.aliases.get(lookUpCmd);
+						if (alias) {
+							matchingCommands.push(alias);
+						}
 					}
 				});
 
