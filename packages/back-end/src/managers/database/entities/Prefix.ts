@@ -1,4 +1,5 @@
-import { Column, Entity, PrimaryColumn } from "typeorm";
+import { Column, Entity, ManyToMany, PrimaryColumn } from "typeorm";
+import Command from "./Command";
 
 @Entity()
 export default class Prefix {
@@ -6,5 +7,8 @@ export default class Prefix {
 	id!: string;
 
 	@Column()
-	prefix!: string
+	prefix!: string;
+
+	@ManyToMany(() => Command, command => command.prefixes)
+	commands?: Command[]
 }

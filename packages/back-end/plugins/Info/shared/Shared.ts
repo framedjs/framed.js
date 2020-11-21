@@ -1,1 +1,0 @@
-export const cmdList = ["help", "ping", "poll"];

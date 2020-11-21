@@ -5,9 +5,9 @@ import FramedClient from "packages/back-end/src/structures/FramedClient";
 export default class extends BasePlugin {
 	constructor(framedClient: FramedClient) {
 		super(framedClient, {
-			id: "default.bot.info",
-			name: "Info",
-			description: "Info commands.",
+			id: "default.bot.comamnds",
+			name: "Commands",
+			description: "Commands plugin.",
 			version: "0.1.0",
 			paths: {
 				commands: path.join(__dirname, "commands"),
@@ -16,5 +16,3 @@ export default class extends BasePlugin {
 		});
 	}
 }
-
-export const cmdList = ["help", "ping", "poll"];

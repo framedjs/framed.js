@@ -1,7 +1,7 @@
 import FramedMessage from "../../../src/structures/FramedMessage";
 import { BaseCommand } from "../../../src/structures/BaseCommand";
 import { BasePlugin } from "packages/back-end/src/structures/BasePlugin";
-import { cmdList } from "../shared/Shared";
+import { cmdList } from "../Info.plugin";
 import { stripIndent } from "common-tags";
 import EmbedHelper from "packages/back-end/src/utils/discord/EmbedHelper";
 

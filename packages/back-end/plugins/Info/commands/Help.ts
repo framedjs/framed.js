@@ -5,7 +5,7 @@ import FramedClient from "packages/back-end/src/structures/FramedClient";
 import FramedMessage from "../../../src/structures/FramedMessage";
 import { BasePlugin } from "packages/back-end/src/structures/BasePlugin";
 import { BaseCommand } from "../../../src/structures/BaseCommand";
-import { cmdList } from "../shared/Shared";
+import { cmdList } from "../Info.plugin";
 import { oneLine, stripIndent } from "common-tags";
 
 interface HelpCategory {

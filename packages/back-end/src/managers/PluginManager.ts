@@ -134,21 +134,40 @@ export default class PluginManager {
 
 				// First tries to find the command from the command map
 				if (command && hasMatchingPrefix) {
-					await command.run(msg);
-					commandList.push(command);
-					logger.warn(`B ${msg.prefix}${command.id}`);
+					try {
+						await command.run(msg);
+						commandList.push(command);
+					} catch (error) {
+						logger.error(error.stack)
+					}
 				} else {
 					// Tries to find the command from an alias
 					const alias = plugin.aliases.get(commandString);
 					if (alias && hasMatchingPrefix) {
 						alias.run(msg);
 						commandList.push(alias);
-						logger.warn("b");
 					}
 				}
 			}
-
-			logger.warn("C");
 		}
+	}
+
+	static async showHelp(msg: FramedMessage, id: string): Promise<boolean> {
+		if (msg.discord) {
+			await msg.framedClient.pluginManager.runCommand(
+				new FramedMessage({
+					framedClient: msg.framedClient,
+					discord: {
+						client: msg.discord.client,
+						channel: msg.discord.channel,
+						content: `${msg.framedClient.defaultPrefix}help ${id}`,
+						author: msg.discord.author,
+						guild: msg.discord.guild,
+					},
+				})
+			);
+		}
+
+		return false;
 	}
 }

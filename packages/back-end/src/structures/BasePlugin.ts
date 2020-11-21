@@ -119,7 +119,7 @@ export abstract class BasePlugin {
 			}
 		}
 
-		logger.verbose(`Finished loading command ${command.name}.`);
+		logger.verbose(`Finished loading command ${command.id}.`);
 	}
 
 	//#endregion
