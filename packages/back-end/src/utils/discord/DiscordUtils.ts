@@ -3,6 +3,7 @@ import { logger } from "shared";
 import util from "util";
 import RequireAll from "require-all";
 import Options from "../../interfaces/RequireAllOptions";
+import { existsSync } from "fs";
 
 export default class DiscordUtils {
 	/**
@@ -14,11 +15,16 @@ export default class DiscordUtils {
 	static importScripts(options: Options): any[] {
 		// I have no idea how the hell this code is supposed to work in TypeScript
 
+		const scripts: any[] = [];
+
+		// Sanity check
+		if (!existsSync(options.dirname)) return scripts;
+
 		const requiredScripts: {
 			[key: number]: { key: number; value: { default: any } };
 		} = RequireAll(options);
 		logger.debug(`requiredScripts: ${util.inspect(requiredScripts)}`);
-		const scripts: any[] = [];
+
 
 		const requiredScriptsValues = Object.values(requiredScripts);
 		logger.debug(
