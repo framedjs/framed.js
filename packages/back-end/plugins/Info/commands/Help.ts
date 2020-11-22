@@ -7,6 +7,7 @@ import { BasePlugin } from "../../../src/structures/BasePlugin";
 import { BaseCommand } from "../../../src/structures/BaseCommand";
 import { cmdList } from "../Info.plugin";
 import { oneLine, stripIndent } from "common-tags";
+import { logger } from "shared";
 
 interface HelpCategory {
 	category: string;
@@ -88,18 +89,18 @@ export default class extends BaseCommand {
 					if (command.inlineCharacterLimit) {
 						inlineCharacterLimit = command.inlineCharacterLimit;
 					}
-					console.log("AAAAAAAAAAAAAA " + inlineCharacterLimit);
+					logger.debug("Help.ts: Inline Character Limit: " + inlineCharacterLimit);
 
 					if (command.usage) {
 						const guideMsg = stripIndent`
-							Type \`.usage\` for more info.
+							Type \`.usage\` for important info.
 						`;
 						const usageMsg = stripIndent`
 							\`${command.defaultPrefix}${command.id} ${command.usage}\`
 						`;
 						embed.addField(
 							"Usage",
-							`${usageMsg}\n${guideMsg}`,
+							`${guideMsg}\n${usageMsg}`,
 							usageMsg.length <= inlineCharacterLimit
 						);
 					}
@@ -107,7 +108,7 @@ export default class extends BaseCommand {
 					if (command.examples) {
 						embed.addField(
 							"Examples",
-							command.examples,
+							`Try copying and editing them!\n${command.examples}`,
 							command.examples.length <= inlineCharacterLimit
 						);
 					}

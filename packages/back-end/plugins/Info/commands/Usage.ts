@@ -1,4 +1,4 @@
-import { stripIndent } from "common-tags";
+import { oneLine, stripIndent } from "common-tags";
 import { BasePlugin } from "packages/back-end/src/structures/BasePlugin";
 import FramedMessage from "../../../src/structures/FramedMessage";
 import EmbedHelper from "../../../src/utils/discord/EmbedHelper";
@@ -21,14 +21,19 @@ export default class extends BaseCommand {
 				msg.discord,
 				this.id,
 				cmdList
-			).addField(
-				"Usage",
-				stripIndent`
-				\`[]\` means the field is optional.
-				\`<>\` means the field is mandatory.
-				\`[A | B]\` means you can choose either A or B.
-			`
-			);
+			)
+				.addField(
+					"Usage",
+					stripIndent`
+					\`[]\` means the field is optional.
+					\`<>\` means the field is mandatory.
+					\`[A | B]\` means you can choose either A or B.`
+				)
+				.addField(
+					"Note",
+					stripIndent`In most cases, DO NOT USE BRACKETS while trying to run commands.
+					If there are quotes however, it is usually a requirement.`
+				);
 			// ).addField(
 			// 	"Example",
 			// 	stripIndent`
