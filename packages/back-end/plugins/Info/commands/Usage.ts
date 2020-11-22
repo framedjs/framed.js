@@ -9,18 +9,16 @@ export default class extends BaseCommand {
 	constructor(plugin: BasePlugin) {
 		super(plugin, {
 			id: "usage",
-			about: "Shows what the `[]` and `<>` brackets means, along other syntax.",
+			about:
+				"Shows what the `[]` and `<>` brackets means, along other syntax.",
+			emojiIcon: "📄",
 		});
 	}
 
 	async run(msg: FramedMessage): Promise<boolean> {
 		if (msg.discord) {
 			const embed = EmbedHelper.applyEmbedTemplate(
-				{
-					client: msg.discord.client,
-					author: msg.discord.author,
-					guild: msg.discord.guild
-				},
+				msg.discord,
 				this.id,
 				cmdList
 			).addField(
@@ -30,7 +28,7 @@ export default class extends BaseCommand {
 				\`<>\` means the field is mandatory.
 				\`[A | B]\` means you can choose either A or B.
 			`
-			)
+			);
 			// ).addField(
 			// 	"Example",
 			// 	stripIndent`
@@ -38,7 +36,7 @@ export default class extends BaseCommand {
 
 			// 	\`<question>\` means that you have to type your question in here.
 			// 	\`.poll Should Bim be Server Owner?\`, with "Should Bim be Server Owner?" would be valid.
-				
+
 			// 	\`["option 1"]\` means we could decide not to put something in here.
 
 			// 	`

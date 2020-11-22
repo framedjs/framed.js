@@ -8,11 +8,16 @@ export default class extends BaseCommand {
 			id: "template",
 			about: "Not a real command.",
 			usage: "Instead, you should copy me!",
+			emojiIcon: "🥞",
 		});
 	}
-	
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+
 	async run(msg: FramedMessage): Promise<boolean> {
-		return true;
+		if (msg.discord) {
+			// Do things!
+			// await msg.discord.channel.send("test"); // Uncomment me!
+			return true;
+		}
+		return false;
 	}
 }

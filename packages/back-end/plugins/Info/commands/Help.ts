@@ -14,7 +14,6 @@ interface HelpCategory {
 }
 
 interface HelpInfo {
-	emote: string;
 	command: string;
 }
 
@@ -33,6 +32,7 @@ export default class extends BaseCommand {
 				\`{{prefix}}help poll\`
 			`,
 			inlineCharacterLimit: 40,
+			emojiIcon: "❓",
 		});
 	}
 
@@ -71,11 +71,7 @@ export default class extends BaseCommand {
 
 					// Creates the embed
 					const embed = EmbedHelper.applyEmbedTemplate(
-						{
-							client: msg.discord.client,
-							author: msg.discord.author,
-							guild: msg.discord.guild,
-						},
+						msg.discord,
 						this.id,
 						cmdList
 					)
@@ -125,11 +121,7 @@ export default class extends BaseCommand {
 				// }
 			} else {
 				const mainEmbed = EmbedHelper.applyEmbedTemplate(
-					{
-						client: msg.discord.client,
-						author: msg.discord.author,
-						guild: msg.discord.guild,
-					},
+					msg.discord,
 					this.id,
 					cmdList
 				);
@@ -144,9 +136,7 @@ export default class extends BaseCommand {
 					.addField(
 						"Other Bots",
 						stripIndent`
-						<@159985870458322944> \`!help\` - Bot generally used for \`!levels\` and \`!rank\`.
-						<@234395307759108106> \`-help\` - Used for music in <#760622055384547368>.
-					`
+						<@234395307759108106> \`-help\` - Used for music in the <#760622055384547368> voice channel.`
 					);
 
 				await msg.discord.channel.send(mainEmbed);
@@ -194,20 +184,16 @@ export default class extends BaseCommand {
 				category: "Commands",
 				command: [
 					{
-						emote: "❓",
 						command: "help",
 					},
 					{
-						emote: "📄",
 						command: "usage",
 					},
 					{
-						emote: "🏓",
-						command: "ping",
+						command: "poll",
 					},
 					{
-						emote: "👍",
-						command: "poll",
+						command: "dailies",
 					},
 				],
 			},
@@ -220,12 +206,19 @@ export default class extends BaseCommand {
 		helpList.forEach(helpElement => {
 			// Searches through plugins
 			plugins.forEach(plugin => {
+				const allComamnds = Array.from(plugin.commands.values()).concat(
+					Array.from(plugin.aliases.values())
+				);
+
 				// Searches through commands inside the plugins
-				plugin.commands.forEach(command => {
+				allComamnds.forEach(command => {
 					// Searches through command text options
 					helpElement.command.forEach(cmdElement => {
 						// If there's a matching one, add it to the Map
-						if (command.id == cmdElement.command) {
+						if (
+							command.id == cmdElement.command ||
+							command.aliases?.includes(cmdElement.command)
+						) {
 							const usage =
 								command.usage && !command.hideUsageInHelp
 									? ` ${command.usage}`
@@ -234,7 +227,7 @@ export default class extends BaseCommand {
 							sectionMap.set(
 								cmdElement.command,
 								oneLine`
-								${cmdElement.emote}
+								${command.emojiIcon ? command.emojiIcon : "❔"}
 								\`${command.defaultPrefix}${command.id}${usage}\`
 								- ${command.about}
 							`
@@ -264,11 +257,6 @@ export default class extends BaseCommand {
 				value: categoryText,
 			});
 		});
-
-		// fields.push({
-		// 	"Streaks",
-		// 	`🕒 \`.streaks [@user | user ID | top | all]\` - View streak stats.`
-		// });
 
 		return fields;
 	}

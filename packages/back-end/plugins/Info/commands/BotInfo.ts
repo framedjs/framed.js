@@ -12,6 +12,7 @@ export default class extends BaseCommand {
 			aliases: ["botstats"],
 			about:
 				"Gets various stats from the bot, including versions and uptime.",
+			emojiIcon: "🤖",
 		});
 	}
 
@@ -29,11 +30,7 @@ export default class extends BaseCommand {
 		if (msg.discord && framedUser) {
 			const codeblock = "```";
 			const embed = EmbedHelper.applyEmbedTemplate(
-				{
-					client: msg.discord.client,
-					author: msg.discord.author,
-					guild: msg.discord.guild,
-				},
+				msg.discord,
 				this.id,
 				cmdList
 			).setDescription(stripIndent`

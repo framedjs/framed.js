@@ -96,7 +96,7 @@ export default class FramedClient extends EventEmitter {
 			this.client.user
 				?.setPresence({
 					activity: {
-						name: `.help | Maintaining Streaks`,
+						name: `${this.defaultPrefix}help | Maintaining Streaks`,
 					},
 				})
 				.then(logger.debug)
@@ -108,7 +108,7 @@ export default class FramedClient extends EventEmitter {
 			const msg = new FramedMessage({
 				framedClient: this,
 				discord: {
-					msg: discordMsg,
+					base: discordMsg,
 				},
 			});
 			this.processMsg(msg);
@@ -129,7 +129,7 @@ export default class FramedClient extends EventEmitter {
 				const msg = new FramedMessage({
 					framedClient: this,
 					discord: {
-						msg: discordMsg,
+						base: discordMsg,
 					},
 				});
 				this.processMsg(msg);

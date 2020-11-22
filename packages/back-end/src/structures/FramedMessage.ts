@@ -1,22 +1,15 @@
+/* eslint-disable no-mixed-spaces-and-tabs */
 import { oneLine } from "common-tags";
 import Discord from "discord.js";
 import { logger } from "shared";
+import { FramedMessageDiscordData } from "../interfaces/FramedMessageDiscordData";
 import { FramedMessageInfo } from "../interfaces/FramedMessageInfo";
+import util from "util";
 
 export default class FramedMessage {
 	public readonly framedClient;
 
-	public discord?: {
-		readonly msg?: Discord.Message;
-		readonly client: Discord.Client;
-		readonly id?: string;
-		readonly channel:
-			| Discord.TextChannel
-			| Discord.DMChannel
-			| Discord.NewsChannel;
-		readonly author: Discord.User;
-		readonly guild: Discord.Guild | null;
-	};
+	public discord?: FramedMessageDiscordData;
 
 	public content = "";
 
@@ -26,81 +19,92 @@ export default class FramedMessage {
 
 	constructor(info: FramedMessageInfo) {
 		if (info.discord) {
-			if (info.discord.msg) {
-				// If there's an msg object, we set all the relevant values here
-				this.discord = {
-					msg: info.discord.msg,
-					client: info.discord.msg.client,
-					id: info.discord.msg.id,
-					channel: info.discord.msg.channel,
-					author: info.discord.msg.author,
-					guild: info.discord.msg.guild,
-				};
+			const newMsg =
+				info.discord.id && info.discord.channel
+					? info.discord.channel.messages.cache.get(info.discord.id)
+					: info.discord.base instanceof Discord.Message
+					? info.discord.base
+					: undefined;
 
-				this.content = info.discord.msg.content;
-			} else {
-				// If there isn't an msg object, we check to see if they've been
-				// inputted into the data manually.
+			const newDiscordClient = info.discord.client
+				? info.discord.client
+				: info.discord.base instanceof Discord.Message
+				? info.discord.base.client
+				: undefined;
 
-				// Gets client or throws error
-				const discordClient = info.discord.client;
-				if (!discordClient) {
-					throw new Error(
-						oneLine`Parameter discord.client wasn't set when creating FramedMessage!
+			const newId = info.discord.id
+				? info.discord.id
+				: newMsg
+				? newMsg.id
+				: undefined;
+
+			const newChannel = info.discord.channel
+				? info.discord.channel
+				: newMsg
+				? newMsg.channel
+				: undefined;
+
+			const newAuthor = info.discord.author
+				? info.discord.author
+				: newMsg
+				? newMsg.author
+				: undefined;
+
+			const newGuild = info.discord.guild
+				? info.discord.guild
+				: newMsg
+				? newMsg.guild
+				: null;
+
+			// Gets client or throws error
+			if (!newDiscordClient) {
+				throw new Error(
+					oneLine`Parameter discord.client wasn't set when creating FramedMessage!
 						This value should be set if the discord.msg parameter hasn't been set.`
-					);
-				}
-
-				// Gets message ID or throws error
-				const id = info.discord.id;
-				// if (!id) {
-				// 	throw new Error(
-				// 		oneLine`Parameter discord.id wasn't set when creating FramedMessage!
-				// 		This value should be set if the discord.msg parameter hasn't been set.`
-				// 	);
-				// }
-
-				// Gets channel or throws error
-				const channel = info.discord.channel;
-				if (!channel) {
-					throw new Error(
-						oneLine`Parameter discord.channel wasn't set when creating FramedMessage!
-						This value should be set if the discord.msg parameter hasn't been set.`
-					);
-				}
-
-				// Gets author or throws error
-				const author = info.discord.author
-					? info.discord.author
-					: discordClient.user;
-				if (!author) {
-					throw new Error(
-						oneLine`discordClient.user is null, and discord.author is undefined.`
-					);
-				}
-
-				// Gets content or throws error
-				const content = info.discord.content
-					? info.discord.content
-					: id ? channel.messages.cache.get(id)?.content : "";
-				logger.debug(`FramedMessage content: "${content}"`);
-				// if (!content) {
-				// 	throw new Error(
-				// 		oneLine`Parameter discord.content wasn't set when creating FramedMessage!
-				// 		This value should be set if the discord.msg or discord.id parameter hasn't been set.`
-				// 	);
-				// }
-				this.content = content ? content : "";
-
-				// Sets Discord-specific data
-				this.discord = {
-					client: discordClient,
-					id: info.discord.id,
-					channel: channel,
-					author: author,
-					guild: info.discord.guild ? info.discord.guild : null,
-				};
+				);
 			}
+
+			// Gets channel or throws error
+			if (!newChannel) {
+				throw new Error(
+					oneLine`Parameter discord.channel wasn't set when creating FramedMessage!
+						This value should be set if the discord.msg parameter hasn't been set.`
+				);
+			}
+
+			// Gets author or throws error
+			if (!newAuthor) {
+				throw new Error(
+					oneLine`discordClient.user is null, and discord.author is undefined.`
+				);
+			}
+
+			// If there's an msg object, we set all the relevant values here
+			this.discord = {
+				msg: newMsg,
+				client: newDiscordClient,
+				id: newId,
+				channel: newChannel,
+				author: newAuthor,
+				guild: newGuild,
+			};
+
+			// Sets the content
+			let newContent = info.discord.content;
+			if (!newContent) {
+				if (newId) {
+					newContent = newChannel.messages.cache.get(newId)?.content;
+					if (!newContent) {
+						newContent = "";
+					}
+				} else {
+					newContent = "";
+				}
+			}
+
+			this.content = newContent;
+
+			logger.debug(util.inspect(this.discord, undefined, 0));
 		}
 
 		this.framedClient = info.framedClient;

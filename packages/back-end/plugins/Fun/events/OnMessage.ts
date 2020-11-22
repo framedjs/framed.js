@@ -20,8 +20,6 @@ export default class extends BaseEvent {
 			.replace(legacyPollString, `${pollCommandPrefix}poll`)
 			.trim();
 
-		logger.debug(`OnMsg Poll new content: "${newContent}"`);
-
 		if (msg.content.startsWith(legacyPollString)) {
 			this.framedClient.pluginManager.runCommand(
 				new FramedMessage({

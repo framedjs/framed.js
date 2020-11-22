@@ -20,7 +20,7 @@ export default class Poll extends BaseCommand {
 			usage: '[single|multiple] <question> ["option 1"] ["option 2"]',
 			hideUsageInHelp: true,
 			examples: stripIndent`
-				\`{{prefix}}poll Do you like Pineapple on Pizza?\` - Simple Poll
+				\`{{prefix}}poll Do You like Pineapple on Pizza?\` - Simple Poll
 				\`{{prefix}}poll Ban Bim? "Yes" "Sure" "Why Not"\` - Custom Options
 				\`{{prefix}}poll single PC or Console? "PC" "Console"\` - Single Option
 			`,
@@ -135,7 +135,6 @@ export default class Poll extends BaseCommand {
 					},
 				});
 				await msg.framedClient.pluginManager.runCommand(newMsg);
-				logger.debug("Poll.ts: Sent help command");
 			}
 		}
 		return true;

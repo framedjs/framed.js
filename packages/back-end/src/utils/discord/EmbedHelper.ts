@@ -1,5 +1,6 @@
 import Discord from "discord.js";
 import { logger } from "shared";
+import { FramedMessageDiscordData } from "../../interfaces/FramedMessageDiscordData";
 
 /**
  * Discord Embed helper function class
@@ -52,11 +53,7 @@ export default class EmbedHelper {
 	static applyEmbedTemplate(
 		msg:
 			| Discord.Message
-			| {
-					client: Discord.Client;
-					author: Discord.User;
-					guild: Discord.Guild | null;
-			  },
+			| FramedMessageDiscordData,
 		commandUsed?: string,
 		commands?: Array<string>,
 		embed?: Discord.MessageEmbed

@@ -61,9 +61,7 @@ export default class extends BaseEvent {
 					client: reaction.message.client,
 					id: reaction.message.id,
 					channel: reaction.message.channel,
-					content: `${reaction.message.content
-						.replace("poll:", ".poll")
-						.trim()}`,
+					content: newContent,
 					author: reaction.message.author,
 					guild: reaction.message.guild,
 				},

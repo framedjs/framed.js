@@ -17,7 +17,8 @@ export default class extends BaseCommand {
 			id: "command",
 			aliases: ["cmd", "com"],
 			about: "Adds, edits, and removes commands.",
-			usage: "[add|edit|[remove|del|delete]] <command ID> <content>"
+			usage: "[add|edit|[remove|del|delete]] <command ID> <content>",
+			emojiIcon: "📝",
 		});
 	}
 
