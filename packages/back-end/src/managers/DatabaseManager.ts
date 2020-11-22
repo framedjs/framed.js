@@ -33,29 +33,53 @@ export class DatabaseManager {
 		"*.{ts,js}"
 	);
 
+	public connection?: TypeORM.Connection;
 	public options: TypeORM.ConnectionOptions;
 
 	constructor(options: TypeORM.ConnectionOptions) {
 		this.options = options;
 	}
 
+	/**
+	 * 
+	 */
 	async start(): Promise<void> {
-		await TypeORM.createConnection(this.options);
+		this.connection = await TypeORM.createConnection(this.options);
+		const installed = await this.checkInstall();
+		
+		// Generates default prefix, if none existed before
+		if (!installed) {
+			try {
+				await this.install();				
+			} catch (error) {
+				logger.error(`Error happened while installing!\n${error.stack}`);
+			}
+		}
+	}
 
+	/**
+	 * Checks whether or not Framed has been initialized before, 
+	 * by checking if the default prefix exists
+	 * @returns Boolean value if it's been installed before?
+	 */
+	async checkInstall(): Promise<boolean> {
 		const prefixRepo = TypeORM.getRepository(Prefix);
-		let defaultPrefix = await prefixRepo.findOne({
+		const defaultPrefix = await prefixRepo.findOne({
 			where: {
 				id: "default",
 			},
 		});
 
-		// Generates default prefix, if none existed before
-		if (!defaultPrefix) {
-			defaultPrefix = prefixRepo.create({
-				id: "default",
-				prefix: ".",
-			});
-			prefixRepo.save(defaultPrefix);
-		}
+		return defaultPrefix != undefined;
+	}
+
+	async install(): Promise<boolean> {
+		const prefixRepo = TypeORM.getRepository(Prefix);
+		const defaultPrefix = prefixRepo.create({
+			id: "default",
+			prefix: ".",
+		});
+		await prefixRepo.save(defaultPrefix);
+		return true;
 	}
 }

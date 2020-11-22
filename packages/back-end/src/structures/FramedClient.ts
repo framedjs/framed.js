@@ -48,6 +48,7 @@ export default class FramedClient extends EventEmitter {
 			type: "sqlite",
 			database: DatabaseManager.defaultDbPath,
 			synchronize: true,
+			dropSchema: true,
 			logging: true,
 			entities: [DatabaseManager.defaultEntitiesPath],
 		});

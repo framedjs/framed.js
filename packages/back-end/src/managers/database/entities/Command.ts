@@ -7,7 +7,7 @@ export default class Command {
 	@PrimaryColumn()
 	id!: string;
 	
-	@OneToOne(() => Prefix, prefix => prefix.commands)
+	@ManyToOne(() => Prefix, prefix => prefix.defaultCommands)
 	@JoinColumn()
 	defaultPrefix!: Prefix;
 
