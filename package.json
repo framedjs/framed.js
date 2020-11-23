@@ -7,8 +7,8 @@
   "scripts": {
     "clean": "# DOESN'T WORK ON WINDOWS -> pnpm recursive exec -- rm -rf node_modules; rm shrinkwrap.yaml; rm -rf node_modules",
     "build": "pnpm run build --filter shared && pnpm recursive run build",
-    "test": "jest --coverage",
-    "test:watch": "jest --coverage --watchAll",
+    "test": "pnpm recursive run test",
+    "test:watch": "pnpm recursive run test:watch",
     "start": "cross-env NODE_ENV=\"production\" pnpm recursive run start",
     "be:start": "cross-env NODE_ENV=\"production\" pnpm start --filter back-end",
     "be:dev": "cross-env NODE_ENV=\"development\" pnpm dev --filter back-end",
@@ -26,7 +26,7 @@
     "eslint-plugin-jest": "^24.1.0",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-prettier": "^3.1.4",
-    "jest": "^26.6.3",
+    "jest": "26.6.0",
     "prettier": "^2.1.2",
     "ts-jest": "^26.4.4"
   }
