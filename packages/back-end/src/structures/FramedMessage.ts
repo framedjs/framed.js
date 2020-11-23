@@ -5,6 +5,12 @@ import { logger } from "shared";
 import { FramedMessageDiscordData } from "../interfaces/FramedMessageDiscordData";
 import { FramedMessageInfo } from "../interfaces/FramedMessageInfo";
 import util from "util";
+import { FramedMessageArgsSettings } from "../interfaces/FramedMessageArgsSettings";
+
+enum ArgumentState {
+	Quoted,
+	Unquoted,
+}
 
 export default class FramedMessage {
 	public readonly framedClient;
@@ -202,13 +208,178 @@ export default class FramedMessage {
 	}
 
 	/**
+	 * @param content Message content
+	 * @param settings Argument parse settings
+	 */
+	static getArgs(
+		content: string,
+		settings?: FramedMessageArgsSettings
+	): string[] {
+		const args: string[] = [];
+
+		// Remove excess spaces
+		content = content.trim();
+
+		// Parse states; for if in a quoted/unquoted section, or is in a codeblock
+		let state = ArgumentState.Unquoted;
+		let hasCodeBlock = false;
+
+		// What the current argument is
+		let argString = "";
+
+		for (let i = 0; i < content.length; i++) {
+			const char = content[i];
+
+			// Character comparisons
+			const charIsDoubleQuote = char == `"`;
+			const charIsSpace = char == " ";
+			const charIsCodeBlock = char == "`";
+
+			// Special character comparisons
+			const charIsEscaped = content[i - 1] == "\\";
+			const charIsEnd = i + 1 == content.length;
+
+			// hasCodeBlock will be true when the message has codeblocks
+			if (charIsCodeBlock) hasCodeBlock = !hasCodeBlock;
+
+			// Check for state change
+			let stateChanged = false;
+			let changeStateToUnquotedLater = false;
+			let justStartedQuote = false;
+
+			// If there was a " to close off a quote section
+			// and the character hasn't been escaped by a \ or `
+			if (charIsDoubleQuote && !(charIsEscaped || hasCodeBlock)) {
+				stateChanged = true;
+
+				switch (state) {
+					case ArgumentState.Quoted:
+						// NOTE: we don't unquote it back immediately, so we
+						// can process the last " character
+						changeStateToUnquotedLater = true;
+						// state = ArgumentState.Unquoted
+						break;
+					case ArgumentState.Unquoted:
+						state = ArgumentState.Quoted;
+						justStartedQuote = true;
+						break;
+				}
+			}
+
+			if (state == ArgumentState.Unquoted) {
+				// If we're unquoted, split with spaces if settings allow it
+				// We'll process excess spaces later
+				if (!charIsSpace || settings?.separateByQuoteSections) {
+					argString += char;
+					// logger.debug(`uq '${argString}'`); // LARGE DEBUG OUTPUT
+				} else if (argString.length != 0) {
+					// A separator space has been used, so we push our non-empty argument
+					// logger.debug(
+					// 	`'${char}' <${content}> ${i} Unquoted "${argString}"`
+					// ); // LARGE DEBUG OUTPUT
+					// Trim argument string, since we're pushing an unquoted argument
+					FramedMessage.pushArgs(args, argString.trim(), state);
+					argString = "";
+				}
+			} else if (state == ArgumentState.Quoted) {
+				// If we've just started the quote, but the string isn't empty,
+				// push its contents out (carryover from unquoted)
+				if (justStartedQuote && argString.length != 0) {
+					// logger.debug(
+					// 	`'${char}' <${content}> ${i} JSQ_NonEmpty - CStU: ${changeStateToUnquotedLater} justStartedQuote ${justStartedQuote} - (${ArgumentState[state]}) - "${argString}"`
+					// ); // LARGE DEBUG OUTPUT
+
+					// Since it's been carried over as an unquoted argument
+					// And is just finishing in quoted, we can trim it here
+					FramedMessage.pushArgs(args, argString.trim(), state);
+					argString = "";
+				} else if (
+					settings?.showQuoteCharacters ||
+					!charIsDoubleQuote ||
+					charIsEscaped
+				) {
+					// If we should be showing quoted characters because of settings,
+					// or we're unquoted, or there's an escape if not
+					argString += char;
+					// logger.debug(` q '${argString}'`); // LARGE DEBUG OUTPUT
+				}
+			}
+
+			// If state change, and the first character isn't a " and just that,
+			// or this is the end of the string,
+			// push the new argument
+			if (
+				(stateChanged && !justStartedQuote) ||
+				(charIsEnd && argString.length > 0)
+			) {
+				// Is ending off with a quote
+				// logger.debug(
+				// 	`'${char}' <${content}> ${i} State change - CStU: ${changeStateToUnquotedLater} justStartedQuote ${justStartedQuote} - (${ArgumentState[state]}) - "${argString}"`
+				// ); // LARGE DEBUG OUTPUT
+
+				// Trim if unquoted
+				if (state == ArgumentState.Unquoted)
+					argString = argString.trim();
+
+				FramedMessage.pushArgs(args, argString, state);
+
+				argString = "";
+			}
+
+			// Finally changes the state to the proper one
+			// We don't do this for quotes because we need to process putting the " in or not
+			if (changeStateToUnquotedLater) {
+				state = ArgumentState.Unquoted;
+			}
+		}
+
+		return args;
+	}
+
+	/**
+	 * Pushes arguments into a string array, with added checks
+	 * @param args Current arguments for the message so far
+	 * @param argString Current suggested argument
+	 * @param state Argument state
+	 * @param justStartedQuote Did the quote just start
+	 */
+	private static pushArgs(
+		args: string[],
+		argString: string,
+		state: ArgumentState
+	): string | undefined {
+		// switch (state) {
+		// 	case ArgumentState.Quoted:
+		// 		break;
+
+		// 	case ArgumentState.Unquoted:
+		// 		argString = argString.trim();
+		// 		break;
+		// }
+
+		const unquoted = state == ArgumentState.Unquoted;
+		const noContentFastSwitch = false;
+		// state == ArgumentState.Quoted && justStartedQuote;
+
+		// Checks if the args strings wasn't empty and unquoted, so we don't
+		// add an unnessesary empty space argument
+		if (unquoted || !noContentFastSwitch) {
+			args.push(argString);
+			return argString;
+		}
+	}
+
+	/**
 	 * Voodoo magic that grabs parameters off of string, by grouping
 	 * (properly) quoted strings in text, excluding codeblocks and escaped characters.
 	 *
 	 * @param content Message content
 	 * @param showWrapperQuotes
 	 */
-	static getArgs(content: string, showWrapperQuotes?: boolean): string[] {
+	static oldGetArgs(
+		content: string,
+		settings?: FramedMessageArgsSettings
+	): string[] {
 		const args: string[] = [];
 
 		// Stores whether if we're in a codebloack or not
@@ -217,6 +388,31 @@ export default class FramedMessage {
 		// Stores whether there was a quote character
 		// that has happened, and is waiting to be closed
 		let hasDoubleQuote = false;
+
+		// Have hasDoubleQuote be forever true, since it will act as if
+		// there was a double quote for everything
+		if (settings?.separateByQuoteSections) {
+			hasDoubleQuote = true;
+		}
+		// hasDoubleQuote = true;
+
+		// Same as hasDoubleQuote, but cannot be overridden by
+		// the separateByQuoteSections setting.
+		// CAN ONLY BE USED WHEN THAT SETTING IS TRUE
+		let separateByQuoteHasDoubleQuote = false;
+
+		// Immediately trim the excessive spaces
+		content = content.trim();
+
+		// If the first character is a quote, be prepared to close it off
+		if (content[0] == `"`) {
+			separateByQuoteHasDoubleQuote = true;
+		}
+
+		console.log(content);
+
+		// To be used with separateByQuoteSections setting
+		let hasPushedStringOnce = false;
 
 		// Contains the string between the two quote characters
 		// or for anything other type of argument
@@ -235,6 +431,7 @@ export default class FramedMessage {
 			if (isCodeBlock) {
 				hasCodeBlock = !hasCodeBlock;
 			}
+
 			// console.log(
 			// 	`hasCodeBlock: ${hasCodeBlock} | hasDoubleQuote: ${hasDoubleQuote} | isEndOfString: ${isEndOfString}`
 			// );
@@ -242,34 +439,57 @@ export default class FramedMessage {
 			if (hasDoubleQuote) {
 				if (isDoubleQuote && !isEscaped && !hasCodeBlock) {
 					// We are inside a double quote, and are about to seemingly close it
-					// Closes double quote
-					hasDoubleQuote = false;
+
+					if (!settings?.separateByQuoteSections) {
+						// Closes quotes, if the option to disallow it is false
+						hasDoubleQuote = false;
+					} else {
+						// Removes any unnesseary spaces, if parsed from quote sections
+						// and the quotedString isn't surrounded by quotes
+						if (!separateByQuoteHasDoubleQuote) {
+							quotedString = quotedString.trim();
+						}
+						separateByQuoteHasDoubleQuote = !separateByQuoteHasDoubleQuote;
+					}
 
 					// Adds the quote if it's set as an option to
-					if (showWrapperQuotes) {
+					if (settings?.showQuoteCharacters) {
 						quotedString += element;
 					}
 
 					// Stops adding to the quoted string
-					args.push(quotedString);
+					// Checks if there is no special edge case, or there is,
+					// BUT we've already pushed before, or there's actual content in the string
+					if (
+						!settings?.separateByQuoteSections ||
+						hasPushedStringOnce ||
+						quotedString.length > 0
+					) {
+						args.push(quotedString);
+						hasPushedStringOnce = true;
+					}
 					// console.log(`END: "${quotedString}"\n`);
 					quotedString = "";
 				} else if (!isDoubleQuote || hasCodeBlock) {
 					// Adds to the quoted string, if it isn't a quote, or it is
 					// but it's suppsoed to be escaped in some way
 					quotedString += element;
-					hasDoubleQuote = true;
 					// console.log(`Add: ${quotedString}` + "\n");
 
 					// If it's the end of the string, and the user forgot
 					// to add a closing ", we close it for them
 					if (isEndOfString) {
+						// Cleans it up if there's spaces, and we're not in a quote
+						if (!separateByQuoteHasDoubleQuote) {
+							quotedString = quotedString.trim();
+						}
+
 						args.push(quotedString);
 						quotedString = "";
 					}
 				}
 			} else if (isDoubleQuote && !isEscaped) {
-				// We are starting a double quote potentially
+				// We may be starting a quote section
 				if (!hasCodeBlock) {
 					// Set it to check for the string between quotes
 					hasDoubleQuote = true;
@@ -282,7 +502,7 @@ export default class FramedMessage {
 					}
 
 					// Adds the quote if it's set as an option to
-					if (showWrapperQuotes) {
+					if (settings?.showQuoteCharacters) {
 						quotedString += element;
 					}
 				} else if (hasCodeBlock) {
@@ -293,6 +513,7 @@ export default class FramedMessage {
 				}
 			} else {
 				// Where we're not going into a quote, nor are in one currently
+				// Normally, we'll just add to the string.
 
 				// Will add to the quotedString if a space
 				// that splits things apart doesn't exist

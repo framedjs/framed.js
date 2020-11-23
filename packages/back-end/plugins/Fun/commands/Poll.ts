@@ -99,7 +99,7 @@ export default class Poll extends BaseCommand {
 				return true;
 			} else if (questionContent.length > 0) {
 				// Reacts to a message
-				// newMsg obtains a message by either msg.discord.msg, or 
+				// newMsg obtains a message by either msg.discord.msg, or
 				// by getting the message through message ID
 				const newMsg = msg.discord.msg
 					? msg.discord.msg
@@ -176,9 +176,9 @@ export default class Poll extends BaseCommand {
 			.replace(msg.command, "")
 			.replace(questionContent, "")
 			.trim();
-		const pollOptionArgs = FramedMessage.trimArgs(
-			FramedMessage.getArgs(optionsContent)
-		);
+		const pollOptionArgs = FramedMessage.getArgs(optionsContent, {
+			separateByQuoteSections: true,
+		});
 
 		// First, we parse out the beginning single or multiple, out of question content
 		const singleMultipleOption = questionContent

@@ -33,8 +33,9 @@ export default class extends BaseCommand {
 					.replace(msg.prefix, "")
 					.replace(msg.command, "")
 					.replace(addEditRemoveStr, "")
-					.trimLeft();
-				let questionContent = contentNotSplit.split(`"`)[0];
+					.replace(commandId, "")
+					.trim();
+				let questionContent = contentNotSplit.split(`"`)[0].trim();
 				logger.debug(stripIndent`
 					Command.ts: 
 					questionContentNotSplit: '${contentNotSplit}'

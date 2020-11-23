@@ -15,6 +15,7 @@ import PluginManager from "../managers/PluginManager";
 import { EventEmitter } from "events";
 import { FramedClientInfo } from "../interfaces/FramedClientInfo";
 import { DatabaseManager } from "../managers/DatabaseManager";
+import util from "util";
 
 export default class FramedClient extends EventEmitter {
 	public readonly pluginManager = new PluginManager(this);
@@ -100,7 +101,7 @@ export default class FramedClient extends EventEmitter {
 						name: `${this.defaultPrefix}help | Maintaining Streaks`,
 					},
 				})
-				.then(logger.debug)
+				.then(a => logger.debug(util.inspect(a)))
 				.catch(logger.error);
 		});
 
