@@ -29,5 +29,6 @@
     {
       "path": "../shared"
     }
-  ]
+  ],
+  "exclude": ["build", "node_modules"]
 }
