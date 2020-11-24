@@ -87,13 +87,19 @@ export default class PluginManager {
 		return commands;
 	}
 
-	get prefixesArray(): string[] {
+	get defaultPrefixes(): string[] {
 		const prefixes: string[] = [
 			this.framedClient.defaultPrefix,
 			`${this.framedClient.client.user}`,
 			`<@!${this.framedClient.client.user?.id}>`,
 		];
 
+		logger.debug(`PluginManager.ts: Default prefixes: ${prefixes}`);
+		return prefixes;
+	}
+
+	get allPossiblePrefixes(): string[] {
+		const prefixes = this.defaultPrefixes;
 		// Adds to the list of potential prefixes
 		this.commandsArray.forEach(command => {
 			command.prefixes.forEach(element => {
@@ -102,8 +108,7 @@ export default class PluginManager {
 				}
 			});
 		});
-
-		// logger.debug(`PluginManager.ts: Prefixes: ${prefixes}`);
+		logger.debug(`PluginManager.ts: Prefixes: ${prefixes}`);
 		return prefixes;
 	}
 
@@ -117,7 +122,9 @@ export default class PluginManager {
 
 	async runCommand(msg: FramedMessage): Promise<void> {
 		if (msg.command && msg.prefix) {
-			logger.warn(`PluginManager.ts: runCommand() - ${msg.prefix}${msg.command}`);
+			logger.warn(
+				`PluginManager.ts: runCommand() - ${msg.prefix}${msg.command}`
+			);
 
 			// Removes undefined type
 			const commandString = msg.command;
@@ -130,22 +137,41 @@ export default class PluginManager {
 				// Gets a command from the plugin
 				const command = plugin.commands.get(commandString);
 
-				const hasMatchingPrefix = this.prefixesArray.includes(prefix);
+				const defaultHasMatchingPrefix = this.defaultPrefixes.includes(
+					prefix
+				);
+				const hasMatchingPrefix = this.allPossiblePrefixes.includes(
+					prefix
+				);
 
 				// First tries to find the command from the command map
 				if (command && hasMatchingPrefix) {
-					try {
-						await command.run(msg);
-						commandList.push(command);
-					} catch (error) {
-						logger.error(error.stack)
+					// If the prefix matches by default,
+					// or the command has it, run the command
+					if (
+						defaultHasMatchingPrefix ||
+						command.prefixes.includes(prefix)
+					) {
+						try {
+							await command.run(msg);
+							commandList.push(command);
+						} catch (error) {
+							logger.error(error.stack);
+						}
 					}
 				} else {
 					// Tries to find the command from an alias
 					const alias = plugin.aliases.get(commandString);
 					if (alias && hasMatchingPrefix) {
-						alias.run(msg);
-						commandList.push(alias);
+						// If the prefix matches by default,
+						// or the command has it, run the command
+						if (
+							defaultHasMatchingPrefix ||
+							alias.prefixes.includes(prefix)
+						) {
+							alias.run(msg);
+							commandList.push(alias);
+						}
 					}
 				}
 			}
@@ -166,6 +192,7 @@ export default class PluginManager {
 					},
 				})
 			);
+			return true;
 		}
 
 		return false;

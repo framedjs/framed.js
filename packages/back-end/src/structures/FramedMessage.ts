@@ -123,7 +123,7 @@ export default class FramedMessage {
 	 * Gets the prefix of the message.
 	 */
 	getPrefix(): string | undefined {
-		const prefixes = [...this.framedClient.pluginManager.prefixesArray];
+		const prefixes = [...this.framedClient.pluginManager.defaultPrefixes];
 		let prefix: string | undefined;
 		for (const testPrefix of prefixes) {
 			if (this.content.startsWith(testPrefix)) {
@@ -284,7 +284,7 @@ export default class FramedMessage {
 			} else if (state == ArgumentState.Quoted) {
 				// If we've just started the quote, but the string isn't empty,
 				// push its contents out (carryover from unquoted)
-				if (justStartedQuote && argString.length != 0) {
+				if (justStartedQuote && argString.trim().length != 0) {
 					// logger.debug(
 					// 	`'${char}' <${content}> ${i} JSQ_NonEmpty - CStU: ${changeStateToUnquotedLater} justStartedQuote ${justStartedQuote} - (${ArgumentState[state]}) - "${argString}"`
 					// ); // LARGE DEBUG OUTPUT

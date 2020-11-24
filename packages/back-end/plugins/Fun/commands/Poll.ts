@@ -12,7 +12,6 @@ export default class Poll extends BaseCommand {
 	constructor(plugin: BasePlugin) {
 		super(plugin, {
 			id: "poll",
-			defaultPrefix: ".",
 			about: "Create a simple, reaction-based poll through Discord.",
 			description: stripIndent`
 				Create a simple, reaction-based poll through Discord.
@@ -20,7 +19,7 @@ export default class Poll extends BaseCommand {
 			usage: '[single] <question> ["option 1"] ["option 2"]',
 			hideUsageInHelp: true,
 			examples: stripIndent`
-				\`{{prefix}}poll Do You like Pineapple on Pizza?\` - Simple Poll
+				\`{{prefix}}poll Do you like pineapple on pizza?\` - Simple Poll
 				\`{{prefix}}poll Ban Bim? "Yes" "Sure" "Why Not"\` - Custom Options
 				\`{{prefix}}poll single PC or Console? "PC" "Console"\` - Single Option
 			`,
@@ -97,7 +96,7 @@ export default class Poll extends BaseCommand {
 				}
 
 				return true;
-			} else if (questionContent.length > 0) {
+			} else if (questionContent?.length > 0) {
 				// Reacts to a message
 				// newMsg obtains a message by either msg.discord.msg, or
 				// by getting the message through message ID
@@ -166,85 +165,64 @@ export default class Poll extends BaseCommand {
 			return;
 		}
 
-		const contentNotSplit = msg.content
+		const newContent = msg.content
 			.replace(msg.prefix, "")
 			.replace(msg.command, "")
 			.trim();
-		let questionContent = contentNotSplit.split(`"`)[0];
-		const optionsContent = msg.content
-			.replace(msg.prefix, "")
-			.replace(msg.command, "")
-			.replace(questionContent, "")
-			.trim();
-		const pollOptionArgs = FramedMessage.getArgs(optionsContent, {
+		const newArgs = FramedMessage.getArgs(newContent, {
 			separateByQuoteSections: true,
 		});
 
-		// First, we parse out the beginning single or multiple, out of question content
-		const singleMultipleOption = questionContent
-			.split(" ")[0]
-			.toLocaleLowerCase();
-		const isSingle = singleMultipleOption == "single";
-		const isMultiple = singleMultipleOption == "multiple";
+		logger.debug(stripIndent`
+			new Poll.ts: 
+			newContent: '${newContent}'
+			newArgs: '${newArgs}'`);
 
-		// Potentially removes "single" or "multiple" from the content
-		if (isSingle || isMultiple) {
-			// Since the option is valid, the mention is not part of the question.
-			// Therefore, it gets removed
+		// Handles getting new content
+		// NOTE: isSingleOrMultiple will be false, if there's quotes cancelling this param out
+		let singleMultipleOption = "";
+		let questionContent = newArgs[0];
+
+		const isSingle = newContent.startsWith("single");
+		const isMultiple = newContent.startsWith("multiple");
+		const isSingleOrMultiple = isSingle || isMultiple;
+
+		if (isSingleOrMultiple) {
+			if (isSingle) {
+				singleMultipleOption = "single";
+			} else if (isMultiple) {
+				singleMultipleOption = "multiple";
+			}
+
+			// Handles combined "single question"
 			questionContent = questionContent
-				.replace(singleMultipleOption, "")
-				.trim();
-			logger.debug(stripIndent`
-				Poll.ts: Detected single/multiple flag!
-				New questionContent: "${questionContent}"
-				Replaced the "${singleMultipleOption}" out of the string.
-				`);
-		}
+				.replace(`${singleMultipleOption} `, ``)
+				.replace(singleMultipleOption, "");
 
-		// If a user quotes the beginning question,
-		// this causes the question content value be empty.
-		// We shift it back to as if it was never an "option",
-		// but rather the question itself
-		if (questionContent == "") {
-			const shifted = pollOptionArgs.shift();
-			logger.debug("a");
-			if (shifted) {
-				logger.debug("Replaced question content");
-				questionContent = shifted;
+			// If there is no content now, the argument was alone before.
+			// This means we can remove it from args
+			if (questionContent.length == 0) {
+				newArgs.shift();
+				questionContent = newArgs[0];
 			}
 		}
 
-		// Does some checks to see if the amount of options is correct
-		const discordMsg = msg.discord?.msg;
-		const min = 1;
-		const max = 20;
-		if (pollOptionArgs.length > max) {
-			if (discordMsg && !silent)
-				await discordMsg.reply(oneLine`
-						there are too many options! The max number of options is 
-						${max} due to the Discord reaction limit.
-					`);
-			return;
-		} else if (pollOptionArgs.length <= min && pollOptionArgs.length != 0) {
-			// != 0 exclusion exists to make sure that there's an
-			// option to have no options, and just create a simple poll
-			if (discordMsg && !silent)
-				await discordMsg.reply(oneLine`
-						there needs to be at least more than 1 option!
-					`);
-			return;
-		}
+		logger.debug(`singleMultipleOption ${isSingleOrMultiple}`);
+		logger.debug(`newArgs: "${newArgs}"`);
+
+		const pollOptionArgs = newArgs.slice(1, newArgs.length);
 
 		logger.debug(stripIndent`
-			Poll.ts: 
-			singleMultipleOption: ${singleMultipleOption}
-			pollOptionsArgs: [${pollOptionArgs}]
-			questionContentNotSplit: '${contentNotSplit}'
+			new Poll.ts: 
+			newContent: '${newContent}'
+			newArgs: '${newArgs}'
+			singleMultipleOption: '${singleMultipleOption}'
 			questionContent: '${questionContent}'
+			pollOptionsArgs: [${pollOptionArgs}]
 		`);
 
 		return {
-			askingForSingle: isSingle,
+			askingForSingle: isSingleOrMultiple,
 			singleMultipleOption,
 			questionContent,
 			pollOptionArgs,
