@@ -18,6 +18,9 @@ src/**/*.js
 
 docker-compose.yml
 
+# Ignore React build directory
+packages/front-end/build/
+
 ## START https://github.com/github/gitignore/blob/master/Node.gitignore
 
 # Logs
