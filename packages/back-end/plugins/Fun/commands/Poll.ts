@@ -75,9 +75,12 @@ export default class Poll extends BaseCommand {
 					.setColor(
 						EmbedHelper.getEmbedColorWithFallback(msg.discord.guild)
 					)
-					.setTitle(questionContent).setDescription(stripIndent`
-						${description}${hasCodeBlock ? "" : "\n"}\nPoll by ${msg.discord.author}
-						${askingForSingle ? oneOptionMsg : ""}`);
+					.setTitle(questionContent)
+					.setDescription(
+						`${description}${hasCodeBlock ? "" : "\n"}` +
+						`\nPoll by ${msg.discord.author}` + 
+						`\n${askingForSingle ? oneOptionMsg : ""}`
+					);
 				const newMsg = await msg.discord.channel.send(embed);
 
 				// Does the reactions

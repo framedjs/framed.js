@@ -31,7 +31,8 @@ export default class extends BaseCommand {
 				)
 				.addField(
 					"Note",
-					stripIndent`In most cases, **${"DO NOT USE BRACKETS".toLocaleLowerCase()}** while trying to run commands.
+					stripIndent`
+					In most cases, **${"DO NOT USE BRACKETS".toLocaleLowerCase()}** while trying to run commands.
 					If there are quotes however, it is usually a requirement.
 					The usage statements might be inaccurate in order to simplify them, too.
 					`
