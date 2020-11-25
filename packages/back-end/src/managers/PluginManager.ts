@@ -7,6 +7,7 @@ import FramedMessage from "../structures/FramedMessage";
 import { BaseCommand } from "../structures/BaseCommand";
 import { BaseEvent } from "../structures/BaseEvent";
 import Options from "../interfaces/RequireAllOptions";
+import Command from "./database/entities/Command";
 
 export default class PluginManager {
 	public plugins = new Map<string, BasePlugin>();
@@ -94,7 +95,7 @@ export default class PluginManager {
 			`<@!${this.framedClient.client.user?.id}>`,
 		];
 
-		logger.debug(`PluginManager.ts: Default prefixes: ${prefixes}`);
+		// logger.debug(`PluginManager.ts: Default prefixes: ${prefixes}`);
 		return prefixes;
 	}
 
@@ -108,7 +109,7 @@ export default class PluginManager {
 				}
 			});
 		});
-		logger.debug(`PluginManager.ts: Prefixes: ${prefixes}`);
+		// logger.debug(`PluginManager.ts: Prefixes: ${prefixes}`);
 		return prefixes;
 	}
 
@@ -132,6 +133,7 @@ export default class PluginManager {
 
 			const commandList: BaseCommand[] = [];
 
+			// Runs commands through plugins
 			for await (const pluginElement of this.plugins) {
 				const plugin = pluginElement[1];
 				// Gets a command from the plugin
@@ -175,6 +177,34 @@ export default class PluginManager {
 					}
 				}
 			}
+
+			// Runs commands through database
+			const dbCommand:
+				| Command
+				| undefined = await this.framedClient.databaseManager.findCommandInDatabase(
+				msg.command,
+				msg.prefix
+			);
+
+			if (dbCommand) {
+				this.renderCommandFromDB(dbCommand, msg);
+			}
+		}
+	}
+
+	async renderCommandFromDB(
+		dbCommand: Command,
+		msg: FramedMessage
+	): Promise<void> {
+		const responseData = dbCommand.response.responseData;
+		if (responseData) {
+			for await (const data of responseData.list) {
+				await msg.discord?.channel.send(data.content);
+			}
+		} else {
+			logger.error(
+				`PluginManager.ts: tried to output the response data, but there was none!`
+			);
 		}
 	}
 

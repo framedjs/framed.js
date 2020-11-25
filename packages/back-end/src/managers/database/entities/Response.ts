@@ -1,10 +1,7 @@
-import Discord from "discord.js";
 import {
 	Column,
 	Entity,
-	JoinTable,
 	OneToMany,
-	PrimaryColumn,
 	PrimaryGeneratedColumn,
 } from "typeorm";
 import ResponseData from "../interfaces/ResponseData";
@@ -21,6 +18,5 @@ export default class Response {
 	};
 
 	@OneToMany(() => Command, command => command.response)
-	@JoinTable()
 	commandResponses?: Command[];
 }
