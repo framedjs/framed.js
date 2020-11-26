@@ -5,7 +5,6 @@ import FramedClient from "../../../src/structures/FramedClient";
 import FramedMessage from "../../../src/structures/FramedMessage";
 import { BasePlugin } from "../../../src/structures/BasePlugin";
 import { BaseCommand } from "../../../src/structures/BaseCommand";
-import { cmdList } from "../Info.plugin";
 import { oneLine, stripIndent } from "common-tags";
 import { logger } from "shared";
 
@@ -73,8 +72,8 @@ export default class extends BaseCommand {
 					// Creates the embed
 					const embed = EmbedHelper.applyEmbedTemplate(
 						msg.discord,
-						this.id,
-						cmdList
+						this.framedClient,
+						this.id
 					)
 						.setTitle(`${command.defaultPrefix}${command.id}`)
 						.setDescription(description);
@@ -123,8 +122,8 @@ export default class extends BaseCommand {
 			} else {
 				const mainEmbed = EmbedHelper.applyEmbedTemplate(
 					msg.discord,
-					this.id,
-					cmdList
+					this.framedClient,
+					this.id
 				);
 
 				mainEmbed

@@ -1,6 +1,7 @@
 import Discord from "discord.js";
 import { logger } from "shared";
 import { FramedMessageDiscordData } from "../../interfaces/FramedMessageDiscordData";
+import FramedClient from "../../structures/FramedClient";
 
 /**
  * Discord Embed helper function class
@@ -44,19 +45,19 @@ export default class EmbedHelper {
 
 	/**
 	 * Applies a Discord embed template that should (hopefully) be a consistent design language.
-	 * @param msg - Discord message to get the appropiate color and avatar
-	 * @param commandUsed - Command used (as its full form) to be removed from a list
-	 * @param commands - All possible commands
-	 * @param embed - Embed to base the changes off of
+	 * @param msg FramedMessage object or Discord message
+	 * @param framedClient Framed client
+	 * @param commandUsed Command used (as its full form) to be removed from a list
+	 * @param embed Embed to base the changes off of
+	 * @param commands All possible commands
 	 */
 	/* eslint-disable no-mixed-spaces-and-tabs */
 	static applyEmbedTemplate(
-		msg:
-			| Discord.Message
-			| FramedMessageDiscordData,
+		msg: Discord.Message | FramedMessageDiscordData,
+		framedClient: FramedClient,
 		commandUsed?: string,
-		commands?: Array<string>,
-		embed?: Discord.MessageEmbed
+		embed?: Discord.MessageEmbed,
+		commands?: Array<string>
 	): Discord.MessageEmbed {
 		return new Discord.MessageEmbed(embed)
 			.setAuthor(
@@ -65,7 +66,10 @@ export default class EmbedHelper {
 			)
 			.setColor(EmbedHelper.getEmbedColorWithFallback(msg.guild))
 			.setFooter(
-				EmbedHelper.getCheckOutText(commandUsed, commands),
+				EmbedHelper.getCheckOutText(
+					commandUsed,
+					commands ? commands : framedClient.helpCommands
+				),
 				msg.author.displayAvatarURL({ dynamic: true })
 			);
 	}

@@ -30,25 +30,31 @@ export default class FramedMessage {
 					? info.discord.channel.messages.cache.get(info.discord.id)
 					: info.discord.base instanceof Discord.Message
 					? info.discord.base
+					: info.discord.base?.discord?.id && info.discord.base?.discord?.channel
+					? info.discord.base?.discord?.channel?.messages.cache.get(info.discord.base.discord.id)
 					: undefined;
 
 			const newDiscordClient = info.discord.client
 				? info.discord.client
 				: info.discord.base instanceof Discord.Message
 				? info.discord.base.client
-				: undefined;
+				: info.discord.base?.discord?.client;
 
 			const newId = info.discord.id
 				? info.discord.id
 				: newMsg
 				? newMsg.id
-				: undefined;
+				: info.discord.base instanceof Discord.Message
+				? info.discord.base.id
+				: info.discord.base?.discord?.id;
 
 			const newChannel = info.discord.channel
 				? info.discord.channel
 				: newMsg
 				? newMsg.channel
-				: undefined;
+				: info.discord.base instanceof Discord.Message
+				? info.discord.base.channel
+				: info.discord.base?.discord?.channel;
 
 			const newAuthor = info.discord.author
 				? info.discord.author
@@ -96,7 +102,7 @@ export default class FramedMessage {
 			};
 
 			// Sets the content
-			let newContent = info.discord.content;
+			let newContent = info.content;
 			if (!newContent) {
 				if (newId) {
 					newContent = newChannel.messages.cache.get(newId)?.content;

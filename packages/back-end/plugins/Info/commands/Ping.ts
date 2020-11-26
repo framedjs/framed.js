@@ -2,7 +2,6 @@ import FramedMessage from "../../../src/structures/FramedMessage";
 import { BaseCommand } from "../../../src/structures/BaseCommand";
 import { BasePlugin } from "packages/back-end/src/structures/BasePlugin";
 import { oneLine, stripIndent } from "common-tags";
-import { cmdList } from "../Info.plugin";
 import EmbedHelper from "../../../src/utils/discord/EmbedHelper";
 
 export default class extends BaseCommand {
@@ -47,8 +46,8 @@ export default class extends BaseCommand {
 
 			const embed = EmbedHelper.applyEmbedTemplate(
 				msg.discord,
-				this.id,
-				cmdList
+				this.framedClient,
+				this.id
 			);
 			embed.setDescription(stripIndent`
 				🏓 \`Message Latency\` - ${botDateNumber - userDateNumber}ms

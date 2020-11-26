@@ -1,12 +1,8 @@
-import Discord from "discord.js";
-// import * as Pagination from "discord-paginationembed";
 import EmbedHelper from "../../../src/utils/discord/EmbedHelper";
-import FramedClient from "../../../src/structures/FramedClient";
 import FramedMessage from "../../../src/structures/FramedMessage";
 import { BasePlugin } from "../../../src/structures/BasePlugin";
 import { BaseCommand } from "../../../src/structures/BaseCommand";
-import { cmdList } from "../Info.plugin";
-import { oneLine, stripIndent } from "common-tags";
+import { stripIndent } from "common-tags";
 
 interface HelpCategory {
 	category: string;
@@ -33,8 +29,8 @@ export default class extends BaseCommand {
 		if (msg.discord && framedUser) {
 			const embed = EmbedHelper.applyEmbedTemplate(
 				msg.discord,
-				this.id,
-				cmdList
+				this.framedClient,
+				this.id
 			)
 				.setTitle("Daily Challenge")
 				.setDescription(

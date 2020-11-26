@@ -128,12 +128,9 @@ export default class Poll extends BaseCommand {
 				// incorrectly read, this thing *will* break.
 				const newMsg = new FramedMessage({
 					framedClient: this.framedClient,
+					content: `${this.framedClient.defaultPrefix}help ${this.id}`,
 					discord: {
-						client: msg.discord.client,
-						channel: msg.discord.channel,
-						content: `${this.framedClient.defaultPrefix}help ${this.id}`,
-						author: msg.discord.author,
-						guild: msg.discord.guild,
+						base: msg
 					},
 				});
 				await msg.framedClient.pluginManager.runCommand(newMsg);

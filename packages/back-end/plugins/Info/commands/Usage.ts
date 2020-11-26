@@ -1,9 +1,8 @@
-import { oneLine, stripIndent } from "common-tags";
+import { stripIndent } from "common-tags";
 import { BasePlugin } from "packages/back-end/src/structures/BasePlugin";
 import FramedMessage from "../../../src/structures/FramedMessage";
 import EmbedHelper from "../../../src/utils/discord/EmbedHelper";
 import { BaseCommand } from "../../../src/structures/BaseCommand";
-import { cmdList } from "../Info.plugin";
 
 export default class extends BaseCommand {
 	constructor(plugin: BasePlugin) {
@@ -19,8 +18,8 @@ export default class extends BaseCommand {
 		if (msg.discord) {
 			const embed = EmbedHelper.applyEmbedTemplate(
 				msg.discord,
-				this.id,
-				cmdList
+				this.framedClient,
+				this.id
 			)
 				.addField(
 					"Usage",

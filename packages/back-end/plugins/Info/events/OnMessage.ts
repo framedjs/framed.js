@@ -3,7 +3,6 @@ import { BaseEvent } from "../../../src/structures/BaseEvent";
 import { BasePlugin } from "../../../src/structures/BasePlugin";
 import FramedMessage from "../../../src/structures/FramedMessage";
 import { logger } from "shared";
-import util from "util";
 
 export default class extends BaseEvent {
 	constructor(plugin: BasePlugin) {
@@ -23,12 +22,9 @@ export default class extends BaseEvent {
 			try {
 				const newFramedMsg = new FramedMessage({
 					framedClient: this.framedClient,
+					content: `${this.framedClient.defaultPrefix}help`,
 					discord: {
-						client: msg.client,
-						channel: msg.channel,
-						content: `${this.framedClient.defaultPrefix}help`,
-						author: msg.author,
-						guild: msg.guild,
+						base: msg,
 					},
 				});
 

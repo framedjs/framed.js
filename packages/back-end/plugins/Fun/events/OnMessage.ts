@@ -24,13 +24,9 @@ export default class extends BaseEvent {
 			this.framedClient.pluginManager.runCommand(
 				new FramedMessage({
 					framedClient: this.framedClient,
+					content: newContent,
 					discord: {
-						client: msg.client,
-						id: msg.id,
-						channel: msg.channel,
-						content: newContent,
-						author: msg.author,
-						guild: msg.guild,
+						base: msg
 					},
 				})
 			);

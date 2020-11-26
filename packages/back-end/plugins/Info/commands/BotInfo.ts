@@ -1,7 +1,6 @@
 import FramedMessage from "../../../src/structures/FramedMessage";
 import { BaseCommand } from "../../../src/structures/BaseCommand";
 import { BasePlugin } from "../../../src/structures/BasePlugin";
-import { cmdList } from "../Info.plugin";
 import { stripIndent } from "common-tags";
 import EmbedHelper from "../../../src/utils/discord/EmbedHelper";
 
@@ -31,8 +30,8 @@ export default class extends BaseCommand {
 			const codeblock = "```";
 			const embed = EmbedHelper.applyEmbedTemplate(
 				msg.discord,
-				this.id,
-				cmdList
+				this.framedClient,
+				this.id
 			).setDescription(stripIndent`
 				${codeblock}
 				Uptime:           ${this.secondsToDhms(uptime)}
@@ -40,7 +39,7 @@ export default class extends BaseCommand {
 				Back-End Version: v${msg.framedClient.backEndVersion}${environment}
 				${codeblock}
 				`);
-			msg.discord.channel.send(embed);
+			await msg.discord.channel.send(embed);
 		}
 		return true;
 	}

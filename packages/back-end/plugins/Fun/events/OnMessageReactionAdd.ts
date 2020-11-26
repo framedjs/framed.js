@@ -57,11 +57,11 @@ export default class extends BaseEvent {
 		const parsedResults = await Poll.customParse(
 			new FramedMessage({
 				framedClient: this.framedClient,
+				content: newContent,
 				discord: {
 					client: reaction.message.client,
 					id: reaction.message.id,
 					channel: reaction.message.channel,
-					content: newContent,
 					author: reaction.message.author,
 					guild: reaction.message.guild,
 				},

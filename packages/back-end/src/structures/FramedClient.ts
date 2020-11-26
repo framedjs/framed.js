@@ -25,6 +25,8 @@ export default class FramedClient extends EventEmitter {
 	public readonly version: string;
 	public readonly backEndVersion: string;
 
+	public readonly helpCommands = ["help", "dailies", "poll"]
+
 	public defaultPrefix = "!";
 
 	constructor(info?: FramedClientInfo) {

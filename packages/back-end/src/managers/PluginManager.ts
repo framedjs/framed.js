@@ -213,10 +213,10 @@ export default class PluginManager {
 			await msg.framedClient.pluginManager.runCommand(
 				new FramedMessage({
 					framedClient: msg.framedClient,
+					content: `${msg.framedClient.defaultPrefix}help ${id}`,
 					discord: {
 						client: msg.discord.client,
 						channel: msg.discord.channel,
-						content: `${msg.framedClient.defaultPrefix}help ${id}`,
 						author: msg.discord.author,
 						guild: msg.discord.guild,
 					},

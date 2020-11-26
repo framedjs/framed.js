@@ -16,5 +16,3 @@ export default class extends BasePlugin {
 		});
 	}
 }
-
-export const cmdList = ["help", "ping", "poll"];
