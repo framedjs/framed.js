@@ -81,11 +81,12 @@ export default class extends BaseEvent {
 		if (isPollCommand && singleVoteOnly) {
 			// https://discordjs.guide/popular-topics/reactions.html#removing-reactions-by-user
 			const extraUserReactions = reaction.message.reactions.cache.filter(
-				reactionElement =>
-					reactionElement.users.cache.has(user.id) &&
-					(emotes.includes(reactionElement.emoji.name) ||
-						optionEmotes.includes(reactionElement.emoji.name)) &&
-					reactionElement != reaction
+				extraReaction =>
+					extraReaction.users.cache.has(user.id) &&
+					(emotes.includes(extraReaction.emoji.name) ||
+						optionEmotes.includes(extraReaction.emoji.name)) &&
+					optionEmotes.includes(reaction.emoji.name) &&
+					extraReaction != reaction
 			);
 
 			try {
@@ -100,7 +101,11 @@ export default class extends BaseEvent {
 					await reaction.users.remove(user.id);
 				}
 			} catch (error) {
-				logger.error("Failed to remove reactions.");
+				if (!(reaction.message.channel instanceof Discord.DMChannel)) {
+					logger.error(
+						`Failed to remove reactions, where it should\n${error.stack}`
+					);
+				}
 			}
 		}
 	}
