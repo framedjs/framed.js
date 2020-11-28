@@ -45,11 +45,14 @@ export default class EmbedHelper {
 
 	/**
 	 * Applies a Discord embed template that should (hopefully) be a consistent design language.
+	 * 
 	 * @param msg FramedMessage object or Discord message
 	 * @param framedClient Framed client
 	 * @param commandUsed Command used (as its full form) to be removed from a list
 	 * @param embed Embed to base the changes off of
 	 * @param commands All possible commands
+	 * 
+	 * @returns Discord embed
 	 */
 	/* eslint-disable no-mixed-spaces-and-tabs */
 	static getEmbedTemplate(

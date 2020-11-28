@@ -9,12 +9,14 @@ export default class CustomCommand extends BaseCommand {
 		super(plugin, {
 			id: "editcom",
 			aliases: ["changecom"],
-			about:
+			about: "Edits custom commands.",
+			description:
 				"Edits custom commands. This is an alias of `.command edit`.",
-			usage: "<command ID> <content>",
+			usage: `<command ID> <content> "[description]"`,
 			examples: stripIndent`
-			\`{{prefix}}editcom newcommand This is an edited command!\``,
-			emojiIcon: "📝",
+			\`{{prefix}}editcom newcommand This is an edited command message!\``,
+			emojiIcon: "🔸",
+			hideUsageInHelp: true,
 		});
 	}
 

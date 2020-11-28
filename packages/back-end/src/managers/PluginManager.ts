@@ -8,6 +8,18 @@ import { BaseCommand } from "../structures/BaseCommand";
 import { BaseEvent } from "../structures/BaseEvent";
 import Options from "../interfaces/RequireAllOptions";
 import Command from "./database/entities/Command";
+import Discord from "discord.js";
+import { DatabaseManager } from "./DatabaseManager";
+import { oneLine } from "common-tags";
+
+export interface HelpCategory {
+	category: string;
+	command: HelpInfo[];
+}
+
+export interface HelpInfo {
+	command: string;
+}
 
 export default class PluginManager {
 	/**
@@ -190,19 +202,34 @@ export default class PluginManager {
 			);
 
 			if (dbCommand) {
-				this.renderCommandFromDB(dbCommand, msg);
+				this.sendCommandFromDB(dbCommand, msg);
 			}
 		}
 	}
 
-	async renderCommandFromDB(
+	/**
+	 * Sends a command from the database into chat.
+	 *
+	 * @param dbCommand Command entity
+	 * @param msg Framed message object
+	 */
+	async sendCommandFromDB(
 		dbCommand: Command,
 		msg: FramedMessage
 	): Promise<void> {
 		const responseData = dbCommand.response.responseData;
 		if (responseData) {
 			for await (const data of responseData.list) {
-				await msg.discord?.channel.send(data.content);
+				const embeds = data.discord?.embeds;
+				let embed: Discord.MessageEmbed | undefined;
+				if (embeds && embeds[0]) {
+					embed = embeds[0];
+				}
+				if (embed) {
+					await msg.discord?.channel.send(data.content, embed);
+				} else {
+					await msg.discord?.channel.send(data.content);
+				}
 			}
 		} else {
 			logger.error(
@@ -211,7 +238,16 @@ export default class PluginManager {
 		}
 	}
 
-	static async showHelp(msg: FramedMessage, id: string): Promise<boolean> {
+	/**
+	 * Sends a message showing help for a command.
+	 *
+	 * @param msg Framed message object
+	 * @param id Command ID
+	 */
+	static async showHelpForCommand(
+		msg: FramedMessage,
+		id: string
+	): Promise<boolean> {
 		if (msg.discord) {
 			await msg.framedClient.pluginManager.runCommand(
 				new FramedMessage({
@@ -229,5 +265,174 @@ export default class PluginManager {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Creates Discord embed field data from plugin commands, showing commands.
+	 *
+	 * @param helpList Data to choose certain commands
+	 *
+	 * @returns Discord embed field data, containing brief info on commands
+	 */
+	createMainHelpFields(helpList: HelpCategory[]): Discord.EmbedFieldData[] {
+		return PluginManager.createMainHelpFields(this.plugins, helpList);
+	}
+
+	/**
+	 * Creates Discord embed field data from plugin commands, showing commands.
+	 *
+	 * @param plugins A map of plugins. Usually, this should equal
+	 * `this.plugins`. If you're not calling it statically, use the non-static `createMainHelpFields()`.
+	 * @param helpList Data to choose certain commands
+	 *
+	 * @returns Discord embed field data, containing brief info on commands
+	 */
+	static createMainHelpFields(
+		plugins: Map<string, BasePlugin>,
+		helpList: HelpCategory[]
+	): Discord.EmbedFieldData[] {
+		const fields: Discord.EmbedFieldData[] = [];
+
+		const sectionMap = new Map<string, string>();
+
+		// Loops through all of the help elements,
+		// in order to find the right data
+		helpList.forEach(helpElement => {
+			// Searches through plugins
+			plugins.forEach(plugin => {
+				const allComamnds = Array.from(plugin.commands.values()).concat(
+					Array.from(plugin.aliases.values())
+				);
+
+				// Searches through commands inside the plugins
+				allComamnds.forEach(command => {
+					// Searches through command text options
+					helpElement.command.forEach(cmdElement => {
+						// If there's a matching one, add it to the Map
+						if (
+							command.id == cmdElement.command ||
+							command.aliases?.includes(cmdElement.command)
+						) {
+							const usage =
+								command.usage && !command.hideUsageInHelp
+									? ` ${command.usage}`
+									: "";
+
+							const emojiString = command.emojiIcon
+								? command.emojiIcon
+								: command.emojiIcon?.length == undefined
+								? "❔"
+								: command.emojiIcon.length == 0
+								? ""
+								: "❔";
+
+							sectionMap.set(
+								cmdElement.command,
+								oneLine`
+								${emojiString}
+								\`${command.defaultPrefix}${command.id}${usage}\`
+								- ${command.about}
+							`
+							);
+						}
+					});
+				});
+			});
+		});
+
+		// Loops through all of the help elements,
+		// in order to sort them properly like in the data
+		helpList.forEach(helpElement => {
+			let categoryText = "";
+
+			// Goes through each command in help, and finds matches in order
+			helpElement.command.forEach(cmdElement => {
+				const cmdText = sectionMap.get(cmdElement.command);
+				if (cmdText) {
+					categoryText += `${cmdText}\n`;
+				}
+			});
+
+			// Push everything from this category into a Embed field
+			fields.push({
+				name: helpElement.category,
+				value: categoryText,
+			});
+		});
+
+		return fields;
+	}
+
+	/**
+	 * Create embed field data on all of the commands in the database.
+	 * 
+	 * @returns Discord embed field data
+	 */
+	async createInfoHelpFields(): Promise<
+		Discord.EmbedFieldData[] | undefined
+	> {
+		return PluginManager.createDBHelpFields(
+			this.framedClient.databaseManager
+		);
+	}
+
+	/**
+	 * Create embed field data on all of the commands in the database.
+	 *
+	 * @param databaseManager Database Manager
+	 *
+	 * @returns Discord embed field data
+	 */
+	static async createDBHelpFields(
+		databaseManager: DatabaseManager
+	): Promise<Discord.EmbedFieldData[] | undefined> {
+		const connection = databaseManager.connection;
+		if (connection) {
+			const fields: Discord.EmbedFieldData[] = [];
+			const commandRepo = connection.getRepository(Command);
+			const commands = await commandRepo.find({
+				relations: ["defaultPrefix", "response"],
+			});
+
+			const contentNoDescriptionList: string[] = [];
+			const contentList: string[] = [];
+
+			for await (const command of commands) {
+				let content = `\`${command.defaultPrefix.prefix}${command.id}\``;
+				const description = command.response?.responseData?.description;
+
+				if (description) {
+					content = `🔹 ${content} - ${description}\n`;
+					contentList.push(content);
+				} else {
+					content += ` `;
+					contentNoDescriptionList.push(content);
+				}
+			}
+
+			let content = "";
+			contentNoDescriptionList.forEach(element => {
+				content += element;
+			});
+
+			if (content.length > 0) {
+				content += "\n";
+			}
+
+			contentList.forEach(element => {
+				content += element;
+			});
+
+			if (content.length > 0) {
+				fields.push({
+					name: "Other",
+					value: content,
+				});
+				return fields;
+			} else {
+				return undefined;
+			}
+		}
+		return undefined;
 	}
 }

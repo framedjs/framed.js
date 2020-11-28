@@ -10,7 +10,7 @@ export default class extends BaseCommand {
 			id: "usage",
 			about:
 				"Shows what the `[]` and `<>` brackets means, along other syntax.",
-			emojiIcon: "📄",
+			emojiIcon: "🔍",
 		});
 	}
 
