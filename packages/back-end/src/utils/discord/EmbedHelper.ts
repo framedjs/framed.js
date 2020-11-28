@@ -52,7 +52,7 @@ export default class EmbedHelper {
 	 * @param commands All possible commands
 	 */
 	/* eslint-disable no-mixed-spaces-and-tabs */
-	static applyEmbedTemplate(
+	static getEmbedTemplate(
 		msg: Discord.Message | FramedMessageDiscordData,
 		framedClient: FramedClient,
 		commandUsed?: string,

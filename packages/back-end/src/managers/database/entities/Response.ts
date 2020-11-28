@@ -1,9 +1,4 @@
-import {
-	Column,
-	Entity,
-	OneToMany,
-	PrimaryGeneratedColumn,
-} from "typeorm";
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import ResponseData from "../interfaces/ResponseData";
 import Command from "./Command";
 
@@ -14,6 +9,7 @@ export default class Response {
 
 	@Column({ type: "simple-json" })
 	responseData?: {
+		description: string;
 		list: ResponseData[];
 	};
 

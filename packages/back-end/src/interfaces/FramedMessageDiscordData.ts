@@ -28,7 +28,12 @@ export interface FramedMessageDiscordData {
 	 * The author of the message.
 	 */
 	readonly author: Discord.User;
-	
+
+	/**
+	 * The member of a guild.
+	 */
+	readonly member?: Discord.GuildMember | null;
+
 	/**
 	 * The guild of where the Discord message came from.
 	 */

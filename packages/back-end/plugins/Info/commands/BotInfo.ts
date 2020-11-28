@@ -28,7 +28,7 @@ export default class extends BaseCommand {
 
 		if (msg.discord && framedUser) {
 			const codeblock = "```";
-			const embed = EmbedHelper.applyEmbedTemplate(
+			const embed = EmbedHelper.getEmbedTemplate(
 				msg.discord,
 				this.framedClient,
 				this.id

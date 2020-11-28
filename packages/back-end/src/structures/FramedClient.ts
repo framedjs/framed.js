@@ -25,7 +25,7 @@ export default class FramedClient extends EventEmitter {
 	public readonly version: string;
 	public readonly backEndVersion: string;
 
-	public readonly helpCommands = ["help", "dailies", "poll"]
+	public readonly helpCommands = ["help", "dailies", "poll"];
 
 	public defaultPrefix = "!";
 
@@ -40,13 +40,11 @@ export default class FramedClient extends EventEmitter {
 		if (info) {
 			if (info.defaultPrefix) this.defaultPrefix = info?.defaultPrefix;
 		}
-		
-		logger.verbose(
-			`Using database path: ${DatabaseManager.defaultDbPath}`
-		);
+
+		logger.verbose(`Using database path: ${DatabaseManager.defaultDbPath}`);
 		logger.verbose(
 			`Using entities path: ${DatabaseManager.defaultEntitiesPath}`
-		)
+		);
 		this.databaseManager = new DatabaseManager({
 			type: "sqlite",
 			database: DatabaseManager.defaultDbPath,
@@ -83,28 +81,44 @@ export default class FramedClient extends EventEmitter {
 			// logger.error(`owo`);
 			//#endregion
 
-			this.client
-				// Permissions might not work
-				.generateInvite([
-					"SEND_MESSAGES",
-					"MANAGE_MESSAGES",
-					"READ_MESSAGE_HISTORY",
-					"MANAGE_ROLES",
-					"ADD_REACTIONS",
-					"EMBED_LINKS",
-					"VIEW_CHANNEL",
-				])
-				.then(link => logger.info(`Generated bot invite link: ${link}`))
-				.catch(logger.error);
+			try {
+				this.client
+					// Permissions might not work
+					.generateInvite([
+						"SEND_MESSAGES",
+						"MANAGE_MESSAGES",
+						"READ_MESSAGE_HISTORY",
+						"MANAGE_ROLES",
+						"ADD_REACTIONS",
+						"EMBED_LINKS",
+						"VIEW_CHANNEL",
+					])
+					.then(link =>
+						logger.info(`Generated bot invite link: ${link}`)
+					)
+					.catch(logger.error);
 
-			this.client.user
-				?.setPresence({
-					activity: {
-						name: `${this.defaultPrefix}help | Maintaining Streaks`,
-					},
-				})
-				.then(a => logger.debug(util.inspect(a)))
-				.catch(logger.error);
+				this.client.user
+					?.setPresence({
+						activity: {
+							name: `${this.defaultPrefix}help | Maintaining Streaks`,
+						},
+					})
+					.then(a => logger.debug(util.inspect(a)))
+					.catch(logger.error);
+
+				// this.client.user
+				// 	?.setPresence({
+				// 		activity: {
+				// 			name: `${this.defaultPrefix}help | Maintaining Streaks`,
+				// 			type: "CUSTOM_STATUS",
+				// 		},
+				// 	})
+				// 	.then(a => logger.debug(util.inspect(a)))
+				// 	.catch(logger.error);
+			} catch (error) {
+				logger.error(error.stack);
+			}
 		});
 
 		this.client.on("message", async discordMsg => {
@@ -151,7 +165,7 @@ export default class FramedClient extends EventEmitter {
 			)
 				return;
 
-			// If it's a bot, nah
+			// Finds user
 			let user = this.client.users.cache.get(packet.d.user_id);
 			if (!user) {
 				try {
@@ -162,15 +176,11 @@ export default class FramedClient extends EventEmitter {
 					);
 				}
 			}
-			// console.log("packet: " + util.inspect(packet))
-			// console.log("bot: " + user.bot)
 
 			// Grab the channel to check the message from
 			const channel = this.client.channels.cache.get(
 				packet.d.channel_id
 			) as Discord.TextChannel;
-
-			// console.log(channel?.messages.cache.has(packet.d.message_id));
 
 			// There's no need to emit if the message is cached, because the event will fire anyway for that
 			if (channel?.messages.cache.has(packet.d.message_id)) return;
@@ -192,7 +202,7 @@ export default class FramedClient extends EventEmitter {
 						user = await this.client.users.fetch(packet.d.user_id);
 					} catch (error) {
 						return logger.error(
-							`Wasn't able to find user from Raw event ${error.stack}`
+							`Wasn't able to find user from raw event\n${error.stack}`
 						);
 					}
 				}
@@ -202,7 +212,7 @@ export default class FramedClient extends EventEmitter {
 
 					// Check which type of event it is before emitting
 					if (packet.t === "MESSAGE_REACTION_ADD") {
-						logger.debug("!! EMITTING messageReactionAdd");
+						logger.debug("FramedClient: Emitting messageReactionAdd");
 						this.client.emit("messageReactionAdd", reaction, user);
 					} else if (packet.t === "MESSAGE_REACTION_REMOVE") {
 						this.client.emit(
@@ -212,7 +222,7 @@ export default class FramedClient extends EventEmitter {
 						);
 					}
 				} else {
-					logger.error("unable to find reaction");
+					logger.error("Unable to find reaction to message!");
 				}
 			});
 		});

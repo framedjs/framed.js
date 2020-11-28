@@ -1,3 +1,5 @@
+import { FramedPermissions } from "../structures/FramedPermissions";
+
 /**
  * To be used with BaseCommand.
  */
@@ -54,6 +56,13 @@ export interface CommandInfo {
 	examples?: string;
 
 	/**
+	 * Primary permissions for running the command.
+	 * 
+	 * This doesn't act as a complete override for commands, so be careful! 
+	 */
+	permissions?: FramedPermissions;
+
+	/**
 	 * Emoji icon
 	 */
 	emojiIcon?: string;
@@ -64,7 +73,7 @@ export interface CommandInfo {
 	inlineCharacterLimit?: number;
 
 	/**
-	 * 
+	 *
 	 */
-	useInline?: boolean
+	useInline?: boolean;
 }

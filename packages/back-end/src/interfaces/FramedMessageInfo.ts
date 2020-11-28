@@ -1,5 +1,6 @@
 import Discord from "discord.js";
 import FramedClient from "../structures/FramedClient";
+import FramedMessage from "../structures/FramedMessage";
 
 export interface FramedMessageInfo {
 	framedClient: FramedClient;
@@ -20,7 +21,7 @@ export interface FramedMessageInfo {
 		 * The base itself shouldnt be modified, but the rest of the Discord data
 		 * should be changed to fake a command, and override the base.
 		 */
-		base?: Discord.Message | FramedMessageInfo;
+		base?: Discord.Message | FramedMessageInfo | FramedMessage;
 
 		/**
 		 * The Discord client object.
@@ -46,6 +47,11 @@ export interface FramedMessageInfo {
 		 * The author of the message.
 		 */
 		author?: Discord.User;
+
+		/**
+		 * The member of a guild.
+		 */
+		member?: Discord.GuildMember;
 
 		/**
 		 * The guild of where the Discord message came from.

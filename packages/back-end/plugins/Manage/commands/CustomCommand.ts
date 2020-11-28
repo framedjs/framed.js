@@ -10,7 +10,6 @@ import PluginManager from "../../../src/managers/PluginManager";
 import Command from "../../../src/managers/database/entities/Command";
 import Prefix from "../../../src/managers/database/entities/Prefix";
 import Response from "../../../src/managers/database/entities/Response";
-import util from "util";
 import ResponseData from "packages/back-end/src/managers/database/interfaces/ResponseData";
 
 export default class CustomCommand extends BaseCommand {
@@ -22,13 +21,20 @@ export default class CustomCommand extends BaseCommand {
 	constructor(plugin: BasePlugin) {
 		super(plugin, {
 			id: "command",
-			aliases: ["cmd", "com"],
+			aliases: ["cmd", "cmds", "com"],
 			about: "Adds, edits, and deletes custom commands.",
-			usage: "<add|edit|delete> <command ID> <content>",
+			usage: "<add|edit|delete> <command ID> <content> [desc.]",
 			examples: stripIndent`
 			\`{{prefix}}command add testmsg This is a test message.\`
 			\`{{prefix}}command edit testmsg We've edited the message!\`
 			\`{{prefix}}command delete testmsg\``,
+			permissions: {
+				discord: {
+					permissions: ["MANAGE_MESSAGES"],
+					// Mods, Community Manager
+					roles: ["462342299171684364", "758771336289583125"],
+				},
+			},
 			emojiIcon: "📝",
 		});
 
@@ -90,50 +96,115 @@ export default class CustomCommand extends BaseCommand {
 	 * @param msg FramedMessage object
 	 */
 	async run(msg: FramedMessage): Promise<boolean> {
-		if (msg.prefix && msg.command && msg.args && msg.args.length > 0) {
-			const parse = CustomCommand.customParse(
-				msg.prefix,
-				msg.command,
-				msg.content,
-				msg.args,
-				this.addEditRemoveAliases
-			);
-
-			if (parse) {
-				const { addEditRemoveParam, commandId, questionArgs } = parse;
-
-				// Tries and get the aliases
-				const state = this.addEditRemoveAliases?.get(
-					addEditRemoveParam
+		if (msg.prefix && msg.command && msg.args) {
+			// If there's content
+			if (msg.args.length > 0) {
+				const parse = CustomCommand.customParse(
+					msg.prefix,
+					msg.command,
+					msg.content,
+					msg.args,
+					this.addEditRemoveAliases
 				);
-				if (state) {
-					switch (state?.toLocaleLowerCase()) {
-						case "add":
-							return (
-								(await this.addCommand(
-									commandId,
-									questionArgs,
-									msg
-								)) != undefined
-							);
-						case "edit":
-							return (
-								(await this.editCommand(
-									commandId,
-									questionArgs,
-									msg
-								)) != undefined
-							);
-						case "delete":
-							return (
-								(await this.deleteCommand(commandId, msg)) !=
-								undefined
-							);
+
+				if (parse) {
+					const {
+						addEditRemoveParam,
+						commandId,
+						questionArgs,
+					} = parse;
+
+					// Tries and get the aliases
+					const state = this.addEditRemoveAliases?.get(
+						addEditRemoveParam
+					);
+					if (state) {
+						const hasPermission = this.hasPermission(msg);
+
+						if (!hasPermission) {
+							await this.sendPermissionErrorMessage(msg);
+							return false;
+						}
+
+						switch (state?.toLocaleLowerCase()) {
+							case "add":
+								return (
+									(await this.addCommand(
+										commandId,
+										questionArgs,
+										msg
+									)) != undefined
+								);
+							case "edit":
+								return (
+									(await this.editCommand(
+										commandId,
+										questionArgs,
+										msg
+									)) != undefined
+								);
+							case "delete":
+								return (
+									(await this.deleteCommand(
+										commandId,
+										msg
+									)) != undefined
+								);
+						}
 					}
+				} else {
+					await PluginManager.showHelp(msg, this.id);
+					return true;
 				}
 			} else {
-				await PluginManager.showHelp(msg, this.id);
-				return true;
+				// Show the commands
+				const connection = this.framedClient.databaseManager.connection;
+				if (connection) {
+					const commandRepo = connection.getRepository(Command);
+					const commands = await commandRepo.find({
+						relations: ["defaultPrefix", "response"],
+					});
+
+					let contents = "";
+
+					for (const command of commands) {
+						const description =
+							command.response.responseData?.description;
+
+						contents += stripIndent`
+						\`${command.defaultPrefix.prefix}${command.id}\` - ${
+							description ? description : ""
+						}
+						`;
+						contents += "\n";
+					}
+
+					// Message if there's no commands
+					if (contents.length == 0) {
+						const infoPlugin = this.framedClient.pluginManager.plugins.get(
+							"default.bot.info"
+						);
+						const helpCommand = infoPlugin?.commands.get("help");
+
+						contents = stripIndent`
+						There are no custom commands to show.
+						To see how you can add one, try \`${
+							helpCommand ? helpCommand.defaultPrefix : "."
+						}${helpCommand ? helpCommand.id : "help"} ${
+							this.id
+						}\`.`;
+					}
+
+					if (msg.discord) {
+						const embed = EmbedHelper.getEmbedTemplate(
+							msg.discord,
+							this.framedClient,
+							this.id
+						).setDescription(contents);
+						await msg.discord.channel.send(embed);
+						return true;
+					}
+				}
 			}
 		}
 		await PluginManager.showHelp(msg, this.id);
@@ -273,17 +344,16 @@ export default class CustomCommand extends BaseCommand {
 			// Generates response data for adding + editing
 			if (newContents) {
 				if (!command) {
-					// Add response, if comand doesn't exist
-					const newList: ResponseData[] = [];
-					newContents.forEach(content => {
-						newList.push({
-							content: content,
-						});
-					});
+					// Add response, if command doesn't exist
 					newResponse = await responseRepo.save(
 						responseRepo.create({
 							responseData: {
-								list: newList,
+								description: newContents[1],
+								list: [
+									{
+										content: newContents[0],
+									},
+								],
 							},
 							commandResponses: [command],
 						})

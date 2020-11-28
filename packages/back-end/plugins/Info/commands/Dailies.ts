@@ -4,16 +4,6 @@ import { BasePlugin } from "../../../src/structures/BasePlugin";
 import { BaseCommand } from "../../../src/structures/BaseCommand";
 import { stripIndent } from "common-tags";
 
-interface HelpCategory {
-	category: string;
-	command: HelpInfo[];
-}
-
-interface HelpInfo {
-	emote: string;
-	command: string;
-}
-
 export default class extends BaseCommand {
 	constructor(plugin: BasePlugin) {
 		super(plugin, {
@@ -27,7 +17,7 @@ export default class extends BaseCommand {
 	async run(msg: FramedMessage): Promise<boolean> {
 		const framedUser = this.framedClient.client.user;
 		if (msg.discord && framedUser) {
-			const embed = EmbedHelper.applyEmbedTemplate(
+			const embed = EmbedHelper.getEmbedTemplate(
 				msg.discord,
 				this.framedClient,
 				this.id
@@ -39,6 +29,12 @@ export default class extends BaseCommand {
 					Post about what you've been working on in <#692939668160774204>.
 					You can also talk about submissions in <#697203526530760764> with others.`
 				)
+				// .addField("Daily Challenge",
+				// 	stripIndent`
+				// 	Challenge yourself to do something every day! 
+				// 	Post about what you've been working on in <#692939668160774204>.
+				// 	You can also talk about submissions in <#697203526530760764> with others.`
+				// )
 				.addField(
 					"Checking Streaks",
 					stripIndent`

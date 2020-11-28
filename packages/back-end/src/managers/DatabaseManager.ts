@@ -164,7 +164,7 @@ export class DatabaseManager {
 
 	/**
 	 * Deletes command from the database
-	 * @param id Command I
+	 * @param id Command ID
 	 */
 	async deleteCommandFromDB(id: string): Promise<void> {
 		if (this.connection) {

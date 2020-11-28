@@ -16,18 +16,25 @@ export default class extends BaseCommand {
 
 	async run(msg: FramedMessage): Promise<boolean> {
 		if (msg.discord) {
-			const embed = EmbedHelper.applyEmbedTemplate(
+			const embed = EmbedHelper.getEmbedTemplate(
 				msg.discord,
 				this.framedClient,
 				this.id
 			)
-				.addField(
-					"Usage",
+				.setTitle("Usage")
+				.setDescription(
 					stripIndent`
 					\`[]\` means the field is optional.
 					\`<>\` means the field is mandatory.
 					\`[A | B]\` means you can choose either A or B.`
 				)
+				// .addField(
+				// 	"Usage",
+				// 	stripIndent`
+				// 	\`[]\` means the field is optional.
+				// 	\`<>\` means the field is mandatory.
+				// 	\`[A | B]\` means you can choose either A or B.`
+				// )
 				.addField(
 					"Note",
 					stripIndent`

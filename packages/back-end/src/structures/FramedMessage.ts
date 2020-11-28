@@ -18,7 +18,6 @@ export default class FramedMessage {
 	public discord?: FramedMessageDiscordData;
 
 	public content = "";
-
 	public prefix?: string;
 	public args?: Array<string>;
 	public command?: string;
@@ -68,6 +67,12 @@ export default class FramedMessage {
 				? newMsg.guild
 				: null;
 
+			const newMember = info.discord.member
+				? info.discord.member
+				: newAuthor?.id 
+				? newGuild?.member(newAuthor.id)
+				: null;
+
 			// Gets client or throws error
 			if (!newDiscordClient) {
 				throw new Error(
@@ -98,6 +103,7 @@ export default class FramedMessage {
 				id: newId,
 				channel: newChannel,
 				author: newAuthor,
+				member: newMember,
 				guild: newGuild,
 			};
 

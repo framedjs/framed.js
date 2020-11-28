@@ -1,12 +1,13 @@
 import Discord from "discord.js";
 // import * as Pagination from "discord-paginationembed";
 import EmbedHelper from "../../../src/utils/discord/EmbedHelper";
-import FramedClient from "../../../src/structures/FramedClient";
 import FramedMessage from "../../../src/structures/FramedMessage";
 import { BasePlugin } from "../../../src/structures/BasePlugin";
 import { BaseCommand } from "../../../src/structures/BaseCommand";
 import { oneLine, stripIndent } from "common-tags";
 import { logger } from "shared";
+import { DatabaseManager } from "packages/back-end/src/managers/DatabaseManager";
+import Command from "packages/back-end/src/managers/database/entities/Command";
 
 interface HelpCategory {
 	category: string;
@@ -21,7 +22,7 @@ export default class extends BaseCommand {
 	constructor(plugin: BasePlugin) {
 		super(plugin, {
 			id: "help",
-			aliases: ["h"],
+			aliases: ["h", "commands"],
 			about: "View help for certain commands and extra info.",
 			description: stripIndent`
 				Shows a list of useful commands, or detail specific commands for you.
@@ -70,7 +71,7 @@ export default class extends BaseCommand {
 					}
 
 					// Creates the embed
-					const embed = EmbedHelper.applyEmbedTemplate(
+					const embed = EmbedHelper.getEmbedTemplate(
 						msg.discord,
 						this.framedClient,
 						this.id
@@ -88,7 +89,10 @@ export default class extends BaseCommand {
 					if (command.inlineCharacterLimit) {
 						inlineCharacterLimit = command.inlineCharacterLimit;
 					}
-					logger.debug("Help.ts: Inline Character Limit: " + inlineCharacterLimit);
+					logger.debug(
+						"Help.ts: Inline Character Limit: " +
+							inlineCharacterLimit
+					);
 
 					if (command.usage) {
 						const guideMsg = stripIndent`
@@ -120,26 +124,47 @@ export default class extends BaseCommand {
 				// 	);
 				// }
 			} else {
-				const mainEmbed = EmbedHelper.applyEmbedTemplate(
+				const mainEmbed = EmbedHelper.getEmbedTemplate(
 					msg.discord,
 					this.framedClient,
 					this.id
 				);
 
+				const botName = msg.discord.client.user?.username ? msg.discord.client.user?.username : "Pixel pete";
+
 				mainEmbed
+					.setTitle(botName)
 					.setDescription(
-						oneLine`Pixel Pete is a collection of custom bots by <@200340393596944384> and 
+						oneLine`${botName} is a collection of custom bots by <@200340393596944384> and 
 						<@359521958519504926> for Game Dev Underground. 
 						Bot created partly with the [Framed](https://github.com/som1chan/Framed) bot framework.`
 					)
-					.addFields(this.createMainHelpFields(msg.framedClient))
-					.addField(
-						"Other Bots",
-						stripIndent`
-						<@234395307759108106> \`-help\` - Used for music in the <#760622055384547368> voice channel.`
+					.addFields(
+						this.createMainHelpFields(
+							msg.framedClient.pluginManager.plugins
+						)
 					);
 
-				await msg.discord.channel.send(mainEmbed);
+				const data = await this.createInfoHelpFields(
+					msg.framedClient.databaseManager
+				);
+
+				if (data) {
+					mainEmbed.addFields(data);
+				}
+
+				mainEmbed.addField(
+					"Other Bots",
+					stripIndent`
+						<@234395307759108106> \`-help\` - Used for music in the <#760622055384547368> voice channel.`
+				);
+
+				try {
+					await msg.discord.channel.send(mainEmbed);					
+				} catch (error) {
+					await msg.discord.channel.send(`${msg.discord.author}, the embed size for help is too large! Contact one of the bot masters`)
+					logger.error(error.stack);
+				}
 			}
 
 			return true;
@@ -148,7 +173,9 @@ export default class extends BaseCommand {
 		return true;
 	}
 
-	createMainHelpFields(framedClient: FramedClient): Discord.EmbedFieldData[] {
+	createMainHelpFields(
+		plugins: Map<string, BasePlugin>
+	): Discord.EmbedFieldData[] {
 		const fields: Discord.EmbedFieldData[] = [];
 
 		// const helpList: HelpCategory[] = [
@@ -199,7 +226,6 @@ export default class extends BaseCommand {
 			},
 		];
 		const sectionMap = new Map<string, string>();
-		const plugins = framedClient.pluginManager.plugins;
 
 		// Loops through all of the help elements,
 		// in order to find the right data
@@ -259,5 +285,58 @@ export default class extends BaseCommand {
 		});
 
 		return fields;
+	}
+
+	async createInfoHelpFields(
+		databaseManager: DatabaseManager
+	): Promise<Discord.EmbedFieldData[] | undefined> {
+		const connection = databaseManager.connection;
+		if (connection) {
+			const fields: Discord.EmbedFieldData[] = [];
+			const commandRepo = connection.getRepository(Command);
+			const commands = await commandRepo.find({
+				relations: ["defaultPrefix", "response"],
+			});
+
+			const contentNoDescriptionList: string[] = [];
+			const contentList: string[] = [];
+
+			for await (const command of commands) {
+				let content = `\`${command.defaultPrefix.prefix}${command.id}\``;
+				const description = command.response?.responseData?.description;
+
+				if (description) {
+					content = `🔹 ${content} - ${description}\n`;
+					contentList.push(content);
+				} else {
+					content += ` `;
+					contentNoDescriptionList.push(content);
+				}
+			}
+
+			let content = "";
+			contentNoDescriptionList.forEach(element => {
+				content += element;
+			});
+
+			if (content.length > 0) {
+				content += "\n";
+			}
+
+			contentList.forEach(element => {
+				content += element;
+			});
+
+			if (content.length > 0) {
+				fields.push({
+					name: "Other Commands",
+					value: content,
+				});
+				return fields;
+			} else {
+				return undefined;
+			}
+		}
+		return undefined;
 	}
 }

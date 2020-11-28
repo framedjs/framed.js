@@ -10,6 +10,9 @@ import Options from "../interfaces/RequireAllOptions";
 import Command from "./database/entities/Command";
 
 export default class PluginManager {
+	/**
+	 * The key is the plugin's full ID
+	 */
 	public plugins = new Map<string, BasePlugin>();
 	// public importingCommand?: BaseCommand;
 

@@ -44,7 +44,7 @@ export default class extends BaseCommand {
 					? newDiscordMsg.createdTimestamp
 					: newDiscordMsg.editedTimestamp;
 
-			const embed = EmbedHelper.applyEmbedTemplate(
+			const embed = EmbedHelper.getEmbedTemplate(
 				msg.discord,
 				this.framedClient,
 				this.id
