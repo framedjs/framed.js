@@ -373,32 +373,42 @@ export default class CustomCommand extends BaseCommand {
 
 			// Generates response data for adding + editing
 			if (newContents) {
+				let lastContent: string | undefined =
+					newContents[newContents.length - 1];
+				if (lastContent == newContents[0]) {
+					lastContent = undefined;
+				}
+
+				const newList: ResponseData[] = [];
+
+				for (let i = 0; i < newContents.length - 1; i++) {
+					const element = newContents[i];
+					newList.push({
+						content: element,
+					});
+				}
+
 				if (!command) {
 					// Add response, if command doesn't exist
 					newResponse = await responseRepo.save(
 						responseRepo.create({
 							responseData: {
-								description: newContents[1],
-								list: [
-									{
-										content: newContents[0],
-									},
-								],
+								description: lastContent,
+								list: newList,
 							},
 							commandResponses: [command],
 						})
 					);
 				} else {
 					// Edit response
-					const newList: ResponseData[] = [];
-					newContents.forEach(content => {
-						newList.push({
-							content: content,
-						});
-					});
-
 					if (oldResponse?.responseData) {
-						oldResponse.responseData.list = newList;
+						oldResponse = responseRepo.create({
+							id: oldResponse.id,
+							responseData: {
+								description: lastContent,
+								list: newList
+							},
+						});
 						newResponse = await responseRepo.save(oldResponse);
 					} else {
 						throw new Error(
@@ -524,7 +534,7 @@ export default class CustomCommand extends BaseCommand {
 	 *
 	 * @param newCommandId Command ID string
 	 * @param newContents Contents to add, in an array. If undefined, the response
-	 * will be generated through taaaawfeawfawefawf
+	 * will be generated through
 	 * @param msg FramedMessage object
 	 *
 	 * @returns Edited command

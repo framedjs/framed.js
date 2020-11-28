@@ -3,6 +3,7 @@ import FramedMessage from "../../../src/structures/FramedMessage";
 import { BaseCommand } from "../../../src/structures/BaseCommand";
 import { BasePlugin } from "../../../src/structures/BasePlugin";
 import { stripIndent } from "common-tags";
+import { logger } from "shared";
 
 export default class CustomCommand extends BaseCommand {
 	constructor(plugin: BasePlugin) {
@@ -39,7 +40,7 @@ export default class CustomCommand extends BaseCommand {
 				.replace(msg.prefix, "")
 				.replace(msg.command, "");
 
-			console.log(`newContent.trim(): "${newContent.trim()}"`);
+			logger.debug(`newContent.trim(): "${newContent.trim()}"`);
 
 			// If there's content after the command, run the proper command
 			// Else, run the help command

@@ -3,6 +3,7 @@ import FramedMessage from "../../../src/structures/FramedMessage";
 import { BaseCommand } from "../../../src/structures/BaseCommand";
 import { BasePlugin } from "../../../src/structures/BasePlugin";
 import { stripIndent } from "common-tags";
+import { logger } from "shared";
 
 export default class CustomCommand extends BaseCommand {
 	constructor(plugin: BasePlugin) {
@@ -10,7 +11,8 @@ export default class CustomCommand extends BaseCommand {
 			id: "addcom",
 			aliases: ["createcom"],
 			about: "Adds custom commands.",
-			description: "Adds custom commmands. This is an alias of `.command add`.",
+			description:
+				"Adds custom commmands. This is an alias of `.command add`.",
 			usage: `<command ID> <content> "[description]"`,
 			examples: stripIndent`
 			\`{{prefix}}addcom newcommand This is a test message.\``,
@@ -25,7 +27,8 @@ export default class CustomCommand extends BaseCommand {
 	 */
 	async run(msg: FramedMessage): Promise<boolean> {
 		let newContent = msg.content.replace(`addcom`, `command add `);
-		const commandPrefix = this.plugin.commands.get("command")?.defaultPrefix;
+		const commandPrefix = this.plugin.commands.get("command")
+			?.defaultPrefix;
 
 		if (msg.prefix && msg.command) {
 			newContent = newContent.replace(
@@ -37,7 +40,7 @@ export default class CustomCommand extends BaseCommand {
 				.replace(msg.prefix, "")
 				.replace(msg.command, "");
 
-			console.log(`newContent.trim(): "${newContent.trim()}"`);
+			logger.debug(`newContent.trim(): "${newContent.trim()}"`);
 
 			// If there's content after the command, run the proper command
 			// Else, run the help command
