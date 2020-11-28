@@ -29,7 +29,11 @@ export default class CustomCommand extends BaseCommand {
 			usage: `<add|edit|delete> <command ID> <content> "[description]"`,
 			examples: stripIndent`
 			\`{{prefix}}command add newcommand This is a test message.\`
+<<<<<<< HEAD
 			\`{{prefix}}command edit newcommand We've edited the message! "New description!"\`
+=======
+			\`{{prefix}}command edit newcommand We've edited the message! "\`
+>>>>>>> 05d267bbee7364cde8e686b4fee58474bdc1d2ec
 			\`{{prefix}}command delete newcommand\``,
 			permissions: {
 				discord: {
