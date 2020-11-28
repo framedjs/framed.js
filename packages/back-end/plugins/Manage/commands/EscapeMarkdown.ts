@@ -3,7 +3,6 @@ import FramedMessage from "../../../src/structures/FramedMessage";
 import { BaseCommand } from "../../../src/structures/BaseCommand";
 import { oneLine, stripIndent } from "common-tags";
 import Discord from "discord.js";
-import PluginManager from "packages/back-end/src/managers/PluginManager";
 import { logger } from "shared";
 
 export default class EscapeMarkdown extends BaseCommand {
@@ -44,45 +43,42 @@ export default class EscapeMarkdown extends BaseCommand {
 			// 	return false;
 			// }
 
-			let newMsg: Discord.Message | undefined;
-			let snowflake: Discord.DeconstructedSnowflake | undefined;
-
 			// Snowflake logic
-			try {
-				snowflake = Discord.SnowflakeUtil.deconstruct(content.trim());
-
-				if (snowflake) {
-					newMsg = await EscapeMarkdown.getMessageFromSnowflake(
-						content,
-						Array.from(msg.discord.client.channels.cache.values()),
-						msg.discord.channel
-					);
-				}
-			} catch (error) {
-				logger.debug("Not a snowflake, likely");
+			let snowflakeMsg: Discord.Message | undefined;
+			const snowflake = Discord.SnowflakeUtil.deconstruct(content.trim());
+			const validSnowflake =
+				snowflake.binary !=
+					"0000000000000000000000000000000000000000000000000000000000000000" &&
+				/^\d+$/.test(content);
+			if (validSnowflake) {
+				snowflakeMsg = await EscapeMarkdown.getMessageFromSnowflake(
+					content,
+					Array.from(msg.discord.client.channels.cache.values()),
+					msg.discord.channel
+				);
 			}
 
 			// Link logic
-			if (!newMsg) {
-				const newMsgOrLink = await EscapeMarkdown.getMessageFromLink(
+			let linkMsg: Discord.Message | string | undefined;
+			if (!snowflakeMsg) {
+				linkMsg = await EscapeMarkdown.getMessageFromLink(
 					content,
 					msg.discord.client,
+					msg.discord.author,
 					msg.discord.guild
 				);
-				if (newMsgOrLink instanceof Discord.Message) {
-					newMsg = newMsgOrLink;
-				}
 			}
 
 			// Previous message logic
-			if (!newMsg && !snowflake) {
+			let previousMsg: Discord.Message | undefined;
+			if (!linkMsg && !snowflakeMsg) {
 				try {
 					const messages = await msg.discord.channel.messages.fetch({
 						limit: 10,
 					});
 					messages.forEach(message => {
-						if (message.content != msg.content && !newMsg) {
-							newMsg = message;
+						if (message.content != msg.content && !previousMsg) {
+							previousMsg = message;
 						}
 					});
 				} catch (error) {
@@ -93,22 +89,64 @@ export default class EscapeMarkdown extends BaseCommand {
 			}
 
 			// Sends the output
-			if (!snowflake || newMsg) {
-				// If there was a valid ID before, put the new content
-				// to be the new message's contents
-				if (newMsg) {
-					content = newMsg.content;
+			let newMsg: Discord.Message | undefined;
+			let newContent: string | undefined;
+			const successMessage = `${msg.discord.author}, here is your stripped markdown message:`;
+			if (validSnowflake) {
+				if (snowflakeMsg) {
+					newContent = `${Discord.Util.escapeMarkdown(
+						snowflakeMsg.content
+					)}`;
+					newMsg = snowflakeMsg;
+				} else {
+					await msg.discord.channel.send(oneLine`
+					${msg.discord.author}, I think you inputted a message ID, but I couldn't retrieve it.
+					Try running \`${msg.prefix}${msg.command}\` again in the channel the message exists in,
+					or copy the message link and use that instead.`);
+					return false;
+				}
+			} else if (linkMsg) {
+				if (linkMsg instanceof Discord.Message) {
+					newContent = `${Discord.Util.escapeMarkdown(
+						linkMsg.content
+					)}`;
+					newMsg = linkMsg;
+				} else {
+					await msg.discord.channel.send(
+						`${msg.discord.author}, ${linkMsg}`
+					);
+				}
+			} else if (content.length > 0) {
+				newContent = `${Discord.Util.escapeMarkdown(content)}`;
+			} else if (previousMsg) {
+				newContent = `${Discord.Util.escapeMarkdown(
+					previousMsg.content
+				)}`;
+				newMsg = previousMsg;
+			} else {
+				await msg.discord.channel.send(oneLine`
+					${msg.discord.author}, I'm unable to give you an escaped version of anything!`);
+				return false;
+			}
+
+			// Sends the output
+			if ((newContent && newContent.length > 0) || newMsg) {
+				let sentAnything = false;
+
+				// Handles contents
+				if (newContent && newContent?.length > 0) {
+					sentAnything = true;
+					await msg.discord.channel.send(successMessage);
+					await msg.discord.channel.send(newContent);
 				}
 
-				const sentMessage = `${msg.discord.author}, here is your stripped markdown message:`;
+				// Handles messages that might have embeds
+				if (newMsg && newMsg.embeds.length > 0) {
+					if (!sentAnything) {
+						await msg.discord.channel.send(successMessage);
+						sentAnything = true;
+					}
 
-				if (content.length > 0) {
-					await msg.discord.channel.send(sentMessage);
-					await msg.discord.channel.send(
-						`${Discord.Util.escapeMarkdown(content)}`
-					);
-				} else if (newMsg) {
-					await msg.discord.channel.send(sentMessage);
 					for await (const embed of newMsg.embeds) {
 						await msg.discord.channel.send(
 							`\`\`\`${JSON.stringify(
@@ -118,25 +156,29 @@ export default class EscapeMarkdown extends BaseCommand {
 							)}\`\`\``
 						);
 					}
-				} else {
+				}
+
+				if (!sentAnything) {
 					await msg.discord.channel.send(oneLine`
 					${msg.discord.author}, I'm unable to give you an escaped version of anything!`);
 					return false;
 				}
 
 				return true;
-			} else {
-				await msg.discord.channel.send(oneLine`
-				${msg.discord.author}, you inputted a message ID, but I couldn't retrieve it.
-				Try running \`${msg.prefix}${msg.command}\` again in the channel the message exists in,
-				or copy the message link and use that instead.`);
-
-				return false;
 			}
 		}
+
 		return false;
 	}
 
+	/**
+	 * JSON.stringify replacer that removes things that are null
+	 *
+	 * @param key
+	 * @param value
+	 *
+	 * @returns value, if not null
+	 */
 	static removeNulls(_key: string, value: unknown): unknown {
 		console.log(`${value} | ${typeof value}`);
 		if (value === null) {
@@ -212,6 +254,7 @@ export default class EscapeMarkdown extends BaseCommand {
 	static async getMessageFromLink(
 		link: string,
 		client: Discord.Client,
+		author: Discord.User,
 		guild: Discord.Guild
 	): Promise<Discord.Message | string | undefined> {
 		// If it's not an actual link, return undefined
@@ -240,7 +283,9 @@ export default class EscapeMarkdown extends BaseCommand {
 			| Discord.NewsChannel
 			| Discord.DMChannel;
 		if (!channel) {
-			return `I couldn't find channel from message link!`;
+			return `I couldn't find the channel from the message link!`;
+		} else if (channel.type == "dm" && author.id != channel.id) {
+			return `I won't retrieve private DMs into a public server.`;
 		}
 
 		let message = channel.messages.cache.get(args[2]);
