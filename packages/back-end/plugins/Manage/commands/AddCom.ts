@@ -9,11 +9,13 @@ export default class CustomCommand extends BaseCommand {
 		super(plugin, {
 			id: "addcom",
 			aliases: ["createcom"],
-			about: "Adds custom commands. This is an alias of `.command add`.",
-			usage: "<command ID> <content>",
+			about: "Adds custom commands.",
+			description: "Adds custom commmands. This is an alias of `.command add`.",
+			usage: `<command ID> <content> "[description]"`,
 			examples: stripIndent`
-			\`{{prefix}}addcom newcommand This is a test!\``,
-			emojiIcon: "📝",
+			\`{{prefix}}addcom newcommand This is a test message.\``,
+			emojiIcon: "🔸",
+			hideUsageInHelp: true,
 		});
 	}
 

@@ -20,14 +20,17 @@ export default class CustomCommand extends BaseCommand {
 
 	constructor(plugin: BasePlugin) {
 		super(plugin, {
-			id: "command",
-			aliases: ["cmd", "cmds", "com"],
-			about: "Adds, edits, and deletes custom commands.",
-			usage: "<add|edit|delete> <command ID> <content> [desc.]",
+			id: "commands",
+			aliases: ["customcommand", "command", "cmd", "cmds", "com", "coms"],
+			about: "Lists all the commands available.",
+			description: oneLine`
+			Lists all the commands availiable. This command also allows you to add, edit, and
+			delete custom commands. See \`.addcom\`, \`.editcom\`, and \`.delcom\`.`,
+			usage: `<add|edit|delete> <command ID> <content> "[description]"`,
 			examples: stripIndent`
-			\`{{prefix}}command add testmsg This is a test message.\`
-			\`{{prefix}}command edit testmsg We've edited the message!\`
-			\`{{prefix}}command delete testmsg\``,
+			\`{{prefix}}command add newcommand This is a test message.\`
+			\`{{prefix}}command edit newcommand We've edited the message! "\`
+			\`{{prefix}}command delete newcommand\``,
 			permissions: {
 				discord: {
 					permissions: ["MANAGE_MESSAGES"],
@@ -36,6 +39,7 @@ export default class CustomCommand extends BaseCommand {
 				},
 			},
 			emojiIcon: "📝",
+			hideUsageInHelp: true,
 		});
 
 		this.addEditRemoveAliases = CustomCommand.createAddEditRemoveAliases();
@@ -91,10 +95,6 @@ export default class CustomCommand extends BaseCommand {
 		return addEditRemoveAliases;
 	}
 
-	/**
-	 * Default run command
-	 * @param msg FramedMessage object
-	 */
 	async run(msg: FramedMessage): Promise<boolean> {
 		if (msg.prefix && msg.command && msg.args) {
 			// If there's content
@@ -153,7 +153,7 @@ export default class CustomCommand extends BaseCommand {
 						}
 					}
 				} else {
-					await PluginManager.showHelp(msg, this.id);
+					await PluginManager.showHelpForCommand(msg, this.id);
 					return true;
 				}
 			} else {
@@ -161,53 +161,83 @@ export default class CustomCommand extends BaseCommand {
 				const connection = this.framedClient.databaseManager.connection;
 				if (connection) {
 					const commandRepo = connection.getRepository(Command);
-					const commands = await commandRepo.find({
-						relations: ["defaultPrefix", "response"],
-					});
+					const mainHelpFields = this.framedClient.pluginManager.createMainHelpFields(
+						[
+							{
+								category: "Info",
+								command: [
+									{
+										command: "help",
+									},
+									{
+										command: "usage",
+									},
+									{
+										command: "ping",
+									},
+									{
+										command: "botinfo",
+									},
+									{
+										command: "dailies",
+									},
+								],
+							},
+							{
+								category: "Fun",
+								command: [{ command: "poll" }],
+							},
+							{
+								category: "Manage",
+								command: [
+									{
+										command: "command",
+									},
+									{
+										command: "addcom",
+									},
+									{
+										command: "editcom",
+									},
+									{
+										command: "delcom",
+									},
+									{
+										command: "escapemd",
+									},
+								],
+							},
+						]
+					);
 
-					let contents = "";
-
-					for (const command of commands) {
-						const description =
-							command.response.responseData?.description;
-
-						contents += stripIndent`
-						\`${command.defaultPrefix.prefix}${command.id}\` - ${
-							description ? description : ""
-						}
-						`;
-						contents += "\n";
-					}
-
-					// Message if there's no commands
-					if (contents.length == 0) {
-						const infoPlugin = this.framedClient.pluginManager.plugins.get(
-							"default.bot.info"
-						);
-						const helpCommand = infoPlugin?.commands.get("help");
-
-						contents = stripIndent`
-						There are no custom commands to show.
-						To see how you can add one, try \`${
-							helpCommand ? helpCommand.defaultPrefix : "."
-						}${helpCommand ? helpCommand.id : "help"} ${
-							this.id
-						}\`.`;
-					}
+					const infoHelpFields = await this.framedClient.pluginManager.createInfoHelpFields();
 
 					if (msg.discord) {
 						const embed = EmbedHelper.getEmbedTemplate(
 							msg.discord,
 							this.framedClient,
 							this.id
-						).setDescription(contents);
+						)
+							.setTitle("Commands")
+							.setDescription(
+								oneLine`
+							This is a list of all the commands. If you'd like to view a
+							shorter and simpler view, along with other info, use \`${this.defaultPrefix}help\`.
+							`
+							)
+							.addFields(mainHelpFields);
+
+						if (infoHelpFields) {
+							embed.addFields(infoHelpFields);
+						}
+
 						await msg.discord.channel.send(embed);
 						return true;
 					}
 				}
 			}
 		}
-		await PluginManager.showHelp(msg, this.id);
+		await PluginManager.showHelpForCommand(msg, this.id);
 		return false;
 	}
 
@@ -420,7 +450,7 @@ export default class CustomCommand extends BaseCommand {
 		// If the user didn't enter the command right, show help
 		if (!parse) {
 			if (msg && !silent) {
-				await PluginManager.showHelp(msg, this.id);
+				await PluginManager.showHelpForCommand(msg, this.id);
 			}
 			return undefined;
 		}
@@ -514,7 +544,7 @@ export default class CustomCommand extends BaseCommand {
 		// If the user didn't enter the command right, show help
 		if (!parse) {
 			if (msg && !silent) {
-				await PluginManager.showHelp(msg, this.id);
+				await PluginManager.showHelpForCommand(msg, this.id);
 			}
 			return undefined;
 		}
@@ -597,7 +627,7 @@ export default class CustomCommand extends BaseCommand {
 		// If the user didn't enter the command right, show help
 		if (!parse) {
 			if (msg && !silent) {
-				await PluginManager.showHelp(msg, this.id);
+				await PluginManager.showHelpForCommand(msg, this.id);
 			}
 			return;
 		}

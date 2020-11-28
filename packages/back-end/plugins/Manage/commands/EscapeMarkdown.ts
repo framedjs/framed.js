@@ -18,7 +18,7 @@ export default class EscapeMarkdown extends BaseCommand {
 			• Spoiler tags
 			This will allow the message to be copy and pastable.`,
 			usage: "<message ID | message link | message>",
-			emojiIcon: "🥞",
+			emojiIcon: "🧼",
 			hideUsageInHelp: true,
 		});
 	}

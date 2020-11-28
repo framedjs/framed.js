@@ -16,7 +16,7 @@ export default class Poll extends BaseCommand {
 			description: stripIndent`
 				Create a simple, reaction-based poll through Discord.
 			`,
-			usage: '[single] <question> ["option 1"] ["option 2"]',
+			usage: '[single] <question> "[option 1]" "[option 2]"',
 			hideUsageInHelp: true,
 			examples: stripIndent`
 				\`{{prefix}}poll Do you like pineapple on pizza?\` - Simple Poll

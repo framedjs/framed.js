@@ -6,23 +6,13 @@ import { BasePlugin } from "../../../src/structures/BasePlugin";
 import { BaseCommand } from "../../../src/structures/BaseCommand";
 import { oneLine, stripIndent } from "common-tags";
 import { logger } from "shared";
-import { DatabaseManager } from "packages/back-end/src/managers/DatabaseManager";
-import Command from "packages/back-end/src/managers/database/entities/Command";
-
-interface HelpCategory {
-	category: string;
-	command: HelpInfo[];
-}
-
-interface HelpInfo {
-	command: string;
-}
+import PluginManager from "packages/back-end/src/managers/PluginManager";
 
 export default class extends BaseCommand {
 	constructor(plugin: BasePlugin) {
 		super(plugin, {
 			id: "help",
-			aliases: ["h", "commands"],
+			aliases: ["h"],
 			about: "View help for certain commands and extra info.",
 			description: stripIndent`
 				Shows a list of useful commands, or detail specific commands for you.
@@ -124,45 +114,51 @@ export default class extends BaseCommand {
 				// 	);
 				// }
 			} else {
-				const mainEmbed = EmbedHelper.getEmbedTemplate(
+				const embed = EmbedHelper.getEmbedTemplate(
 					msg.discord,
 					this.framedClient,
 					this.id
 				);
 
-				const botName = msg.discord.client.user?.username ? msg.discord.client.user?.username : "Pixel pete";
+				const botName = msg.discord.client.user?.username
+					? msg.discord.client.user?.username
+					: "Pixel pete";
 
-				mainEmbed
-					.setTitle(botName)
-					.setDescription(
-						oneLine`${botName} is a collection of custom bots by <@200340393596944384> and 
+				embed.setTitle(botName).setDescription(
+					oneLine`${botName} is a collection of custom bots by <@200340393596944384> and 
 						<@359521958519504926> for Game Dev Underground. 
 						Bot created partly with the [Framed](https://github.com/som1chan/Framed) bot framework.`
-					)
-					.addFields(
-						this.createMainHelpFields(
-							msg.framedClient.pluginManager.plugins
-						)
-					);
+				);
 
-				const data = await this.createInfoHelpFields(
+				const mainData = PluginManager.createMainHelpFields(
+					this.framedClient.pluginManager.plugins,
+					this.framedClient.shortHelpInfo
+				);
+
+				if (mainData) {
+					embed.addFields(mainData);
+				}
+
+				const infoData = await PluginManager.createDBHelpFields(
 					msg.framedClient.databaseManager
 				);
 
-				if (data) {
-					mainEmbed.addFields(data);
+				if (infoData) {
+					embed.addFields(infoData);
 				}
 
-				mainEmbed.addField(
+				embed.addField(
 					"Other Bots",
 					stripIndent`
 						<@234395307759108106> \`-help\` - Used for music in the <#760622055384547368> voice channel.`
 				);
 
 				try {
-					await msg.discord.channel.send(mainEmbed);					
+					await msg.discord.channel.send(embed);
 				} catch (error) {
-					await msg.discord.channel.send(`${msg.discord.author}, the embed size for help is too large! Contact one of the bot masters`)
+					await msg.discord.channel.send(
+						`${msg.discord.author}, the embed size for help is too large! Contact one of the bot masters`
+					);
 					logger.error(error.stack);
 				}
 			}
@@ -171,172 +167,5 @@ export default class extends BaseCommand {
 		}
 
 		return true;
-	}
-
-	createMainHelpFields(
-		plugins: Map<string, BasePlugin>
-	): Discord.EmbedFieldData[] {
-		const fields: Discord.EmbedFieldData[] = [];
-
-		// const helpList: HelpCategory[] = [
-		// 	{
-		// 		category: "Info",
-		// 		command: [
-		// 			{
-		// 				emote: "❓",
-		// 				command: "help",
-		// 			},
-		// 			{
-		// 				emote: "🏓",
-		// 				command: "ping",
-		// 			},
-		// 			{
-		// 				emote: "⌚",
-		// 				command: "uptime",
-		// 			},
-		// 		],
-		// 	},
-		// 	{
-		// 		category: "Fun",
-		// 		command: [
-		// 			{
-		// 				emote: "👍",
-		// 				command: "poll",
-		// 			},
-		// 		],
-		// 	},
-		// ];
-		const helpList: HelpCategory[] = [
-			{
-				category: "Commands",
-				command: [
-					{
-						command: "help",
-					},
-					{
-						command: "usage",
-					},
-					{
-						command: "poll",
-					},
-					{
-						command: "dailies",
-					},
-				],
-			},
-		];
-		const sectionMap = new Map<string, string>();
-
-		// Loops through all of the help elements,
-		// in order to find the right data
-		helpList.forEach(helpElement => {
-			// Searches through plugins
-			plugins.forEach(plugin => {
-				const allComamnds = Array.from(plugin.commands.values()).concat(
-					Array.from(plugin.aliases.values())
-				);
-
-				// Searches through commands inside the plugins
-				allComamnds.forEach(command => {
-					// Searches through command text options
-					helpElement.command.forEach(cmdElement => {
-						// If there's a matching one, add it to the Map
-						if (
-							command.id == cmdElement.command ||
-							command.aliases?.includes(cmdElement.command)
-						) {
-							const usage =
-								command.usage && !command.hideUsageInHelp
-									? ` ${command.usage}`
-									: "";
-
-							sectionMap.set(
-								cmdElement.command,
-								oneLine`
-								${command.emojiIcon ? command.emojiIcon : "❔"}
-								\`${command.defaultPrefix}${command.id}${usage}\`
-								- ${command.about}
-							`
-							);
-						}
-					});
-				});
-			});
-		});
-
-		// Loops through all of the help elements,
-		// in order to sort them properly like in the data
-		helpList.forEach(helpElement => {
-			let categoryText = "";
-
-			// Goes through each command in help, and finds matches in order
-			helpElement.command.forEach(cmdElement => {
-				const cmdText = sectionMap.get(cmdElement.command);
-				if (cmdText) {
-					categoryText += `${cmdText}\n`;
-				}
-			});
-
-			// Push everything from this category into a Embed field
-			fields.push({
-				name: helpElement.category,
-				value: categoryText,
-			});
-		});
-
-		return fields;
-	}
-
-	async createInfoHelpFields(
-		databaseManager: DatabaseManager
-	): Promise<Discord.EmbedFieldData[] | undefined> {
-		const connection = databaseManager.connection;
-		if (connection) {
-			const fields: Discord.EmbedFieldData[] = [];
-			const commandRepo = connection.getRepository(Command);
-			const commands = await commandRepo.find({
-				relations: ["defaultPrefix", "response"],
-			});
-
-			const contentNoDescriptionList: string[] = [];
-			const contentList: string[] = [];
-
-			for await (const command of commands) {
-				let content = `\`${command.defaultPrefix.prefix}${command.id}\``;
-				const description = command.response?.responseData?.description;
-
-				if (description) {
-					content = `🔹 ${content} - ${description}\n`;
-					contentList.push(content);
-				} else {
-					content += ` `;
-					contentNoDescriptionList.push(content);
-				}
-			}
-
-			let content = "";
-			contentNoDescriptionList.forEach(element => {
-				content += element;
-			});
-
-			if (content.length > 0) {
-				content += "\n";
-			}
-
-			contentList.forEach(element => {
-				content += element;
-			});
-
-			if (content.length > 0) {
-				fields.push({
-					name: "Other Commands",
-					value: content,
-				});
-				return fields;
-			} else {
-				return undefined;
-			}
-		}
-		return undefined;
 	}
 }

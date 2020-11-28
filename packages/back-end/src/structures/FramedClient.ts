@@ -11,7 +11,7 @@ import path from "path";
 // Other important imports
 import { logger, Utils } from "shared";
 import FramedMessage from "./FramedMessage";
-import PluginManager from "../managers/PluginManager";
+import PluginManager, { HelpCategory } from "../managers/PluginManager";
 import { EventEmitter } from "events";
 import { FramedClientInfo } from "../interfaces/FramedClientInfo";
 import { DatabaseManager } from "../managers/DatabaseManager";
@@ -25,6 +25,25 @@ export default class FramedClient extends EventEmitter {
 	public readonly version: string;
 	public readonly backEndVersion: string;
 
+	public shortHelpInfo: HelpCategory[] = [
+		{
+			category: "Notable Commands",
+			command: [
+				{
+					command: "commands",
+				},
+				{
+					command: "help",
+				},
+				{
+					command: "usage",
+				},
+				{
+					command: "poll",
+				},
+			],
+		},
+	];
 	public readonly helpCommands = ["help", "dailies", "poll"];
 
 	public defaultPrefix = "!";
@@ -212,7 +231,9 @@ export default class FramedClient extends EventEmitter {
 
 					// Check which type of event it is before emitting
 					if (packet.t === "MESSAGE_REACTION_ADD") {
-						logger.debug("FramedClient: Emitting messageReactionAdd");
+						logger.debug(
+							"FramedClient: Emitting messageReactionAdd"
+						);
 						this.client.emit("messageReactionAdd", reaction, user);
 					} else if (packet.t === "MESSAGE_REACTION_REMOVE") {
 						this.client.emit(

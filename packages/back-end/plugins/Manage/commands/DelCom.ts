@@ -10,11 +10,13 @@ export default class CustomCommand extends BaseCommand {
 			id: "delcom",
 			aliases: ["removecom"],
 			about:
-				"Deletes custom commands. This is an alias of `.command delete`.",
+				"Deletes custom commands.",
+			description: "Deletes custom commands. This is an alias of `.command delete`.",
 			usage: "<command ID>",
 			examples: stripIndent`
 			\`{{prefix}}delcom newcommand\``,
-			emojiIcon: "📝",
+			emojiIcon: "🔸",
+			hideUsageInHelp: true,
 		});
 	}
 
