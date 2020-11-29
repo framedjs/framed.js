@@ -4,8 +4,10 @@ import { BaseCommand } from "../../../src/structures/BaseCommand";
 import EscapeMarkdown from "./EscapeMarkdown";
 import Discord from "discord.js";
 import { logger } from "shared";
-import EmbedHelper from "packages/back-end/src/utils/discord/EmbedHelper";
-// import UrlShortener from "node-url-shortener";
+import EmbedHelper from "../../../src/utils/discord/EmbedHelper";
+import NodeUrlShortener from "node-url-shortener";
+import * as ShortenURL from "../utils/ShortenURL";
+import { stripIndent } from "common-tags";
 
 export default class DiscohookEmbed extends BaseCommand {
 	constructor(plugin: BasePlugin) {
@@ -27,15 +29,36 @@ export default class DiscohookEmbed extends BaseCommand {
 				parse?.newMsg
 			);
 
-			const embed = EmbedHelper.getEmbedTemplate(msg.discord, this.framedClient, this.id)
+			if (longLink) {
+				let shortUrl: string | undefined;
 
-			// if (longLink.length > 2048) {
+				logger.debug(`Shortening long URL "${longLink}"`);
+				await ShortenURL.shorten(longLink, (url, error) => {
+					if (error) {
+						logger.error(error);
+					} else {
+						shortUrl = url;
+					}
+				});
 
-			// }
+				if (shortUrl) {
+					const embed = EmbedHelper.getEmbedTemplate(
+						msg.discord,
+						this.framedClient,
+						this.id
+					)
+						.setTitle("Discohook URL")
+						.setURL(shortUrl)
+						.setDescription(
+							stripIndent`
+						To view the embed through Discohook, click [here](${shortUrl}).
+						`
+						);
 
-			await msg.discord.channel.send(embed);
-
-			return true;
+					await msg.discord.channel.send(embed);
+					return true;
+				}
+			}
 		}
 		return false;
 	}

@@ -32,6 +32,7 @@ importers:
     dependencies:
       '@types/node-emoji': 1.8.1
       '@types/require-all': 3.0.1
+      axios: 0.21.0
       common-tags: 1.8.0
       discord-paginationembed: 2.1.0_discord.js@12.5.1
       discord.js: 12.5.1
@@ -61,6 +62,7 @@ importers:
       '@types/koa-router': ^7.4.1
       '@types/node-emoji': ^1.8.1
       '@types/require-all': ^3.0.1
+      axios: ^0.21.0
       common-tags: ^1.8.0
       discord-paginationembed: ^2.1.0
       discord.js: ^12.5.1
@@ -3813,6 +3815,12 @@ packages:
       node: '>=4'
     resolution:
       integrity: sha512-5Kgy8Cz6LPC9DJcNb3yjAXTu3XihQgEdnIg50c//zOC/MyLP0Clg+Y8Sh9ZjjnvBrDZU4DgXS9C3T9r4/scGZQ==
+  /axios/0.21.0:
+    dependencies:
+      follow-redirects: 1.13.0
+    dev: false
+    resolution:
+      integrity: sha512-fmkJBknJKoZwem3/IKSSLpkdNXZeBu5Q7GA/aRsr2btgrptmSCxi2oFjZHqGdK9DoTil9PIHlPIZw2EcRJXRvw==
   /axobject-query/2.2.0:
     dev: false
     resolution:

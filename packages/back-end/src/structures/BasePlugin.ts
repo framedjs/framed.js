@@ -47,7 +47,7 @@ export abstract class BasePlugin {
 	commands = new Map<string, BaseCommand>();
 	aliases = new Map<string, BaseCommand>();
 	/**
-	 * To get an event, put in its 
+	 * To get an event, put in its
 	 */
 	// events = new Map<string, BaseEvent>();
 	events: BaseEvent[] = [];
@@ -91,8 +91,12 @@ export abstract class BasePlugin {
 		commands: (new (plugin: BasePlugin) => T)[]
 	): void {
 		for (const command of commands) {
-			const initCommand = new command(this);
-			this.loadCommand(initCommand);
+			try {
+				const initCommand = new command(this);
+				this.loadCommand(initCommand);
+			} catch (error) {
+				logger.error(error.stack);
+			}
 		}
 	}
 
@@ -112,7 +116,9 @@ export abstract class BasePlugin {
 		if (command.aliases) {
 			for (const alias of command.aliases) {
 				if (this.aliases.get(alias)) {
-					logger.error(`Alias "${alias}" from command id ${command.id} already exists!`);
+					logger.error(
+						`Alias "${alias}" from command id ${command.id} already exists!`
+					);
 					continue;
 				}
 				this.aliases.set(alias, command);
