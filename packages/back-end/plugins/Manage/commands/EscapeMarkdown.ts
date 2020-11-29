@@ -1,9 +1,11 @@
+/* eslint-disable no-mixed-spaces-and-tabs */
 import { BasePlugin } from "../../../src/structures/BasePlugin";
 import FramedMessage from "../../../src/structures/FramedMessage";
 import { BaseCommand } from "../../../src/structures/BaseCommand";
 import { oneLine, stripIndent } from "common-tags";
 import Discord from "discord.js";
 import { logger } from "shared";
+import EmbedHelper from "packages/back-end/src/utils/discord/EmbedHelper";
 
 export default class EscapeMarkdown extends BaseCommand {
 	constructor(plugin: BasePlugin) {
@@ -18,12 +20,43 @@ export default class EscapeMarkdown extends BaseCommand {
 			• Spoiler tags
 			This will allow the message to be copy and pastable.`,
 			usage: "<message ID | message link | message>",
+			permissions: {
+				discord: {
+					roles: ["462342299171684364", "758771336289583125"],
+				},
+			},
 			emojiIcon: "🧼",
 			hideUsageInHelp: true,
 		});
 	}
 
 	async run(msg: FramedMessage): Promise<boolean> {
+		if (!this.hasPermission(msg)) {
+			await this.sendPermissionErrorMessage(msg);
+			return false;
+		}
+
+		if (msg.discord?.guild && msg.args) {
+			const parse = await EscapeMarkdown.getNewMessage(msg);
+			return await EscapeMarkdown.showStrippedMessage(
+				msg,
+				parse?.newContent,
+				parse?.newMsg
+			);
+		}
+
+		return false;
+	}
+
+	/**
+	 *
+	 * @param msg
+	 * @param silent
+	 */
+	static async getNewMessage(
+		msg: FramedMessage,
+		silent?: boolean
+	): Promise<{ newMsg?: Discord.Message; newContent?: string } | undefined> {
 		if (msg.discord?.guild && msg.args) {
 			// Grabs the argument of the thing
 			let content = msg.content;
@@ -36,12 +69,6 @@ export default class EscapeMarkdown extends BaseCommand {
 			}
 
 			content = content.trimLeft();
-
-			// If there is no content, show the help command
-			// if (content.trim().length == 0) {
-			// 	await PluginManager.showHelp(msg, this.id);
-			// 	return false;
-			// }
 
 			// Snowflake logic
 			let snowflakeMsg: Discord.Message | undefined;
@@ -91,7 +118,7 @@ export default class EscapeMarkdown extends BaseCommand {
 			// Sends the output
 			let newMsg: Discord.Message | undefined;
 			let newContent: string | undefined;
-			const successMessage = `${msg.discord.author}, here is your stripped markdown message:`;
+
 			if (validSnowflake) {
 				if (snowflakeMsg) {
 					newContent = `${Discord.Util.escapeMarkdown(
@@ -99,11 +126,12 @@ export default class EscapeMarkdown extends BaseCommand {
 					)}`;
 					newMsg = snowflakeMsg;
 				} else {
-					await msg.discord.channel.send(oneLine`
+					if (!silent)
+						await msg.discord.channel.send(oneLine`
 					${msg.discord.author}, I think you inputted a message ID, but I couldn't retrieve it.
 					Try running \`${msg.prefix}${msg.command}\` again in the channel the message exists in,
 					or copy the message link and use that instead.`);
-					return false;
+					return undefined;
 				}
 			} else if (linkMsg) {
 				if (linkMsg instanceof Discord.Message) {
@@ -112,9 +140,10 @@ export default class EscapeMarkdown extends BaseCommand {
 					)}`;
 					newMsg = linkMsg;
 				} else {
-					await msg.discord.channel.send(
-						`${msg.discord.author}, ${linkMsg}`
-					);
+					if (!silent)
+						await msg.discord.channel.send(
+							`${msg.discord.author}, ${linkMsg}`
+						);
 				}
 			} else if (content.length > 0) {
 				newContent = `${Discord.Util.escapeMarkdown(content)}`;
@@ -124,48 +153,76 @@ export default class EscapeMarkdown extends BaseCommand {
 				)}`;
 				newMsg = previousMsg;
 			} else {
-				await msg.discord.channel.send(oneLine`
+				if (!silent)
+					await msg.discord.channel.send(oneLine`
+					${msg.discord.author}, I'm unable to give you an escaped version of anything!`);
+				return undefined;
+			}
+
+			// Returns the output
+			if ((newContent && newContent.length > 0) || newMsg) {
+				return {
+					newMsg,
+					newContent,
+				};
+			}
+		}
+
+		return undefined;
+	}
+
+	/**
+	 * Shows the message that has markdown stripped.
+	 *
+	 * @param msg
+	 * @param newContent
+	 * @param newMsg
+	 * @param silent
+	 */
+	static async showStrippedMessage(
+		msg: FramedMessage,
+		newContent?: string,
+		newMsg?: Discord.Message,
+		silent?: boolean
+	): Promise<boolean> {
+		if (msg.discord) {
+			const successMessage = `${msg.discord.author}, here is your stripped markdown message:`;
+
+			let sentAnything = false;
+
+			// Handles contents
+			if (newContent && newContent?.length > 0) {
+				sentAnything = true;
+				await msg.discord.channel.send(successMessage);
+				await msg.discord.channel.send(newContent);
+			}
+
+			// Handles messages that might have embeds
+			if (newMsg && newMsg.embeds.length > 0) {
+				if (!sentAnything) {
+					await msg.discord.channel.send(successMessage);
+					sentAnything = true;
+				}
+
+				for await (const embed of newMsg.embeds) {
+					await msg.discord.channel.send(
+						`\`\`\`${JSON.stringify(
+							embed.toJSON(),
+							EscapeMarkdown.removeNulls,
+							2
+						)}\`\`\``
+					);
+				}
+			}
+
+			if (!sentAnything) {
+				if (!silent)
+					await msg.discord.channel.send(oneLine`
 					${msg.discord.author}, I'm unable to give you an escaped version of anything!`);
 				return false;
 			}
 
-			// Sends the output
-			if ((newContent && newContent.length > 0) || newMsg) {
-				let sentAnything = false;
-
-				// Handles contents
-				if (newContent && newContent?.length > 0) {
-					sentAnything = true;
-					await msg.discord.channel.send(successMessage);
-					await msg.discord.channel.send(newContent);
-				}
-
-				// Handles messages that might have embeds
-				if (newMsg && newMsg.embeds.length > 0) {
-					if (!sentAnything) {
-						await msg.discord.channel.send(successMessage);
-						sentAnything = true;
-					}
-
-					for await (const embed of newMsg.embeds) {
-						await msg.discord.channel.send(
-							`\`\`\`${JSON.stringify(
-								embed.toJSON(),
-								EscapeMarkdown.removeNulls,
-								2
-							)}\`\`\``
-						);
-					}
-				}
-
-				if (!sentAnything) {
-					await msg.discord.channel.send(oneLine`
-					${msg.discord.author}, I'm unable to give you an escaped version of anything!`);
-					return false;
-				}
-
-				return true;
-			}
+			return true;
 		}
 
 		return false;

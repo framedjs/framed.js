@@ -39,6 +39,7 @@ importers:
       koa: 2.13.0
       koa-router: 10.0.0
       node-emoji: 1.10.0
+      node-url-shortener: 1.1.11
       reflect-metadata: 0.1.13
       require-all: 3.0.0
       shared: 'link:../shared'
@@ -68,6 +69,7 @@ importers:
       koa: ^2.13.0
       koa-router: ^10.0.0
       node-emoji: ^1.10.0
+      node-url-shortener: ^1.1.11
       reflect-metadata: ^0.1.13
       require-all: ^3.0.0
       shared: shared
@@ -9778,6 +9780,12 @@ packages:
     dev: false
     resolution:
       integrity: sha512-V5QF9noGFl3EymEwUYzO+3NTDpGfQB4ve6Qfnzf3UNydMhjQRVPR1DZTuvWiLzaFJYw2fmDwAfnRNEVb64hSIg==
+  /node-url-shortener/1.1.11:
+    dependencies:
+      request: 2.88.2
+    dev: false
+    resolution:
+      integrity: sha512-8AKi4gfrwRV8xEKCANgZLJ8Uej8p6jd7mn1Cl7YSMnQ08IbLKIkNHTQhNpmMM0cjBCoay33y45/KttH427HyoA==
   /nopt/3.0.6:
     dependencies:
       abbrev: 1.1.1

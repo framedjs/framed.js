@@ -124,11 +124,20 @@ export default class extends BaseCommand {
 					? msg.discord.client.user?.username
 					: "Pixel pete";
 
-				embed.setTitle(botName).setDescription(
-					oneLine`${botName} is a collection of custom bots by <@200340393596944384> and 
-						<@359521958519504926> for Game Dev Underground. 
+				embed
+					.setTitle(botName)
+					.setDescription(
+						oneLine`${botName} is a collection of custom bots by <@200340393596944384>,
+						<@359521958519504926>, and <@150649616772235264> for Game Dev Underground. 
 						Bot created partly with the [Framed](https://github.com/som1chan/Framed) bot framework.`
-				);
+					)
+					// .addField(
+					// 	"News",
+					// 	stripIndent`
+					// 	Pixel Pete is looking for a new identity!
+						
+					// 	`
+					// );
 
 				const mainData = PluginManager.createMainHelpFields(
 					this.framedClient.pluginManager.plugins,

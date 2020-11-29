@@ -15,11 +15,13 @@ export default class Poll extends BaseCommand {
 			about: "Create a simple, reaction-based poll through Discord.",
 			description: stripIndent`
 				Create a simple, reaction-based poll through Discord.
+				You can use \`\\\"\` to put quotes in, without making custom options.
 			`,
 			usage: '[single] <question> "[option 1]" "[option 2]"',
 			hideUsageInHelp: true,
 			examples: stripIndent`
 				\`{{prefix}}poll Do you like pineapple on pizza?\` - Simple Poll
+				\`{{prefix}}poll Rename \\"Game Development\\" category?\` - Simple Poll With Quotes 
 				\`{{prefix}}poll Ban Bim? "Yes" "Sure" "Why Not"\` - Custom Options
 				\`{{prefix}}poll single PC or Console? "PC" "Console"\` - Choose One Only
 			`,
