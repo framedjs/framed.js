@@ -1,7 +1,71 @@
 import Discord from "discord.js";
-import { logger } from "shared";
+import { logger, Utils } from "shared";
 import { FramedMessageDiscordData } from "../../interfaces/FramedMessageDiscordData";
 import FramedClient from "../../structures/FramedClient";
+
+export interface RawTemplateSettings {
+	/**
+	 * Bot username
+	 */
+	botUsername: string;
+
+	/**
+	 * Bot avatar URL
+	 */
+	botAvatarUrl?: string;
+
+	/**
+	 * Author avatar URL
+	 */
+	authorAvatarUrl?: string;
+
+	/**
+	 * Discord color resolvable
+	 */
+	color: string;
+
+	/**
+	 * Command used (as a non-alias) to be removed from a list
+	 */
+	commandUsed: string;
+
+	/**
+	 * All possible commands in an array
+	 */
+	commands: string[];
+
+	/**
+	 * Embed to base the chagnes off of
+	 */
+	embed?: Discord.MessageEmbed;
+}
+
+export interface ObjectTemplateSettings {
+	/**
+	 * FramedMessage object or Discord message
+	 */
+	msg: Discord.Message | FramedMessageDiscordData;
+
+	/**
+	 * Framed client
+	 */
+	framedClient: FramedClient;
+
+	/**
+	 * Command used (as a non-alias) to be removed from a list
+	 */
+	commandUsed?: string;
+
+	/**
+	 * All possible commands in an array
+	 */
+	commands?: string[];
+
+	/**
+	 * Embed to base the chagnes off of
+	 */
+	embed?: Discord.MessageEmbed;
+}
 
 /**
  * Discord Embed helper function class
@@ -11,7 +75,7 @@ export default class EmbedHelper {
 	 * Gets a color for generating embeds
 	 * @param guild - Discord message object
 	 */
-	static getEmbedColorWithFallback(
+	static getColorWithFallback(
 		guild: Discord.Guild | null | undefined,
 		defaultColor = "#000000"
 	): string {
@@ -44,39 +108,83 @@ export default class EmbedHelper {
 	}
 
 	/**
-	 * Applies a Discord embed template that should (hopefully) be a consistent design language.
-	 * 
+	 * Applies a Discord embed template that should
+	 * (hopefully) be a consistent design language.
+	 *
 	 * @param msg FramedMessage object or Discord message
-	 * @param framedClient Framed client
-	 * @param commandUsed Command used (as its full form) to be removed from a list
-	 * @param embed Embed to base the changes off of
-	 * @param commands All possible commands
-	 * 
+	 * @param commandUsed Command used (as a non-alias) to be potentially removed from a list.
+	 * @param commands Commands listed under check out footer message. In most cases, use `framedClient.helpCommands`.
+	 * @param baseEmbed Base Discord embed to apply the template to
+	 *
 	 * @returns Discord embed
 	 */
-	/* eslint-disable no-mixed-spaces-and-tabs */
-	static getEmbedTemplate(
+	static getTemplate(
 		msg: Discord.Message | FramedMessageDiscordData,
-		framedClient: FramedClient,
+		commands?: string[],
 		commandUsed?: string,
-		embed?: Discord.MessageEmbed,
-		commands?: Array<string>
+		baseEmbed?: Discord.MessageEmbed,
 	): Discord.MessageEmbed {
-		return new Discord.MessageEmbed(embed)
-			.setAuthor(
-				msg.client.user?.username,
-				msg.client.user?.displayAvatarURL({ dynamic: true })
-			)
-			.setColor(EmbedHelper.getEmbedColorWithFallback(msg.guild))
+		let tempUrl: string | null | undefined;
+
+		tempUrl = msg.author.displayAvatarURL({ dynamic: true })
+			? msg.author.displayAvatarURL({ dynamic: true })
+			: msg.client.user?.defaultAvatarURL;
+		const authorAvatarUrl = Utils.turnUndefinedIfNull(tempUrl) as string;
+
+		tempUrl = msg.client.user?.avatarURL({ dynamic: true });
+		const botAvatarUrl = Utils.turnUndefinedIfNull(tempUrl) as string;
+
+		const newEmbed = new Discord.MessageEmbed(baseEmbed)
+			// .setAuthor(msg.client.user?.username, botAvatarUrl)
 			.setFooter(
-				EmbedHelper.getCheckOutText(
-					commandUsed,
-					commands ? commands : framedClient.helpCommands
-				),
-				msg.author.displayAvatarURL({ dynamic: true })
-			);
+				EmbedHelper.getCheckOutText(commandUsed, commands),
+				authorAvatarUrl
+			)
+			.setColor(EmbedHelper.getColorWithFallback(msg.guild));
+
+		return newEmbed;
 	}
-	/* eslint-enable no-mixed-spaces-and-tabs */
+
+	/**
+	 * Applies a Discord embed template that should
+	 * (hopefully) be a consistent design language.
+	 *
+	 * Use EmbedHelper.getTemplate() if you have access to those parameters,
+	 * as that would be more simpler.
+	 *
+	 * @param botUsername Bot username
+	 * @param commands Commands listed under check out footer message
+	 * @param color Discord color resolvable
+	 * @param botAvatarUrl Bot avatar URL
+	 * @param authorAvatarUrl Author avatar URL
+	 * @param baseEmbed Base Discord embed to apply the template to
+	 * @param commandUsed Command used (as a non-alias) to potentially be removed from a list
+	 *
+	 * @returns Discord embed
+	 */
+	static getTemplateRaw(
+		botUsername: string,
+		commands: string[],
+		color: Discord.ColorResolvable,
+		botAvatarUrl?: string,
+		authorAvatarUrl?: string,
+		baseEmbed?: Discord.MessageEmbed,
+		commandUsed?: string
+	): Discord.MessageEmbed {
+		// Get bot avatar URL that isn't null
+		botAvatarUrl = Utils.turnUndefinedIfNull(botAvatarUrl) as string;
+		authorAvatarUrl = Utils.turnUndefinedIfNull(authorAvatarUrl) as string;
+
+		const newEmbed = new Discord.MessageEmbed(baseEmbed)
+			.setAuthor(botUsername, botAvatarUrl)
+			.setFooter(
+				EmbedHelper.getCheckOutText(commandUsed, commands),
+				authorAvatarUrl
+			)
+			.setColor(color);
+
+		return newEmbed;
+	}
 
 	/**
 	 * Related to applyEmbedTemplate()

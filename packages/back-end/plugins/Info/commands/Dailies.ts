@@ -17,9 +17,9 @@ export default class extends BaseCommand {
 	async run(msg: FramedMessage): Promise<boolean> {
 		const framedUser = this.framedClient.client.user;
 		if (msg.discord && framedUser) {
-			const embed = EmbedHelper.getEmbedTemplate(
+			const embed = EmbedHelper.getTemplate(
 				msg.discord,
-				this.framedClient,
+				this.framedClient.helpCommands,
 				this.id
 			)
 				.setTitle("Daily Challenge")

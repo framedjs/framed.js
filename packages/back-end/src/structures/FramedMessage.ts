@@ -21,6 +21,7 @@ export default class FramedMessage {
 	public prefix?: string;
 	public args?: Array<string>;
 	public command?: string;
+	public argsContent?: string;
 
 	constructor(info: FramedMessageInfo) {
 		if (info.discord) {
@@ -29,8 +30,11 @@ export default class FramedMessage {
 					? info.discord.channel.messages.cache.get(info.discord.id)
 					: info.discord.base instanceof Discord.Message
 					? info.discord.base
-					: info.discord.base?.discord?.id && info.discord.base?.discord?.channel
-					? info.discord.base?.discord?.channel?.messages.cache.get(info.discord.base.discord.id)
+					: info.discord.base?.discord?.id &&
+					  info.discord.base?.discord?.channel
+					? info.discord.base?.discord?.channel?.messages.cache.get(
+							info.discord.base.discord.id
+					  )
 					: undefined;
 
 			const newDiscordClient = info.discord.client
@@ -69,7 +73,7 @@ export default class FramedMessage {
 
 			const newMember = info.discord.member
 				? info.discord.member
-				: newAuthor?.id 
+				: newAuthor?.id
 				? newGuild?.member(newAuthor.id)
 				: null;
 
@@ -129,6 +133,13 @@ export default class FramedMessage {
 		this.prefix = this.getPrefix();
 		this.args = this.getArgs();
 		this.command = this.getCommand();
+
+		if (this.prefix && this.command) {
+			this.argsContent = this.content
+				.replace(this.prefix, "")
+				.replace(this.command, "")
+				.trimLeft();
+		}
 	}
 
 	/**
@@ -280,7 +291,11 @@ export default class FramedMessage {
 			if (state == ArgumentState.Unquoted) {
 				// If we're unquoted, split with spaces if settings allow it
 				// We'll process excess spaces later
-				if (!charIsSpace || settings?.separateByQuoteSections) {
+				if (
+					!charIsSpace ||
+					settings?.separateByQuoteSections ||
+					hasCodeBlock
+				) {
 					argString += char;
 					// logger.debug(`uq '${argString}'`); // LARGE DEBUG OUTPUT
 				} else if (argString.length != 0) {
@@ -295,7 +310,11 @@ export default class FramedMessage {
 			} else if (state == ArgumentState.Quoted) {
 				// If we've just started the quote, but the string isn't empty,
 				// push its contents out (carryover from unquoted)
-				if (justStartedQuote && argString.trim().length != 0) {
+				if (
+					justStartedQuote &&
+					argString.trim().length != 0 &&
+					!hasCodeBlock
+				) {
 					// logger.debug(
 					// 	`'${char}' <${content}> ${i} JSQ_NonEmpty - CStU: ${changeStateToUnquotedLater} justStartedQuote ${justStartedQuote} - (${ArgumentState[state]}) - "${argString}"`
 					// ); // LARGE DEBUG OUTPUT
@@ -307,7 +326,8 @@ export default class FramedMessage {
 				} else if (
 					settings?.showQuoteCharacters ||
 					!charIsDoubleQuote ||
-					charIsEscaped
+					charIsEscaped ||
+					hasCodeBlock
 				) {
 					// If we should be showing quoted characters because of settings,
 					// or we're unquoted, or there's an escape if not

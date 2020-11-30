@@ -11,6 +11,7 @@ import Command from "./database/entities/Command";
 import Discord from "discord.js";
 import { DatabaseManager } from "./DatabaseManager";
 import { oneLine } from "common-tags";
+import * as TypeORM from "typeorm";
 
 export interface HelpCategory {
 	category: string;
@@ -274,8 +275,19 @@ export default class PluginManager {
 	 *
 	 * @returns Discord embed field data, containing brief info on commands
 	 */
-	createMainHelpFields(helpList: HelpCategory[]): Discord.EmbedFieldData[] {
-		return PluginManager.createMainHelpFields(this.plugins, helpList);
+	async createMainHelpFields(
+		helpList: HelpCategory[]
+	): Promise<Discord.EmbedFieldData[] | undefined> {
+		const connection = this.framedClient.databaseManager.connection;
+		if (connection) {
+			return await PluginManager.createMainHelpFields(
+				this.plugins,
+				helpList,
+				connection
+			);
+		} else {
+			return undefined;
+		}
 	}
 
 	/**
@@ -287,28 +299,34 @@ export default class PluginManager {
 	 *
 	 * @returns Discord embed field data, containing brief info on commands
 	 */
-	static createMainHelpFields(
+	static async createMainHelpFields(
 		plugins: Map<string, BasePlugin>,
-		helpList: HelpCategory[]
-	): Discord.EmbedFieldData[] {
+		helpList: HelpCategory[],
+		connection: TypeORM.Connection
+	): Promise<Discord.EmbedFieldData[]> {
 		const fields: Discord.EmbedFieldData[] = [];
-
 		const sectionMap = new Map<string, string>();
+		const commandRepo = connection.getRepository(Command);
+		const databaseCommands = await commandRepo.find({
+			relations: ["defaultPrefix", "response"],
+		});
 
 		// Loops through all of the help elements,
 		// in order to find the right data
-		helpList.forEach(helpElement => {
+		for await (const helpElement of helpList) {
 			// Searches through plugins
 			plugins.forEach(plugin => {
-				const allComamnds = Array.from(plugin.commands.values()).concat(
-					Array.from(plugin.aliases.values())
-				);
+				// Combine both commands and aliases into one variable
+				const pluginCommands = Array.from(plugin.commands.values());
+				const pluginAliases = Array.from(plugin.aliases.values());
+				const allComamndsAliases = pluginCommands.concat(pluginAliases);
 
 				// Searches through commands inside the plugins
-				allComamnds.forEach(command => {
+				allComamndsAliases.forEach(command => {
 					// Searches through command text options
 					helpElement.command.forEach(cmdElement => {
-						// If there's a matching one, add it to the Map
+						// If there's a matching command or alias,
+						// add it to the Map for processing later
 						if (
 							command.id == cmdElement.command ||
 							command.aliases?.includes(cmdElement.command)
@@ -318,18 +336,9 @@ export default class PluginManager {
 									? ` ${command.usage}`
 									: "";
 
-							const emojiString = command.emojiIcon
-								? command.emojiIcon
-								: command.emojiIcon?.length == undefined
-								? "❔"
-								: command.emojiIcon.length == 0
-								? ""
-								: "❔";
-
 							sectionMap.set(
 								cmdElement.command,
 								oneLine`
-								${emojiString}
 								\`${command.defaultPrefix}${command.id}${usage}\`
 								- ${command.about}
 							`
@@ -338,7 +347,21 @@ export default class PluginManager {
 					});
 				});
 			});
-		});
+
+			// Searches through database
+			for await (const command of databaseCommands) {
+				let content = `\`${command.defaultPrefix.prefix}${command.id}\``;
+				const description = command.response?.responseData?.description;
+
+				if (description) {
+					content = `${content} - ${description}\n`;
+				} else {
+					content += ` `;
+				}
+
+				sectionMap.set(command.id, content);
+			}
+		}
 
 		// Loops through all of the help elements,
 		// in order to sort them properly like in the data
@@ -364,8 +387,99 @@ export default class PluginManager {
 	}
 
 	/**
+	 * @param plugins A map of plugins. Usually, this should equal
+	 * `this.plugins`. If you're not calling it statically, use the non-static `createMainHelpFields()`.
+	 * @param helpList Data to choose certain commands
+	 */
+	static async createHelpFields(
+		plugins: Map<string, BasePlugin>,
+		helpList: [
+			{
+				category: string;
+				commands: string[];
+			}
+		],
+		connection: TypeORM.Connection
+	): Promise<Discord.EmbedFieldData[]> {
+		const fields: Discord.EmbedFieldData[] = [];
+		const entries = new Map<
+			string,
+			{ description: string; category: string }
+		>();
+		const commandRepo = connection.getRepository(Command);
+		const databaseCommands = await commandRepo.find({
+			relations: ["defaultPrefix", "response"],
+		});
+
+		const categoryIconMap = new Map<string, string>();
+		const pluginCommandMap = new Map<string, BaseCommand[]>();
+
+		plugins.forEach(plugin => {
+			// Combine both commands and aliases into one variable
+			const pluginCommands = Array.from(plugin.commands.values());
+
+			// Set them all into the map
+			pluginCommandMap.set(plugin.id, pluginCommands);
+		});
+
+		for await (const helpElement of helpList) {
+			for await (const command of helpElement.commands) {
+				// Gets all plugin command and alias references, along
+				// with exhausting all possible categories
+				pluginCommandMap.forEach(element => {
+					element.forEach(baseCommand => {
+						// Category
+						if (baseCommand.category)
+							categoryIconMap.set(
+								baseCommand.category,
+								baseCommand.emojiIcon
+									? baseCommand.emojiIcon
+									: "❔"
+							);
+
+						// If there's a matching command or alias,
+						if (
+							baseCommand.id == command ||
+							baseCommand.aliases?.includes(command)
+						) {
+							const usage =
+								baseCommand.usage &&
+								!baseCommand.hideUsageInHelp
+									? ` ${baseCommand.usage}`
+									: "";
+							entries.set(command, {
+								category: baseCommand.category
+									? baseCommand.category
+									: "Other",
+								description: `\`${baseCommand.defaultPrefix}${baseCommand.id}${usage}\` - ${baseCommand.about}`,
+							});
+						}
+					});
+				});
+
+				// Searches through database
+				for await (const command of databaseCommands) {
+					let content = `\`${command.defaultPrefix.prefix}${command.id}\``;
+					const description =
+						command.response?.responseData?.description;
+
+					if (description) {
+						content = `${content} - ${description}\n`;
+					} else {
+						content += ` `;
+					}
+
+					sectionMap.set(command.id, content);
+				}
+			}
+		}
+
+		return fields;
+	}
+
+	/**
 	 * Create embed field data on all of the commands in the database.
-	 * 
+	 *
 	 * @returns Discord embed field data
 	 */
 	async createInfoHelpFields(): Promise<

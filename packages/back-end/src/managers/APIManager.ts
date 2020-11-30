@@ -1,18 +1,20 @@
 import { logger } from "shared";
 import Options from "../interfaces/RequireAllOptions";
-import BaseRouter from "../structures/BaseRouter";
 import FramedClient from "../structures/FramedClient";
 import DiscordUtils from "../utils/discord/DiscordUtils";
 import util from "util";
 import Koa from "koa";
 import Router from "koa-router";
+import path from "path";
+import BaseRouter from "../structures/BaseRouter";
 
 export default class APIManager {
+	public static readonly defaultPath = path.join(__dirname, "api", "routes");
 	public readonly app = new Koa();
 	public readonly router = new Router();
-	public routers = new Map<string, BaseRouter>();
 
 	/**
+	 * Starts listening for API queries
 	 * @param framedClient
 	 */
 	constructor(public readonly framedClient: FramedClient) {
@@ -29,55 +31,46 @@ export default class APIManager {
 			}
 		});
 
-		// Initial route
-		this.app.use(async (ctx: Koa.Context) => {
-			ctx.body = "Hello world";
-		});
-
 		// Application error logging
 		this.app.on("error", logger.error);
 
+		// Send to port
 		const PORT: number = Number(process.env.API_PORT) || 42069;
 		this.app.listen(PORT);
 	}
 
 	/**
-	 * Loads the routers
+	 * Loads routes
 	 * @param options RequireAll options
 	 */
 	loadRoutersIn(options: Options): void {
-		const routers = DiscordUtils.importScripts(options);
-		logger.debug(`routers: ${util.inspect(routers)}`);
-		this.loadRouters(routers);
+		const routes = DiscordUtils.importScripts(options);
+		logger.debug(`Routers: ${util.inspect(routes)}`);
+		this.loadRouters(routes);
 	}
 
 	/**
-	 *
-	 * @param routers
+	 * Loads routes
+	 * @param routes
 	 */
-	loadRouters(routers: Router[]): void {
-		for (const router of routers) {
-			// logger.debug(`initrouter: ${util.inspect(initrouter)}`);
-			this.loadRouter(router);
+	loadRouters<T extends BaseRouter>(
+		routes: (new (framedClient: FramedClient) => T)[]
+	): void {
+		for (const router of routes) {
+			const initRouter = new router(this.framedClient);
+			logger.debug(`initRouter: ${util.inspect(initRouter)}`);
+			this.loadRouter(initRouter);
 		}
 	}
 
 	/**
-	 *
+	 * Loads routes
 	 * @param router
 	 */
-	loadRouter(router: Router): void {
-		// if (this.routers.get(router.id)) {
-		// 	logger.error(`router with id ${router.id} already exists!`);
-		// 	return;
-		// }
-
-		// this.routers.set(router.id, router);
-
+	loadRouter<T extends BaseRouter>(router: T): void {
 		this.router.use(router.router.routes());
-
-		// logger.verbose(
-		// 	`Finished loading router ${router.name} v${router.version}.`
-		// );
+		this.router.use(router.router.allowedMethods());
+		this.app.use(this.router.routes());
+		this.app.use(this.router.allowedMethods());
 	}
 }

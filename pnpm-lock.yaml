@@ -28,6 +28,38 @@ importers:
       jest: 26.6.0
       prettier: ^2.1.2
       ts-jest: ^26.4.4
+  packages/api:
+    dependencies:
+      '@types/node-emoji': 1.8.1
+      '@types/require-all': 3.0.1
+      axios: 0.21.0
+      back-end: 'link:../back-end'
+      common-tags: 1.8.0
+      koa: 2.13.0
+      koa-router: 10.0.0
+    devDependencies:
+      '@types/common-tags': 1.8.0
+      '@types/koa': 2.11.6
+      '@types/koa-router': 7.4.1
+      jest: 26.6.0
+      ts-node-dev: 1.0.0-pre.63_typescript@4.0.3
+      tsconfig-paths: 3.9.0
+      typescript: 4.0.3
+    specifiers:
+      '@types/common-tags': ^1.8.0
+      '@types/koa': ^2.11.6
+      '@types/koa-router': ^7.4.1
+      '@types/node-emoji': ^1.8.1
+      '@types/require-all': ^3.0.1
+      axios: ^0.21.0
+      back-end: back-end
+      common-tags: ^1.8.0
+      jest: 26.6.0
+      koa: ^2.13.0
+      koa-router: ^10.0.0
+      ts-node-dev: ^1.0.0-pre.63
+      tsconfig-paths: ^3.9.0
+      typescript: ^4.0.3
   packages/back-end:
     dependencies:
       '@types/node-emoji': 1.8.1
@@ -2163,7 +2195,7 @@ packages:
   /@jest/console/26.6.2:
     dependencies:
       '@jest/types': 26.6.2
-      '@types/node': 14.14.9
+      '@types/node': 14.14.10
       chalk: 4.1.0
       jest-message-util: 26.6.2
       jest-util: 26.6.2
@@ -2179,7 +2211,7 @@ packages:
       '@jest/test-result': 26.6.2
       '@jest/transform': 26.6.2
       '@jest/types': 26.6.2
-      '@types/node': 14.14.9
+      '@types/node': 14.14.10
       ansi-escapes: 4.3.1
       chalk: 4.1.0
       exit: 0.1.2
@@ -2210,7 +2242,7 @@ packages:
     dependencies:
       '@jest/fake-timers': 26.6.2
       '@jest/types': 26.6.2
-      '@types/node': 14.14.9
+      '@types/node': 14.14.10
       jest-mock: 26.6.2
     engines:
       node: '>= 10.14.2'
@@ -2220,7 +2252,7 @@ packages:
     dependencies:
       '@jest/types': 26.6.2
       '@sinonjs/fake-timers': 6.0.1
-      '@types/node': 14.14.9
+      '@types/node': 14.14.10
       jest-message-util: 26.6.2
       jest-mock: 26.6.2
       jest-util: 26.6.2
@@ -2324,7 +2356,7 @@ packages:
     dependencies:
       '@types/istanbul-lib-coverage': 2.0.3
       '@types/istanbul-reports': 3.0.0
-      '@types/node': 14.14.9
+      '@types/node': 14.14.10
       '@types/yargs': 15.0.10
       chalk: 4.1.0
     engines:
@@ -2741,7 +2773,7 @@ packages:
       integrity: sha512-SEYeGAIQIQX8NN6LDKprLjbrd5dARM5EXsd8GI/A5l0apYI1fGMWgPHSe4ZKL4eozlAyI+doUE9XbYS4xCkQ1w==
   /@types/graceful-fs/4.1.4:
     dependencies:
-      '@types/node': 14.14.9
+      '@types/node': 14.14.10
     resolution:
       integrity: sha512-mWA/4zFQhfvOA8zWkXobwJvBD7vzcxgrOQ0J5CH1votGqdq9m7+FwtGaqyCZqC3NyyBkc9z4m+iry4LlqcMWJg==
   /@types/history/4.7.8:
@@ -2852,10 +2884,10 @@ packages:
     resolution:
       integrity: sha512-KPcKqKm5UKDkaYPTuXSx8wEP7vE9GnuaXIZKijwRYcePpZFDVuy2a57LarFKiORbHOuTOOwYzxVxcUzsh2P2Pw==
   /@types/node/14.14.10:
-    dev: true
     resolution:
       integrity: sha512-J32dgx2hw8vXrSbu4ZlVhn1Nm3GbeCFNw2FWL8S5QKucHGY0cyNwjdQdO+KMBZ4wpmC7KhLCiNsdk1RFRIYUQQ==
   /@types/node/14.14.9:
+    dev: false
     resolution:
       integrity: sha512-JsoLXFppG62tWTklIoO4knA+oDTYsmqWxHRvd4lpmfQRNhX6osheUOWETP2jMoV/2bEHuMra8Pp3Dmo/stBFcw==
   /@types/normalize-package-data/2.4.0:
@@ -5447,6 +5479,7 @@ packages:
   /debug/3.2.6:
     dependencies:
       ms: 2.1.2
+    deprecated: 'Debug versions >=3.2.0 <3.2.7 || >=4 <4.3.1 have a low-severity ReDos regression when used in a Node.js environment. It is recommended you upgrade to 3.2.7 or 4.3.1. (https://github.com/visionmedia/debug/issues/797)'
     dev: false
     resolution:
       integrity: sha512-mel+jf7nrtEl5Pn1Qx46zARXKDpBbvzezse7p7LqINmdoIk8PYP5SySaxEmYv6TZ0JyEKA1hsCId6DIhgITtWQ==
@@ -7431,6 +7464,7 @@ packages:
     resolution:
       integrity: sha512-l9sfDFsuqtOqKDsQdqrMRk0U85RZc0RtOR9yPI7mRVOa4FsR/BVnZ0shmQRM96Ji99kYZP/7hn1cedc1+ApsTQ==
   /highlight.js/9.18.3:
+    deprecated: Version no longer supported. Upgrade to @latest
     dev: false
     resolution:
       integrity: sha512-zBZAmhSupHIl5sITeMqIJnYCDfAEc3Gdkqj65wC1lpI468MMQeeQkhcIAvk+RylAkxrCcI9xy9piHiXeQ1BdzQ==
@@ -8397,7 +8431,7 @@ packages:
       '@jest/environment': 26.6.2
       '@jest/fake-timers': 26.6.2
       '@jest/types': 26.6.2
-      '@types/node': 14.14.9
+      '@types/node': 14.14.10
       jest-mock: 26.6.2
       jest-util: 26.6.2
       jsdom: 16.4.0
@@ -8410,7 +8444,7 @@ packages:
       '@jest/environment': 26.6.2
       '@jest/fake-timers': 26.6.2
       '@jest/types': 26.6.2
-      '@types/node': 14.14.9
+      '@types/node': 14.14.10
       jest-mock: 26.6.2
       jest-util: 26.6.2
     engines:
@@ -8426,7 +8460,7 @@ packages:
     dependencies:
       '@jest/types': 26.6.2
       '@types/graceful-fs': 4.1.4
-      '@types/node': 14.14.9
+      '@types/node': 14.14.10
       anymatch: 3.1.1
       fb-watchman: 2.0.1
       graceful-fs: 4.2.4
@@ -8450,7 +8484,7 @@ packages:
       '@jest/source-map': 26.6.2
       '@jest/test-result': 26.6.2
       '@jest/types': 26.6.2
-      '@types/node': 14.14.9
+      '@types/node': 14.14.10
       chalk: 4.1.0
       co: 4.6.0
       expect: 26.6.2
@@ -8503,7 +8537,7 @@ packages:
   /jest-mock/26.6.2:
     dependencies:
       '@jest/types': 26.6.2
-      '@types/node': 14.14.9
+      '@types/node': 14.14.10
     engines:
       node: '>= 10.14.2'
     resolution:
@@ -8582,7 +8616,7 @@ packages:
       '@jest/environment': 26.6.2
       '@jest/test-result': 26.6.2
       '@jest/types': 26.6.2
-      '@types/node': 14.14.9
+      '@types/node': 14.14.10
       chalk: 4.1.0
       emittery: 0.7.2
       exit: 0.1.2
@@ -8638,7 +8672,7 @@ packages:
       integrity: sha512-lrzyR3N8sacTAMeonbqpnSka1dHNux2uk0qqDXVkMv2c/A3wYnvQ4EXuI013Y6+gSKSCxdaczvf4HF0mVXHRdw==
   /jest-serializer/26.6.2:
     dependencies:
-      '@types/node': 14.14.9
+      '@types/node': 14.14.10
       graceful-fs: 4.2.4
     engines:
       node: '>= 10.14.2'
@@ -8669,7 +8703,7 @@ packages:
   /jest-util/26.6.2:
     dependencies:
       '@jest/types': 26.6.2
-      '@types/node': 14.14.9
+      '@types/node': 14.14.10
       chalk: 4.1.0
       graceful-fs: 4.2.4
       is-ci: 2.0.0
@@ -8711,7 +8745,7 @@ packages:
     dependencies:
       '@jest/test-result': 26.6.2
       '@jest/types': 26.6.2
-      '@types/node': 14.14.9
+      '@types/node': 14.14.10
       ansi-escapes: 4.3.1
       chalk: 4.1.0
       jest-util: 26.6.2
@@ -8731,7 +8765,7 @@ packages:
       integrity: sha512-51PE4haMSXcHohnSMdM42anbvZANYTqMrr52tVKPqqsPJMzoP6FYYDVqahX/HrAoKEKz3uUPzSvKs9A3qR4iVw==
   /jest-worker/26.6.2:
     dependencies:
-      '@types/node': 14.14.9
+      '@types/node': 14.14.10
       merge-stream: 2.0.0
       supports-color: 7.2.0
     engines:
@@ -13682,7 +13716,7 @@ packages:
       buffer: 5.6.0
       chalk: 2.4.2
       cli-highlight: 2.1.4
-      debug: 4.2.0
+      debug: 4.3.1
       dotenv: 6.2.0
       glob: 7.1.6
       js-yaml: 3.14.0

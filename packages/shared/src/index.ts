@@ -1,4 +1,3 @@
-export * from "./user"; // test
 export { Utils } from "./Utils";
 
 import Colors from "colors";

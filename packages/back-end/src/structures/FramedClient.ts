@@ -15,9 +15,13 @@ import PluginManager, { HelpCategory } from "../managers/PluginManager";
 import { EventEmitter } from "events";
 import { FramedClientInfo } from "../interfaces/FramedClientInfo";
 import { DatabaseManager } from "../managers/DatabaseManager";
-import util from "util";
+// import util from "util";
+import APIManager from "../managers/APIManager";
+
+// logger.level = "verbose";
 
 export default class FramedClient extends EventEmitter {
+	public readonly apiManager: APIManager;
 	public readonly pluginManager = new PluginManager(this);
 	public readonly databaseManager: DatabaseManager;
 	public readonly utils = new Utils();
@@ -27,7 +31,7 @@ export default class FramedClient extends EventEmitter {
 
 	public shortHelpInfo: HelpCategory[] = [
 		{
-			category: "Notable Commands",
+			category: "Pinned Commands",
 			command: [
 				{
 					command: "commands",
@@ -63,6 +67,8 @@ export default class FramedClient extends EventEmitter {
 			if (info.defaultPrefix) this.defaultPrefix = info?.defaultPrefix;
 		}
 
+		this.apiManager = new APIManager(this);
+
 		logger.verbose(`Using database path: ${DatabaseManager.defaultDbPath}`);
 		logger.verbose(
 			`Using entities path: ${DatabaseManager.defaultEntitiesPath}`
@@ -78,8 +84,11 @@ export default class FramedClient extends EventEmitter {
 	}
 
 	async login(token: string): Promise<void> {
-		this.client.login(token);
-		// this.pluginManager.loadPlugins();
+		logger.verbose(`Using routes path: ${APIManager.defaultPath}`);
+		this.apiManager.loadRoutersIn({
+			dirname: APIManager.defaultPath,
+			filter: /^(.*)\.(js|ts)$/,
+		});
 
 		// Loads the plugins, which loads commands and events
 		this.pluginManager.loadPluginsIn({
@@ -89,6 +98,9 @@ export default class FramedClient extends EventEmitter {
 
 		// Loads the database
 		await this.databaseManager.start();
+
+		// Logs into Discord
+		await this.client.login(token);
 
 		this.client.on("ready", async () => {
 			logger.info(`Logged in as ${this.client.user?.tag}!`);
@@ -106,15 +118,17 @@ export default class FramedClient extends EventEmitter {
 			try {
 				this.client
 					// Permissions might not work
-					.generateInvite([
-						"SEND_MESSAGES",
-						"MANAGE_MESSAGES",
-						"READ_MESSAGE_HISTORY",
-						"MANAGE_ROLES",
-						"ADD_REACTIONS",
-						"EMBED_LINKS",
-						"VIEW_CHANNEL",
-					])
+					.generateInvite({
+						permissions: [
+							"SEND_MESSAGES",
+							"MANAGE_MESSAGES",
+							"READ_MESSAGE_HISTORY",
+							"MANAGE_ROLES",
+							"ADD_REACTIONS",
+							"EMBED_LINKS",
+							"VIEW_CHANNEL",
+						],
+					})
 					.then(link =>
 						logger.info(`Generated bot invite link: ${link}`)
 					)
@@ -126,7 +140,7 @@ export default class FramedClient extends EventEmitter {
 							name: `${this.defaultPrefix}help | Maintaining Streaks`,
 						},
 					})
-					.then(a => logger.debug(util.inspect(a)))
+					// .then(a => logger.debug(util.inspect(a)))
 					.catch(logger.error);
 
 				// this.client.user

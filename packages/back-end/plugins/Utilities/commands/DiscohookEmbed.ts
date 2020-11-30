@@ -5,7 +5,6 @@ import EscapeMarkdown from "./EscapeMarkdown";
 import Discord from "discord.js";
 import { logger } from "shared";
 import EmbedHelper from "../../../src/utils/discord/EmbedHelper";
-import NodeUrlShortener from "node-url-shortener";
 import * as ShortenURL from "../utils/ShortenURL";
 import { stripIndent } from "common-tags";
 
@@ -42,16 +41,23 @@ export default class DiscohookEmbed extends BaseCommand {
 				});
 
 				if (shortUrl) {
-					const embed = EmbedHelper.getEmbedTemplate(
+					const embed = EmbedHelper.getTemplate(
 						msg.discord,
-						this.framedClient,
+						this.framedClient.helpCommands,
 						this.id
 					)
 						.setTitle("Discohook URL")
 						.setURL(shortUrl)
 						.setDescription(
 							stripIndent`
-						To view the embed through Discohook, click [here](${shortUrl}).
+							I've just recreated [this message](https://discordapp.com/channels/${
+								msg.discord.guild != null
+									? msg.discord.guild.id
+									: "@me"
+							}/${msg.discord.channel.id}/${
+								parse?.newMsg ? parse?.newMsg.id : msg.discord.id
+							} "Discord Message") into Discohook for embed testing.
+							Click the shortened link to view: ${shortUrl}
 						`
 						);
 
@@ -70,38 +76,48 @@ export default class DiscohookEmbed extends BaseCommand {
 	): Promise<string | undefined> {
 		if (msg.discord && msg.discord.msg) {
 			const firstPassMessage: {
-				content?: string | null;
-				embeds?: Discord.MessageEmbed[] | null;
-				username?: string | null;
-				avatar_url?: string | null;
-			} = {};
+				messages: [
+					{
+						data: {
+							content?: string | null;
+							embeds?: Discord.MessageEmbed[] | null;
+							username?: string | null;
+							avatar_url?: string | null;
+						};
+					}
+				];
+			} = {
+				messages: [
+					{
+						data: {},
+					},
+				],
+			};
+
+			const data = firstPassMessage.messages[0].data;
 
 			if (newContent) {
-				firstPassMessage.content = newContent;
+				data.content = newContent;
 			}
 
 			if (newMsg) {
 				if (newMsg.embeds.length > 0) {
-					firstPassMessage.embeds = newMsg.embeds;
+					data.embeds = newMsg.embeds;
 				}
 			}
 
-			firstPassMessage.username = msg.discord.client.user?.username;
-			firstPassMessage.avatar_url = msg.discord.client.user?.avatarURL();
-
-			const newObject = {
-				message: firstPassMessage,
-			};
+			data.username = msg.discord.client.user?.username;
+			data.avatar_url = msg.discord.client.user?.avatarURL();
 
 			// Makes TypeScript get less complaints with changing parameters
 			const secondPassJson = JSON.parse(
-				JSON.stringify(newObject, EscapeMarkdown.removeNulls, 0)
+				JSON.stringify(firstPassMessage, EscapeMarkdown.removeNulls, 0)
 			);
 
-			if (secondPassJson.message.embeds) {
-				secondPassJson.message.embeds.forEach(
+			if (secondPassJson.messages[0].data.embeds) {
+				secondPassJson.messages[0].data.embeds.forEach(
 					(embed: { type: null; fields: never[] }) => {
-						// Removes type
+						// Removes type: "rich"
 						embed.type = null;
 						if (embed.fields) {
 							// Removes inline variables, through removeNulls
@@ -117,20 +133,39 @@ export default class DiscohookEmbed extends BaseCommand {
 				);
 			}
 
-			const thirdPassJson = JSON.stringify(
-				secondPassJson,
-				EscapeMarkdown.removeNulls,
-				0
+			const thirdPassJson = JSON.parse(
+				JSON.stringify(secondPassJson, EscapeMarkdown.removeNulls, 0)
 			);
+
+			// Make content null
+			if (!thirdPassJson.messages[0].data.content) {
+				thirdPassJson.messages[0].data.content = null;
+			}
+
+			const fourthPassJson = {
+				messages: [
+					{
+						data: {
+							content: thirdPassJson.messages[0].data.content,
+							embeds: thirdPassJson.messages[0].data.embeds,
+							username: thirdPassJson.messages[0].data.username,
+							avatar_url:
+								thirdPassJson.messages[0].data.avatar_url,
+						},
+					},
+				],
+			};
+
+			const finalPassJson = JSON.stringify(fourthPassJson, undefined, 0);
 
 			// For some reason, discohook doesn't like "+" and prefers "-".
 			// This isn't considered "web safe" but it's fine here?
-			const buffer = Buffer.from(thirdPassJson, "utf-8");
+			const buffer = Buffer.from(finalPassJson, "utf-8");
 			const base64 = buffer
 				.toString("base64")
-				.replace(/\+/, "-")
+				.replace(/\+/g, "-")
 				.replace(/=/g, "");
-			return `https://discohook.org/?message=${base64}`;
+			return `https://discohook.org/?data=${base64}`;
 		}
 
 		return undefined;

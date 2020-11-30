@@ -32,6 +32,11 @@ export abstract class BaseCommand {
 	id: string;
 
 	/**
+	 * Subcommands a list of possible subcommands for metadata.
+	 */
+	subcommands?: string[];
+
+	/**
 	 * Stores a list of command aliases possible to trigger the command.
 	 */
 	aliases?: string[];
@@ -45,6 +50,11 @@ export abstract class BaseCommand {
 	 * A list of all possible prefixes.
 	 */
 	prefixes: string[];
+
+	/**
+	 * Category
+	 */
+	category?: string;
 
 	/**
 	 * A brief, one-liner about section to talk about what the command does.
@@ -97,6 +107,7 @@ export abstract class BaseCommand {
 
 		this.id = info.id.toLocaleLowerCase();
 		this.fullId = `${this.plugin.id}.command.${this.id}`;
+		this.category = this.category ? this.category : plugin.category;
 		this.aliases = info.aliases;
 		this.defaultPrefix =
 			info.defaultPrefix != undefined
@@ -152,9 +163,9 @@ export abstract class BaseCommand {
 		if (msg.discord && permissions?.discord) {
 			const discord = msg.discord;
 			const embedFields: Discord.EmbedFieldData[] = [];
-			const embed = EmbedHelper.getEmbedTemplate(
+			const embed = EmbedHelper.getTemplate(
 				msg.discord,
-				this.framedClient,
+				this.framedClient.helpCommands,
 				this.id
 			)
 				.setTitle("Permission Denied")

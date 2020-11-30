@@ -13,6 +13,8 @@ export abstract class BasePlugin {
 	readonly pluginManager: PluginManager;
 
 	id: string;
+	category: string;
+	categoryIcon: string;
 	defaultPrefix: string;
 	name: string;
 	description: string;
@@ -69,6 +71,8 @@ export abstract class BasePlugin {
 		this.githubRaw = info.githubRaw;
 		this.changelog = info.changelog;
 		this.paths = info.paths;
+		this.category = info.defaultCategory ? info.defaultCategory : info.name;
+		this.categoryIcon = info.categoryIcon ? info.categoryIcon : "❔";
 	}
 
 	//#region Command loading

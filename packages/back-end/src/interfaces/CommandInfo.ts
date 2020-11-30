@@ -16,6 +16,11 @@ export interface CommandInfo {
 	id: string;
 
 	/**
+	 * Subcommands a list of possible subcommands for metadata.
+	 */
+	subcommands?: string[];
+
+	/**
 	 * Stores a list of command aliases possible to trigger the command.
 	 */
 	aliases?: string[];
@@ -29,6 +34,11 @@ export interface CommandInfo {
 	 * A list of all possible prefixes.
 	 */
 	prefixes?: string[];
+
+	/**
+	 * Category
+	 */
+	category?: string;
 
 	/**
 	 * A brief, one-liner about section to talk about what the command does.
@@ -57,8 +67,8 @@ export interface CommandInfo {
 
 	/**
 	 * Primary permissions for running the command.
-	 * 
-	 * This doesn't act as a complete override for commands, so be careful! 
+	 *
+	 * This doesn't act as a complete override for commands, so be careful!
 	 */
 	permissions?: FramedPermissions;
 

@@ -3,12 +3,22 @@
  */
 export interface PluginInfo {
 	/**
-	 * The ID of the plugin, which cannot use spaces. All plugin IDs should try to be unique, 
+	 * The ID of the plugin, which cannot use spaces. All plugin IDs should try to be unique,
 	 * to make sure that no plugin from different developers would overlap.
-	 * 
+	 *
 	 * Example: com.example.mynewplugin
 	 */
 	id: string;
+
+	/**
+	 * Default Category
+	 */
+	defaultCategory?: string;
+
+	/**
+	 * Default Category icon
+	 */
+	categoryIcon?: string;
 
 	/**
 	 * Optional prefix override from the client.

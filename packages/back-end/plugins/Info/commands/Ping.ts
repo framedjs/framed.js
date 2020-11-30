@@ -2,7 +2,8 @@ import FramedMessage from "../../../src/structures/FramedMessage";
 import { BaseCommand } from "../../../src/structures/BaseCommand";
 import { BasePlugin } from "packages/back-end/src/structures/BasePlugin";
 import { oneLine, stripIndent } from "common-tags";
-import EmbedHelper from "../../../src/utils/discord/EmbedHelper";
+import Discord from "discord.js";
+import EmbedHelper from "packages/back-end/src/utils/discord/EmbedHelper";
 
 export default class extends BaseCommand {
 	constructor(plugin: BasePlugin) {
@@ -44,12 +45,9 @@ export default class extends BaseCommand {
 					? newDiscordMsg.createdTimestamp
 					: newDiscordMsg.editedTimestamp;
 
-			const embed = EmbedHelper.getEmbedTemplate(
-				msg.discord,
-				this.framedClient,
-				this.id
-			);
-			embed.setDescription(stripIndent`
+			const embed = new Discord.MessageEmbed().setColor(
+				EmbedHelper.getColorWithFallback(msg.discord.guild)
+			).setDescription(stripIndent`
 				🏓 \`Message Latency\` - ${botDateNumber - userDateNumber}ms
 				🤖 \`API Latency\` - ${Math.round(discordMsg.client.ws.ping)}ms`);
 			await newDiscordMsg.edit(newDiscordMsg.content, embed);

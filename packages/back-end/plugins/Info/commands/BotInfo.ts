@@ -28,9 +28,9 @@ export default class extends BaseCommand {
 
 		if (msg.discord && framedUser) {
 			const codeblock = "```";
-			const embed = EmbedHelper.getEmbedTemplate(
+			const embed = EmbedHelper.getTemplate(
 				msg.discord,
-				this.framedClient,
+				this.framedClient.helpCommands,
 				this.id
 			).setDescription(stripIndent`
 				${codeblock}

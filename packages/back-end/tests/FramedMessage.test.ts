@@ -23,11 +23,7 @@ test(`Shows quotes in contents, if settings apply`, () => {
 			showQuoteCharacters: false,
 		}
 	);
-	expect(args2).toStrictEqual([
-		`arg 0`,
-		`arg 1 but more spaces`,
-		`arg 2`,
-	]);
+	expect(args2).toStrictEqual([`arg 0`, `arg 1 but more spaces`, `arg 2`]);
 });
 
 test(`Parses content inside quotes`, () => {
@@ -84,4 +80,17 @@ test(`Empty quote section is determined as valid data, and gets parsed`, () => {
 		separateByQuoteSections: true,
 	});
 	expect(argsWithQuoteSection).toStrictEqual([``]);
+});
+
+test(`Parses codeblocks as one argument`, () => {
+	const expectedResult = '```this is a "test" with code blocks```';
+	const args = FramedMessage.getArgs(expectedResult);
+	expect(args[0]).toStrictEqual(expectedResult);
+});
+
+test(`Parses codeblocks as one argument, in quotes`, () => {
+	const inputData = '"```this is a "test" with code blocks```"';
+	const expectedResult = '```this is a "test" with code blocks```';
+	const args = FramedMessage.getArgs(inputData);
+	expect(args[0]).toStrictEqual(expectedResult);
 });

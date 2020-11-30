@@ -75,7 +75,7 @@ export default class Poll extends BaseCommand {
 				// Sends and creates the embed
 				const embed = new Discord.MessageEmbed()
 					.setColor(
-						EmbedHelper.getEmbedColorWithFallback(msg.discord.guild)
+						EmbedHelper.getColorWithFallback(msg.discord.guild)
 					)
 					.setTitle(questionContent)
 					.setDescription(

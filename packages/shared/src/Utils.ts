@@ -42,4 +42,22 @@ export class Utils {
 	public static randomNumber(min: number, max: number): number {
 		return Math.floor(Math.random() * (max + 1 - min) + min);
 	}
+
+	/**
+	 * Returns a variable that could be null into undefined.
+	 *
+	 * To make the value no longer the type "unknown", cast a value
+	 * to your wanted value.
+	 *
+	 * ```ts
+	 * let newString = "This is a string";
+	 * let nonNullVariable = turnUndefinedIfNull(newString) as string;
+	 * ```
+	 */
+	public static turnUndefinedIfNull(variable: unknown): unknown | undefined {
+		if (variable == null) {
+			variable = undefined;
+		}
+		return variable;
+	}
 }

@@ -5,7 +5,6 @@ import { BaseCommand } from "../../../src/structures/BaseCommand";
 import { oneLine, stripIndent } from "common-tags";
 import Discord from "discord.js";
 import { logger } from "shared";
-import EmbedHelper from "packages/back-end/src/utils/discord/EmbedHelper";
 
 export default class EscapeMarkdown extends BaseCommand {
 	constructor(plugin: BasePlugin) {
@@ -237,7 +236,6 @@ export default class EscapeMarkdown extends BaseCommand {
 	 * @returns value, if not null
 	 */
 	static removeNulls(_key: string, value: unknown): unknown {
-		console.log(`${value} | ${typeof value}`);
 		if (value === null) {
 			return undefined;
 		}

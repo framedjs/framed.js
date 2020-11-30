@@ -20,8 +20,8 @@ export default class CustomCommand extends BaseCommand {
 
 	constructor(plugin: BasePlugin) {
 		super(plugin, {
-			id: "commands",
-			aliases: ["customcommand", "command", "cmd", "cmds", "com", "coms"],
+			id: "command",
+			aliases: ["customcommand", "cmd", "cmds", "com", "coms"],
 			about: "Lists all the commands available.",
 			description: oneLine`
 			Lists all the commands availiable. This command also allows you to add, edit, and
@@ -160,8 +160,7 @@ export default class CustomCommand extends BaseCommand {
 				// Show the commands
 				const connection = this.framedClient.databaseManager.connection;
 				if (connection) {
-					const commandRepo = connection.getRepository(Command);
-					const mainHelpFields = this.framedClient.pluginManager.createMainHelpFields(
+					const mainHelpFields = await this.framedClient.pluginManager.createMainHelpFields(
 						[
 							{
 								category: "Info",
@@ -185,7 +184,11 @@ export default class CustomCommand extends BaseCommand {
 							},
 							{
 								category: "Fun",
-								command: [{ command: "poll" }],
+								command: [
+									{
+										command: "poll",
+									},
+								],
 							},
 							{
 								category: "Manage",
@@ -207,15 +210,18 @@ export default class CustomCommand extends BaseCommand {
 									},
 								],
 							},
+							{
+								category: ""
+							}
 						]
 					);
 
-					const infoHelpFields = await this.framedClient.pluginManager.createInfoHelpFields();
+					// const infoHelpFields = await this.framedClient.pluginManager.createInfoHelpFields();
 
-					if (msg.discord) {
-						const embed = EmbedHelper.getEmbedTemplate(
+					if (msg.discord && mainHelpFields) {
+						const embed = EmbedHelper.getTemplate(
 							msg.discord,
-							this.framedClient,
+							this.framedClient.helpCommands,
 							this.id
 						)
 							.setTitle("Commands")
@@ -227,9 +233,9 @@ export default class CustomCommand extends BaseCommand {
 							)
 							.addFields(mainHelpFields);
 
-						if (infoHelpFields) {
-							embed.addFields(infoHelpFields);
-						}
+						// if (infoHelpFields) {
+						// 	embed.addFields(infoHelpFields);
+						// }
 
 						await msg.discord.channel.send(embed);
 						return true;
@@ -406,7 +412,7 @@ export default class CustomCommand extends BaseCommand {
 							id: oldResponse.id,
 							responseData: {
 								description: lastContent,
-								list: newList
+								list: newList,
 							},
 						});
 						newResponse = await responseRepo.save(oldResponse);
