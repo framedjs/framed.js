@@ -9,14 +9,13 @@ export default class CustomCommand extends BaseCommand {
 	constructor(plugin: BasePlugin) {
 		super(plugin, {
 			id: "addcom",
-			aliases: ["createcom"],
+			aliases: ["addcommand", "createcom", "createcommand"],
 			about: "Adds custom commands.",
 			description:
 				"Adds custom commmands. This is an alias of `.command add`.",
 			usage: `<command ID> <content> "[description]"`,
 			examples: stripIndent`
 			\`{{prefix}}addcom newcommand This is a test message.\``,
-			emojiIcon: "🔸",
 			hideUsageInHelp: true,
 		});
 	}

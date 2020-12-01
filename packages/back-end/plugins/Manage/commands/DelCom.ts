@@ -16,7 +16,6 @@ export default class CustomCommand extends BaseCommand {
 			usage: "<command ID>",
 			examples: stripIndent`
 			\`{{prefix}}delcom newcommand\``,
-			emojiIcon: "🔸",
 			hideUsageInHelp: true,
 		});
 	}

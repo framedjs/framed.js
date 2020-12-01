@@ -5,13 +5,28 @@ import { BasePlugin } from "../../../src/structures/BasePlugin";
 import { BaseCommand } from "../../../src/structures/BaseCommand";
 import { oneLine, stripIndent } from "common-tags";
 import { logger } from "shared";
-import PluginManager from "packages/back-end/src/managers/PluginManager";
+import PluginManager, { HelpData } from "../../../src/managers/PluginManager";
+
+const data: HelpData[] = [
+	{
+		category: ":information_source: Info",
+		commands: ["help", "usage", "ping", "about", "dailies"],
+	},
+	{
+		category: ":tada: Fun",
+		commands: ["poll"],
+	},
+	{
+		category: "🕒 Dailies",
+		commands: ["dailies", "streaks", "alert", "casual"],
+	},
+];
 
 export default class extends BaseCommand {
 	constructor(plugin: BasePlugin) {
 		super(plugin, {
 			id: "help",
-			aliases: ["h"],
+			aliases: ["h", "commands"],
 			about: "View help for certain commands and extra info.",
 			description: stripIndent`
 				Shows a list of useful commands, or detail specific commands for you.
@@ -21,171 +36,82 @@ export default class extends BaseCommand {
 				\`{{prefix}}help\`
 				\`{{prefix}}help poll\`
 			`,
-			inlineCharacterLimit: 40,
 			emojiIcon: "❓",
+			inline: true,
 		});
 	}
 
 	async run(msg: FramedMessage): Promise<boolean> {
 		const framedUser = this.framedClient.client.user;
-		if (msg.discord && msg.args && framedUser) {
+
+		if (msg.args && framedUser) {
 			const lookUpCmd = msg.args[0];
 
 			if (lookUpCmd) {
-				this.showHelpForCommand(lookUpCmd, msg);
+				return this.showHelpForCommand(lookUpCmd, msg);
 			} else {
-				const embed = EmbedHelper.getTemplate(
-					msg.discord,
-					this.framedClient.helpCommands,
-					this.id
-				);
-
-				const botName = msg.discord.client.user?.username
-					? msg.discord.client.user?.username
-					: "Pixel pete";
-
-				embed.setTitle(botName).setDescription(
-					oneLine`${botName} is a collection of custom bots for <:gdu:766718483983368212> Game Dev Underground, 
-						by <@200340393596944384>, <@359521958519504926>, and <@150649616772235264>.`
-				);
-				// .addField(
-				// 	"News",
-				// 	stripIndent`
-				// 	Pixel Pete is looking for a new identity!
-
-				// 	`
-				// );
-
-				// const mainData = PluginManager.createMainHelpFields(
-				// 	this.framedClient.pluginManager.plugins,
-				// 	this.framedClient.shortHelpInfo
-				// );
-
-				// if (mainData) {
-				// 	embed.addFields(mainData);
-				// }
-
-				const infoData = await PluginManager.createDBHelpFields(
-					msg.framedClient.databaseManager
-				);
-
-				if (infoData) {
-					embed.addFields(infoData);
-				}
-
-				embed.addField(
-					"Other Bots",
-					stripIndent`
-						<@234395307759108106> \`-help\` - Used for music in the <#760622055384547368> voice channel.`
-				);
-
-				try {
-					await msg.discord.channel.send(embed);
-				} catch (error) {
-					await msg.discord.channel.send(
-						`${msg.discord.author}, the embed size for help is too large! Contact one of the bot masters`
-					);
-					logger.error(error.stack);
-				}
-			}
-
-			return true;
-		}
-
-		return true;
-	}
-
-	private async showHelpAll(msg: FramedMessage): Promise<boolean> {
-		if (msg.discord) {
-			// Show the commands
-			const connection = this.framedClient.databaseManager.connection;
-			if (connection) {
-				const mainHelpFields = this.framedClient.pluginManager.createMainHelpFields(
-					[
-						{
-							category: "Info",
-							command: [
-								{
-									command: "help",
-								},
-								{
-									command: "usage",
-								},
-								{
-									command: "ping",
-								},
-								{
-									command: "botinfo",
-								},
-								{
-									command: "dailies",
-								},
-							],
-						},
-						{
-							category: "Fun",
-							command: [
-								{
-									command: "poll",
-								},
-							],
-						},
-						{
-							category: "Manage",
-							command: [
-								{
-									command: "command",
-								},
-								{
-									command: "addcom",
-								},
-								{
-									command: "editcom",
-								},
-								{
-									command: "delcom",
-								},
-								{
-									command: "escapemd",
-								},
-							],
-						},
-					]
-				);
-
-				const infoHelpFields = await this.framedClient.pluginManager.createInfoHelpFields();
-
-				if (msg.discord) {
-					const embed = EmbedHelper.getTemplate(
-						msg.discord,
-						this.framedClient.helpCommands,
-						this.id
-					)
-						.setTitle("Commands")
-						.setDescription(
-							oneLine`
-						This is a list of all the commands. If you'd like to view a
-						shorter and simpler view, along with other info, use \`${this.defaultPrefix}help\`.
-						`
-						)
-						// .addFields(mainHelpFields);
-
-					if (infoHelpFields) {
-						embed.addFields(infoHelpFields);
-					}
-
-					await msg.discord.channel.send(embed);
-					return true;
-				}
+				return this.showHelpAll(msg);
 			}
 		}
 		return false;
 	}
 
+	private async showHelpAll(msg: FramedMessage): Promise<boolean> {
+		const helpFields = await this.framedClient.pluginManager.createHelpFields(
+			data
+		);
+
+		if (msg.discord && helpFields) {
+			const embed = EmbedHelper.getTemplate(
+				msg.discord,
+				this.framedClient.helpCommands,
+				this.id
+			)
+				.setTitle("Command Help")
+				.setDescription(
+					oneLine`
+						Pixel Pete is a collection of custom bots for <:gdu:766718483983368212>
+						**Game Dev Underground**, by <@200340393596944384>, <@359521958519504926>,
+						and <@150649616772235264>. 
+						`
+				)
+				.addFields(helpFields)
+				.addField(
+					"🤖 Other Bots",
+					stripIndent`
+						\`-help\` - <@234395307759108106> is used for music in the <#760622055384547368> voice channel.
+						`
+				)
+				.addField(
+					"Need a Custom Discord Bot?",
+					oneLine`
+						Send <@200340393596944384> a message on Discord!`
+				);
+
+			embed.setFooter(
+				`${
+					embed.footer?.text ? embed.footer.text : ""
+				}\nUse .help <command> to see more info.`,
+				embed.footer?.iconURL
+			);
+
+			try {
+				await msg.discord.channel.send(embed);
+			} catch (error) {
+				await msg.discord.channel.send(
+					`${msg.discord.author}, the embed size for help is too large! Contact one of the bot masters`
+				);
+				logger.error(error.stack);
+			}
+			return true;
+		}
+		return false;
+	}
+
 	/**
-	 * 
-	 * @param lookUpCmd 
-	 * @param msg 
+	 *
+	 * @param lookUpCmd
+	 * @param msg
 	 */
 	private async showHelpForCommand(
 		lookUpCmd: string,
@@ -231,15 +157,16 @@ export default class extends BaseCommand {
 				// 	`\`${command.prefix}${command.id}\`\n${description}`
 				// );
 
-				// Sets the inline character limit, for when it should become not inline
-				// if it exceeds this value
-				let inlineCharacterLimit = 25;
-				if (command.inlineCharacterLimit) {
-					inlineCharacterLimit = command.inlineCharacterLimit;
-				}
-				logger.debug(
-					"Help.ts: Inline Character Limit: " + inlineCharacterLimit
-				);
+				// if (command.aliases) {
+				// 	let aliasString = "";
+				// 	const newElementCharacter = command.inline ? "\n" : " ";
+
+				// 	for (const alias of command.aliases) {
+				// 		aliasString += `\`${alias}\`${newElementCharacter}`;
+				// 	}
+				// 	if (aliasString.length > 0)
+				// 		embed.addField("Aliases", aliasString, command.inline);
+				// }
 
 				if (command.usage) {
 					const guideMsg = stripIndent`
@@ -251,7 +178,9 @@ export default class extends BaseCommand {
 					embed.addField(
 						"Usage",
 						`${guideMsg}\n${usageMsg}`,
-						usageMsg.length <= inlineCharacterLimit
+						command.inlineCharacterLimit
+							? usageMsg.length <= command.inlineCharacterLimit
+							: command.inline
 					);
 				}
 
@@ -259,7 +188,10 @@ export default class extends BaseCommand {
 					embed.addField(
 						"Examples",
 						`Try copying and editing them!\n${command.examples}`,
-						command.examples.length <= inlineCharacterLimit
+						command.inlineCharacterLimit
+							? command.examples.length <=
+									command.inlineCharacterLimit
+							: command.inline
 					);
 				}
 

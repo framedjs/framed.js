@@ -77,7 +77,7 @@ export default class EmbedHelper {
 	 */
 	static getColorWithFallback(
 		guild: Discord.Guild | null | undefined,
-		defaultColor = "#000000"
+		defaultColor = "#ffffff"
 	): string {
 		// If guild doesn't exist, just return any value
 		if (!guild) {

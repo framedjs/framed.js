@@ -15,12 +15,14 @@ export default class DiscohookEmbed extends BaseCommand {
 			Creates an embed from Discordhook JSON.
 			To get the JSON from a Discordhook link, simply click JSON Editor and Copy to Clipboard.
 			`,
-			usage: "<message ID | message link | message>",
-			emojiIcon: "⚓",
+			usage: "[id|link|content]",
+			examples: stripIndent`
+			\`{{prefix}}embed\`
+			\`{{prefix}}embed This test is **bold**!\`			
+			`,
 			permissions: {
 				discord: {
 					roles: ["758771336289583125", "462342299171684364"],
-					permissions: ["ADMINISTRATOR"],
 				},
 			},
 		});

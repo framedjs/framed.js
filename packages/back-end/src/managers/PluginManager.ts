@@ -22,6 +22,11 @@ export interface HelpInfo {
 	command: string;
 }
 
+export interface HelpData {
+	category: string;
+	commands: string[];
+}
+
 export default class PluginManager {
 	/**
 	 * The key is the plugin's full ID
@@ -275,12 +280,12 @@ export default class PluginManager {
 	 *
 	 * @returns Discord embed field data, containing brief info on commands
 	 */
-	async createMainHelpFields(
-		helpList: HelpCategory[]
+	async createHelpFields(
+		helpList: HelpData[]
 	): Promise<Discord.EmbedFieldData[] | undefined> {
 		const connection = this.framedClient.databaseManager.connection;
 		if (connection) {
-			return await PluginManager.createMainHelpFields(
+			return await PluginManager.createHelpFields(
 				this.plugins,
 				helpList,
 				connection
@@ -366,20 +371,20 @@ export default class PluginManager {
 		// Loops through all of the help elements,
 		// in order to sort them properly like in the data
 		helpList.forEach(helpElement => {
-			let categoryText = "";
+			let text = "";
 
 			// Goes through each command in help, and finds matches in order
 			helpElement.command.forEach(cmdElement => {
 				const cmdText = sectionMap.get(cmdElement.command);
 				if (cmdText) {
-					categoryText += `${cmdText}\n`;
+					text += `${cmdText}\n`;
 				}
 			});
 
 			// Push everything from this category into a Embed field
 			fields.push({
 				name: helpElement.category,
-				value: categoryText,
+				value: text,
 			});
 		});
 
@@ -393,12 +398,7 @@ export default class PluginManager {
 	 */
 	static async createHelpFields(
 		plugins: Map<string, BasePlugin>,
-		helpList: [
-			{
-				category: string;
-				commands: string[];
-			}
-		],
+		helpList: HelpData[],
 		connection: TypeORM.Connection
 	): Promise<Discord.EmbedFieldData[]> {
 		const fields: Discord.EmbedFieldData[] = [];
@@ -422,6 +422,7 @@ export default class PluginManager {
 			pluginCommandMap.set(plugin.id, pluginCommands);
 		});
 
+		// Goes through all of the help elements, and assigns something to print out
 		for await (const helpElement of helpList) {
 			for await (const command of helpElement.commands) {
 				// Gets all plugin command and alias references, along
@@ -469,10 +470,35 @@ export default class PluginManager {
 						content += ` `;
 					}
 
-					sectionMap.set(command.id, content);
+					entries.set(command.id, {
+						category: "",
+						description: content,
+					});
 				}
 			}
 		}
+
+		// 
+
+		// Loops through all of the help elements,
+		// in order to sort them properly like in the data
+		helpList.forEach(helpElement => {
+			let categoryText = "";
+
+			// Goes through each command in help, and finds matches in order
+			helpElement.commands.forEach(command => {
+				const text = entries.get(command);
+				if (text) {
+					categoryText += `${text.description}\n`;
+				}
+			});
+
+			// Push everything from this category into a Embed field
+			fields.push({
+				name: helpElement.category,
+				value: categoryText,
+			});
+		});
 
 		return fields;
 	}
@@ -516,7 +542,7 @@ export default class PluginManager {
 				const description = command.response?.responseData?.description;
 
 				if (description) {
-					content = `🔹 ${content} - ${description}\n`;
+					content = `${content} - ${description}\n`;
 					contentList.push(content);
 				} else {
 					content += ` `;

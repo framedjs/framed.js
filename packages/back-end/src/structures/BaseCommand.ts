@@ -6,6 +6,9 @@ import Discord from "discord.js";
 import { FramedPermissions } from "./FramedPermissions";
 import EmbedHelper from "../utils/discord/EmbedHelper";
 import { logger } from "shared";
+import Options from "../interfaces/RequireAllOptions";
+import DiscordUtils from "../utils/discord/DiscordUtils";
+import BaseSubcommand from "./BaseSubcommand";
 
 export abstract class BaseCommand {
 	readonly framedClient: FramedClient;
@@ -32,9 +35,16 @@ export abstract class BaseCommand {
 	id: string;
 
 	/**
-	 * Subcommands a list of possible subcommands for metadata.
+	 * The command tries to import scripts from paths found in this object.
 	 */
-	subcommands?: string[];
+	paths?: {
+		subcommands?: string;
+	};
+
+	/**
+	 * Subcommands.
+	 */
+	subcommands: Map<string, BaseSubcommand>;
 
 	/**
 	 * Stores a list of command aliases possible to trigger the command.
@@ -97,6 +107,24 @@ export abstract class BaseCommand {
 	inlineCharacterLimit?: number;
 
 	/**
+	 * Use inline in help?
+	 */
+	inline: boolean;
+
+	/**
+	 * Use inline in help?
+	 */
+	inlineAliases: boolean;
+
+	/**
+	 * Command info. DO NOT USE THIS unless you're re-constructing through the constructor,
+	 * or know what you're doing.
+	 *
+	 * If you're unsure whether to use this, USE THE BASE VARIABLES INSTEAD.
+	 */
+	info: CommandInfo;
+
+	/**
 	 * Create a new BaseCommand.
 	 * @param plugin Plugin that this command will be attached to
 	 * @param info Command information
@@ -142,6 +170,12 @@ export abstract class BaseCommand {
 				this.defaultPrefix
 			);
 		}
+
+		this.inline = info.inline ? info.inline : false;
+		this.inlineAliases = info.inlineAliases ? info.inlineAliases : false;
+
+		this.info = info;
+		this.subcommands = new Map();
 	}
 
 	/**
@@ -229,7 +263,7 @@ export abstract class BaseCommand {
 			if (embedFields.length > 0) {
 				embed
 					.setDescription(
-						`${embed.description}\nYou need one of the following permissions:`
+						`${embed.description}\nYou need the following permissions or roles:`
 					)
 					.addFields(embedFields);
 			}
@@ -302,5 +336,46 @@ export abstract class BaseCommand {
 			// If the command doesn't specify permissions, assume it's fine
 			return true;
 		}
+	}
+
+	/**
+	 * Loads the plugins
+	 * @param options RequireAll options
+	 */
+	loadSubcommandsIn(options: Options): void {
+		try {
+			const subcommands = DiscordUtils.importScripts(options);
+			this.loadSubcommands(subcommands);
+		} catch (error) {
+			logger.error(error.stack);
+		}
+	}
+
+	/**
+	 *
+	 * @param subcommands
+	 */
+	loadSubcommands<T extends BaseSubcommand>(
+		subcommands: (new (framedClient: FramedClient) => T)[]
+	): void {
+		for (const plugin of subcommands) {
+			const initSubcommand = new plugin(this.framedClient);
+			this.loadSubcommand(initSubcommand);
+		}
+	}
+
+	/**
+	 *
+	 * @param subcommand
+	 */
+	loadSubcommand<T extends BaseSubcommand>(subcommand: T): void {
+		if (this.subcommands.get(subcommand.id)) {
+			logger.error(`Subcommand with id ${subcommand.id} already exists!`);
+			return;
+		}
+
+		this.subcommands.set(subcommand.id, subcommand);
+
+		logger.debug(`Finished loading subcommand ${subcommand.id}.`);
 	}
 }

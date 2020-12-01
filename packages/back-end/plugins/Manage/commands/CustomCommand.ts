@@ -3,14 +3,13 @@ import FramedMessage from "../../../src/structures/FramedMessage";
 import { BaseCommand } from "../../../src/structures/BaseCommand";
 import { BasePlugin } from "../../../src/structures/BasePlugin";
 import { oneLine, stripIndent } from "common-tags";
-import EmbedHelper from "../../../src/utils/discord/EmbedHelper";
 import { logger } from "shared";
 import * as TypeORM from "typeorm";
 import PluginManager from "../../../src/managers/PluginManager";
 import Command from "../../../src/managers/database/entities/Command";
 import Prefix from "../../../src/managers/database/entities/Prefix";
 import Response from "../../../src/managers/database/entities/Response";
-import ResponseData from "packages/back-end/src/managers/database/interfaces/ResponseData";
+import ResponseData from "../../../src/managers/database/interfaces/ResponseData";
 
 export default class CustomCommand extends BaseCommand {
 	/**
@@ -21,7 +20,7 @@ export default class CustomCommand extends BaseCommand {
 	constructor(plugin: BasePlugin) {
 		super(plugin, {
 			id: "command",
-			aliases: ["customcommand", "cmd", "cmds", "com", "coms"],
+			aliases: ["customcommand", "cmd", "com"],
 			about: "Lists all the commands available.",
 			description: oneLine`
 			Lists all the commands availiable. This command also allows you to add, edit, and
@@ -38,7 +37,6 @@ export default class CustomCommand extends BaseCommand {
 					roles: ["462342299171684364", "758771336289583125"],
 				},
 			},
-			emojiIcon: "📝",
 			hideUsageInHelp: true,
 		});
 
@@ -109,9 +107,9 @@ export default class CustomCommand extends BaseCommand {
 
 				if (parse) {
 					const {
-						addEditRemoveParam,
-						commandId,
-						questionArgs,
+						subcommand: addEditRemoveParam,
+						newCommandId: commandId,
+						args: newArgs,
 					} = parse;
 
 					// Tries and get the aliases
@@ -131,7 +129,7 @@ export default class CustomCommand extends BaseCommand {
 								return (
 									(await this.addCommand(
 										commandId,
-										questionArgs,
+										newArgs,
 										msg
 									)) != undefined
 								);
@@ -139,7 +137,7 @@ export default class CustomCommand extends BaseCommand {
 								return (
 									(await this.editCommand(
 										commandId,
-										questionArgs,
+										newArgs,
 										msg
 									)) != undefined
 								);
@@ -155,91 +153,6 @@ export default class CustomCommand extends BaseCommand {
 				} else {
 					await PluginManager.showHelpForCommand(msg, this.id);
 					return true;
-				}
-			} else {
-				// Show the commands
-				const connection = this.framedClient.databaseManager.connection;
-				if (connection) {
-					const mainHelpFields = await this.framedClient.pluginManager.createMainHelpFields(
-						[
-							{
-								category: "Info",
-								command: [
-									{
-										command: "help",
-									},
-									{
-										command: "usage",
-									},
-									{
-										command: "ping",
-									},
-									{
-										command: "botinfo",
-									},
-									{
-										command: "dailies",
-									},
-								],
-							},
-							{
-								category: "Fun",
-								command: [
-									{
-										command: "poll",
-									},
-								],
-							},
-							{
-								category: "Manage",
-								command: [
-									{
-										command: "command",
-									},
-									{
-										command: "addcom",
-									},
-									{
-										command: "editcom",
-									},
-									{
-										command: "delcom",
-									},
-									{
-										command: "escapemd",
-									},
-								],
-							},
-							{
-								category: ""
-							}
-						]
-					);
-
-					// const infoHelpFields = await this.framedClient.pluginManager.createInfoHelpFields();
-
-					if (msg.discord && mainHelpFields) {
-						const embed = EmbedHelper.getTemplate(
-							msg.discord,
-							this.framedClient.helpCommands,
-							this.id
-						)
-							.setTitle("Commands")
-							.setDescription(
-								oneLine`
-							This is a list of all the commands. If you'd like to view a
-							shorter and simpler view, along with other info, use \`${this.defaultPrefix}help\`.
-							`
-							)
-							.addFields(mainHelpFields);
-
-						// if (infoHelpFields) {
-						// 	embed.addFields(infoHelpFields);
-						// }
-
-						await msg.discord.channel.send(embed);
-						return true;
-					}
 				}
 			}
 		}
@@ -268,24 +181,24 @@ export default class CustomCommand extends BaseCommand {
 		addEditRemove: Map<string, string>
 	):
 		| {
-				addEditRemoveParam: string;
-				commandId: string;
+				subcommand: string;
+				newCommandId: string;
 				questionContent: string;
-				questionArgs: string[];
+				args: string[];
 		  }
 		| undefined {
-		const addEditRemoveParam = args[0];
-		const commandId = args[1];
+		const subcommand = args[0];
+		const newCommandId = args[1];
 
-		if (addEditRemoveParam && commandId) {
+		if (subcommand && newCommandId) {
 			const questionContent = content
 				.replace(prefix, "")
 				.replace(command, "")
-				.replace(addEditRemoveParam, "")
-				.replace(commandId, "")
+				.replace(subcommand, "")
+				.replace(newCommandId, "")
 				.trim();
 
-			const state = addEditRemove.get(addEditRemoveParam);
+			const state = addEditRemove.get(subcommand);
 			if (state) {
 				const questionArgs = FramedMessage.getArgs(questionContent, {
 					separateByQuoteSections: true,
@@ -298,10 +211,10 @@ export default class CustomCommand extends BaseCommand {
 				`);
 
 				return {
-					addEditRemoveParam: addEditRemoveParam,
-					commandId: commandId,
+					subcommand: subcommand,
+					newCommandId: newCommandId,
 					questionContent: questionContent,
-					questionArgs: questionArgs,
+					args: questionArgs,
 				};
 			}
 		}

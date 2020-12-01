@@ -1,7 +1,7 @@
 import { FramedPermissions } from "../structures/FramedPermissions";
 
 /**
- * To be used with BaseCommand.
+ * To be used with BaseCommand and BaseSubcommand
  */
 export interface CommandInfo {
 	/**
@@ -12,13 +12,17 @@ export interface CommandInfo {
 	 *
 	 * For example, if the ID was "test", then one way to be able to trigger it would
 	 * be !test if the default prefix was "!".
+	 * 
+	 * If the command info is part of a subcommand, the subcommand is the ID.
 	 */
 	id: string;
 
 	/**
-	 * Subcommands a list of possible subcommands for metadata.
+	 * The command tries to import scripts from paths found in this object.
 	 */
-	subcommands?: string[];
+	paths?: {
+		subcommands?: string;
+	};
 
 	/**
 	 * Stores a list of command aliases possible to trigger the command.
@@ -83,7 +87,12 @@ export interface CommandInfo {
 	inlineCharacterLimit?: number;
 
 	/**
-	 *
+	 * Use inline for embed field?
 	 */
-	useInline?: boolean;
+	inline?: boolean;
+
+	/**
+	 * Use inline for embed for aliases field?
+	 */
+	inlineAliases?: boolean;
 }

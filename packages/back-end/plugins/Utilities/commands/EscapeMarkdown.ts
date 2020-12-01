@@ -10,22 +10,23 @@ export default class EscapeMarkdown extends BaseCommand {
 	constructor(plugin: BasePlugin) {
 		super(plugin, {
 			id: "escapemd",
-			aliases: ["escapemarkdown", "markdown", "md", "escmd"],
+			aliases: ["escapemarkdown", "markdown", "md"],
 			about: "Escapes all markdown in a message.",
-			description: stripIndent`
-			Escapes all markdown in a message, including:
-			• Code blocks and inline code
-			• Bold, italics, underlines, and strikethroughs
-			• Spoiler tags
-			This will allow the message to be copy and pastable.`,
-			usage: "<message ID | message link | message>",
+			description: oneLine`
+			Escapes all markdown in a message, including code blocks,
+			bold, italics, underlines, and strikethroughs.
+			This allows the message to be copy and pastable.`,
+			usage: "[id|link|content]",
+			examples: stripIndent`
+			\`{{prefix}}escapemd\`
+			\`{{prefix}}escapemd This ~~is~~ a **test**!\``,
 			permissions: {
 				discord: {
 					roles: ["462342299171684364", "758771336289583125"],
 				},
 			},
-			emojiIcon: "🧼",
-			hideUsageInHelp: true,
+			inline: true,
+			// hideUsageInHelp: true,
 		});
 	}
 
@@ -36,7 +37,7 @@ export default class EscapeMarkdown extends BaseCommand {
 		}
 
 		if (msg.discord?.guild && msg.args) {
-			const parse = await EscapeMarkdown.getNewMessage(msg);
+			const parse = await EscapeMarkdown.getNewMessage(msg, true);
 			return await EscapeMarkdown.showStrippedMessage(
 				msg,
 				parse?.newContent,
@@ -54,6 +55,7 @@ export default class EscapeMarkdown extends BaseCommand {
 	 */
 	static async getNewMessage(
 		msg: FramedMessage,
+		cleanUp?: boolean,
 		silent?: boolean
 	): Promise<{ newMsg?: Discord.Message; newContent?: string } | undefined> {
 		if (msg.discord?.guild && msg.args) {
@@ -120,9 +122,13 @@ export default class EscapeMarkdown extends BaseCommand {
 
 			if (validSnowflake) {
 				if (snowflakeMsg) {
-					newContent = `${Discord.Util.escapeMarkdown(
-						snowflakeMsg.content
-					)}`;
+					if (cleanUp) {
+						newContent = `${Discord.Util.escapeMarkdown(
+							snowflakeMsg.content
+						)}`;
+					} else {
+						newContent = snowflakeMsg.content;
+					}
 					newMsg = snowflakeMsg;
 				} else {
 					if (!silent)
@@ -134,9 +140,13 @@ export default class EscapeMarkdown extends BaseCommand {
 				}
 			} else if (linkMsg) {
 				if (linkMsg instanceof Discord.Message) {
-					newContent = `${Discord.Util.escapeMarkdown(
-						linkMsg.content
-					)}`;
+					if (cleanUp) {
+						newContent = `${Discord.Util.escapeMarkdown(
+							linkMsg.content
+						)}`;
+					} else {
+						newContent = linkMsg.content;
+					}
 					newMsg = linkMsg;
 				} else {
 					if (!silent)
@@ -145,11 +155,17 @@ export default class EscapeMarkdown extends BaseCommand {
 						);
 				}
 			} else if (content.length > 0) {
-				newContent = `${Discord.Util.escapeMarkdown(content)}`;
+				if (cleanUp)
+					newContent = `${Discord.Util.escapeMarkdown(content)}`;
+				else newContent = content;
 			} else if (previousMsg) {
-				newContent = `${Discord.Util.escapeMarkdown(
-					previousMsg.content
-				)}`;
+				if (cleanUp) {
+					newContent = `${Discord.Util.escapeMarkdown(
+						previousMsg.content
+					)}`;
+				} else {
+					newContent = previousMsg.content;
+				}
 				newMsg = previousMsg;
 			} else {
 				if (!silent)

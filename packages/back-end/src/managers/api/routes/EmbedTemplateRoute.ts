@@ -1,6 +1,6 @@
-import BaseRouter from "packages/back-end/src/structures/BaseRouter";
-import FramedClient from "packages/back-end/src/structures/FramedClient";
-import EmbedHelper from "packages/back-end/src/utils/discord/EmbedHelper";
+import BaseRouter from "../../../structures/BaseRouter";
+import FramedClient from "../../../structures/FramedClient";
+import EmbedHelper from "../../../utils/discord/EmbedHelper";
 import { Utils } from "shared";
 
 export default class extends BaseRouter {
@@ -22,14 +22,14 @@ export default class extends BaseRouter {
 				})
 			) as string | undefined; 
 
-			const authorAvatarUrl = "";
-			const commandUsed = "";
+			const authorAvatarUrl = ctx.query.authorAvatarUrl || "";
+			const commandUsed = ctx.query.commandUsed || "";
 
 			const json = JSON.stringify(
 				EmbedHelper.getTemplateRaw(
 					botUsername,
 					framedClient.helpCommands,
-					"#e91e63",
+					EmbedHelper.getColorWithFallback(undefined),
 					botAvatarUrl,
 					authorAvatarUrl,
 					undefined,

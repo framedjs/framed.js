@@ -17,7 +17,7 @@ export default class Poll extends BaseCommand {
 				Create a simple, reaction-based poll through Discord.
 				You can use \`\\\"\` to put quotes in, without making custom options.
 			`,
-			usage: '[single] <question> "[option 1]" "[option 2]"',
+			usage: '[single] <question> [..."options"]',
 			hideUsageInHelp: true,
 			examples: stripIndent`
 				\`{{prefix}}poll Do you like pineapple on pizza?\` - Simple Poll
