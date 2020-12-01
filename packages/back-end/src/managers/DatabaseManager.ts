@@ -4,6 +4,7 @@ import { logger } from "shared";
 import Prefix from "./database/entities/Prefix";
 import Command from "./database/entities/Command";
 import Response from "./database/entities/Response";
+import Group from "./database/entities/Group";
 
 export class DatabaseManager {
 	static readonly defaultDbPath = path.join(
@@ -89,10 +90,10 @@ export class DatabaseManager {
 
 	/**
 	 * Finds a command in a database
-	 * 
+	 *
 	 * @param commandId Command ID
 	 * @param prefix Prefix string
-	 * 
+	 *
 	 * @returns Command object from database, or undefined
 	 */
 	async findCommandInDatabase(
@@ -128,10 +129,12 @@ export class DatabaseManager {
 				foundPrefixes.forEach(prefix => {
 					foundCommand.prefixes.forEach(cmdPrefix => {
 						if (cmdPrefix.id == prefix.id) {
-							logger.debug(`DatabaseManager.ts: returning command ${foundCommand.id}`);
+							logger.debug(
+								`DatabaseManager.ts: returning command ${foundCommand.id}`
+							);
 							matchingCommand = foundCommand;
 						}
-					})
+					});
 				});
 
 				return matchingCommand;
@@ -181,6 +184,26 @@ export class DatabaseManager {
 			throw new Error(
 				"No connection to database while trying to delete Response!"
 			);
+		}
+	}
+
+	// async createDefaultGroup(): Promise<void> {}
+
+	/**
+	 * Creates a group
+	 * @param name Name of the group
+	 */
+	async createGroup(name: string): Promise<void> {
+		const connection = this.connection;
+		if (connection) {
+			const groupRepo = connection.getRepository(Group);
+
+			await groupRepo.save(groupRepo.create({
+				name: name,
+				commands: [],
+			}))
+		} else {
+			throw new Error("There is no connection to the database!");
 		}
 	}
 }

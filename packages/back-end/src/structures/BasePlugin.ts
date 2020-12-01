@@ -7,6 +7,7 @@ import { PluginInfo } from "../interfaces/PluginInfo";
 import { BaseEvent } from "./BaseEvent";
 import PluginManager from "../managers/PluginManager";
 import Options from "../interfaces/RequireAllOptions";
+import BaseSubcommand from "./BaseSubcommand";
 
 export abstract class BasePlugin {
 	readonly framedClient: FramedClient;
@@ -95,11 +96,19 @@ export abstract class BasePlugin {
 		commands: (new (plugin: BasePlugin) => T)[]
 	): void {
 		for (const command of commands) {
-			try {
-				const initCommand = new command(this);
-				this.loadCommand(initCommand);
-			} catch (error) {
-				logger.error(error.stack);
+			// I hate this
+			const className = util
+				.inspect(command.prototype, undefined, 0)
+				?.replace("{}", "")
+				.trim();
+			const name = BaseCommand.name;
+			if (className.startsWith(name)) {
+				try {
+					const initCommand = new command(this);
+					this.loadCommand(initCommand);
+				} catch (error) {
+					logger.error(error.stack);
+				}
 			}
 		}
 	}
@@ -116,6 +125,11 @@ export abstract class BasePlugin {
 		}
 		this.commands.set(command.id, command);
 
+		// Skip over subcommand scripts
+		// if (command instanceof BaseSubcommand) {
+		// 	return;
+		// }
+
 		// Sets up some aliases
 		if (command.aliases) {
 			for (const alias of command.aliases) {
@@ -126,6 +140,16 @@ export abstract class BasePlugin {
 					continue;
 				}
 				this.aliases.set(alias, command);
+			}
+		}
+
+		// Load subcommands from script
+		if (command.subcommands) {
+			if (command.paths?.subcommands) {
+				command.loadSubcommandsIn({
+					dirname: command.paths.subcommands,
+					filter: /^(.*)\.(js|ts)$/,
+				});
 			}
 		}
 

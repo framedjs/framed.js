@@ -7,8 +7,8 @@ import EmbedHelper from "../../../src/utils/discord/EmbedHelper";
 export default class extends BaseCommand {
 	constructor(plugin: BasePlugin) {
 		super(plugin, {
-			id: "botinfo",
-			aliases: ["botstats"],
+			id: "about",
+			aliases: ["botinfo", "botstats"],
 			about:
 				"Gets various stats from the bot, including versions and uptime.",
 			emojiIcon: "🤖",
@@ -33,7 +33,7 @@ export default class extends BaseCommand {
 				this.framedClient.helpCommands,
 				this.id
 			).setDescription(stripIndent`
-				${codeblock}
+				${codeblock}yml
 				Uptime:           ${this.secondsToDhms(uptime)}
 				Framed Version:   v${msg.framedClient.version}
 				Back-End Version: v${msg.framedClient.backEndVersion}${environment}

@@ -14,8 +14,7 @@ export default class DiscohookEmbed extends BaseCommand {
 			id: "discohook",
 			aliases: ["discohookembed"],
 			about: "Creates JSON data usable in Discohook.",
-			usage: "<message ID | message link | message>",
-			emojiIcon: "⚓",
+			usage: "[id|link|content]",
 		});
 	}
 

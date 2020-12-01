@@ -1,4 +1,5 @@
-import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToOne, PrimaryColumn } from "typeorm";
+import { Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, PrimaryColumn } from "typeorm";
+import Group from "./Group";
 import Prefix from "./Prefix";
 import Response from "./Response";
 
@@ -7,6 +8,9 @@ export default class Command {
 	@PrimaryColumn()
 	id!: string;
 	
+	@ManyToOne(() => Group, category => category.commands)
+	group!: Group;
+
 	@ManyToOne(() => Prefix, prefix => prefix.defaultCommands)
 	@JoinColumn()
 	defaultPrefix!: Prefix;
