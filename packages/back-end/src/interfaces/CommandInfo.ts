@@ -40,9 +40,9 @@ export interface CommandInfo {
 	prefixes?: string[];
 
 	/**
-	 * Category
+	 * Group
 	 */
-	category?: string;
+	group?: string;
 
 	/**
 	 * A brief, one-liner about section to talk about what the command does.
@@ -75,11 +75,6 @@ export interface CommandInfo {
 	 * This doesn't act as a complete override for commands, so be careful!
 	 */
 	permissions?: FramedPermissions;
-
-	/**
-	 * Emoji icon
-	 */
-	emojiIcon?: string;
 
 	/**
 	 * The embed inline character limit, before it becomes not inline in the help embed.

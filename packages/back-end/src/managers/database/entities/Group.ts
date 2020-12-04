@@ -1,14 +1,17 @@
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryColumn } from "typeorm";
 import Command from "./Command";
 
 @Entity()
 export default class Group {
-	@PrimaryGeneratedColumn()
+	@PrimaryColumn()
 	id!: string;
-	
-	@ManyToOne(() => Command, command => command.group)
+
+	@OneToMany(() => Command, command => command.group)
 	@JoinColumn()
-	commands!: Command[];
+	commands?: Command[];
+
+	@Column({ nullable: true })
+	emote?: string;
 
 	@Column()
 	name!: string;

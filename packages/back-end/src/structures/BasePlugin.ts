@@ -7,15 +7,18 @@ import { PluginInfo } from "../interfaces/PluginInfo";
 import { BaseEvent } from "./BaseEvent";
 import PluginManager from "../managers/PluginManager";
 import Options from "../interfaces/RequireAllOptions";
-import BaseSubcommand from "./BaseSubcommand";
 
 export abstract class BasePlugin {
 	readonly framedClient: FramedClient;
 	readonly pluginManager: PluginManager;
 
 	id: string;
-	category: string;
-	categoryIcon: string;
+
+	group: string;
+	groupEmote: string;
+	groupId: string;
+	fullGroupId: string;
+
 	defaultPrefix: string;
 	name: string;
 	description: string;
@@ -72,8 +75,12 @@ export abstract class BasePlugin {
 		this.githubRaw = info.githubRaw;
 		this.changelog = info.changelog;
 		this.paths = info.paths;
-		this.category = info.defaultCategory ? info.defaultCategory : info.name;
-		this.categoryIcon = info.categoryIcon ? info.categoryIcon : "❔";
+
+		// Default group logic
+		this.group = info.groupName ? info.groupName : info.name;
+		this.groupEmote = info.groupEmote ? info.groupEmote : "❔";
+		this.groupId = info.groupId ? info.groupId : "default";
+		this.fullGroupId = `${this.id}.group.${this.groupId}`;
 	}
 
 	//#region Command loading
@@ -144,13 +151,11 @@ export abstract class BasePlugin {
 		}
 
 		// Load subcommands from script
-		if (command.subcommands) {
-			if (command.paths?.subcommands) {
-				command.loadSubcommandsIn({
-					dirname: command.paths.subcommands,
-					filter: /^(.*)\.(js|ts)$/,
-				});
-			}
+		if (command.paths?.subcommands) {
+			command.loadSubcommandsIn({
+				dirname: command.paths.subcommands,
+				filter: /^(.*)\.(js|ts)$/,
+			});
 		}
 
 		logger.verbose(`Finished loading command ${command.id}.`);

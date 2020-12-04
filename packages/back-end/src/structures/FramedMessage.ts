@@ -5,7 +5,10 @@ import { logger } from "shared";
 import { FramedMessageDiscordData } from "../interfaces/FramedMessageDiscordData";
 import { FramedMessageInfo } from "../interfaces/FramedMessageInfo";
 import util from "util";
-import { FramedMessageArgsSettings } from "../interfaces/FramedMessageArgsSettings";
+import {
+	FramedMessageArgsSettings,
+	QuoteSections,
+} from "../interfaces/FramedMessageArgsSettings";
 
 enum ArgumentState {
 	Quoted,
@@ -21,8 +24,12 @@ export default class FramedMessage {
 	public prefix?: string;
 	public args?: Array<string>;
 	public command?: string;
-	public argsContent?: string;
 
+	/**
+	 * Create a new Framed message instance
+	 *
+	 * @param info Framed Message info
+	 */
 	constructor(info: FramedMessageInfo) {
 		if (info.discord) {
 			const newMsg =
@@ -133,20 +140,13 @@ export default class FramedMessage {
 		this.prefix = this.getPrefix();
 		this.args = this.getArgs();
 		this.command = this.getCommand();
-
-		if (this.prefix && this.command) {
-			this.argsContent = this.content
-				.replace(this.prefix, "")
-				.replace(this.command, "")
-				.trimLeft();
-		}
 	}
 
 	/**
 	 * Gets the prefix of the message.
 	 */
 	getPrefix(): string | undefined {
-		const prefixes = [...this.framedClient.pluginManager.defaultPrefixes];
+		const prefixes = [...this.framedClient.pluginManager.allPossiblePrefixes];
 		let prefix: string | undefined;
 		for (const testPrefix of prefixes) {
 			if (this.content.startsWith(testPrefix)) {
@@ -187,51 +187,15 @@ export default class FramedMessage {
 		} else {
 			return undefined;
 		}
-
-		// return this.prefix
-		// 	? this.content.slice(this.prefix.length).trim().split(/ +/g)
-		// 	: undefined;
 	}
 
 	/**
-	 * If an argument parameter is empty, it will be removed.
-	 */
-	static trimArgs(args: string[]): string[] {
-		return args.filter(function (e) {
-			return e;
-		});
-	}
-
-	/**
-	 * Removes unescaped quotes from arguments
-	 * @param args Message arguments
-	 */
-	static removeQuotesFromArgs(args: string[]): string[] {
-		const newArgs: string[] = [];
-		for (const arg of args) {
-			let newArg = "";
-
-			// Scans through the string
-			for (let i = 0; i < arg.length; i++) {
-				const lastChar = arg[i - 1];
-				const char = arg[i];
-
-				// Checks if this current char is not a ", and before that wasn't escaping it
-				if (char != `"` || lastChar == "\\") {
-					newArg += char;
-				}
-			}
-
-			// Push results
-			newArgs.push(newArg);
-		}
-
-		return newArgs;
-	}
-
-	/**
+	 * Get the command arguments from a string
+	 *
 	 * @param content Message content
 	 * @param settings Argument parse settings
+	 *
+	 * @returns Command arguments
 	 */
 	static getArgs(
 		content: string,
@@ -293,10 +257,16 @@ export default class FramedMessage {
 				// We'll process excess spaces later
 				if (
 					!charIsSpace ||
-					settings?.separateByQuoteSections ||
+					settings?.quoteSections != undefined ||
 					hasCodeBlock
 				) {
-					argString += char;
+					if (settings?.quoteSections == QuoteSections.Strict) {
+						if (!charIsSpace && !charIsDoubleQuote) {
+							return [];
+						}
+					} else {
+						argString += char;
+					}
 					// logger.debug(`uq '${argString}'`); // LARGE DEBUG OUTPUT
 				} else if (argString.length != 0) {
 					// A separator space has been used, so we push our non-empty argument
@@ -310,19 +280,27 @@ export default class FramedMessage {
 			} else if (state == ArgumentState.Quoted) {
 				// If we've just started the quote, but the string isn't empty,
 				// push its contents out (carryover from unquoted)
-				if (
-					justStartedQuote &&
-					argString.trim().length != 0 &&
-					!hasCodeBlock
-				) {
+				if (justStartedQuote) {
 					// logger.debug(
 					// 	`'${char}' <${content}> ${i} JSQ_NonEmpty - CStU: ${changeStateToUnquotedLater} justStartedQuote ${justStartedQuote} - (${ArgumentState[state]}) - "${argString}"`
 					// ); // LARGE DEBUG OUTPUT
 
-					// Since it's been carried over as an unquoted argument
-					// And is just finishing in quoted, we can trim it here
-					FramedMessage.pushArgs(args, argString.trim(), state);
-					argString = "";
+					if (char == `"` && settings?.showQuoteCharacters) {
+						// Fixes edge case where we're just entering quotes now,
+						// and we have the setting to put it in
+						argString += char;
+					} else if (!hasCodeBlock) {
+						if (argString.trim().length != 0) {
+							// Since it's been carried over as an unquoted argument
+							// And is just finishing in quoted, we can trim it here
+							FramedMessage.pushArgs(
+								args,
+								argString.trim(),
+								state
+							);
+						}
+						argString = "";
+					}
 				} else if (
 					settings?.showQuoteCharacters ||
 					!charIsDoubleQuote ||
@@ -368,6 +346,24 @@ export default class FramedMessage {
 	}
 
 	/**
+	 * Get the arguments, represented as contents. In other words, this gets the
+	 * contents after the command.
+	 *
+	 * @param argsToTrim Arguments to trim out.
+	 */
+	getArgsContent(argsToTrim?: string[]): string {
+		let newContent = this.content;
+		if (this.prefix) newContent = newContent.replace(this.prefix, "");
+		if (this.command) newContent = newContent.replace(this.command, "");
+
+		argsToTrim?.forEach(arg => {
+			newContent = newContent.replace(arg, "");
+		});
+
+		return newContent.trim();
+	}
+
+	/**
 	 * Pushes arguments into a string array, with added checks
 	 * @param args Current arguments for the message so far
 	 * @param argString Current suggested argument
@@ -379,24 +375,13 @@ export default class FramedMessage {
 		argString: string,
 		state: ArgumentState
 	): string | undefined {
-		// switch (state) {
-		// 	case ArgumentState.Quoted:
-		// 		break;
-
-		// 	case ArgumentState.Unquoted:
-		// 		argString = argString.trim();
-		// 		break;
-		// }
-
 		const unquoted = state == ArgumentState.Unquoted;
-		const noContentFastSwitch = false;
-		// state == ArgumentState.Quoted && justStartedQuote;
 
 		// Checks if the args strings wasn't empty and unquoted, so we don't
 		// add an unnessesary empty space argument
-		if (unquoted || !noContentFastSwitch) {
-			args.push(argString);
-			return argString;
-		}
+		// if (unquoted) {
+		args.push(argString);
+		return argString;
+		// }
 	}
 }

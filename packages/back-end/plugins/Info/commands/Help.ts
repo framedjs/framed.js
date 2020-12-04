@@ -1,28 +1,27 @@
-import Discord from "discord.js";
 import EmbedHelper from "../../../src/utils/discord/EmbedHelper";
 import FramedMessage from "../../../src/structures/FramedMessage";
 import { BasePlugin } from "../../../src/structures/BasePlugin";
 import { BaseCommand } from "../../../src/structures/BaseCommand";
-import { oneLine, stripIndent } from "common-tags";
+import { oneLine, oneLineInlineLists, stripIndent } from "common-tags";
 import { logger } from "shared";
-import PluginManager, { HelpData } from "../../../src/managers/PluginManager";
+import { HelpData } from "../../../src/managers/PluginManager";
 
 const data: HelpData[] = [
 	{
-		category: ":information_source: Info",
-		commands: ["help", "usage", "ping", "about", "dailies"],
+		group: "Info",
+		commands: ["help", "usage", "about", "ping"],
 	},
 	{
-		category: ":tada: Fun",
+		group: "Fun",
 		commands: ["poll"],
 	},
 	{
-		category: "🕒 Dailies",
+		group: "Dailies",
 		commands: ["dailies", "streaks", "alert", "casual"],
-	},
+	},	
 ];
 
-export default class extends BaseCommand {
+export default class Help extends BaseCommand {
 	constructor(plugin: BasePlugin) {
 		super(plugin, {
 			id: "help",
@@ -36,7 +35,6 @@ export default class extends BaseCommand {
 				\`{{prefix}}help\`
 				\`{{prefix}}help poll\`
 			`,
-			emojiIcon: "❓",
 			inline: true,
 		});
 	}
@@ -45,10 +43,8 @@ export default class extends BaseCommand {
 		const framedUser = this.framedClient.client.user;
 
 		if (msg.args && framedUser) {
-			const lookUpCmd = msg.args[0];
-
-			if (lookUpCmd) {
-				return this.showHelpForCommand(lookUpCmd, msg);
+			if (msg.args[0]) {
+				return this.showHelpForCommand(msg.args, msg);
 			} else {
 				return this.showHelpAll(msg);
 			}
@@ -81,12 +77,12 @@ export default class extends BaseCommand {
 					stripIndent`
 						\`-help\` - <@234395307759108106> is used for music in the <#760622055384547368> voice channel.
 						`
-				)
-				.addField(
-					"Need a Custom Discord Bot?",
-					oneLine`
-						Send <@200340393596944384> a message on Discord!`
 				);
+			// .addField(
+			// 	"Need a Custom Discord Bot?",
+			// 	oneLine`
+			// 		Send <@200340393596944384> a message on Discord!`
+			// );
 
 			embed.setFooter(
 				`${
@@ -99,7 +95,7 @@ export default class extends BaseCommand {
 				await msg.discord.channel.send(embed);
 			} catch (error) {
 				await msg.discord.channel.send(
-					`${msg.discord.author}, the embed size for help is too large! Contact one of the bot masters`
+					`${msg.discord.author}, the embed size for help is too large! Contact one of the bot masters.`
 				);
 				logger.error(error.stack);
 			}
@@ -114,89 +110,104 @@ export default class extends BaseCommand {
 	 * @param msg
 	 */
 	private async showHelpForCommand(
-		lookUpCmd: string,
+		args: string[],
 		msg: FramedMessage
 	): Promise<boolean> {
-		if (msg.discord) {
-			const matchingCommands: BaseCommand[] = [];
+		if (msg.discord && args[0]) {
+			const newArgs = [...args];
+			const command = newArgs.shift();
 
-			const plugins = this.framedClient.pluginManager.plugins;
-			plugins.forEach(plugin => {
-				const command = plugin.commands.get(lookUpCmd);
-				if (command) {
-					matchingCommands.push(command);
-				} else {
-					const alias = plugin.aliases.get(lookUpCmd);
-					if (alias) {
-						matchingCommands.push(alias);
+			if (command) {
+				const matchingCommands = this.framedClient.pluginManager.getCommands(
+					command
+				);
+
+				for await (let command of matchingCommands) {
+					// Get potential subcommand
+					const subcommands = command.getSubcommandChain(newArgs);
+					const finalSubcommand = subcommands[subcommands.length - 1];
+					const subcommandIds: string[] = [];
+
+					subcommands.forEach(subcommand => {
+						subcommandIds.push(subcommand.id);
+					});
+
+					const commandRan = `${command.defaultPrefix}${
+						command.id
+					} ${oneLineInlineLists`${subcommandIds}`}`.trim();
+
+					// Creates the embed
+					let title = "";
+
+					const embed = EmbedHelper.getTemplate(
+						msg.discord,
+						this.framedClient.helpCommands,
+						this.id
+					).setTitle(commandRan);
+
+					// .addField(
+					// 	`${command.plugin.name} Plugin`,
+					// 	`\`${command.prefix}${command.id}\`\n${description}`
+					// );
+
+					// if (command.aliases) {
+					// 	let aliasString = "";
+					// 	const newElementCharacter = command.inline ? "\n" : " ";
+
+					// 	for (const alias of command.aliases) {
+					// 		aliasString += `\`${alias}\`${newElementCharacter}`;
+					// 	}
+					// 	if (aliasString.length > 0)
+					// 		embed.addField("Aliases", aliasString, command.inline);
+					// }
+
+					// The command/subcommand that has the data needed
+					const primaryCommand = finalSubcommand
+						? finalSubcommand
+						: command;
+
+					// Get the description
+					let description = primaryCommand.description;
+					if (!description) {
+						if (primaryCommand.about) {
+							description = primaryCommand.about;
+						} else {
+							description = `*No about or description set for the command.*`;
+						}
 					}
-				}
-			});
+					embed.setDescription(description);
 
-			for await (const command of matchingCommands) {
-				// Get the description
-				let description = command.description;
-				if (!description) {
-					if (command.about) {
-						description = command.about;
-					} else {
-						description = `*No description set for command.*`;
+					// Gets the usage text
+					if (primaryCommand.usage) {
+						const guideMsg = `Type \`.usage\` for important info.`;
+						const usageMsg = `\`${commandRan} ${primaryCommand.usage}\``;
+						const useInline = primaryCommand.inlineCharacterLimit
+							? usageMsg.length <=
+							  primaryCommand.inlineCharacterLimit
+							: primaryCommand.inline;
+						embed.addField(
+							"Usage",
+							`${guideMsg}\n${usageMsg}`,
+							useInline
+						);
 					}
+
+					// Get the examples text
+					if (primaryCommand.examples) {
+						const useInline = primaryCommand.inlineCharacterLimit
+							? primaryCommand.examples.length <=
+							  primaryCommand.inlineCharacterLimit
+							: primaryCommand.inline;
+						embed.addField(
+							"Examples",
+							`Try copying and editing them!\n${primaryCommand.examples}`,
+							useInline
+						);
+					}
+
+					await msg.discord.channel.send(embed);
+					return true;
 				}
-
-				// Creates the embed
-				const embed = EmbedHelper.getTemplate(
-					msg.discord,
-					this.framedClient.helpCommands,
-					this.id
-				)
-					.setTitle(`${command.defaultPrefix}${command.id}`)
-					.setDescription(description);
-				// .addField(
-				// 	`${command.plugin.name} Plugin`,
-				// 	`\`${command.prefix}${command.id}\`\n${description}`
-				// );
-
-				// if (command.aliases) {
-				// 	let aliasString = "";
-				// 	const newElementCharacter = command.inline ? "\n" : " ";
-
-				// 	for (const alias of command.aliases) {
-				// 		aliasString += `\`${alias}\`${newElementCharacter}`;
-				// 	}
-				// 	if (aliasString.length > 0)
-				// 		embed.addField("Aliases", aliasString, command.inline);
-				// }
-
-				if (command.usage) {
-					const guideMsg = stripIndent`
-					Type \`.usage\` for important info.
-				`;
-					const usageMsg = stripIndent`
-					\`${command.defaultPrefix}${command.id} ${command.usage}\`
-				`;
-					embed.addField(
-						"Usage",
-						`${guideMsg}\n${usageMsg}`,
-						command.inlineCharacterLimit
-							? usageMsg.length <= command.inlineCharacterLimit
-							: command.inline
-					);
-				}
-
-				if (command.examples) {
-					embed.addField(
-						"Examples",
-						`Try copying and editing them!\n${command.examples}`,
-						command.inlineCharacterLimit
-							? command.examples.length <=
-									command.inlineCharacterLimit
-							: command.inline
-					);
-				}
-
-				await msg.discord.channel.send(embed);
-				return true;
 			}
 		}
 		return false;

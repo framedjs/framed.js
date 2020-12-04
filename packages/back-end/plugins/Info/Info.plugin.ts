@@ -13,8 +13,8 @@ export default class extends BasePlugin {
 				commands: path.join(__dirname, "commands"),
 				events: path.join(__dirname, "events"),
 			},
-			categoryIcon: ":information_source:",
-			defaultCategory: "Info",
+			groupEmote: ":information_source:",
+			groupName: "Info",
 		});
 	}
 }

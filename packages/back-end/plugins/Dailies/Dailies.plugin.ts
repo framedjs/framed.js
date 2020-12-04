@@ -19,8 +19,8 @@ export default class extends BasePlugin {
 			paths: {
 				commands: path.join(__dirname, "commands"),
 			},
-			categoryIcon: ":information_source:",
-			defaultCategory: "Info",
+			groupEmote: "🕒",
+			groupName: "Dailies",
 		});
 	}
 }

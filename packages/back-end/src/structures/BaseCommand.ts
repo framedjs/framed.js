@@ -9,6 +9,7 @@ import { logger } from "shared";
 import Options from "../interfaces/RequireAllOptions";
 import DiscordUtils from "../utils/discord/DiscordUtils";
 import BaseSubcommand from "./BaseSubcommand";
+import { oneLine } from "common-tags";
 
 export abstract class BaseCommand {
 	readonly framedClient: FramedClient;
@@ -62,9 +63,14 @@ export abstract class BaseCommand {
 	prefixes: string[];
 
 	/**
-	 * Category
+	 * Group name
 	 */
-	category?: string;
+	group: string;
+
+	/**
+	 * Group emote
+	 */
+	groupEmote?: string;
 
 	/**
 	 * A brief, one-liner about section to talk about what the command does.
@@ -92,14 +98,23 @@ export abstract class BaseCommand {
 	examples?: string;
 
 	/**
-	 * Permissions
+	 * Permissions to compare to.
+	 *
+	 * WARNING: YOU NEED TO CHECK FOR THESE MANUALLY. See `hasPermission()` on how to do this.
+	 * It is also recommended you send a permission denied message too with `sendPermissionErrorMessage()`.
+	 *
+	 * Example:
+	 *
+	 * ```ts
+	 * const hasPermission = this.hasPermission(msg);
+	 * if (!hasPermission) {
+	 * 	await this.sendPermissionErrorMessage(msg);
+	 * 	return false;
+	 * }
+	 * // Continues on, if it passes the permission check...
+	 * ```
 	 */
 	permissions?: FramedPermissions;
-
-	/**
-	 * Emoji icon when shown in the help embed.
-	 */
-	emojiIcon?: string;
 
 	/**
 	 * The embed inline character limit, before it becomes not inline in the help embed.
@@ -117,12 +132,16 @@ export abstract class BaseCommand {
 	inlineAliases: boolean;
 
 	/**
-	 * Command info. DO NOT USE THIS unless you're re-constructing through the constructor,
+	 * This variable contains the raw info of what a plugin has returned as data. This data may be incomplete,
+	 * or may have not been parsed yet. The constructor of BaseCommand is designed
+	 * to parse it all at once.
+	 *
+	 * **DO NOT USE THIS** unless you're re-constructing through the constructor,
 	 * or know what you're doing.
 	 *
-	 * If you're unsure whether to use this, USE THE BASE VARIABLES INSTEAD.
+	 * If you're unsure whether to use this, **USE THE BASE VARIABLES INSTEAD**.
 	 */
-	info: CommandInfo;
+	rawInfo: CommandInfo;
 
 	/**
 	 * Create a new BaseCommand.
@@ -134,8 +153,10 @@ export abstract class BaseCommand {
 		this.plugin = plugin;
 
 		this.id = info.id.toLocaleLowerCase();
+		this.paths = info.paths;
 		this.fullId = `${this.plugin.id}.command.${this.id}`;
-		this.category = this.category ? this.category : plugin.category;
+		this.group = info.group	? info.group : plugin.group ? plugin.group : "Other";
+		this.groupEmote = plugin.groupEmote;
 		this.aliases = info.aliases;
 		this.defaultPrefix =
 			info.defaultPrefix != undefined
@@ -161,7 +182,6 @@ export abstract class BaseCommand {
 		this.hideUsageInHelp = info.hideUsageInHelp;
 		this.examples = info.examples;
 		this.permissions = info.permissions;
-		this.emojiIcon = info.emojiIcon;
 		this.inlineCharacterLimit = info.inlineCharacterLimit;
 
 		if (this.examples) {
@@ -174,7 +194,7 @@ export abstract class BaseCommand {
 		this.inline = info.inline ? info.inline : false;
 		this.inlineAliases = info.inlineAliases ? info.inlineAliases : false;
 
-		this.info = info;
+		this.rawInfo = info;
 		this.subcommands = new Map();
 	}
 
@@ -356,10 +376,10 @@ export abstract class BaseCommand {
 	 * @param subcommands
 	 */
 	loadSubcommands<T extends BaseSubcommand>(
-		subcommands: (new (framedClient: FramedClient) => T)[]
+		subcommands: (new (command: BaseCommand) => T)[]
 	): void {
-		for (const plugin of subcommands) {
-			const initSubcommand = new plugin(this.framedClient);
+		for (const subcommand of subcommands) {
+			const initSubcommand = new subcommand(this);
 			this.loadSubcommand(initSubcommand);
 		}
 	}
@@ -377,5 +397,112 @@ export abstract class BaseCommand {
 		this.subcommands.set(subcommand.id, subcommand);
 
 		logger.debug(`Finished loading subcommand ${subcommand.id}.`);
+	}
+
+	/**
+	 * Gets the subcommand to run from command arguments.
+	 *
+	 * @param command Base command
+	 * @param args Arguments represetned as a string. Likely
+	 * should equal `msg.args` from FramedMessage.
+	 *
+	 * @returns BaseSubcommand or undefined
+	 */
+	static getSubcommand(
+		command: BaseCommand,
+		args: string[]
+	): BaseSubcommand | undefined {
+		const maxSubcommandNesting = 3;
+		let finalSubcommand: BaseSubcommand | undefined;
+		let newSubcommand: BaseSubcommand | undefined;
+
+		for (let i = 0; i < maxSubcommandNesting + 1; i++) {
+			let subcommand = command.subcommands.get(args[i]);
+
+			// If it can't be found, check the all of the command's
+			// subcommand aliases
+			if (!subcommand) {
+				command.subcommands.forEach(element => {
+					if (element.aliases?.includes(args[i])) {
+						subcommand = element;
+					}
+				});
+			}
+
+			if (subcommand) {
+				// If it hit max and isn't done
+				if (i == maxSubcommandNesting) {
+					logger.error(oneLine`
+					There are too many nested subcommands! The maximum is 3.
+					The ${finalSubcommand?.fullId} subcommand will be ran anyway.`);
+					break;
+				}
+
+				// Else, simply add it as a possible subcommand
+				newSubcommand = subcommand;
+			} else if (newSubcommand) {
+				// Gets the previous new command as the final one, to be ran
+				finalSubcommand = newSubcommand;
+				break;
+			} else {
+				// There was no subcommand, so we return undefined
+				return undefined;
+			}
+		}
+
+		// If there was a final subcommand, return it
+		if (finalSubcommand) {
+			return finalSubcommand;
+		}
+	}
+
+	/**
+	 * Gets the subcommand to run from command arguments.
+	 *
+	 * @param args Message arguments
+	 */
+	getSubcommand(args: string[]): BaseSubcommand | undefined {
+		return BaseCommand.getSubcommand(this, args);
+	}
+
+	/**
+	 * Gets the nested subcommands.
+	 *
+	 * @param command Base command
+	 * @param args Message arguments
+	 */
+	static getSubcommandChain(
+		command: BaseCommand,
+		args: string[]
+	): BaseSubcommand[] {
+		const maxSubcommandNesting = 3;
+		const subcommands: BaseSubcommand[] = [];
+		let finalSubcommand: BaseSubcommand | undefined;
+
+		for (let i = 0; i < maxSubcommandNesting + 1; i++) {
+			const element = command.subcommands.get(args[i]);
+
+			if (element) {
+				// If it hit max and isn't done
+				if (i == maxSubcommandNesting) {
+					logger.error(oneLine`
+					There are too many nested subcommands! The maximum is 3.
+					The ${finalSubcommand?.fullId} subcommand will be ran anyway.`);
+					break;
+				}
+
+				// Else, simply add the new subcommand to our list
+				subcommands.push(element);
+			} else {
+				// There are no new subcommand, so we return the array
+				return subcommands;
+			}
+		}
+
+		return subcommands;
+	}
+
+	getSubcommandChain(args: string[]): BaseSubcommand[] {
+		return BaseCommand.getSubcommandChain(this, args);
 	}
 }

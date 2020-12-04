@@ -8,9 +8,9 @@ export default class extends BaseCommand {
 	constructor(plugin: BasePlugin) {
 		super(plugin, {
 			id: "dailies",
+			prefixes: ["!", "."],
 			aliases: ["daily", "dailychallenge", "dc"],
 			about: "View what is the daily challenge, and how to use it.",
-			emojiIcon: "🕒",
 		});
 	}
 

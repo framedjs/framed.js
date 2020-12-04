@@ -11,7 +11,6 @@ export default class extends BaseCommand {
 			id: "ping",
 			about:
 				"Sends a response back to the user, replying with latency info.",
-			emojiIcon: "🏓",
 		});
 	}
 
@@ -45,9 +44,13 @@ export default class extends BaseCommand {
 					? newDiscordMsg.createdTimestamp
 					: newDiscordMsg.editedTimestamp;
 
-			const embed = new Discord.MessageEmbed().setColor(
-				EmbedHelper.getColorWithFallback(msg.discord.guild)
-			).setDescription(stripIndent`
+			const embed = EmbedHelper.getTemplate(
+				msg.discord,
+				this.framedClient.helpCommands,
+				this.id
+			)
+				.setColor(EmbedHelper.getColorWithFallback(msg.discord.guild))
+				.setTitle("Latency Info").setDescription(stripIndent`
 				🏓 \`Message Latency\` - ${botDateNumber - userDateNumber}ms
 				🤖 \`API Latency\` - ${Math.round(discordMsg.client.ws.ping)}ms`);
 			await newDiscordMsg.edit(newDiscordMsg.content, embed);

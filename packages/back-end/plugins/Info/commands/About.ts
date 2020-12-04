@@ -1,8 +1,9 @@
 import FramedMessage from "../../../src/structures/FramedMessage";
 import { BaseCommand } from "../../../src/structures/BaseCommand";
 import { BasePlugin } from "../../../src/structures/BasePlugin";
-import { stripIndent } from "common-tags";
+import { oneLine, stripIndent } from "common-tags";
 import EmbedHelper from "../../../src/utils/discord/EmbedHelper";
+import os from "os";
 
 export default class extends BaseCommand {
 	constructor(plugin: BasePlugin) {
@@ -10,14 +11,13 @@ export default class extends BaseCommand {
 			id: "about",
 			aliases: ["botinfo", "botstats"],
 			about:
-				"Gets various stats from the bot, including versions and uptime.",
-			emojiIcon: "🤖",
+				"Gets extra info and stats from the bot, including versions and uptime.",
 		});
 	}
 
 	async run(msg: FramedMessage): Promise<boolean> {
 		const framedUser = msg.framedClient.client.user;
-		const environment = process.env.NODE_ENV
+		const nodeEnvironment = process.env.NODE_ENV
 			? ` ${process.env.NODE_ENV}`
 			: "";
 
@@ -32,11 +32,16 @@ export default class extends BaseCommand {
 				msg.discord,
 				this.framedClient.helpCommands,
 				this.id
-			).setDescription(stripIndent`
+			).setTitle("About the Bot").setDescription(stripIndent`
+				${oneLine`Pixel Pete is a collection of custom bots for
+				<:gdu:766718483983368212> **Game Dev Underground**, by <@200340393596944384>,
+				<@359521958519504926>, and <@150649616772235264>.`}
 				${codeblock}yml
 				Uptime:           ${this.secondsToDhms(uptime)}
+				OS Environment:   ${os.platform()}
 				Framed Version:   v${msg.framedClient.version}
-				Back-End Version: v${msg.framedClient.backEndVersion}${environment}
+				Back-End Version: v${msg.framedClient.backEndVersion}${nodeEnvironment}
+				Dailies Version:  v1.52
 				${codeblock}
 				`);
 			await msg.discord.channel.send(embed);
@@ -51,19 +56,10 @@ export default class extends BaseCommand {
 		const m = Math.floor((seconds % 3600) / 60);
 		const s = Math.floor(seconds % 60);
 
-		// const dDisplay = d > 0 ? d + (d == 1 ? " day, " : " days, ") : "";
-		// const hDisplay = h > 0 ? h + (h == 1 ? " hour, " : " hours, ") : "";
-		// const mDisplay = m > 0 ? m + (m == 1 ? " minute, " : " minutes ") : "";
-		// const sDisplay = s > 0 ? s + (s == 1 ? " second" : " seconds") : "";
 		const dDisplay = d > 0 ? `${d}d ` : "";
 		const hDisplay = h > 0 ? `${h}hr ` : "";
 		const mDisplay = m > 0 ? `${m}m ` : "";
 		const sDisplay = s > 0 ? `${s}s ` : "";
-
-		// const dDisplay = d > 0 ? `${d}d ` : "";
-		// const hDisplay = h > 0 ? `${h}:`: "";
-		// const mDisplay = m > 0 ? `${m < 10 ? "0" : ""}${m}:` : "00:";
-		// const sDisplay = s > 0 ? `${s < 10 ? "0" : ""}${s}` : "00";
 
 		return `${dDisplay}${hDisplay}${mDisplay}${sDisplay}`;
 		// return dDisplay + hDisplay + mDisplay + sDisplay;

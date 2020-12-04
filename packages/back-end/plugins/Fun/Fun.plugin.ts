@@ -14,8 +14,8 @@ export default class extends BasePlugin {
 				commands: path.join(__dirname, "commands"),
 				events: path.join(__dirname, "events"),
 			},
-			categoryIcon: "🎉",
-			defaultCategory: "Fun",
+			groupEmote: "😛",
+			groupName: "Fun",
 		});
 	}
 }

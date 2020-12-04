@@ -81,12 +81,25 @@ export default class extends BaseEvent {
 		if (isPollCommand && singleVoteOnly) {
 			// https://discordjs.guide/popular-topics/reactions.html#removing-reactions-by-user
 			const extraUserReactions = reaction.message.reactions.cache.filter(
-				extraReaction =>
-					extraReaction.users.cache.has(user.id) &&
-					(emotes.includes(extraReaction.emoji.name) ||
-						optionEmotes.includes(extraReaction.emoji.name)) &&
-					optionEmotes.includes(reaction.emoji.name) &&
-					extraReaction != reaction
+				extraReaction => {
+					const userHasReaction = extraReaction.users.cache.has(
+						user.id
+					);
+					const isSimplePollReaction = emotes.includes(
+						extraReaction.emoji.name
+					);
+					const isOptionPollReaction = optionEmotes.includes(
+						extraReaction.emoji.name
+					);
+					const extraReactionIsntJustPlaced =
+						extraReaction != reaction;
+						
+					return (
+						userHasReaction &&
+						(isSimplePollReaction || isOptionPollReaction) &&
+						extraReactionIsntJustPlaced
+					);
+				}
 			);
 
 			try {

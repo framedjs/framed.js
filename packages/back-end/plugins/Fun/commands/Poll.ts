@@ -7,6 +7,8 @@ import { emotes, oneOptionMsg, optionEmotes } from "../Fun.plugin";
 import { stripIndent } from "common-tags";
 import { logger } from "shared";
 import EmbedHelper from "../../../src/utils/discord/EmbedHelper";
+import PluginManager from "../../../src/managers/PluginManager";
+import { QuoteSections } from "../../../src/interfaces/FramedMessageArgsSettings";
 
 export default class Poll extends BaseCommand {
 	constructor(plugin: BasePlugin) {
@@ -25,7 +27,6 @@ export default class Poll extends BaseCommand {
 				\`{{prefix}}poll Ban Bim? "Yes" "Sure" "Why Not"\` - Custom Options
 				\`{{prefix}}poll single PC or Console? "PC" "Console"\` - Choose One Only
 			`,
-			emojiIcon: "👍",
 		});
 	}
 
@@ -123,19 +124,8 @@ export default class Poll extends BaseCommand {
 					return false;
 				}
 			} else {
-				// If the user just tried to do .poll by itself, it'll show a help message
-				//
-				// NOTE: if the client prefix is different from the help command prefix,
-				// the help command code doesn't work, or the parameter gets
-				// incorrectly read, this thing *will* break.
-				const newMsg = new FramedMessage({
-					framedClient: this.framedClient,
-					content: `${this.framedClient.defaultPrefix}help ${this.id}`,
-					discord: {
-						base: msg
-					},
-				});
-				await msg.framedClient.pluginManager.runCommand(newMsg);
+				await PluginManager.showHelpForCommand(msg);
+				return false;
 			}
 		}
 		return true;
@@ -172,7 +162,7 @@ export default class Poll extends BaseCommand {
 			.replace(msg.command, "")
 			.trim();
 		const newArgs = FramedMessage.getArgs(newContent, {
-			separateByQuoteSections: true,
+			quoteSections: QuoteSections.Flexible
 		});
 
 		logger.debug(stripIndent`

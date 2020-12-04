@@ -1,6 +1,6 @@
 import { BasePlugin } from "../../src/structures/BasePlugin";
-import path from "path";
 import FramedClient from "../../src/structures/FramedClient";
+import path from "path";
 
 export default class extends BasePlugin {
 	constructor(framedClient: FramedClient) {
@@ -11,10 +11,10 @@ export default class extends BasePlugin {
 			version: "0.1.0",
 			paths: {
 				commands: path.join(__dirname, "commands"),
-				// events: path.join(__dirname, "events"),
+				events: path.join(__dirname, "events"),
 			},
-			categoryIcon: ":pencil2:",
-			defaultCategory: "Manage",
+			groupEmote: ":pencil2:",
+			groupName: "Manage",
 		});
 	}
 }

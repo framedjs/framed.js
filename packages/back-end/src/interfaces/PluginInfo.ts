@@ -11,14 +11,19 @@ export interface PluginInfo {
 	id: string;
 
 	/**
-	 * Default Category
+	 * Default group name
 	 */
-	defaultCategory?: string;
+	groupName?: string;
 
 	/**
-	 * Default Category icon
+	 * Default group emote
 	 */
-	categoryIcon?: string;
+	groupEmote?: string;
+
+	/**
+	 * Default group ID
+	 */
+	groupId?: string;
 
 	/**
 	 * Optional prefix override from the client.

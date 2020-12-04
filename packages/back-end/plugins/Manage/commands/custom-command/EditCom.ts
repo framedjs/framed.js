@@ -1,21 +1,21 @@
 /* eslint-disable no-mixed-spaces-and-tabs */
-import FramedMessage from "../../../src/structures/FramedMessage";
-import { BaseCommand } from "../../../src/structures/BaseCommand";
-import { BasePlugin } from "../../../src/structures/BasePlugin";
+import FramedMessage from "../../../../src/structures/FramedMessage";
+import { BaseCommand } from "../../../../src/structures/BaseCommand";
+import { BasePlugin } from "../../../../src/structures/BasePlugin";
 import { stripIndent } from "common-tags";
 import { logger } from "shared";
 
 export default class CustomCommand extends BaseCommand {
 	constructor(plugin: BasePlugin) {
 		super(plugin, {
-			id: "addcom",
-			aliases: ["addcommand", "createcom", "createcommand"],
-			about: "Adds custom commands.",
+			id: "editcom",
+			aliases: ["changecom"],
+			about: "Edits custom commands.",
 			description:
-				"Adds custom commmands. This is an alias of `.command add`.",
+				"Edits custom commands. This is an alias of `.command edit`.",
 			usage: `<command ID> <content> "[description]"`,
 			examples: stripIndent`
-			\`{{prefix}}addcom newcommand This is a test message.\``,
+			\`{{prefix}}editcom newcommand This is an edited command message!\``,
 			hideUsageInHelp: true,
 		});
 	}
@@ -25,7 +25,7 @@ export default class CustomCommand extends BaseCommand {
 	 * @param msg FramedMessage object
 	 */
 	async run(msg: FramedMessage): Promise<boolean> {
-		let newContent = msg.content.replace(`addcom`, `command add `);
+		let newContent = msg.content.replace(`editcom`, `command edit `);
 		const commandPrefix = this.plugin.commands.get("command")
 			?.defaultPrefix;
 

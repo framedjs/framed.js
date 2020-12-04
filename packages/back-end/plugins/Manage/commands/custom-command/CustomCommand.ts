@@ -1,15 +1,17 @@
 /* eslint-disable no-mixed-spaces-and-tabs */
-import FramedMessage from "../../../src/structures/FramedMessage";
-import { BaseCommand } from "../../../src/structures/BaseCommand";
-import { BasePlugin } from "../../../src/structures/BasePlugin";
+import FramedMessage from "../../../../src/structures/FramedMessage";
+import { BaseCommand } from "../../../../src/structures/BaseCommand";
+import { BasePlugin } from "../../../../src/structures/BasePlugin";
 import { oneLine, stripIndent } from "common-tags";
 import { logger } from "shared";
 import * as TypeORM from "typeorm";
-import PluginManager from "../../../src/managers/PluginManager";
-import Command from "../../../src/managers/database/entities/Command";
-import Prefix from "../../../src/managers/database/entities/Prefix";
-import Response from "../../../src/managers/database/entities/Response";
-import ResponseData from "../../../src/managers/database/interfaces/ResponseData";
+import PluginManager from "../../../../src/managers/PluginManager";
+import Command from "../../../../src/managers/database/entities/Command";
+import Prefix from "../../../../src/managers/database/entities/Prefix";
+import Response from "../../../../src/managers/database/entities/Response";
+import ResponseData from "../../../../src/managers/database/interfaces/ResponseData";
+import { QuoteSections } from "../../../../src/interfaces/FramedMessageArgsSettings";
+import { SnowflakeUtil } from "discord.js";
 
 export default class CustomCommand extends BaseCommand {
 	/**
@@ -151,12 +153,12 @@ export default class CustomCommand extends BaseCommand {
 						}
 					}
 				} else {
-					await PluginManager.showHelpForCommand(msg, this.id);
+					await PluginManager.showHelpForCommand(msg);
 					return true;
 				}
 			}
 		}
-		await PluginManager.showHelpForCommand(msg, this.id);
+		await PluginManager.showHelpForCommand(msg);
 		return false;
 	}
 
@@ -201,7 +203,7 @@ export default class CustomCommand extends BaseCommand {
 			const state = addEditRemove.get(subcommand);
 			if (state) {
 				const questionArgs = FramedMessage.getArgs(questionContent, {
-					separateByQuoteSections: true,
+					quoteSections: QuoteSections.Flexible,
 				});
 
 				logger.debug(stripIndent`
@@ -292,15 +294,20 @@ export default class CustomCommand extends BaseCommand {
 
 			// Generates response data for adding + editing
 			if (newContents) {
+				// Gets the last content
 				let lastContent: string | undefined =
 					newContents[newContents.length - 1];
+				
+				// If the last content section is the beginning, lastContent becomes undefined,
+				// and won't be used as a description.
 				if (lastContent == newContents[0]) {
 					lastContent = undefined;
 				}
 
 				const newList: ResponseData[] = [];
 
-				for (let i = 0; i < newContents.length - 1; i++) {
+				// Gets all possible responses, excluding the description if it exists
+				for (let i = 0; i < newContents.length - (lastContent ? 1 : 0); i++) {
 					const element = newContents[i];
 					newList.push({
 						content: element,
@@ -311,6 +318,7 @@ export default class CustomCommand extends BaseCommand {
 					// Add response, if command doesn't exist
 					newResponse = await responseRepo.save(
 						responseRepo.create({
+							id: SnowflakeUtil.generate(new Date()),
 							responseData: {
 								description: lastContent,
 								list: newList,
@@ -370,6 +378,8 @@ export default class CustomCommand extends BaseCommand {
 		msg?: FramedMessage,
 		silent?: boolean
 	): Promise<Command | undefined> {
+		const connection = this.framedClient.databaseManager.connection;
+
 		const parse = await CustomCommand.customParseCommand(
 			newCommandId,
 			newContents,
@@ -379,7 +389,7 @@ export default class CustomCommand extends BaseCommand {
 		// If the user didn't enter the command right, show help
 		if (!parse) {
 			if (msg && !silent) {
-				await PluginManager.showHelpForCommand(msg, this.id);
+				await PluginManager.showHelpForCommand(msg);
 			}
 			return undefined;
 		}
@@ -394,6 +404,12 @@ export default class CustomCommand extends BaseCommand {
 				"No response returned for CustomCommand.ts addCommand()!"
 			);
 			return undefined;
+		}
+
+		if (!connection) {
+			logger.error(
+				"No connection to a database found!"
+			)
 		}
 
 		// Checks if the command already exists
@@ -421,7 +437,7 @@ export default class CustomCommand extends BaseCommand {
 			command = await commandRepo.save(command);
 		} catch (error) {
 			try {
-				await this.framedClient.databaseManager.deleteResponseFromDB(
+				await this.framedClient.databaseManager.deleteResponse(
 					response.id
 				);
 			} catch (error) {
@@ -473,7 +489,7 @@ export default class CustomCommand extends BaseCommand {
 		// If the user didn't enter the command right, show help
 		if (!parse) {
 			if (msg && !silent) {
-				await PluginManager.showHelpForCommand(msg, this.id);
+				await PluginManager.showHelpForCommand(msg);
 			}
 			return undefined;
 		}
@@ -556,7 +572,7 @@ export default class CustomCommand extends BaseCommand {
 		// If the user didn't enter the command right, show help
 		if (!parse) {
 			if (msg && !silent) {
-				await PluginManager.showHelpForCommand(msg, this.id);
+				await PluginManager.showHelpForCommand(msg);
 			}
 			return;
 		}
@@ -583,7 +599,7 @@ export default class CustomCommand extends BaseCommand {
 			if (command) {
 				// Tries and deletes the command
 				try {
-					await this.framedClient.databaseManager.deleteCommandFromDB(
+					await this.framedClient.databaseManager.deleteCommand(
 						command.id
 					);
 
@@ -594,7 +610,7 @@ export default class CustomCommand extends BaseCommand {
 						response.commandResponses.length <= 1
 					) {
 						try {
-							await this.framedClient.databaseManager.deleteResponseFromDB(
+							await this.framedClient.databaseManager.deleteResponse(
 								response.id
 							);
 						} catch (error) {

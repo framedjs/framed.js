@@ -120,9 +120,9 @@ export default class EmbedHelper {
 	 */
 	static getTemplate(
 		msg: Discord.Message | FramedMessageDiscordData,
-		commands?: string[],
+		commands: string[],
 		commandUsed?: string,
-		baseEmbed?: Discord.MessageEmbed,
+		baseEmbed?: Discord.MessageEmbed
 	): Discord.MessageEmbed {
 		let tempUrl: string | null | undefined;
 
@@ -132,12 +132,10 @@ export default class EmbedHelper {
 		const authorAvatarUrl = Utils.turnUndefinedIfNull(tempUrl) as string;
 
 		tempUrl = msg.client.user?.avatarURL({ dynamic: true });
-		const botAvatarUrl = Utils.turnUndefinedIfNull(tempUrl) as string;
 
 		const newEmbed = new Discord.MessageEmbed(baseEmbed)
-			// .setAuthor(msg.client.user?.username, botAvatarUrl)
 			.setFooter(
-				EmbedHelper.getCheckOutText(commandUsed, commands),
+				EmbedHelper.getCheckOutText(commands, commandUsed),
 				authorAvatarUrl
 			)
 			.setColor(EmbedHelper.getColorWithFallback(msg.guild));
@@ -178,7 +176,7 @@ export default class EmbedHelper {
 		const newEmbed = new Discord.MessageEmbed(baseEmbed)
 			.setAuthor(botUsername, botAvatarUrl)
 			.setFooter(
-				EmbedHelper.getCheckOutText(commandUsed, commands),
+				EmbedHelper.getCheckOutText(commands, commandUsed),
 				authorAvatarUrl
 			)
 			.setColor(color);
@@ -192,8 +190,8 @@ export default class EmbedHelper {
 	 * @param commands - Command list
 	 */
 	static getCheckOutText(
-		commandUsed?: string,
-		commands?: Array<string>
+		commands?: Array<string>,
+		commandUsed?: string
 	): string {
 		// This might be completely unnessesary, but just in case
 		// https://stackoverflow.com/questions/44808882/cloning-an-array-in-javascript-typescript
@@ -214,12 +212,10 @@ export default class EmbedHelper {
 			if (!process.env.PREFIX) process.env.PREFIX = ".";
 			output += `${process.env.PREFIX}${element}`;
 
-			// If it's not the last one
+			// If it's not the last one, put a 
 			if (i != clonedArray.length - 1) {
 				output += " | ";
 				// output += "  ";
-			} else {
-				logger.debug(`last one`);
 			}
 		}
 

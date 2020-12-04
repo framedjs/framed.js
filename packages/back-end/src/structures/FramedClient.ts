@@ -11,7 +11,7 @@ import path from "path";
 // Other important imports
 import { logger, Utils } from "shared";
 import FramedMessage from "./FramedMessage";
-import PluginManager, { HelpCategory } from "../managers/PluginManager";
+import PluginManager, { HelpGroup } from "../managers/PluginManager";
 import { EventEmitter } from "events";
 import { FramedClientInfo } from "../interfaces/FramedClientInfo";
 import { DatabaseManager } from "../managers/DatabaseManager";
@@ -29,9 +29,9 @@ export default class FramedClient extends EventEmitter {
 	public readonly version: string;
 	public readonly backEndVersion: string;
 
-	public shortHelpInfo: HelpCategory[] = [
+	public shortHelpInfo: HelpGroup[] = [
 		{
-			category: "Pinned Commands",
+			group: "Pinned Commands",
 			command: [
 				{
 					command: "commands",
@@ -80,10 +80,11 @@ export default class FramedClient extends EventEmitter {
 			dropSchema: true,
 			logging: true,
 			entities: [DatabaseManager.defaultEntitiesPath],
-		});
+		}, this);
 	}
 
 	async login(token: string): Promise<void> {
+		// Loads the API
 		logger.verbose(`Using routes path: ${APIManager.defaultPath}`);
 		this.apiManager.loadRoutersIn({
 			dirname: APIManager.defaultPath,

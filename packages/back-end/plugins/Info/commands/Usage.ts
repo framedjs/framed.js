@@ -10,18 +10,18 @@ export default class extends BaseCommand {
 			id: "usage",
 			about:
 				"Shows what the `[]` and `<>` brackets means, along other syntax.",
-			emojiIcon: "🔍",
 		});
 	}
 
 	async run(msg: FramedMessage): Promise<boolean> {
 		if (msg.discord) {
+			const bulletPoint = ":small_orange_diamond:";
 			const embed = EmbedHelper.getTemplate(
 				msg.discord,
 				this.framedClient.helpCommands,
 				this.id
 			)
-				.setTitle("Usage")
+				.setTitle("Usage Key")
 				.setDescription(
 					stripIndent`
 					\`[]\` - This field is optional.
@@ -30,33 +30,15 @@ export default class extends BaseCommand {
 					\`...A\` - Multiple parameters could be put here.
 					`
 				)
-				// .addField(
-				// 	"Usage",
-				// 	stripIndent`
-				// 	\`[]\` means the field is optional.
-				// 	\`<>\` means the field is mandatory.
-				// 	\`[A | B]\` means you can choose either A or B.`
-				// )
 				.addField(
-					"Note",
+					"Notes",
 					stripIndent`
-					In most cases, **${"DO NOT USE BRACKETS".toLocaleLowerCase()}** while trying to run commands.
-					If there are quotes however, it is usually a requirement (especially with spaces).
-					The usage statements may be inaccurate in order to simplify them.
+					${bulletPoint} In most cases, **do not use brackets** while trying to run commands.
+					${bulletPoint} If asked for, quotes are *usually* needed (ex. fields with spaces), but not always. 
+					${bulletPoint} The usage statements may be inaccurate in order to simplify them.
 					`
 				);
-			// ).addField(
-			// 	"Example",
-			// 	stripIndent`
-			// 	Take the sample usage text for \`.poll\`: \`.poll <question> ["option 1"] ["option 2"]\`
 
-			// 	\`<question>\` means that you have to type your question in here.
-			// 	\`.poll Should Bim be Server Owner?\`, with "Should Bim be Server Owner?" would be valid.
-
-			// 	\`["option 1"]\` means we could decide not to put something in here.
-
-			// 	`
-			// );
 			await msg.discord.channel.send(embed);
 		}
 
