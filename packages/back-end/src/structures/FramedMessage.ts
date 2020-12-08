@@ -349,7 +349,7 @@ export default class FramedMessage {
 	 * Get the arguments, represented as contents. In other words, this gets the
 	 * contents after the command.
 	 *
-	 * @param argsToTrim Arguments to trim out.
+	 * @param argsToTrim Optional arguments to trim out.
 	 */
 	getArgsContent(argsToTrim?: string[]): string {
 		let newContent = this.content;
