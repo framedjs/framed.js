@@ -1,14 +1,17 @@
 import FramedMessage from "../../../../../src/structures/FramedMessage";
 import { BaseCommand } from "../../../../../src/structures/BaseCommand";
 import BaseSubcommand from "../../../../../src/structures/BaseSubcommand";
+import { logger } from "shared";
+import PluginManager from "../../../../../src/managers/PluginManager";
 import { oneLine } from "common-tags";
 import EmbedHelper from "../../../../../src/utils/discord/EmbedHelper";
 
-export default class CustomGroupAdd extends BaseSubcommand {
+export default class CustomGroupEdit extends BaseSubcommand {
 	constructor(command: BaseCommand) {
 		super(command, {
 			id: "list",
-			about: "Lists all the groups.",
+			aliases: ["show"],
+			about: "Lists all custom groups.",
 		});
 	}
 
