@@ -170,7 +170,7 @@ export default class PluginManager {
 	 */
 	getCommands(msg: FramedMessage): BaseCommand[];
 
-	getCommands(msgOrCommand: FramedMessage | string, prefix?: string) {
+	getCommands(msgOrCommand: FramedMessage | string, prefix?: string): BaseCommand[] {
 		const commandList: BaseCommand[] = [];
 
 		let commandString: string;
@@ -395,7 +395,7 @@ export default class PluginManager {
 							baseCommand.group,
 							baseCommand.groupEmote
 								? baseCommand.groupEmote
-								: "❔"
+								: "🐛"
 						);
 
 						// If there's a matching command or alias,
@@ -414,7 +414,7 @@ export default class PluginManager {
 							entries.set(command, {
 								group: baseCommand.groupEmote
 									? baseCommand.groupEmote
-									: "Other",
+									: "Unknown",
 								description: `\`${baseCommand.defaultPrefix}${baseCommand.id}${usage}\`${about}`,
 								small: baseCommand.about != undefined,
 							});

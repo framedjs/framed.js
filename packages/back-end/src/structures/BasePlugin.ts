@@ -7,6 +7,7 @@ import { PluginInfo } from "../interfaces/PluginInfo";
 import { BaseEvent } from "./BaseEvent";
 import PluginManager from "../managers/PluginManager";
 import Options from "../interfaces/RequireAllOptions";
+import BaseSubcommand from "./BaseSubcommand";
 
 export abstract class BasePlugin {
 	readonly framedClient: FramedClient;
@@ -86,7 +87,7 @@ export abstract class BasePlugin {
 	//#region Command loading
 
 	/**
-	 *
+	 * Loads commands, through RequireAll options.
 	 * @param options
 	 */
 	loadCommandsIn(options: Options): void {
@@ -96,6 +97,12 @@ export abstract class BasePlugin {
 	}
 
 	/**
+	 * Loads commands from a list of uninitiated classes.
+	 *
+	 * This function will attempt to get the instance of the new command,
+	 * and then compare if it is just a BaseCommand and not a BaseSubcommand.
+	 *
+	 * BaseSubcommand will get imported by the BaseCommand itself.
 	 *
 	 * @param commands
 	 */
@@ -103,19 +110,16 @@ export abstract class BasePlugin {
 		commands: (new (plugin: BasePlugin) => T)[]
 	): void {
 		for (const command of commands) {
-			// I hate this
-			const className = util
-				.inspect(command.prototype, undefined, 0)
-				?.replace("{}", "")
-				.trim();
-			const name = BaseCommand.name;
-			if (className.startsWith(name)) {
-				try {
-					const initCommand = new command(this);
+			try {
+				const initCommand = new command(this);
+				if (
+					!(initCommand instanceof BaseSubcommand) &&
+					initCommand instanceof BaseCommand
+				) {
 					this.loadCommand(initCommand);
-				} catch (error) {
-					logger.error(error.stack);
 				}
+			} catch (error) {
+				logger.error(error.stack);
 			}
 		}
 	}

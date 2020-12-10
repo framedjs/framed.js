@@ -1,3 +1,4 @@
+/* eslint-disable no-mixed-spaces-and-tabs */
 import EmbedHelper from "../../../src/utils/discord/EmbedHelper";
 import FramedMessage from "../../../src/structures/FramedMessage";
 import { BasePlugin } from "../../../src/structures/BasePlugin";
@@ -122,7 +123,7 @@ export default class Help extends BaseCommand {
 					command
 				);
 
-				for await (let command of matchingCommands) {
+				for await (const command of matchingCommands) {
 					// Get potential subcommand
 					const subcommands = command.getSubcommandChain(newArgs);
 					const finalSubcommand = subcommands[subcommands.length - 1];
@@ -135,9 +136,6 @@ export default class Help extends BaseCommand {
 					const commandRan = `${command.defaultPrefix}${
 						command.id
 					} ${oneLineInlineLists`${subcommandIds}`}`.trim();
-
-					// Creates the embed
-					let title = "";
 
 					const embed = EmbedHelper.getTemplate(
 						msg.discord,

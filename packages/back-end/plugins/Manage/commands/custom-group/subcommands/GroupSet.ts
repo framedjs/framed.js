@@ -28,7 +28,7 @@ export default class CustomGroupSet extends BaseSubcommand {
 		}
 
 		if (msg.args) {
-			let argsContent = msg.getArgsContent([this.id]);
+			const argsContent = msg.getArgsContent([this.id]);
 			const parse = FramedMessage.getArgs(argsContent, {
 				quoteSections: QuoteSections.Flexible,
 			});

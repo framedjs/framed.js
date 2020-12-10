@@ -40,6 +40,13 @@ export default class Poll extends BaseCommand {
 
 			// If there some poll options
 			if (pollOptionArgs.length >= 1) {
+				if (pollOptionArgs.length == 1) {
+					await msg.discord.channel.send(
+						`${msg.discord.author}, you need at least more than one option!`
+					);
+					return false;
+				}
+
 				// Create the description with results
 				const reactionEmotes: string[] = [];
 				let description = "";
@@ -81,8 +88,8 @@ export default class Poll extends BaseCommand {
 					.setTitle(questionContent)
 					.setDescription(
 						`${description}${hasCodeBlock ? "" : "\n"}` +
-						`\nPoll by ${msg.discord.author}` + 
-						`\n${askingForSingle ? oneOptionMsg : ""}`
+							`\nPoll by ${msg.discord.author}` +
+							`\n${askingForSingle ? oneOptionMsg : ""}`
 					);
 				const newMsg = await msg.discord.channel.send(embed);
 
@@ -157,13 +164,8 @@ export default class Poll extends BaseCommand {
 			return;
 		}
 
-		const newContent = msg.content
-			.replace(msg.prefix, "")
-			.replace(msg.command, "")
-			.trim();
-		const newArgs = FramedMessage.getArgs(newContent, {
-			quoteSections: QuoteSections.Flexible
-		});
+		let newContent = msg.getArgsContent();
+		let newArgs = FramedMessage.getArgs(newContent);		
 
 		logger.debug(stripIndent`
 			new Poll.ts: 
@@ -174,6 +176,7 @@ export default class Poll extends BaseCommand {
 		// NOTE: isSingleOrMultiple will be false, if there's quotes cancelling this param out
 		let singleMultipleOption = "";
 		let questionContent = newArgs[0];
+		// let questionContent = "";
 
 		const isSingle = newContent.startsWith("single");
 		const isMultiple = newContent.startsWith("multiple");
@@ -187,17 +190,24 @@ export default class Poll extends BaseCommand {
 			}
 
 			// Handles combined "single question"
-			questionContent = questionContent
+			newContent = newContent
 				.replace(`${singleMultipleOption} `, ``)
 				.replace(singleMultipleOption, "");
 
-			// If there is no content now, the argument was alone before.
-			// This means we can remove it from args
+			// // If there is no content now, the argument was alone before.
+			// // This means we can remove it from args
 			if (questionContent.length == 0) {
 				newArgs.shift();
 				questionContent = newArgs[0];
 			}
 		}
+
+		// Get a list of all the character 
+
+
+		newArgs = FramedMessage.getArgs(newContent, {
+			quoteSections: QuoteSections.Strict
+		});
 
 		logger.debug(`singleMultipleOption ${isSingleOrMultiple}`);
 		logger.debug(`newArgs: "${newArgs}"`);

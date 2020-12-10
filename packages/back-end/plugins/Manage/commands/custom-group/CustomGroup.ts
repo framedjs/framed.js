@@ -1,3 +1,4 @@
+/* eslint-disable no-mixed-spaces-and-tabs */
 import { oneLine, stripIndent } from "common-tags";
 import PluginManager from "../../../../src/managers/PluginManager";
 import { BaseCommand } from "../../../../src/structures/BaseCommand";
@@ -20,11 +21,11 @@ export default class CustomGroup extends BaseCommand {
 			],
 			about: "Lists all the groups available.",
 			description: oneLine`
-			This command allows you to add, edit, and delete custom groups, shown in \`.help\`.
-			See \`.addgrp\`, \`.editgrp\`, and \`.delgrp\`.
-			You can also set commands to be in certain groups. See \`.setgrp\`.`,
-			usage: `<add|edit|set|delete> "<group|command>" "<group>"`,
+			This command allows you to add, edit, delete, and list custom groups.
+			These groups are shown with commands in them, which can be set with this command.`,
+			usage: `<add|edit|delete|set|list> "<group|command>" "<group>"`,
 			examples: stripIndent`
+			\`{{prefix}}group list\`
 			\`{{prefix}}group add "🍎 Food Stuff"\`
 			\`{{prefix}}group set "Food Stuff" newcommand\`
 			\`{{prefix}}group edit "Food Stuff" "🍏 Food"\`

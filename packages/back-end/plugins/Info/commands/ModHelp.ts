@@ -8,15 +8,25 @@ import { HelpData } from "../../../src/managers/PluginManager";
 
 const data: HelpData[] = [
 	{
-		group: ":pencil2: Manage",
-		commands: ["command", "addcom", "editcom", "delcom", "group"],
+		group: "Manage",
+		commands: [
+			"command",
+			// "addcom",
+			// "editcom",
+			// "delcom",
+			"group",
+			// "addgrp",
+			// "editgrp",
+			// "delgrp",
+			// "setgrp",
+		],
 	},
 	{
-		group: ":tools: Utilities",
+		group: "Utilities",
 		commands: ["embed", "discohook", "escapemd"],
 	},
 	{
-		group: "🕒 Dailies",
+		group: "Dailies",
 		commands: ["setstreak", "setmercies", "bumpstreak"],
 	},
 ];

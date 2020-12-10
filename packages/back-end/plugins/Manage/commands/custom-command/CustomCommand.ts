@@ -23,9 +23,9 @@ export default class CustomCommand extends BaseCommand {
 		super(plugin, {
 			id: "command",
 			aliases: ["customcommand", "cmd", "com"],
-			about: "Lists all the commands available.",
+			about: "Manages commands.",
 			description: oneLine`
-			Lists all the commands availiable. This command also allows you to add, edit, and
+			This command also allows you to add, edit, and
 			delete custom commands. See \`.addcom\`, \`.editcom\`, and \`.delcom\`.`,
 			usage: `<add|edit|delete> <command ID> <content> "[description]"`,
 			examples: stripIndent`

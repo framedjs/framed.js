@@ -47,6 +47,11 @@ export class DatabaseManager {
 	public connection?: TypeORM.Connection;
 	public options: TypeORM.ConnectionOptions;
 
+	public prefixRepo?: TypeORM.Repository<Prefix>;
+	public commandRepo?: TypeORM.Repository<Command>;
+	public responseRepo?: TypeORM.Repository<Response>;
+	public groupRepo?: TypeORM.Repository<Group>;
+
 	constructor(
 		options: TypeORM.ConnectionOptions,
 		public readonly framedClient: FramedClient
@@ -72,6 +77,11 @@ export class DatabaseManager {
 			}
 		}
 
+		this.prefixRepo = this.connection.getRepository(Prefix);
+		this.commandRepo = this.connection.getRepository(Command);
+		this.responseRepo = this.connection.getRepository(Response);
+		this.groupRepo = this.connection.getRepository(Group);
+
 		await this.install();
 	}
 
@@ -87,8 +97,7 @@ export class DatabaseManager {
 		if (!connection)
 			throw new ReferenceError(DatabaseManager.errorNoConnection);
 
-		const prefixRepo = connection.getRepository(Prefix);
-		const defaultPrefix = await prefixRepo.findOne({
+		const defaultPrefix = await this.prefixRepo?.findOne({
 			where: {
 				id: this.framedClient.defaultPrefix,
 			},
@@ -102,6 +111,7 @@ export class DatabaseManager {
 	 */
 	async installDefaults(): Promise<void> {
 		await this.addDefaultPrefix();
+		await this.addGroup("Other", "❔");
 	}
 
 	/**
@@ -122,7 +132,7 @@ export class DatabaseManager {
 	/**
 	 * Adds the default prefix
 	 */
-	async addDefaultPrefix() {
+	async addDefaultPrefix(): Promise<void> {
 		const connection = this.connection;
 		if (connection) {
 			const prefixRepo = connection.getRepository(Prefix);
@@ -139,12 +149,17 @@ export class DatabaseManager {
 	/**
 	 * Get the default prefix
 	 */
-	async getDefaultPrefix(): Promise<Prefix> {
+	async getDefaultPrefix(
+		relations: TypeORM.FindOptionsRelationKeyName<Prefix>[] = []
+	): Promise<Prefix> {
 		const connection = this.connection;
 		if (connection) {
-			const prefixRepo = TypeORM.getRepository(Prefix);
+			const prefixRepo = connection.getRepository(Prefix);
 			return prefixRepo.findOneOrFail({
-				id: "default",
+				where: {
+					id: "default",
+				},
+				relations: relations,
 			});
 		} else {
 			throw new Error(DatabaseManager.errorNoConnection);
@@ -163,7 +178,15 @@ export class DatabaseManager {
 	 */
 	async findCommand(
 		commandId: string,
-		prefix: string
+		prefix: string,
+		prefixRelations: TypeORM.FindOptionsRelationKeyName<Prefix>[] = [
+			"commands",
+		],
+		commandRelations: TypeORM.FindOptionsRelationKeyName<Command>[] = [
+			"prefixes",
+			"response",
+			"group",
+		]
 	): Promise<Command | undefined> {
 		const connection = this.connection;
 		if (!connection) {
@@ -177,14 +200,14 @@ export class DatabaseManager {
 				where: {
 					prefix: prefix,
 				},
-				relations: ["commands"],
+				relations: prefixRelations,
 			});
 
 			const findingCommand = commandRepo.findOne({
 				where: {
 					id: commandId,
 				},
-				relations: ["prefixes", "response", "group"],
+				relations: commandRelations,
 			});
 
 			const [foundPrefixes, foundCommand] = await Promise.all([
@@ -264,7 +287,7 @@ export class DatabaseManager {
 	/**
 	 * Adds groups from scripts, such as plugins and commands.
 	 */
-	async addScriptGroups() {
+	async addScriptGroups(): Promise<void> {
 		const connection = this.connection;
 		if (connection) {
 			const groupRepo = connection.getRepository(Group);
