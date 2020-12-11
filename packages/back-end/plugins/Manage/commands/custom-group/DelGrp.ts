@@ -11,7 +11,7 @@ export default class extends BaseCommand {
 	constructor(plugin: BasePlugin) {
 		super(plugin, {
 			id: "delgrp",
-			aliases: ["delgroup", "creategrp", "creategroup"],
+			aliases: ["delgroup", "remgrp", "removegroup"],
 			about: `Deletes a custom group. This is an alias of \`${plugin.defaultPrefix}${replacement}\`.`,
 			usage: `"<group>"`,
 			examples: oneLine`

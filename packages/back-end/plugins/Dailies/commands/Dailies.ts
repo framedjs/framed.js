@@ -27,7 +27,7 @@ export default class extends BaseCommand {
 					stripIndent`
 					🔸 Challenge yourself to do something every day! 
 					🔸 Post about what you've been working on in <#692939668160774204>.
-					🔸 You can also talk about submissions in <#697203526530760764> with others.`
+					🔸 Talk about submissions in <#697203526530760764> with others.`
 				)
 				.addField(
 					"Checking Streaks",

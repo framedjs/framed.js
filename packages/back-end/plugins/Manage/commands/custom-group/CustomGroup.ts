@@ -12,12 +12,9 @@ export default class CustomGroup extends BaseCommand {
 		super(plugin, {
 			id: "group",
 			aliases: [
-				"groups",
-				"category",
-				"categories",
-				"customcategory",
-				"customcategories",
 				"grp",
+				"category",
+				"customcategory",
 			],
 			about: "Lists all the groups available.",
 			description: oneLine`

@@ -10,7 +10,14 @@ export default class extends BaseCommand {
 	constructor(plugin: BasePlugin) {
 		super(plugin, {
 			id: "listgrp",
-			aliases: ["delgroup", "creategrp", "creategroup"],
+			aliases: [
+				"showgrp",
+				"showgroup",
+				"showgroups",
+				"groups",
+				"categories",
+				"customcategories",
+			],
 			about: `Lists all custom groups. This is an alias of \`${plugin.defaultPrefix}${replacement}\`.`,
 			hideUsageInHelp: true,
 		});
