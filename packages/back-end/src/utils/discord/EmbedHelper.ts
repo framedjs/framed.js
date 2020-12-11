@@ -150,34 +150,27 @@ export default class EmbedHelper {
 	 * Use EmbedHelper.getTemplate() if you have access to those parameters,
 	 * as that would be more simpler.
 	 *
-	 * @param botUsername Bot username
 	 * @param commands Commands listed under check out footer message
 	 * @param color Discord color resolvable
-	 * @param botAvatarUrl Bot avatar URL
-	 * @param authorAvatarUrl Author avatar URL
+	 * @param footerUrl Footer avatar URL
 	 * @param baseEmbed Base Discord embed to apply the template to
 	 * @param commandUsed Command used (as a non-alias) to potentially be removed from a list
 	 *
 	 * @returns Discord embed
 	 */
 	static getTemplateRaw(
-		botUsername: string,
 		commands: string[],
 		color: Discord.ColorResolvable,
-		botAvatarUrl?: string,
-		authorAvatarUrl?: string,
+		footerUrl?: string,
 		baseEmbed?: Discord.MessageEmbed,
 		commandUsed?: string
 	): Discord.MessageEmbed {
-		// Get bot avatar URL that isn't null
-		botAvatarUrl = Utils.turnUndefinedIfNull(botAvatarUrl) as string;
-		authorAvatarUrl = Utils.turnUndefinedIfNull(authorAvatarUrl) as string;
+		footerUrl = Utils.turnUndefinedIfNull(footerUrl) as string;
 
 		const newEmbed = new Discord.MessageEmbed(baseEmbed)
-			.setAuthor(botUsername, botAvatarUrl)
 			.setFooter(
 				EmbedHelper.getCheckOutText(commands, commandUsed),
-				authorAvatarUrl
+				footerUrl
 			)
 			.setColor(color);
 

@@ -13,25 +13,14 @@ export default class extends BaseRouter {
 		// })
 
 		this.router.get("/api/discord/embedtemplate", async ctx => {
-			const botUsername = framedClient.client.user?.username
-				? framedClient.client.user?.username
-				: "(undefined username)";
-			const botAvatarUrl = Utils.turnUndefinedIfNull(
-					framedClient.client.user?.avatarURL({
-					dynamic: true,
-				})
-			) as string | undefined; 
-
-			const authorAvatarUrl = ctx.query.authorAvatarUrl || "";
+			const footerUrl = ctx.query.footerUrl || "";
 			const commandUsed = ctx.query.commandUsed || "";
 
 			const json = JSON.stringify(
 				EmbedHelper.getTemplateRaw(
-					botUsername,
 					framedClient.helpCommands,
 					EmbedHelper.getColorWithFallback(undefined),
-					botAvatarUrl,
-					authorAvatarUrl,
+					footerUrl,
 					undefined,
 					commandUsed,
 				)
