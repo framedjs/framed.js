@@ -5,13 +5,25 @@ import BaseSubcommand from "../../../../../src/structures/BaseSubcommand";
 export default class CustomCommandAdd extends BaseSubcommand {
 	constructor(command: BaseCommand) {
 		super(command, {
-			id: "add"
-		})
+			id: "add",
+		});
 	}
 
 	async run(msg: FramedMessage): Promise<boolean> {
+		// Checks for permission
+		if (!this.hasPermission(msg, this.permissions)) {
+			this.sendPermissionErrorMessage(msg);
+			return false;
+		}
+
+		if (msg.args) {
+			// Things
+		}
+
 		if (msg.discord) {
-			this.baseCommand.id
+			// Do things!
+			// await msg.discord.channel.send("test"); // Uncomment me!
+			return true;
 		}
 		return false;
 	}

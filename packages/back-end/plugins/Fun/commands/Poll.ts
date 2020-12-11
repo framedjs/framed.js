@@ -9,6 +9,7 @@ import { logger } from "shared";
 import EmbedHelper from "../../../src/utils/discord/EmbedHelper";
 import PluginManager from "../../../src/managers/PluginManager";
 import { QuoteSections } from "../../../src/interfaces/FramedMessageArgsSettings";
+import { FramedArgument } from "../../../src/interfaces/FramedArgument";
 
 export default class Poll extends BaseCommand {
 	constructor(plugin: BasePlugin) {
@@ -17,13 +18,12 @@ export default class Poll extends BaseCommand {
 			about: "Create a simple, reaction-based poll through Discord.",
 			description: stripIndent`
 				Create a simple, reaction-based poll through Discord.
-				You can use \`\\\"\` to put quotes in, without making custom options.
 			`,
 			usage: '[single] <question> [..."options"]',
 			hideUsageInHelp: true,
 			examples: stripIndent`
 				\`{{prefix}}poll Do you like pineapple on pizza?\` - Simple Poll
-				\`{{prefix}}poll Rename \\"Game Development\\" category?\` - Simple Poll With Quotes 
+				\`{{prefix}}poll Rename \\"Pixel Pete\\"\` - Simple Poll With Quotes at the End
 				\`{{prefix}}poll Ban Bim? "Yes" "Sure" "Why Not"\` - Custom Options
 				\`{{prefix}}poll single PC or Console? "PC" "Console"\` - Choose One Only
 			`,
@@ -165,23 +165,17 @@ export default class Poll extends BaseCommand {
 		}
 
 		let newContent = msg.getArgsContent();
-		let newArgs = FramedMessage.getArgs(newContent);		
+		const newArgs = FramedMessage.getArgs(newContent, {
+			quoteSections: QuoteSections.Flexible,
+		});
 
-		logger.debug(stripIndent`
-			new Poll.ts: 
-			newContent: '${newContent}'
-			newArgs: '${newArgs}'`);
-
-		// Handles getting new content
-		// NOTE: isSingleOrMultiple will be false, if there's quotes cancelling this param out
 		let singleMultipleOption = "";
-		let questionContent = newArgs[0];
-		// let questionContent = "";
 
 		const isSingle = newContent.startsWith("single");
 		const isMultiple = newContent.startsWith("multiple");
 		const isSingleOrMultiple = isSingle || isMultiple;
 
+		// Removes the single/multiple parma from newContent
 		if (isSingleOrMultiple) {
 			if (isSingle) {
 				singleMultipleOption = "single";
@@ -194,32 +188,80 @@ export default class Poll extends BaseCommand {
 				.replace(`${singleMultipleOption} `, ``)
 				.replace(singleMultipleOption, "");
 
-			// // If there is no content now, the argument was alone before.
-			// // This means we can remove it from args
-			if (questionContent.length == 0) {
+			// If there is no content now, the argument was alone before.
+			// This means we can remove it from args
+			if (newArgs[0].length == 0) {
 				newArgs.shift();
-				questionContent = newArgs[0];
 			}
 		}
 
-		// Get a list of all the character 
+		// Attempts to get arguments with a strict quote section mode in mind,
+		// while allowing for the question content to contain quotes.
+		let detailedArgs: FramedArgument[] = [];
+		let elementExtracted: string;
+		let questionContent = "";
+		let lastElementQuoted = false;
+		do {
+			detailedArgs = FramedMessage.getDetailedArgs(newContent, {
+				quoteSections: QuoteSections.Flexible,
+			});
 
+			let failed = false;
+			detailedArgs.forEach(arg => {
+				// If the argument was closed improperly, or wasn't quoted,
+				// the argument hasn't been parsed correctly yet
+				if (arg.nonClosedQuoteSection || !arg.wrappedInQuotes) {
+					failed = true;
+				}
+			});
 
-		newArgs = FramedMessage.getArgs(newContent, {
-			quoteSections: QuoteSections.Strict
-		});
+			if (failed) {
+				const firstArg = detailedArgs.shift();
+				if (firstArg) {
+					elementExtracted = firstArg.untrimmedArgument;
+
+					// Re-adds any quotes that were previously parsed out
+					let leadingQuote = ``;
+					let trailingQuote = ``;
+					if (firstArg.wrappedInQuotes) {
+						leadingQuote += `"`;
+						if (!firstArg.nonClosedQuoteSection) {
+							trailingQuote += `"`;
+						}
+					}
+					elementExtracted = `${leadingQuote}${elementExtracted}${trailingQuote}`;
+
+					let extraSpace = "";
+					if (lastElementQuoted && firstArg.wrappedInQuotes) {
+						extraSpace = " ";
+					}
+					questionContent += `${extraSpace}${elementExtracted}`;
+					newContent = newContent.replace(
+						elementExtracted,
+						""
+					);
+					
+					lastElementQuoted = firstArg.wrappedInQuotes;
+				} else {
+					logger.error("Poll.ts: lastArg is undefined, but should have exited earlier!");
+					break;
+				}
+			} else {
+				break;
+			}
+		} while (detailedArgs.length > 0);
+
+		const pollOptionArgs = FramedMessage.simplifyArgs(detailedArgs);
 
 		logger.debug(`singleMultipleOption ${isSingleOrMultiple}`);
 		logger.debug(`newArgs: "${newArgs}"`);
 
-		const pollOptionArgs = newArgs.slice(1, newArgs.length);
-
 		logger.debug(stripIndent`
 			new Poll.ts: 
 			newContent: '${newContent}'
+			questionContent: '${questionContent}'
 			newArgs: '${newArgs}'
 			singleMultipleOption: '${singleMultipleOption}'
-			questionContent: '${questionContent}'
 			pollOptionsArgs: [${pollOptionArgs}]
 		`);
 

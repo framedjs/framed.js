@@ -8,7 +8,7 @@ import Discord from "discord.js";
 import { version } from "../../../../package.json";
 import path from "path";
 
-// Other important imports
+// Other imports
 import { logger, Utils } from "shared";
 import FramedMessage from "./FramedMessage";
 import PluginManager, { HelpGroup } from "../managers/PluginManager";
@@ -73,28 +73,39 @@ export default class FramedClient extends EventEmitter {
 		logger.verbose(
 			`Using entities path: ${DatabaseManager.defaultEntitiesPath}`
 		);
-		this.databaseManager = new DatabaseManager({
-			type: "sqlite",
-			database: DatabaseManager.defaultDbPath,
-			synchronize: true,
-			dropSchema: true,
-			logging: true,
-			entities: [DatabaseManager.defaultEntitiesPath],
-		}, this);
+		this.databaseManager = new DatabaseManager(
+			{
+				type: "sqlite",
+				database: DatabaseManager.defaultDbPath,
+				synchronize: true,
+				dropSchema: true,
+				logging: true,
+				entities: [DatabaseManager.defaultEntitiesPath],
+			},
+			this
+		);
 	}
 
+	/**
+	 * Logins through Discord
+	 */
 	async login(token: string): Promise<void> {
+		// https://www.stefanjudis.com/today-i-learned/measuring-execution-time-more-precisely-in-the-browser-and-node-js/
+		const startTime = process.hrtime();
+
 		// Loads the API
 		logger.verbose(`Using routes path: ${APIManager.defaultPath}`);
 		this.apiManager.loadRoutersIn({
 			dirname: APIManager.defaultPath,
 			filter: /^(.*)\.(js|ts)$/,
+			excludeDirs: /^(.*)\.(git|svn)$|^(.*)subcommands(.*)\.(js|ts)$/,
 		});
 
 		// Loads the plugins, which loads commands and events
 		this.pluginManager.loadPluginsIn({
 			dirname: path.join(__dirname, "..", "..", "plugins"),
 			filter: /^(.+plugin)\.(js|ts)$/,
+			excludeDirs: /^(.*)\.(git|svn)$|^(.*)subcommands(.*)\.(js|ts)$/,
 		});
 
 		// Loads the database
@@ -104,7 +115,34 @@ export default class FramedClient extends EventEmitter {
 		await this.client.login(token);
 
 		this.client.on("ready", async () => {
-			logger.info(`Logged in as ${this.client.user?.tag}!`);
+			// Gets the difference between the start time, and now
+			const diffTime = process.hrtime(startTime);
+
+			// Fixed decimal places (ex. if set to 3, decimals will be 0.000)
+			const fixedDecimals = 3;
+
+			// diffTime[1] is the decimal number as a whole number, so
+			// we need to convert that. This will remove some trailing numbers.
+			const endDecimalString = String(diffTime[1]).slice(
+				0,
+				fixedDecimals + 1
+			);
+
+			// Negative exponent (for example, 10 ^ -3)
+			const negativeExponent = Math.pow(10, -Number(fixedDecimals + 1));
+
+			// Larger number (that should be a decimal) * negative exponent
+			// will turn it into a decimal
+			const endDecimalNumber = Number(
+				Number(endDecimalString) * negativeExponent
+			).toFixed(fixedDecimals);
+
+			// Startup time
+			const startupTime = diffTime[0] + Number(endDecimalNumber);
+			
+			logger.info(
+				`Done (${startupTime}s)! Logged in as ${this.client.user?.tag}.`
+			);
 
 			//#region  Log test for NPM
 			// logger.silly("test");

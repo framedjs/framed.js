@@ -131,7 +131,7 @@ export abstract class BasePlugin {
 	loadCommand<T extends BaseCommand>(command: T): void {
 		// Sets up some commands
 		if (this.commands.get(command.id)) {
-			logger.error(`Command with id ${command.id} already exists!`);
+			logger.error(`Command with ID "${command.id}" already exists!`);
 			return;
 		}
 		this.commands.set(command.id, command);
@@ -146,7 +146,7 @@ export abstract class BasePlugin {
 			for (const alias of command.aliases) {
 				if (this.aliases.get(alias)) {
 					logger.error(
-						`Alias "${alias}" from command id ${command.id} already exists!`
+						`Alias "${alias}" from command ID "${command.id}" already exists!`
 					);
 					continue;
 				}
@@ -162,7 +162,7 @@ export abstract class BasePlugin {
 			});
 		}
 
-		logger.verbose(`Finished loading command ${command.id}.`);
+		logger.verbose(`Finished loading command "${command.id}".`);
 	}
 
 	//#endregion

@@ -78,10 +78,12 @@ export default class PluginManager {
 		this.plugins.set(plugin.id, plugin);
 
 		// Load commands
+		// TODO: excluding subcommands doesn't work
 		if (plugin.paths.commands) {
 			plugin.loadCommandsIn({
 				dirname: plugin.paths.commands,
 				filter: /^(.*)\.(js|ts)$/,
+				excludeDirs: /^(.*)\.(git|svn)$|^(.*)subcommands(.*)\.(js|ts)$/,
 			});
 		}
 
@@ -90,6 +92,7 @@ export default class PluginManager {
 			plugin.loadEventsIn({
 				dirname: plugin.paths.events,
 				filter: /^(.*)\.(js|ts)$/,
+				excludeDirs: /^(.*)\.(git|svn)$|^(.*)subcommands(.*)\.(js|ts)$/,
 			});
 		}
 
@@ -170,7 +173,10 @@ export default class PluginManager {
 	 */
 	getCommands(msg: FramedMessage): BaseCommand[];
 
-	getCommands(msgOrCommand: FramedMessage | string, prefix?: string): BaseCommand[] {
+	getCommands(
+		msgOrCommand: FramedMessage | string,
+		prefix?: string
+	): BaseCommand[] {
 		const commandList: BaseCommand[] = [];
 
 		let commandString: string;
