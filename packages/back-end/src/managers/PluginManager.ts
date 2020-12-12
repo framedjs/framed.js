@@ -434,7 +434,7 @@ export default class PluginManager {
 					let small = false;
 
 					const description =
-						command.response?.responseData?.description;
+						command.response?.description;
 
 					if (description) {
 						content = `${content} - ${description}\n`;
@@ -581,7 +581,7 @@ export default class PluginManager {
 
 			for await (const command of commands) {
 				let content = `\`${command.defaultPrefix.prefix}${command.id}\``;
-				const description = command.response?.responseData?.description;
+				const description = command.response?.description;
 
 				if (description) {
 					content = `${content} - ${description}\n`;

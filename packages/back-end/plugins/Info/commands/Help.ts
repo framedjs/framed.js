@@ -19,7 +19,7 @@ const data: HelpData[] = [
 	{
 		group: "Dailies",
 		commands: ["dailies", "streaks", "alert", "casual"],
-	},	
+	},
 ];
 
 export default class Help extends BaseCommand {
@@ -66,18 +66,17 @@ export default class Help extends BaseCommand {
 			)
 				.setTitle("Command Help")
 				.setDescription(
-					oneLine`
-						Pixel Pete is a collection of custom bots for <:gdu:766718483983368212>
-						**Game Dev Underground**, by <@200340393596944384>, <@359521958519504926>,
-						and <@150649616772235264>. 
-						`
+					stripIndent`
+					For more info about this bot, use the \`.about\` command.
+					For more info on certain commands, use \`.help poll\` (or a different command)!
+					`
 				)
 				.addFields(helpFields)
 				.addField(
 					"🤖 Other Bots",
 					stripIndent`
-						\`-help\` - <@234395307759108106> is used for music in the <#760622055384547368> voice channel.
-						`
+					\`-help\` - <@234395307759108106> is used for music in the <#760622055384547368> voice channel.
+					`
 				);
 			// .addField(
 			// 	"Need a Custom Discord Bot?",
@@ -85,20 +84,20 @@ export default class Help extends BaseCommand {
 			// 		Send <@200340393596944384> a message on Discord!`
 			// );
 
-			embed.setFooter(
-				`${
-					embed.footer?.text ? embed.footer.text : ""
-				}\nUse .help <command> to see more info.`,
-				embed.footer?.iconURL
-			);
+			// embed.setFooter(
+			// 	`${
+			// 		embed.footer?.text ? embed.footer.text : ""
+			// 	}\nUse .help [command] to see more info.`,
+			// 	embed.footer?.iconURL
+			// );
 
 			try {
 				await msg.discord.channel.send(embed);
 			} catch (error) {
+				logger.error(error.stack);
 				await msg.discord.channel.send(
 					`${msg.discord.author}, the embed size for help is too large! Contact one of the bot masters.`
 				);
-				logger.error(error.stack);
 			}
 			return true;
 		}

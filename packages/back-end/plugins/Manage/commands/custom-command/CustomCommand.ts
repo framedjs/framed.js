@@ -297,17 +297,21 @@ export default class CustomCommand extends BaseCommand {
 				// Gets the last content
 				let lastContent: string | undefined =
 					newContents[newContents.length - 1];
-				
+
 				// If the last content section is the beginning, lastContent becomes undefined,
 				// and won't be used as a description.
-				if (lastContent == newContents[0]) {
+				if (newContents.length < 2) {
 					lastContent = undefined;
 				}
 
 				const newList: ResponseData[] = [];
 
 				// Gets all possible responses, excluding the description if it exists
-				for (let i = 0; i < newContents.length - (lastContent ? 1 : 0); i++) {
+				for (
+					let i = 0;
+					i < newContents.length - (lastContent ? 1 : 0);
+					i++
+				) {
 					const element = newContents[i];
 					newList.push({
 						content: element,
@@ -319,8 +323,8 @@ export default class CustomCommand extends BaseCommand {
 					newResponse = await responseRepo.save(
 						responseRepo.create({
 							id: SnowflakeUtil.generate(new Date()),
+							description: lastContent,
 							responseData: {
-								description: lastContent,
 								list: newList,
 							},
 							commandResponses: [command],
@@ -331,8 +335,8 @@ export default class CustomCommand extends BaseCommand {
 					if (oldResponse?.responseData) {
 						oldResponse = responseRepo.create({
 							id: oldResponse.id,
+							description: lastContent,
 							responseData: {
-								description: lastContent,
 								list: newList,
 							},
 						});
@@ -407,9 +411,7 @@ export default class CustomCommand extends BaseCommand {
 		}
 
 		if (!connection) {
-			logger.error(
-				"No connection to a database found!"
-			)
+			logger.error("No connection to a database found!");
 		}
 
 		// Checks if the command already exists
