@@ -34,7 +34,7 @@ export default class extends BaseCommand {
 			).setTitle("About the Bot").setDescription(stripIndent`
 				${codeblock}yml
 				Uptime:           ${this.secondsToDhms(uptime)}
-				OS Environment:   ${os.platform()}
+				OS/Arch:          ${os.platform()}/${os.arch()}
 				Framed Version:   v${msg.framedClient.version}
 				Back-End Version: v${msg.framedClient.backEndVersion}${nodeEnvironment}
 				Dailies Version:  v1.52
