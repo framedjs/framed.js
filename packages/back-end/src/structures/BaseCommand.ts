@@ -202,7 +202,7 @@ export abstract class BaseCommand {
 	 * Run the command.
 	 * @param msg Framed Message
 	 */
-	abstract async run(msg: FramedMessage): Promise<boolean>;
+	abstract run(msg: FramedMessage): Promise<boolean>;
 
 	/**
 	 * Sends an error message, with what perms the user needs to work with.

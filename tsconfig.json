@@ -3,8 +3,8 @@
     /* Basic Options */
     "target": "ES2017",
     "module": "CommonJS",
+    "baseUrl": ".",
     "outDir": "dist",
-    "rootDir": ".",
 
     /* Strict Type-Checking Options */
     "strict": true,
@@ -17,9 +17,10 @@
     "resolveJsonModule": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
+
+    /* Maps */
     // "sourceMap": true, // Breaks with back-end plugin system
-    "inlineSourceMap": true,
-    "baseUrl": ".",
+    // "inlineSourceMap": true,
 
     /* Advanced Options (that i don't understand) */
     "forceConsistentCasingInFileNames": true,

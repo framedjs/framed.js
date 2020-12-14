@@ -1,6 +1,5 @@
 {
   "name": "framed",
-  "version": "0.1.0",
   "description": "A TypeScript Discord bot framework.",
   "license": "MIT",
   "private": true,
@@ -13,7 +12,9 @@
     "be:start": "cross-env NODE_ENV=\"production\" pnpm start --filter back-end",
     "be:dev": "cross-env NODE_ENV=\"development\" pnpm dev --filter back-end",
     "fe:start": "cross-env NODE_ENV=\"production\" pnpm start --filter front-end",
-    "fe:dev": "cross-env NODE_ENV=\"development\" pnpm start --filter front-end"
+    "fe:dev": "cross-env NODE_ENV=\"development\" pnpm start --filter front-end",
+    "ta:start": "cross-env NODE_ENV=\"production\" pnpm start --filter test-app",
+    "ta:dev": "cross-env NODE_ENV=\"development\" pnpm dev --filter test-app"
   },
   "devDependencies": {
     "@types/jest": "^26.0.16",

@@ -82,7 +82,7 @@ export default class PluginManager {
 		if (plugin.paths.commands) {
 			plugin.loadCommandsIn({
 				dirname: plugin.paths.commands,
-				filter: /^(.*)\.(js|ts)$/,
+				filter: this.framedClient.importFilter,
 				excludeDirs: /^(.*)\.(git|svn)$|^(.*)subcommands(.*)\.(js|ts)$/,
 			});
 		}
@@ -91,7 +91,7 @@ export default class PluginManager {
 		if (plugin.paths.events) {
 			plugin.loadEventsIn({
 				dirname: plugin.paths.events,
-				filter: /^(.*)\.(js|ts)$/,
+				filter: this.framedClient.importFilter,
 				excludeDirs: /^(.*)\.(git|svn)$|^(.*)subcommands(.*)\.(js|ts)$/,
 			});
 		}

@@ -158,7 +158,7 @@ export abstract class BasePlugin {
 		if (command.paths?.subcommands) {
 			command.loadSubcommandsIn({
 				dirname: command.paths.subcommands,
-				filter: /^(.*)\.(js|ts)$/,
+				filter: this.framedClient.importFilter,
 			});
 		}
 

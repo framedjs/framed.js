@@ -1,0 +1,29 @@
+{
+  "name": "test-app",
+  "version": "0.1.0",
+  "scripts": {
+    "build": "tsc --build",
+    "build:watch": "tsc --build --watch",
+    "test": "jest",
+    "test:watch": "jest --watchAll",
+    "start": "pnpm build && node dist/src/index.js",
+    "dev": "tsnd --inspect --transpile-only --project tsconfig.json --respawn -r tsconfig-paths/register ./src/index.ts --rs"
+  },
+  "dependencies": {
+    "axios": "^0.21.0",
+    "back-end": "workspace:back-end",
+    "common-tags": "^1.8.0",
+    "front-end": "workspace:front-end",
+    "shared": "workspace:shared",
+    "typeorm": "^0.3.0-rc.21"
+  },
+  "engines": {
+    "node": ">=12.0.0"
+  },
+  "devDependencies": {
+    "@types/common-tags": "^1.8.0",
+    "ts-node-dev": "^1.1.1",
+    "tsconfig-paths": "^3.9.0",
+    "typescript": "^4.1.3"
+  }
+}

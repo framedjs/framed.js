@@ -3,11 +3,10 @@
   "compilerOptions": {
     /* Basic Options */
     "outDir": "dist",
-    "rootDir": "src",
-
-    "declaration": true,
-    "declarationMap": true,
-    "composite": true,
+    // "rootDir": ".",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "incremental": true
   },
   "exclude": ["dist", "node_modules"]
 }

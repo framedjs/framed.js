@@ -10,5 +10,5 @@ export interface FramedClientInfo {
 	/**
 	 * A version number, separate from the Framed framework itself.
 	 */
-	backEndVersion?: string;
+	appVersion?: string;
 }

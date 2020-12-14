@@ -9,17 +9,21 @@
 // const user: User = createUser('t7yang', 18);
 // showUser(user);
 
-import { logger } from "shared";
-import { version } from "../../../package.json";
-import { version as backEndVersion } from "../package.json";
+// import { logger } from "shared";
+// import { version } from "../../../package.json";
+// import { version as backEndVersion } from "../package.json";
 
-import FramedClient from "./structures/FramedClient";
-import settings from "../../../settings.json";
+export { default as APIManager } from "./managers/APIManager";
+export { default as PluginManager } from "./managers/PluginManager";
+export { default as FramedClient } from "./structures/FramedClient";
+export { default as FramedMessage } from "./structures/FramedMessage";
 
-logger.info(`Launching Framed v${version}, back-end v${backEndVersion}.`);
+// import settings from "../../../settings.json";
 
-const framedClient = new FramedClient({
-	defaultPrefix: ".",
-	backEndVersion: backEndVersion,
-});
-framedClient.login(settings.token);
+// logger.info(`Launching Framed v${version}, back-end v${backEndVersion}.`);
+
+// const framedClient = new FramedClient({
+// 	defaultPrefix: ".",
+// 	backEndVersion: backEndVersion,
+// });
+// framedClient.login(settings.token);

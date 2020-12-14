@@ -32,5 +32,5 @@ export abstract class BaseEvent {
 	 * Run the event.
 	 * @param args 
 	 */
-	abstract async run(...args: any): Promise<void>;
+	abstract run(...args: any): Promise<void>;
 }

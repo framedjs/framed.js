@@ -5,13 +5,13 @@ import Discord from "discord.js";
 
 // File data related imports
 // import * as TypeORM from "typeorm";
-import { version } from "../../../../package.json";
+import { version } from "../../package.json";
 import path from "path";
 
 // Other imports
 import { logger, Utils } from "shared";
 import FramedMessage from "./FramedMessage";
-import PluginManager, { HelpGroup } from "../managers/PluginManager";
+import PluginManager from "../managers/PluginManager";
 import { EventEmitter } from "events";
 import { FramedClientInfo } from "../interfaces/FramedClientInfo";
 import { DatabaseManager } from "../managers/DatabaseManager";
@@ -22,46 +22,35 @@ import APIManager from "../managers/APIManager";
 
 export default class FramedClient extends EventEmitter {
 	public readonly apiManager: APIManager;
-	public readonly pluginManager = new PluginManager(this);
 	public readonly databaseManager: DatabaseManager;
+	public readonly pluginManager = new PluginManager(this);
+
 	public readonly utils = new Utils();
 	public readonly client = new Discord.Client();
+
+	/**
+	 * Framed version
+	 */
 	public readonly version: string;
-	public readonly backEndVersion: string;
 
-	public shortHelpInfo: HelpGroup[] = [
-		{
-			group: "Pinned Commands",
-			command: [
-				{
-					command: "commands",
-				},
-				{
-					command: "help",
-				},
-				{
-					command: "usage",
-				},
-				{
-					command: "poll",
-				},
-				{
-					command: "dailies",
-				},
-			],
-		},
-	];
+	/**
+	 * App version
+	 */
+	public readonly appVersion: string;
+
 	public readonly helpCommands = ["help", "dailies", "poll"];
-
+	public readonly importFilter = /^((?!\.d).)*\.(js|ts)$/;
+	// public readonly importFilter = /(?<!\.d)(\.(js|ts))$/;
 	public defaultPrefix = "!";
+
+	// https://www.stefanjudis.com/today-i-learned/measuring-execution-time-more-precisely-in-the-browser-and-node-js/
+	private startTime = process.hrtime();
 
 	constructor(info?: FramedClientInfo) {
 		// I have no idea what capture rejections does, but I assume it's a good thing.
 		super({ captureRejections: true });
 		this.version = version;
-		this.backEndVersion = info?.backEndVersion
-			? info.backEndVersion
-			: "unknown";
+		this.appVersion = info?.appVersion ? info.appVersion : "unknown";
 
 		if (info) {
 			if (info.defaultPrefix) this.defaultPrefix = info?.defaultPrefix;
@@ -90,20 +79,17 @@ export default class FramedClient extends EventEmitter {
 	 * Logins through Discord
 	 */
 	async login(token: string): Promise<void> {
-		// https://www.stefanjudis.com/today-i-learned/measuring-execution-time-more-precisely-in-the-browser-and-node-js/
-		const startTime = process.hrtime();
-
 		// Loads the API
 		logger.verbose(`Using routes path: ${APIManager.defaultPath}`);
 		this.apiManager.loadRoutersIn({
 			dirname: APIManager.defaultPath,
-			filter: /^(.*)\.(js|ts)$/,
+			filter: this.importFilter,
 			excludeDirs: /^(.*)\.(git|svn)$|^(.*)subcommands(.*)\.(js|ts)$/,
 		});
 
-		// Loads the plugins, which loads commands and events
+		// Loads the default plugins, which loads commands and events
 		this.pluginManager.loadPluginsIn({
-			dirname: path.join(__dirname, "..", "..", "plugins"),
+			dirname: path.join(__dirname, "..", "plugins"),
 			filter: /^(.+plugin)\.(js|ts)$/,
 			excludeDirs: /^(.*)\.(git|svn)$|^(.*)subcommands(.*)\.(js|ts)$/,
 		});
@@ -116,7 +102,7 @@ export default class FramedClient extends EventEmitter {
 
 		this.client.on("ready", async () => {
 			// Gets the difference between the start time, and now
-			const diffTime = process.hrtime(startTime);
+			const diffTime = process.hrtime(this.startTime);
 
 			// Fixed decimal places (ex. if set to 3, decimals will be 0.000)
 			const fixedDecimals = 3;
@@ -139,7 +125,7 @@ export default class FramedClient extends EventEmitter {
 
 			// Startup time
 			const startupTime = diffTime[0] + Number(endDecimalNumber);
-			
+
 			logger.info(
 				`Done (${startupTime}s)! Logged in as ${this.client.user?.tag}.`
 			);
