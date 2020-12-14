@@ -64,12 +64,12 @@ export default class extends BaseCommand {
 				)
 				.addFields(helpFields);
 
-			embed.setFooter(
-				`${
-					embed.footer?.text ? embed.footer.text : ""
-				}\nUse .help <command> to see more info.`,
-				embed.footer?.iconURL
-			);
+			// embed.setFooter(
+			// 	`${
+			// 		embed.footer?.text ? embed.footer.text : ""
+			// 	}\nUse .help <command> to see more info.`,
+			// 	embed.footer?.iconURL
+			// );
 
 			try {
 				await msg.discord.channel.send(embed);

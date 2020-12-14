@@ -15,7 +15,7 @@ export default class extends BaseCommand {
 
 	async run(msg: FramedMessage): Promise<boolean> {
 		if (msg.discord) {
-			const bulletPoint = ":small_orange_diamond:";
+			const bulletPoint = "​ **•** ​ ";
 			const embed = EmbedHelper.getTemplate(
 				msg.discord,
 				this.framedClient.helpCommands,
@@ -33,9 +33,9 @@ export default class extends BaseCommand {
 				.addField(
 					"Notes",
 					stripIndent`
-					${bulletPoint} In most cases, **do not use brackets** while trying to run commands.
-					${bulletPoint} If asked for, quotes are *usually* needed (ex. fields with spaces), but not always. 
-					${bulletPoint} The usage statements may be inaccurate in order to simplify them.
+					${bulletPoint}In most cases, **do not use brackets** while trying to run commands.
+					${bulletPoint}If asked for, quotes are *usually* needed (ex. fields with spaces), but not always. 
+					${bulletPoint}The usage statements may be inaccurate in order to simplify them.
 					`
 				);
 

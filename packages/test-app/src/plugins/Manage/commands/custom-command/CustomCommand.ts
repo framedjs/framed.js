@@ -307,7 +307,7 @@ export default class CustomCommand extends BaseCommand {
 
 				// If the last content section is the beginning, lastContent becomes undefined,
 				// and won't be used as a description.
-				if (lastContent == newContents[0]) {
+				if (newContents.length < 2) {
 					lastContent = undefined;
 				}
 
@@ -330,8 +330,8 @@ export default class CustomCommand extends BaseCommand {
 					newResponse = await responseRepo.save(
 						responseRepo.create({
 							id: SnowflakeUtil.generate(new Date()),
+							description: lastContent,
 							responseData: {
-								description: lastContent,
 								list: newList,
 							},
 							commandResponses: [command],
@@ -342,8 +342,8 @@ export default class CustomCommand extends BaseCommand {
 					if (oldResponse?.responseData) {
 						oldResponse = responseRepo.create({
 							id: oldResponse.id,
+							description: lastContent,
 							responseData: {
-								description: lastContent,
 								list: newList,
 							},
 						});

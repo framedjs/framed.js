@@ -20,11 +20,29 @@ export default class extends BaseCommand {
 				msg.discord,
 				this.framedClient.helpCommands,
 				this.id
-			).setTitle("About the Bot").setDescription(stripIndent`
+			)
+				.setTitle("About the Bot")
+				.setDescription(
+					stripIndent`
 				${oneLine`Pixel Pete is a collection of custom bots for
-				<:gdu:766718483983368212> **Game Dev Underground**, by <@200340393596944384>,
-				<@359521958519504926>, and <@150649616772235264>.`}
-				`);
+				<:gdu:766718483983368212> **Game Dev Underground**.`}
+				`
+				)
+				.addField(
+					"Authors",
+					stripIndent`
+				<@200340393596944384> - General Bot Back-End and Design
+				<@359521958519504926> - Dailies Bot
+				<@150649616772235264> - Advising and API
+				`
+				)
+				// .addField(
+				// 	"Special Thanks",
+				// 	stripIndent`
+				// <@000000000000000000> - Bot Name
+				// <@000000000000000000> - Profile Picture
+				// `
+				// );
 			await msg.discord.channel.send(embed);
 		}
 		return true;
