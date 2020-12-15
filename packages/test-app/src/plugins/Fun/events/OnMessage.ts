@@ -1,7 +1,5 @@
+import { BaseEvent, BasePlugin, FramedMessage } from "back-end";
 import Discord from "discord.js";
-import { BaseEvent } from "back-end/src/structures/BaseEvent";
-import { BasePlugin } from "back-end/src/structures/BasePlugin";
-import FramedMessage from "back-end/src/structures/FramedMessage";
 
 export default class extends BaseEvent {
 	constructor(plugin: BasePlugin) {

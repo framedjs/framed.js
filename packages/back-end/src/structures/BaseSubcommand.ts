@@ -1,7 +1,9 @@
 import { CommandInfo } from "../interfaces/CommandInfo";
 import { BaseCommand } from "./BaseCommand";
 
-export default abstract class BaseSubcommand extends BaseCommand {
+export abstract class BaseSubcommand extends BaseCommand {
+	static readonly type: string = "BaseSubcommand";
+
 	/**
 	 * Base command
 	 */

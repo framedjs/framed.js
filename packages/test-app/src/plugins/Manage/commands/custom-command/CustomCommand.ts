@@ -1,17 +1,22 @@
 /* eslint-disable no-mixed-spaces-and-tabs */
-import FramedMessage from "back-end/src/structures/FramedMessage";
-import { BaseCommand } from "back-end/src/structures/BaseCommand";
-import { BasePlugin } from "back-end/src/structures/BasePlugin";
+
 import { oneLine, stripIndent } from "common-tags";
 import { logger } from "shared";
-import PluginManager from "back-end/src/managers/PluginManager";
-import Command from "back-end/src/managers/database/entities/Command";
-import Prefix from "back-end/src/managers/database/entities/Prefix";
-import Response from "back-end/src/managers/database/entities/Response";
+
 import ResponseData from "back-end/src/managers/database/interfaces/ResponseData";
 import { QuoteSections } from "back-end/src/interfaces/FramedMessageArgsSettings";
 import { SnowflakeUtil } from "discord.js";
-import { DatabaseManager } from "back-end/src/managers/DatabaseManager";
+
+import {
+	BaseCommand,
+	BasePlugin,
+	DatabaseManager,
+	FramedMessage,
+	PluginManager,
+	Command,
+	Prefix,
+	Response,
+} from "back-end";
 
 export default class CustomCommand extends BaseCommand {
 	/**

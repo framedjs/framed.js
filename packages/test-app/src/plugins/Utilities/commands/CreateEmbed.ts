@@ -1,6 +1,4 @@
-import { BasePlugin } from "back-end/src/structures/BasePlugin";
-import FramedMessage from "back-end/src/structures/FramedMessage";
-import { BaseCommand } from "back-end/src/structures/BaseCommand";
+import { FramedMessage, BasePlugin, BaseCommand } from "back-end";
 import { logger, Utils } from "shared";
 import Discord from "discord.js";
 import { stripIndent } from "common-tags";

@@ -1,9 +1,11 @@
 /* eslint-disable no-mixed-spaces-and-tabs */
-import FramedMessage from "back-end/src/structures/FramedMessage";
-import { BaseCommand } from "back-end/src/structures/BaseCommand";
-import { BasePlugin } from "back-end/src/structures/BasePlugin";
+import {
+	FramedMessage,
+	BasePlugin,
+	BaseCommand,
+	PluginManager,
+} from "back-end";
 import { oneLine } from "common-tags";
-import PluginManager from "back-end/src/managers/PluginManager";
 
 const replacement = `group add`;
 
@@ -26,7 +28,10 @@ export default class extends BaseCommand {
 	 */
 	async run(msg: FramedMessage): Promise<boolean> {
 		if (msg.prefix && msg.command) {
-			let newContent = msg.content.replace(msg.command, `${replacement} `);
+			let newContent = msg.content.replace(
+				msg.command,
+				`${replacement} `
+			);
 			const commandPrefix = this.plugin.commands.get("group")
 				?.defaultPrefix;
 

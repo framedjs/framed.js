@@ -1,7 +1,6 @@
-import BaseRouter from "../../../structures/BaseRouter";
+import { BaseRouter } from "../../../structures/BaseRouter";
 import FramedClient from "../../../structures/FramedClient";
 import EmbedHelper from "../../../utils/discord/EmbedHelper";
-import { Utils } from "shared";
 
 export default class extends BaseRouter {
 	constructor(framedClient: FramedClient) {
@@ -22,7 +21,7 @@ export default class extends BaseRouter {
 					EmbedHelper.getColorWithFallback(undefined),
 					footerUrl,
 					undefined,
-					commandUsed,
+					commandUsed
 				)
 			);
 

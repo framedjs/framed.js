@@ -20,7 +20,7 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "react"
+    "jsx": "react-jsx"
   },
   "include": [
     "src"
@@ -30,5 +30,8 @@
       "path": "../shared"
     }
   ],
-  "exclude": ["build", "node_modules"]
+  "exclude": [
+    "build",
+    "node_modules"
+  ]
 }

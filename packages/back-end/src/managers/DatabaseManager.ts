@@ -1,23 +1,14 @@
 import * as TypeORM from "typeorm";
 import path from "path";
-import { logger, NodeUtil, Utils } from "shared";
+import { logger, NodeUtil } from "shared";
 import Prefix from "./database/entities/Prefix";
 import Command from "./database/entities/Command";
 import Response from "./database/entities/Response";
 import Group from "./database/entities/Group";
 import { SnowflakeUtil } from "discord.js";
-import Emoji from "node-emoji";
 import FramedClient from "../structures/FramedClient";
-import { BasePlugin } from "../structures/BasePlugin";
 
-export class DatabaseManager {
-	public static readonly defaultDbPath = path.join(
-		__dirname,
-		"..",
-		"..",
-		"data",
-		"FramedDB.sqlite"
-	);
+export default class DatabaseManager {
 	public static readonly defaultEntitiesPath = path.join(
 		__dirname,
 		"database",
@@ -53,8 +44,8 @@ export class DatabaseManager {
 	public groupRepo?: TypeORM.Repository<Group>;
 
 	constructor(
-		options: TypeORM.ConnectionOptions,
-		public readonly framedClient: FramedClient
+		public readonly framedClient: FramedClient,
+		options: TypeORM.ConnectionOptions
 	) {
 		this.options = options;
 	}
@@ -290,37 +281,49 @@ export class DatabaseManager {
 	async addScriptGroups(): Promise<void> {
 		const connection = this.connection;
 		if (connection) {
+			const groups: Group[] = [];
+			const groupIds: string[] = [];
 			const groupRepo = connection.getRepository(Group);
 
-			for await (const plugin of this.framedClient.pluginManager
-				.pluginsArray) {
+			for (const plugin of this.framedClient.pluginManager.pluginsArray) {
 				// If it doesn't exist, add it
-				if (!(await groupRepo.findOne(plugin.group))) {
-					await groupRepo.save(
+				// if (!(await groupRepo.findOne(plugin.group))) {
+				if (!groupIds.find(groupId => groupId == plugin.fullGroupId)) {
+					groups.push(
 						groupRepo.create({
 							id: plugin.fullGroupId,
 							emote: plugin.groupEmote,
 							name: plugin.group,
 						})
 					);
+					groupIds.push(plugin.fullGroupId);
 				}
+				// }
 
 				// Scans for commands
 				for await (const command of Array.from(
 					plugin.commands.values()
 				)) {
 					// If it doesn't exist, add it
-					if (!(await groupRepo.findOne(command.group))) {
-						await groupRepo.save(
+					// if (!(await groupRepo.findOne(command.group))) {
+					// If the group ID doesn't exist already, add it
+					if (
+						!groupIds.find(groupId => groupId == plugin.fullGroupId)
+					) {
+						groups.push(
 							groupRepo.create({
 								id: plugin.fullGroupId,
 								emote: command.groupEmote,
 								name: command.group,
 							})
 						);
+						groupIds.push(plugin.fullGroupId);
 					}
+					// }
 				}
 			}
+
+			await groupRepo.save(groups);
 		} else {
 			throw new ReferenceError(DatabaseManager.errorNoConnection);
 		}

@@ -1,5 +1,4 @@
-import { BasePlugin } from "back-end/src/structures/BasePlugin";
-import FramedClient from "back-end/src/structures/FramedClient";
+import { BasePlugin, FramedClient } from "back-end";
 import path from "path";
 
 export default class extends BasePlugin {
@@ -8,12 +7,14 @@ export default class extends BasePlugin {
 			id: "com.geekoverdrivestudio.dailies",
 			defaultPrefix: "!",
 			name: "Dailies",
-			authors: [{
-				discordId: "359521958519504926",
-				discordTag: "Gmanicus#5137",
-				twitchUsername: "gman1cus",
-				twitterUsername: "Geek_Overdrive"
-			}],
+			authors: [
+				{
+					discordId: "359521958519504926",
+					discordTag: "Gmanicus#5137",
+					twitchUsername: "gman1cus",
+					twitterUsername: "Geek_Overdrive",
+				},
+			],
 			description: "Challenge yourself to do something every day.",
 			version: "0.1.0",
 			paths: {

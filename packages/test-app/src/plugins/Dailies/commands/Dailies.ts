@@ -1,8 +1,5 @@
 /* eslint-disable no-irregular-whitespace */
-import EmbedHelper from "back-end/src/utils/discord/EmbedHelper";
-import FramedMessage from "back-end/src/structures/FramedMessage";
-import { BasePlugin } from "back-end/src/structures/BasePlugin";
-import { BaseCommand } from "back-end/src/structures/BaseCommand";
+import { BaseCommand, BasePlugin, EmbedHelper, FramedMessage } from "back-end";
 import { oneLine, stripIndent } from "common-tags";
 
 export default class extends BaseCommand {

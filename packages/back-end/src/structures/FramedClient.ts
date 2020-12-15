@@ -14,8 +14,7 @@ import FramedMessage from "./FramedMessage";
 import PluginManager from "../managers/PluginManager";
 import { EventEmitter } from "events";
 import { FramedClientInfo } from "../interfaces/FramedClientInfo";
-import { DatabaseManager } from "../managers/DatabaseManager";
-// import util from "util";
+import DatabaseManager from "../managers/DatabaseManager";
 import APIManager from "../managers/APIManager";
 
 // logger.level = "verbose";
@@ -46,7 +45,7 @@ export default class FramedClient extends EventEmitter {
 	// https://www.stefanjudis.com/today-i-learned/measuring-execution-time-more-precisely-in-the-browser-and-node-js/
 	private startTime = process.hrtime();
 
-	constructor(info?: FramedClientInfo) {
+	constructor(info: FramedClientInfo) {
 		// I have no idea what capture rejections does, but I assume it's a good thing.
 		super({ captureRejections: true });
 		this.version = version;
@@ -58,20 +57,16 @@ export default class FramedClient extends EventEmitter {
 
 		this.apiManager = new APIManager(this);
 
-		logger.verbose(`Using database path: ${DatabaseManager.defaultDbPath}`);
+		logger.verbose(
+			`Using database path: ${info.defaultConnection.database}`
+		);
 		logger.verbose(
 			`Using entities path: ${DatabaseManager.defaultEntitiesPath}`
 		);
+		
 		this.databaseManager = new DatabaseManager(
-			{
-				type: "sqlite",
-				database: DatabaseManager.defaultDbPath,
-				synchronize: true,
-				dropSchema: true,
-				logging: true,
-				entities: [DatabaseManager.defaultEntitiesPath],
-			},
-			this
+			this,
+			info.defaultConnection
 		);
 	}
 
@@ -124,7 +119,9 @@ export default class FramedClient extends EventEmitter {
 			).toFixed(fixedDecimals);
 
 			// Startup time
-			const startupTime = diffTime[0] + Number(endDecimalNumber);
+			const startupTime = (
+				diffTime[0] + Number(endDecimalNumber)
+			).toFixed(fixedDecimals);
 
 			logger.info(
 				`Done (${startupTime}s)! Logged in as ${this.client.user?.tag}.`

@@ -1,12 +1,10 @@
 import Discord from "discord.js";
 import { logger } from "shared";
 import { emotes, oneOptionMsg, optionEmotes } from "../Fun.plugin";
-import { BaseEvent } from "back-end/src/structures/BaseEvent";
+import { BaseEvent, BasePlugin, FramedMessage } from "back-end";
 import Emoji from "node-emoji"; // Doing this only because Windows can't render emotes for some reason
-import { BasePlugin } from "back-end/src/structures/BasePlugin";
 import { oneLine } from "common-tags";
 import Poll from "../commands/Poll";
-import FramedMessage from "back-end/src/structures/FramedMessage";
 // import util from "util";
 
 export default class extends BaseEvent {
@@ -93,7 +91,7 @@ export default class extends BaseEvent {
 					);
 					const extraReactionIsntJustPlaced =
 						extraReaction != reaction;
-						
+
 					return (
 						userHasReaction &&
 						(isSimplePollReaction || isOptionPollReaction) &&

@@ -1,10 +1,8 @@
 /* eslint-disable no-mixed-spaces-and-tabs */
 import { oneLine } from "common-tags";
 import Discord from "discord.js";
-import { logger } from "shared";
 import { FramedMessageDiscordData } from "../interfaces/FramedMessageDiscordData";
 import { FramedMessageInfo } from "../interfaces/FramedMessageInfo";
-import util from "util";
 import {
 	FramedMessageArgsSettings,
 	QuoteSections,

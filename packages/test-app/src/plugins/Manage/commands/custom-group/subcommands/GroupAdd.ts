@@ -1,8 +1,8 @@
-import FramedMessage from "back-end/src/structures/FramedMessage";
-import { BaseCommand } from "back-end/src/structures/BaseCommand";
-import BaseSubcommand from "back-end/src/structures/BaseSubcommand";
+import { FramedMessage } from "back-end";
+import { BaseCommand } from "back-end";
+import { BaseSubcommand } from "back-end";
 import { logger } from "shared";
-import PluginManager from "back-end/src/managers/PluginManager";
+import { PluginManager } from "back-end";
 import { oneLine } from "common-tags";
 import CustomGroup from "../CustomGroup";
 
@@ -36,7 +36,7 @@ export default class CustomGroupAdd extends BaseSubcommand {
 						newContent,
 						newEmote
 					);
-	
+
 					if (newEmote) {
 						await msg.discord?.channel.send(
 							oneLine`${msg.discord.author}, I've added the group "${newContent}" with

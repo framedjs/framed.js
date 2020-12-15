@@ -1,8 +1,5 @@
 import { stripIndent } from "common-tags";
-import { BasePlugin } from "packages/back-end/src/structures/BasePlugin";
-import FramedMessage from "back-end/src/structures/FramedMessage";
-import EmbedHelper from "back-end/src/utils/discord/EmbedHelper";
-import { BaseCommand } from "back-end/src/structures/BaseCommand";
+import { EmbedHelper, FramedMessage, BasePlugin, BaseCommand } from "back-end";
 
 export default class extends BaseCommand {
 	constructor(plugin: BasePlugin) {

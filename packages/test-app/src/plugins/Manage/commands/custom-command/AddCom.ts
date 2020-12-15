@@ -1,7 +1,5 @@
 /* eslint-disable no-mixed-spaces-and-tabs */
-import FramedMessage from "back-end/src/structures/FramedMessage";
-import { BaseCommand } from "back-end/src/structures/BaseCommand";
-import { BasePlugin } from "back-end/src/structures/BasePlugin";
+import { FramedMessage, BaseCommand, BasePlugin } from "back-end";
 import { stripIndent } from "common-tags";
 import { logger } from "shared";
 

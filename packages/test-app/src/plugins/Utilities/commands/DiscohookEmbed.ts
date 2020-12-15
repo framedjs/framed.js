@@ -1,10 +1,7 @@
-import { BasePlugin } from "back-end/src/structures/BasePlugin";
-import FramedMessage from "back-end/src/structures/FramedMessage";
-import { BaseCommand } from "back-end/src/structures/BaseCommand";
+import { FramedMessage, BasePlugin, BaseCommand, EmbedHelper } from "back-end";
 import EscapeMarkdown from "./EscapeMarkdown";
 import Discord from "discord.js";
 import { logger } from "shared";
-import EmbedHelper from "back-end/src/utils/discord/EmbedHelper";
 import * as ShortenURL from "../utils/ShortenURL";
 import { stripIndent } from "common-tags";
 
@@ -54,7 +51,9 @@ export default class DiscohookEmbed extends BaseCommand {
 									? msg.discord.guild.id
 									: "@me"
 							}/${msg.discord.channel.id}/${
-								parse?.newMsg ? parse?.newMsg.id : msg.discord.id
+								parse?.newMsg
+									? parse?.newMsg.id
+									: msg.discord.id
 							} "Discord Message") into Discohook for embed testing.
 							Click the shortened link to view: ${shortUrl}
 						`

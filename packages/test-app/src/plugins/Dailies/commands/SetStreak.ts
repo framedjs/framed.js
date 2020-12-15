@@ -1,6 +1,4 @@
-import { BasePlugin } from "back-end/src/structures/BasePlugin";
-import FramedMessage from "back-end/src/structures/FramedMessage";
-import { BaseCommand } from "back-end/src/structures/BaseCommand";
+import { BaseCommand, BasePlugin, FramedMessage } from "back-end";
 import { oneLine, stripIndent } from "common-tags";
 
 export default class extends BaseCommand {

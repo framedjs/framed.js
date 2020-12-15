@@ -1,10 +1,10 @@
-import FramedMessage from "back-end/src/structures/FramedMessage";
-import { BaseCommand } from "back-end/src/structures/BaseCommand";
-import BaseSubcommand from "back-end/src/structures/BaseSubcommand";
-import { logger } from "shared";
-import PluginManager from "back-end/src/managers/PluginManager";
+import {
+	BaseCommand,
+	BaseSubcommand,
+	EmbedHelper,
+	FramedMessage,
+} from "back-end";
 import { oneLine } from "common-tags";
-import EmbedHelper from "back-end/src/utils/discord/EmbedHelper";
 
 export default class CustomGroupEdit extends BaseSubcommand {
 	constructor(command: BaseCommand) {

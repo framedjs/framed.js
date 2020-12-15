@@ -1,7 +1,5 @@
 /* eslint-disable no-mixed-spaces-and-tabs */
-import { BasePlugin } from "back-end/src/structures/BasePlugin";
-import FramedMessage from "back-end/src/structures/FramedMessage";
-import { BaseCommand } from "back-end/src/structures/BaseCommand";
+import { FramedMessage, BasePlugin, BaseCommand } from "back-end";
 import { oneLine, stripIndent } from "common-tags";
 import Discord from "discord.js";
 import { logger } from "shared";

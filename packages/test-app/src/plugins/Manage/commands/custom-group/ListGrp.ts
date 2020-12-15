@@ -1,9 +1,9 @@
 /* eslint-disable no-mixed-spaces-and-tabs */
-import FramedMessage from "back-end/src/structures/FramedMessage";
-import { BaseCommand } from "back-end/src/structures/BaseCommand";
-import { BasePlugin } from "back-end/src/structures/BasePlugin";
-import PluginManager from "back-end/src/managers/PluginManager";
-
+import {
+	BaseCommand,
+	BasePlugin,
+	FramedMessage,
+} from "back-end";
 const replacement = `group list`;
 
 export default class extends BaseCommand {

@@ -1,6 +1,6 @@
-import FramedMessage from "back-end/src/structures/FramedMessage";
-import { BaseCommand } from "back-end/src/structures/BaseCommand";
-import BaseSubcommand from "back-end/src/structures/BaseSubcommand";
+import { FramedMessage } from "back-end";
+import { BaseCommand } from "back-end";
+import { BaseSubcommand } from "back-end";
 
 export default class CustomCommandAdd extends BaseSubcommand {
 	constructor(command: BaseCommand) {

@@ -1,9 +1,11 @@
 /* eslint-disable no-mixed-spaces-and-tabs */
-import FramedMessage from "back-end/src/structures/FramedMessage";
-import { BaseCommand } from "back-end/src/structures/BaseCommand";
-import { BasePlugin } from "back-end/src/structures/BasePlugin";
+import {
+	PluginManager,
+	BaseCommand,
+	BasePlugin,
+	FramedMessage,
+} from "back-end";
 import { oneLine } from "common-tags";
-import PluginManager from "back-end/src/managers/PluginManager";
 
 const replacement = `group edit`;
 

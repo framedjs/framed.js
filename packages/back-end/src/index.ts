@@ -1,29 +1,27 @@
-// Tries to get environmental variables if it doesn't exist
-// const dotenv = require("dotenv").config({ path: `${process.cwd()}/../.env` });
-// if (dotenv.error) {
-// 	throw dotenv.error;
-// }
-// console.log(dotenv.parsed);
-
-// import { createUser, showUser, User } from 'shared';
-// const user: User = createUser('t7yang', 18);
-// showUser(user);
-
-// import { logger } from "shared";
-// import { version } from "../../../package.json";
-// import { version as backEndVersion } from "../package.json";
-
+// Managers
 export { default as APIManager } from "./managers/APIManager";
 export { default as PluginManager } from "./managers/PluginManager";
+export { default as DatabaseManager } from "./managers/DatabaseManager";
+
+// Structures
 export { default as FramedClient } from "./structures/FramedClient";
 export { default as FramedMessage } from "./structures/FramedMessage";
 
-// import settings from "../../../settings.json";
+export { BasePlugin } from "./structures/BasePlugin";
+export { BaseCommand } from "./structures/BaseCommand";
+export { BaseSubcommand } from "./structures/BaseSubcommand";
+export { BaseEvent } from "./structures/BaseEvent";
+export { BaseRouter } from "./structures/BaseRouter";
 
-// logger.info(`Launching Framed v${version}, back-end v${backEndVersion}.`);
+// Interfaces
+export { QuoteSections } from "./interfaces/FramedMessageArgsSettings";
+export { FramedArgument } from "./interfaces/FramedArgument";
 
-// const framedClient = new FramedClient({
-// 	defaultPrefix: ".",
-// 	backEndVersion: backEndVersion,
-// });
-// framedClient.login(settings.token);
+// TypeORM Entities
+export { default as Command } from "./managers/database/entities/Command";
+export { default as Prefix } from "./managers/database/entities/Prefix";
+export { default as Response } from "./managers/database/entities/Response";
+
+// Utilities
+export { default as EmbedHelper } from "./utils/discord/EmbedHelper";
+export { default as DiscordUtils } from "./utils/discord/DiscordUtils";

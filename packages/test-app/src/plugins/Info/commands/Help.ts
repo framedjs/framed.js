@@ -1,11 +1,8 @@
 /* eslint-disable no-mixed-spaces-and-tabs */
-import EmbedHelper from "back-end/src/utils/discord/EmbedHelper";
-import FramedMessage from "back-end/src/structures/FramedMessage";
-import { BasePlugin } from "back-end/src/structures/BasePlugin";
-import { BaseCommand } from "back-end/src/structures/BaseCommand";
-import { oneLine, oneLineInlineLists, stripIndent } from "common-tags";
-import { logger } from "shared";
+import { EmbedHelper, FramedMessage, BasePlugin, BaseCommand } from "back-end";
 import { HelpData } from "back-end/src/managers/PluginManager";
+import { oneLineInlineLists, stripIndent } from "common-tags";
+import { logger } from "shared";
 
 const data: HelpData[] = [
 	{

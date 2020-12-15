@@ -6,7 +6,7 @@ import util from "util";
 import Koa from "koa";
 import Router from "koa-router";
 import path from "path";
-import BaseRouter from "../structures/BaseRouter";
+import { BaseRouter } from "../structures/BaseRouter";
 
 export default class APIManager {
 	public static readonly defaultPath = path.join(__dirname, "api", "routes");
@@ -58,7 +58,7 @@ export default class APIManager {
 	): void {
 		for (const router of routes) {
 			const initRouter = new router(this.framedClient);
-			logger.debug(`initRouter: ${util.inspect(initRouter)}`);
+			// logger.debug(`initRouter: ${util.inspect(initRouter)}`);
 			this.loadRouter(initRouter);
 		}
 	}

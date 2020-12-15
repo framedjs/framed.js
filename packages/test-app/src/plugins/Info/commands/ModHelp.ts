@@ -1,7 +1,4 @@
-import EmbedHelper from "back-end/src/utils/discord/EmbedHelper";
-import FramedMessage from "back-end/src/structures/FramedMessage";
-import { BasePlugin } from "back-end/src/structures/BasePlugin";
-import { BaseCommand } from "back-end/src/structures/BaseCommand";
+import { EmbedHelper, FramedMessage, BasePlugin, BaseCommand } from "back-end";
 import { oneLine } from "common-tags";
 import { logger } from "shared";
 import { HelpData } from "back-end/src/managers/PluginManager";

@@ -1,9 +1,11 @@
 /* eslint-disable no-mixed-spaces-and-tabs */
 import { oneLine, stripIndent } from "common-tags";
-import PluginManager from "back-end/src/managers/PluginManager";
-import { BaseCommand } from "back-end/src/structures/BaseCommand";
-import { BasePlugin } from "back-end/src/structures/BasePlugin";
-import FramedMessage from "back-end/src/structures/FramedMessage";
+import {
+	PluginManager,
+	BaseCommand,
+	BasePlugin,
+	FramedMessage,
+} from "back-end";
 import path from "path";
 import Emoji from "node-emoji";
 
@@ -11,11 +13,7 @@ export default class CustomGroup extends BaseCommand {
 	constructor(plugin: BasePlugin) {
 		super(plugin, {
 			id: "group",
-			aliases: [
-				"grp",
-				"category",
-				"customcategory",
-			],
+			aliases: ["grp", "category", "customcategory"],
 			about: "Lists all the groups available.",
 			description: oneLine`
 			This command allows you to add, edit, delete, and list custom groups.
@@ -59,7 +57,6 @@ export default class CustomGroup extends BaseCommand {
 				newEmote?: string;
 		  }
 		| undefined {
-
 		let argsContent: string;
 		if (msg instanceof FramedMessage) {
 			argsContent = msg.getArgsContent([...parseOut]);

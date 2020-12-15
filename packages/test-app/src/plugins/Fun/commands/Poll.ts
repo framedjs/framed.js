@@ -1,15 +1,17 @@
 /* eslint-disable no-mixed-spaces-and-tabs */
-import FramedMessage from "back-end/src/structures/FramedMessage";
-import { BaseCommand } from "back-end/src/structures/BaseCommand";
+import {
+	BaseCommand,
+	BasePlugin,
+	FramedMessage,
+	EmbedHelper,
+	PluginManager,
+	FramedArgument,
+	QuoteSections,
+} from "back-end";
 import Discord from "discord.js";
-import { BasePlugin } from "back-end/src/structures/BasePlugin";
 import { emotes, oneOptionMsg, optionEmotes } from "../Fun.plugin";
 import { stripIndent } from "common-tags";
 import { logger } from "shared";
-import EmbedHelper from "back-end/src/utils/discord/EmbedHelper";
-import PluginManager from "back-end/src/managers/PluginManager";
-import { QuoteSections } from "back-end/src/interfaces/FramedMessageArgsSettings";
-import { FramedArgument } from "back-end/src/interfaces/FramedArgument";
 
 export default class Poll extends BaseCommand {
 	constructor(plugin: BasePlugin) {
@@ -236,14 +238,13 @@ export default class Poll extends BaseCommand {
 						extraSpace = " ";
 					}
 					questionContent += `${extraSpace}${elementExtracted}`;
-					newContent = newContent.replace(
-						elementExtracted,
-						""
-					);
-					
+					newContent = newContent.replace(elementExtracted, "");
+
 					lastElementQuoted = firstArg.wrappedInQuotes;
 				} else {
-					logger.error("Poll.ts: lastArg is undefined, but should have exited earlier!");
+					logger.error(
+						"Poll.ts: lastArg is undefined, but should have exited earlier!"
+					);
 					break;
 				}
 			} else {

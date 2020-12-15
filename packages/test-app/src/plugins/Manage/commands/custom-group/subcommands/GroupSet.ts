@@ -1,8 +1,8 @@
-import FramedMessage from "back-end/src/structures/FramedMessage";
-import { BaseCommand } from "back-end/src/structures/BaseCommand";
-import BaseSubcommand from "back-end/src/structures/BaseSubcommand";
+import { FramedMessage } from "back-end";
+import { BaseCommand } from "back-end";
+import { BaseSubcommand } from "back-end";
 import { logger } from "shared";
-import PluginManager from "back-end/src/managers/PluginManager";
+import { PluginManager } from "back-end";
 import { oneLine } from "common-tags";
 import CustomGroup from "../CustomGroup";
 import { QuoteSections } from "back-end/src/interfaces/FramedMessageArgsSettings";

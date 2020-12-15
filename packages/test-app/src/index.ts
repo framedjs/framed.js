@@ -1,5 +1,5 @@
 import { logger } from "shared";
-import { FramedClient } from "back-end";
+import { FramedClient, DatabaseManager } from "back-end";
 import path from "path";
 import settings from "../settings.json";
 import { version as appVersion } from "../package.json";
@@ -7,6 +7,14 @@ import { version as appVersion } from "../package.json";
 logger.info("Starting Test App");
 
 const framedClient = new FramedClient({
+	defaultConnection: {
+		type: "sqlite",
+		database: "./data/FramedDB.sqlite",
+		synchronize: true,
+		dropSchema: false,
+		logging: true,
+		entities: [DatabaseManager.defaultEntitiesPath],
+	},
 	defaultPrefix: ".",
 	appVersion: appVersion,
 });

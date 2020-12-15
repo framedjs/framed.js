@@ -8,10 +8,12 @@ import EmbedHelper from "../utils/discord/EmbedHelper";
 import { logger } from "shared";
 import Options from "../interfaces/RequireAllOptions";
 import DiscordUtils from "../utils/discord/DiscordUtils";
-import BaseSubcommand from "./BaseSubcommand";
+import { BaseSubcommand } from "./BaseSubcommand";
 import { oneLine } from "common-tags";
 
 export abstract class BaseCommand {
+	static readonly type: string = "BaseCommand";
+
 	readonly framedClient: FramedClient;
 
 	/**
@@ -155,7 +157,11 @@ export abstract class BaseCommand {
 		this.id = info.id.toLocaleLowerCase();
 		this.paths = info.paths;
 		this.fullId = `${this.plugin.id}.command.${this.id}`;
-		this.group = info.group	? info.group : plugin.group ? plugin.group : "Other";
+		this.group = info.group
+			? info.group
+			: plugin.group
+			? plugin.group
+			: "Other";
 		this.groupEmote = plugin.groupEmote;
 		this.aliases = info.aliases;
 		this.defaultPrefix =

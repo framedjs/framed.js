@@ -1,6 +1,6 @@
+/* eslint-disable no-irregular-whitespace */
 import Discord from "discord.js";
-import { BaseEvent } from "back-end/src/structures/BaseEvent";
-import { BasePlugin } from "back-end/src/structures/BasePlugin";
+import { BasePlugin, BaseEvent } from "back-end";
 import { logger } from "shared";
 
 export default class extends BaseEvent {
@@ -13,7 +13,6 @@ export default class extends BaseEvent {
 	async run(msg: Discord.Message): Promise<void> {
 		// Commented out due to opt-in role implementation means that
 		// all user roles will turn dark, because they have no other colored role above it.
-
 		// if (msg.member && msg.member.guild.available && !msg.author.bot) {
 		// 	// Attempts to find the Opt-in header role, through
 		// 	// ID, name or its blending color
@@ -24,12 +23,10 @@ export default class extends BaseEvent {
 		// 			role => role.name == "—　　　　Opt-In Roles　　　　—"
 		// 		) ||
 		// 		roles.cache.find(role => role.hexColor == "#2f3136");
-
 		// 	const hasAnyOptInRole =
 		// 		msg.member.roles.cache.find(role =>
 		// 			role.name.includes("Notification")
 		// 		) != undefined;
-
 		// 	// If found, try to add it to the member
 		// 	if (optInHeaderRole) {
 		// 		try {

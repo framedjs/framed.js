@@ -1,8 +1,10 @@
-import FramedMessage from "back-end/src/structures/FramedMessage";
-import { BaseCommand } from "back-end/src/structures/BaseCommand";
-import BaseSubcommand from "back-end/src/structures/BaseSubcommand";
+import {
+	FramedMessage,
+	BaseCommand,
+	BaseSubcommand,
+	PluginManager,
+} from "back-end";
 import { logger } from "shared";
-import PluginManager from "back-end/src/managers/PluginManager";
 import { oneLine } from "common-tags";
 import CustomGroup from "../CustomGroup";
 import { QuoteSections } from "back-end/src/interfaces/FramedMessageArgsSettings";
@@ -29,7 +31,7 @@ export default class CustomGroupEdit extends BaseSubcommand {
 		}
 
 		if (msg.args) {
-			let argsContent = msg.getArgsContent([this.id]);
+			const argsContent = msg.getArgsContent([this.id]);
 			const parse = FramedMessage.getArgs(argsContent, {
 				quoteSections: QuoteSections.Flexible,
 			});
@@ -64,16 +66,16 @@ export default class CustomGroupEdit extends BaseSubcommand {
 						newEmote
 					);
 					if (newEmote) {
-						await msg.discord?.channel.send(oneLine`${msg.discord.author},
+						await msg.discord?.channel
+							.send(oneLine`${msg.discord.author},
 						I've renamed the group "${parseFirstArgs.newContent}" into
 						"${parseSecondArg.newContent}", and changed the emote to
-						"${parseSecondArg.newEmote}" successfully!`
-						);
+						"${parseSecondArg.newEmote}" successfully!`);
 					} else {
-						await msg.discord?.channel.send(oneLine`${msg.discord.author},
+						await msg.discord?.channel
+							.send(oneLine`${msg.discord.author},
 						I've renamed the group "${parseFirstArgs.newContent}" into
-						"${parseSecondArg.newContent}" successfully!`
-						);
+						"${parseSecondArg.newContent}" successfully!`);
 					}
 				} catch (error) {
 					if (error instanceof ReferenceError) {

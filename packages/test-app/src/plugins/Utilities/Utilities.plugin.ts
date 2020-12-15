@@ -1,6 +1,5 @@
-import { BasePlugin } from "back-end/src/structures/BasePlugin";
+import { BasePlugin, FramedClient } from "back-end";
 import path from "path";
-import FramedClient from "back-end/src/structures/FramedClient";
 
 export default class extends BasePlugin {
 	constructor(framedClient: FramedClient) {

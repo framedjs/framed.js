@@ -9,10 +9,9 @@ import { BaseEvent } from "../structures/BaseEvent";
 import Options from "../interfaces/RequireAllOptions";
 import Command from "./database/entities/Command";
 import Discord from "discord.js";
-import { DatabaseManager } from "./DatabaseManager";
-import { oneLine, oneLineInlineLists } from "common-tags";
+import DatabaseManager from "./DatabaseManager";
+import { oneLineInlineLists } from "common-tags";
 import * as TypeORM from "typeorm";
-import BaseSubcommand from "../structures/BaseSubcommand";
 
 export interface HelpGroup {
 	group: string;
@@ -80,10 +79,14 @@ export default class PluginManager {
 		// Load commands
 		// TODO: excluding subcommands doesn't work
 		if (plugin.paths.commands) {
+			const importFilter = this.framedClient.importFilter;
 			plugin.loadCommandsIn({
 				dirname: plugin.paths.commands,
-				filter: this.framedClient.importFilter,
-				excludeDirs: /^(.*)\.(git|svn)$|^(.*)subcommands(.*)\.(js|ts)$/,
+				// filter: importFilter,
+				filter: fileName => {
+					const success = importFilter.test(fileName);
+					return success ? fileName : false;
+				},
 			});
 		}
 
@@ -92,7 +95,6 @@ export default class PluginManager {
 			plugin.loadEventsIn({
 				dirname: plugin.paths.events,
 				filter: this.framedClient.importFilter,
-				excludeDirs: /^(.*)\.(git|svn)$|^(.*)subcommands(.*)\.(js|ts)$/,
 			});
 		}
 
@@ -433,8 +435,7 @@ export default class PluginManager {
 					let content = `\`${command.defaultPrefix.prefix}${command.id}\``;
 					let small = false;
 
-					const description =
-						command.response?.description;
+					const description = command.response?.description;
 
 					if (description) {
 						content = `${content} - ${description}\n`;

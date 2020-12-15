@@ -1,8 +1,8 @@
-import FramedMessage from "back-end/src/structures/FramedMessage";
-import { BaseCommand } from "back-end/src/structures/BaseCommand";
-import { BasePlugin } from "back-end/src/structures/BasePlugin";
+import { FramedMessage } from "back-end";
+import { BaseCommand } from "back-end";
+import { BasePlugin } from "back-end";
 import { stripIndent } from "common-tags";
-import EmbedHelper from "back-end/src/utils/discord/EmbedHelper";
+import { EmbedHelper } from "back-end";
 import os from "os";
 
 export default class extends BaseCommand {

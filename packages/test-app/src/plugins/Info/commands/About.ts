@@ -1,8 +1,5 @@
-import FramedMessage from "back-end/src/structures/FramedMessage";
-import { BaseCommand } from "back-end/src/structures/BaseCommand";
-import { BasePlugin } from "back-end/src/structures/BasePlugin";
+import { BaseCommand, BasePlugin, EmbedHelper, FramedMessage } from "back-end";
 import { oneLine, stripIndent } from "common-tags";
-import EmbedHelper from "back-end/src/utils/discord/EmbedHelper";
 
 export default class extends BaseCommand {
 	constructor(plugin: BasePlugin) {
@@ -31,9 +28,9 @@ export default class extends BaseCommand {
 				.addField(
 					"Authors",
 					stripIndent`
-				<@200340393596944384> - General Bot Back-End and Design
+				<@200340393596944384> - General Bot Back-End, Design
 				<@359521958519504926> - Dailies Bot
-				<@150649616772235264> - Advising and API
+				<@150649616772235264> - Advising, API, RegEx
 				`
 				)
 				// .addField(

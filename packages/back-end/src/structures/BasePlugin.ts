@@ -7,7 +7,7 @@ import { PluginInfo } from "../interfaces/PluginInfo";
 import { BaseEvent } from "./BaseEvent";
 import PluginManager from "../managers/PluginManager";
 import Options from "../interfaces/RequireAllOptions";
-import BaseSubcommand from "./BaseSubcommand";
+import { BaseSubcommand } from "./BaseSubcommand";
 
 export abstract class BasePlugin {
 	readonly framedClient: FramedClient;
@@ -111,6 +111,7 @@ export abstract class BasePlugin {
 	): void {
 		for (const command of commands) {
 			try {
+				const a = command.toString();
 				const initCommand = new command(this);
 				if (
 					!(initCommand instanceof BaseSubcommand) &&
