@@ -3,11 +3,11 @@ import {
 	BaseCommand,
 	BaseSubcommand,
 	PluginManager,
+	QuoteSections,
 } from "back-end";
 import { logger } from "shared";
 import { oneLine } from "common-tags";
 import CustomGroup from "../CustomGroup";
-import { QuoteSections } from "back-end/src/interfaces/FramedMessageArgsSettings";
 
 export default class CustomGroupEdit extends BaseSubcommand {
 	constructor(command: BaseCommand) {

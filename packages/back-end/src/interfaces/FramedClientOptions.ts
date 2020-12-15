@@ -3,7 +3,7 @@ import * as TypeORM from "typeorm";
 /**
  * Used with initializing Framed client.
  */
-export interface FramedClientInfo {
+export interface FramedClientOptions {
 	/**
 	 * TypeORM connection options. This will be merged with other things, such as where
 	 * the default entities are.

@@ -3,7 +3,7 @@ import { FramedPermissions } from "../structures/FramedPermissions";
 /**
  * To be used with BaseCommand and BaseSubcommand
  */
-export interface CommandInfo {
+export interface BaseCommandOptions {
 	/**
 	 * The ID of the command, which cannot use spaces. All plugin IDs should try to be unique,
 	 * to make sure that no plugin from different developers would overlap.

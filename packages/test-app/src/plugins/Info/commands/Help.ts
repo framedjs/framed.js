@@ -1,6 +1,6 @@
 /* eslint-disable no-mixed-spaces-and-tabs */
 import { EmbedHelper, FramedMessage, BasePlugin, BaseCommand } from "back-end";
-import { HelpData } from "back-end/src/managers/PluginManager";
+import { HelpData } from "back-end";
 import { oneLineInlineLists, stripIndent } from "common-tags";
 import { logger } from "shared";
 

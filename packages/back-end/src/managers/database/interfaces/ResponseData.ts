@@ -1,6 +1,6 @@
 import Discord from "discord.js";
 
-export default interface ResponseData {
+export interface ResponseData {
 	content: string;
 	command?: string;
 	responseId?: string;

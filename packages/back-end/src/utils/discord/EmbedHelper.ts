@@ -1,6 +1,6 @@
 import Discord from "discord.js";
 import { logger, Utils } from "shared";
-import { FramedMessageDiscordData } from "../../interfaces/FramedMessageDiscordData";
+import { FramedDiscordMessage } from "../../interfaces/FramedDiscordMessage";
 import FramedClient from "../../structures/FramedClient";
 
 export interface RawTemplateSettings {
@@ -44,7 +44,7 @@ export interface ObjectTemplateSettings {
 	/**
 	 * FramedMessage object or Discord message
 	 */
-	msg: Discord.Message | FramedMessageDiscordData;
+	msg: Discord.Message | FramedDiscordMessage;
 
 	/**
 	 * Framed client
@@ -119,7 +119,7 @@ export default class EmbedHelper {
 	 * @returns Discord embed
 	 */
 	static getTemplate(
-		msg: Discord.Message | FramedMessageDiscordData,
+		msg: Discord.Message | FramedDiscordMessage,
 		commands: string[],
 		commandUsed?: string,
 		baseEmbed?: Discord.MessageEmbed

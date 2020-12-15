@@ -3,7 +3,7 @@ import { ClientEvents } from "discord.js";
 /**
  * Used for BaseEvent.
  */
-export interface EventInfo {
+export interface BaseEventOptions {
 	/**
 	 * Name of the client event.
 	 */

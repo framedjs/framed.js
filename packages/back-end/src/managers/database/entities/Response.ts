@@ -1,5 +1,5 @@
 import { Column, Entity, OneToMany, PrimaryColumn } from "typeorm";
-import ResponseData from "../interfaces/ResponseData";
+import { ResponseData } from "../interfaces/ResponseData";
 import Command from "./Command";
 
 @Entity()

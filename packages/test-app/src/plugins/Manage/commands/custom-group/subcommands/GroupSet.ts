@@ -1,11 +1,13 @@
-import { FramedMessage } from "back-end";
-import { BaseCommand } from "back-end";
-import { BaseSubcommand } from "back-end";
+import {
+	FramedMessage,
+	QuoteSections,
+	BaseCommand,
+	BaseSubcommand,
+	PluginManager,
+} from "back-end";
 import { logger } from "shared";
-import { PluginManager } from "back-end";
 import { oneLine } from "common-tags";
 import CustomGroup from "../CustomGroup";
-import { QuoteSections } from "back-end/src/interfaces/FramedMessageArgsSettings";
 
 export default class CustomGroupSet extends BaseSubcommand {
 	constructor(command: BaseCommand) {

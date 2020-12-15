@@ -3,7 +3,7 @@ import { logger } from "shared";
 import FramedClient from "./FramedClient";
 import DiscordUtils from "../utils/discord/DiscordUtils";
 import util from "util";
-import { PluginInfo } from "../interfaces/PluginInfo";
+import { BasePluginOptions } from "../interfaces/BasePluginOptions";
 import { BaseEvent } from "./BaseEvent";
 import PluginManager from "../managers/PluginManager";
 import Options from "../interfaces/RequireAllOptions";
@@ -59,7 +59,7 @@ export abstract class BasePlugin {
 	// events = new Map<string, BaseEvent>();
 	events: BaseEvent[] = [];
 
-	constructor(framedClient: FramedClient, info: PluginInfo) {
+	constructor(framedClient: FramedClient, info: BasePluginOptions) {
 		this.framedClient = framedClient;
 		this.pluginManager = framedClient.pluginManager;
 

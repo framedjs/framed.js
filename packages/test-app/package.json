@@ -6,7 +6,7 @@
     "build:watch": "tsc --build --watch",
     "test": "jest",
     "test:watch": "jest --watchAll",
-    "start": "pnpm build && node dist/test-app/src/index.js",
+    "start": "node dist/src/index.js",
     "dev": "tsnd --inspect --transpile-only --project tsconfig.json --respawn -r tsconfig-paths/register ./src/index.ts --rs"
   },
   "dependencies": {

@@ -1,7 +1,7 @@
 /**
  * To be used with BasePlugin.
  */
-export interface PluginInfo {
+export interface BasePluginOptions {
 	/**
 	 * The ID of the plugin, which cannot use spaces. All plugin IDs should try to be unique,
 	 * to make sure that no plugin from different developers would overlap.

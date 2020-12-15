@@ -1,13 +1,11 @@
 /* eslint-disable no-mixed-spaces-and-tabs */
 import { oneLine } from "common-tags";
 import Discord from "discord.js";
-import { FramedMessageDiscordData } from "../interfaces/FramedMessageDiscordData";
-import { FramedMessageInfo } from "../interfaces/FramedMessageInfo";
-import {
-	FramedMessageArgsSettings,
-	QuoteSections,
-} from "../interfaces/FramedMessageArgsSettings";
+import { FramedDiscordMessage } from "../interfaces/FramedDiscordMessage";
+import { FramedMessageOptions } from "../interfaces/FramedMessageOptions";
+import { FramedArgumentOptions } from "../interfaces/FramedArgumentOptions";
 import { FramedArgument } from "../interfaces/FramedArgument";
+import { QuoteSections } from "../interfaces/QuoteSections";
 
 enum ArgumentState {
 	Quoted,
@@ -17,7 +15,7 @@ enum ArgumentState {
 export default class FramedMessage {
 	public readonly framedClient;
 
-	public discord?: FramedMessageDiscordData;
+	public discord?: FramedDiscordMessage;
 
 	public content = "";
 	public prefix?: string;
@@ -29,7 +27,7 @@ export default class FramedMessage {
 	 *
 	 * @param info Framed Message info
 	 */
-	constructor(info: FramedMessageInfo) {
+	constructor(info: FramedMessageOptions) {
 		if (info.discord) {
 			const newMsg =
 				info.discord.id && info.discord.channel
@@ -200,7 +198,7 @@ export default class FramedMessage {
 	 */
 	static getArgs(
 		content: string,
-		settings?: FramedMessageArgsSettings
+		settings?: FramedArgumentOptions
 	): string[] {
 		const args = FramedMessage.simplifyArgs(
 			FramedMessage.getDetailedArgs(content, settings)
@@ -212,7 +210,7 @@ export default class FramedMessage {
 	 * Turn FramedArgument[] array into a string[] array, containing the FramedArgument arguments
 	 *
 	 * @param detailedArgs Framed arguments
-	 * 
+	 *
 	 * @returns FramedArgument arguments in a string[] (Command arguments)
 	 */
 	static simplifyArgs(detailedArgs: FramedArgument[]): string[] {
@@ -232,7 +230,7 @@ export default class FramedMessage {
 	 */
 	static getDetailedArgs(
 		content: string,
-		settings?: FramedMessageArgsSettings
+		settings?: FramedArgumentOptions
 	): FramedArgument[] {
 		const args: FramedArgument[] = [];
 

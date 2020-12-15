@@ -3,8 +3,6 @@
 import { oneLine, stripIndent } from "common-tags";
 import { logger } from "shared";
 
-import ResponseData from "back-end/src/managers/database/interfaces/ResponseData";
-import { QuoteSections } from "back-end/src/interfaces/FramedMessageArgsSettings";
 import { SnowflakeUtil } from "discord.js";
 
 import {
@@ -16,6 +14,8 @@ import {
 	Command,
 	Prefix,
 	Response,
+	QuoteSections,
+	ResponseData,
 } from "back-end";
 
 export default class CustomCommand extends BaseCommand {

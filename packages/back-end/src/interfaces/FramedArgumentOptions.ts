@@ -1,4 +1,6 @@
-export interface FramedMessageArgsSettings {
+import { QuoteSections } from "./QuoteSections";
+
+export interface FramedArgumentOptions {
 	/**
 	 * If true, this puts the quotes (that are normally removed) inside the arguments.
 	 */
@@ -40,24 +42,19 @@ export interface FramedMessageArgsSettings {
 	 * This will also parse parts where there may not be any quotes, but
 	 * would be possible to infer what exactly would be in it.
 	 *
-	 * Examples: 
+	 * Examples:
 	 * - `arg 0 "arg 1"` will parse as: `["args 0", "args 1"]`
 	 *
 	 * If set to Strict, parsing will include quoted content into arguments.
-	 * Unlike Flexible, parsing will return undefined if there are parts that 
+	 * Unlike Flexible, parsing will return undefined if there are parts that
 	 * isn't wrapped with quotes.
-	 * 
-	 * Examples: 
+	 *
+	 * Examples:
 	 * - `"arg 0" "arg 1"` will parse as `["args 0", "args 1"]`.
 	 * - `arg 0 "arg 1" arg 2` will parse as `[]`.
 	 *
-	 * If quoteSections is set to undefined, the message won't be parsed through 
+	 * If quoteSections is set to undefined, the message won't be parsed through
 	 * quoted content, but rather spaces.
 	 */
 	quoteSections?: QuoteSections;
-}
-
-export enum QuoteSections {
-	Flexible,
-	Strict,
 }

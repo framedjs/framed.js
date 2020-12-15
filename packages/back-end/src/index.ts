@@ -14,8 +14,12 @@ export { BaseEvent } from "./structures/BaseEvent";
 export { BaseRouter } from "./structures/BaseRouter";
 
 // Interfaces
-export { QuoteSections } from "./interfaces/FramedMessageArgsSettings";
+export { QuoteSections } from "./interfaces/QuoteSections";
 export { FramedArgument } from "./interfaces/FramedArgument";
+export { BaseCommandOptions as CommandInfo } from "./interfaces/BaseCommandOptions";
+
+export { HelpData } from "./interfaces/HelpData";
+export { ResponseData } from "./managers/database/interfaces/ResponseData";
 
 // TypeORM Entities
 export { default as Command } from "./managers/database/entities/Command";

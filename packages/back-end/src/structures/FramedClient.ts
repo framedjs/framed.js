@@ -13,7 +13,7 @@ import { logger, Utils } from "shared";
 import FramedMessage from "./FramedMessage";
 import PluginManager from "../managers/PluginManager";
 import { EventEmitter } from "events";
-import { FramedClientInfo } from "../interfaces/FramedClientInfo";
+import { FramedClientOptions } from "../interfaces/FramedClientOptions";
 import DatabaseManager from "../managers/DatabaseManager";
 import APIManager from "../managers/APIManager";
 
@@ -45,7 +45,7 @@ export default class FramedClient extends EventEmitter {
 	// https://www.stefanjudis.com/today-i-learned/measuring-execution-time-more-precisely-in-the-browser-and-node-js/
 	private startTime = process.hrtime();
 
-	constructor(info: FramedClientInfo) {
+	constructor(info: FramedClientOptions) {
 		// I have no idea what capture rejections does, but I assume it's a good thing.
 		super({ captureRejections: true });
 		this.version = version;

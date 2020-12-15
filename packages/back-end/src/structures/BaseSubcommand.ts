@@ -1,4 +1,4 @@
-import { CommandInfo } from "../interfaces/CommandInfo";
+import { BaseCommandOptions } from "../interfaces/BaseCommandOptions";
 import { BaseCommand } from "./BaseCommand";
 
 export abstract class BaseSubcommand extends BaseCommand {
@@ -9,7 +9,7 @@ export abstract class BaseSubcommand extends BaseCommand {
 	 */
 	baseCommand: BaseCommand;
 
-	constructor(command: BaseCommand, info: CommandInfo) {
+	constructor(command: BaseCommand, info: BaseCommandOptions) {
 		super(command.plugin, command.rawInfo);
 
 		this.id = `${info.id}`;

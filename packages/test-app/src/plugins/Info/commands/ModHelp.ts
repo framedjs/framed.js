@@ -1,7 +1,7 @@
 import { EmbedHelper, FramedMessage, BasePlugin, BaseCommand } from "back-end";
 import { oneLine } from "common-tags";
 import { logger } from "shared";
-import { HelpData } from "back-end/src/managers/PluginManager";
+import { HelpData } from "back-end";
 
 const data: HelpData[] = [
 	{

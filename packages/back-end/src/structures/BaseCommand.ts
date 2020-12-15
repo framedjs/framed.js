@@ -1,7 +1,7 @@
 import FramedMessage from "./FramedMessage";
 import { BasePlugin } from "./BasePlugin";
 import FramedClient from "./FramedClient";
-import { CommandInfo } from "../interfaces/CommandInfo";
+import { BaseCommandOptions } from "../interfaces/BaseCommandOptions";
 import Discord from "discord.js";
 import { FramedPermissions } from "./FramedPermissions";
 import EmbedHelper from "../utils/discord/EmbedHelper";
@@ -143,14 +143,14 @@ export abstract class BaseCommand {
 	 *
 	 * If you're unsure whether to use this, **USE THE BASE VARIABLES INSTEAD**.
 	 */
-	rawInfo: CommandInfo;
+	rawInfo: BaseCommandOptions;
 
 	/**
 	 * Create a new BaseCommand.
 	 * @param plugin Plugin that this command will be attached to
 	 * @param info Command information
 	 */
-	constructor(plugin: BasePlugin, info: CommandInfo) {
+	constructor(plugin: BasePlugin, info: BaseCommandOptions) {
 		this.framedClient = plugin.framedClient;
 		this.plugin = plugin;
 
