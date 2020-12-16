@@ -3,11 +3,12 @@ import { EmbedHelper, FramedMessage, BasePlugin, BaseCommand } from "back-end";
 import { oneLineInlineLists, stripIndent } from "common-tags";
 import { HelpData } from "back-end";
 import { logger } from "shared";
+import Discord from "discord.js";
 
 const data: HelpData[] = [
 	{
 		group: "Info",
-		commands: ["help", "usage", "about", "ping"],
+		commands: ["help", "usage", "info", "about", "ping"],
 	},
 	{
 		group: "Fun",
@@ -42,7 +43,18 @@ export default class Help extends BaseCommand {
 
 		if (msg.args && framedUser) {
 			if (msg.args[0]) {
-				return this.showHelpForCommand(msg.args, msg);
+				// Sends help through Embed
+				if (msg.discord) {
+					const embeds = Help.showHelpForCommand(
+						msg.args,
+						msg,
+						this.id,
+						Help.processEmbedForHelp
+					);
+					for await (const embed of embeds) {
+						await msg.discord.channel.send(embed);
+					}
+				}
 			} else {
 				return this.showHelpAll(msg);
 			}
@@ -50,6 +62,10 @@ export default class Help extends BaseCommand {
 		return false;
 	}
 
+	/**
+	 * Shows the help message for all commands
+	 * @param msg Framed message
+	 */
 	private async showHelpAll(msg: FramedMessage): Promise<boolean> {
 		const helpFields = await this.framedClient.pluginManager.createHelpFields(
 			data
@@ -81,13 +97,6 @@ export default class Help extends BaseCommand {
 			// 		Send <@200340393596944384> a message on Discord!`
 			// );
 
-			// embed.setFooter(
-			// 	`${
-			// 		embed.footer?.text ? embed.footer.text : ""
-			// 	}\nUse .help [command] to see more info.`,
-			// 	embed.footer?.iconURL
-			// );
-
 			try {
 				await msg.discord.channel.send(embed);
 			} catch (error) {
@@ -102,108 +111,124 @@ export default class Help extends BaseCommand {
 	}
 
 	/**
+	 * Show help message for a command
 	 *
-	 * @param lookUpCmd
-	 * @param msg
+	 * @param args Message arguments
+	 * @param msg Framed Message
+	 * @param id Command ID for embed
+	 * @param processFunction The function that will parse and create all embeds.
 	 */
-	private async showHelpForCommand(
+	static showHelpForCommand(
 		args: string[],
-		msg: FramedMessage
-	): Promise<boolean> {
+		msg: FramedMessage,
+		id: string,
+		processFunction: (
+			msg: FramedMessage,
+			id: string,
+			newArgs: string[],
+			command: BaseCommand
+		) => Discord.MessageEmbed | undefined
+	): Discord.MessageEmbed[] {
+		const embeds: Discord.MessageEmbed[] = [];
 		if (msg.discord && args[0]) {
+			// Does a shallow clone of the array
 			const newArgs = [...args];
 			const command = newArgs.shift();
 
 			if (command) {
-				const matchingCommands = this.framedClient.pluginManager.getCommands(
+				// Goes through all matching commands. Hopefully, there's only one, but
+				// this allows for edge cases in where two plugins share the same command.
+				const matchingCommands = msg.framedClient.pluginManager.getCommands(
 					command
 				);
 
-				for await (const command of matchingCommands) {
-					// Get potential subcommand
-					const subcommands = command.getSubcommandChain(newArgs);
-					const finalSubcommand = subcommands[subcommands.length - 1];
-					const subcommandIds: string[] = [];
-
-					subcommands.forEach(subcommand => {
-						subcommandIds.push(subcommand.id);
-					});
-
-					const commandRan = `${command.defaultPrefix}${
-						command.id
-					} ${oneLineInlineLists`${subcommandIds}`}`.trim();
-
-					const embed = EmbedHelper.getTemplate(
-						msg.discord,
-						this.framedClient.helpCommands,
-						this.id
-					).setTitle(commandRan);
-
-					// .addField(
-					// 	`${command.plugin.name} Plugin`,
-					// 	`\`${command.prefix}${command.id}\`\n${description}`
-					// );
-
-					// if (command.aliases) {
-					// 	let aliasString = "";
-					// 	const newElementCharacter = command.inline ? "\n" : " ";
-
-					// 	for (const alias of command.aliases) {
-					// 		aliasString += `\`${alias}\`${newElementCharacter}`;
-					// 	}
-					// 	if (aliasString.length > 0)
-					// 		embed.addField("Aliases", aliasString, command.inline);
-					// }
-
-					// The command/subcommand that has the data needed
-					const primaryCommand = finalSubcommand
-						? finalSubcommand
-						: command;
-
-					// Get the description
-					let description = primaryCommand.description;
-					if (!description) {
-						if (primaryCommand.about) {
-							description = primaryCommand.about;
-						} else {
-							description = `*No about or description set for the command.*`;
-						}
-					}
-					embed.setDescription(description);
-
-					// Gets the usage text
-					if (primaryCommand.usage) {
-						const guideMsg = `Type \`.usage\` for important info.`;
-						const usageMsg = `\`${commandRan} ${primaryCommand.usage}\``;
-						const useInline = primaryCommand.inlineCharacterLimit
-							? usageMsg.length <=
-							  primaryCommand.inlineCharacterLimit
-							: primaryCommand.inline;
-						embed.addField(
-							"Usage",
-							`${guideMsg}\n${usageMsg}`,
-							useInline
-						);
-					}
-
-					// Get the examples text
-					if (primaryCommand.examples) {
-						const useInline = primaryCommand.inlineCharacterLimit
-							? primaryCommand.examples.length <=
-							  primaryCommand.inlineCharacterLimit
-							: primaryCommand.inline;
-						embed.addField(
-							"Examples",
-							`Try copying and editing them!\n${primaryCommand.examples}`,
-							useInline
-						);
-					}
-
-					await msg.discord.channel.send(embed);
-					return true;
+				for (const command of matchingCommands) {
+					const embed = processFunction(msg, id, newArgs, command);
+					if (embed) embeds.push(embed);
 				}
 			}
 		}
-		return false;
+		return embeds;
+	}
+
+	/**
+	 * Creates embeds containing help data
+	 * @param msg Framed Message
+	 * @param id Command ID for embed
+	 * @param newArgs Message arguments
+	 * @param command BaseCommand
+	 */
+	static processEmbedForHelp(
+		msg: FramedMessage,
+		id: string,
+		newArgs: string[],
+		command: BaseCommand
+	): Discord.MessageEmbed | undefined {
+		if (!msg.discord) return undefined;
+
+		const embed = EmbedHelper.getTemplate(
+			msg.discord,
+			msg.framedClient.helpCommands,
+			id
+		);
+
+		// Get potential subcommand
+		const subcommands = command.getSubcommandChain(newArgs);
+		const finalSubcommand = subcommands[subcommands.length - 1];
+
+		// Get the IDs fo all of them
+		const subcommandIds: string[] = [];
+		subcommands.forEach(subcommand => {
+			subcommandIds.push(subcommand.id);
+		});
+
+		// Shows the command/subcommand chain
+		// ex. .command add
+		const commandRan = `${command.defaultPrefix}${
+			command.id
+		} ${oneLineInlineLists`${subcommandIds}`}`.trim();
+		embed.setTitle(commandRan);
+
+		// The command/subcommand that has the data needed
+		const primaryCommand = finalSubcommand ? finalSubcommand : command;
+
+		// Get the description
+		let description = primaryCommand.description;
+		if (!description) {
+			if (primaryCommand.about) {
+				description = primaryCommand.about;
+			} else {
+				description = `*No about or description set for the command.*`;
+			}
+		}
+		embed.setDescription(description);
+
+		// Gets the usage text
+		if (primaryCommand.usage) {
+			const guideMsg = `Type \`.usage\` for important info.`;
+			const usageMsg = `\`${commandRan} ${primaryCommand.usage}\``;
+			embed.addField(
+				"Usage",
+				`${guideMsg}\n${usageMsg}`,
+				Help.useInline(primaryCommand, usageMsg)
+			);
+		}
+
+		// Get the examples text
+		if (primaryCommand.examples) {
+			embed.addField(
+				"Examples",
+				`Try copying and editing them!\n${primaryCommand.examples}`,
+				Help.useInline(primaryCommand, primaryCommand.examples)
+			);
+		}
+
+		return embed;
+	}
+
+	static useInline(command: BaseCommand, newString: string): boolean {
+		return command.inlineCharacterLimit
+			? newString.length <= command.inlineCharacterLimit
+			: command.inline;
 	}
 }
