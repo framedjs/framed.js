@@ -1,6 +1,6 @@
 import * as TypeORM from "typeorm";
 import path from "path";
-import { logger, NodeUtil } from "shared";
+import { logger, Utils } from "shared";
 import Prefix from "./database/entities/Prefix";
 import Command from "./database/entities/Command";
 import Response from "./database/entities/Response";
@@ -174,6 +174,7 @@ export default class DatabaseManager {
 			"commands",
 		],
 		commandRelations: TypeORM.FindOptionsRelationKeyName<Command>[] = [
+			"defaultPrefix",
 			"prefixes",
 			"response",
 			"group",
@@ -414,7 +415,7 @@ export default class DatabaseManager {
 				await groupRepo.remove(group);
 			} else {
 				throw new ReferenceError(
-					NodeUtil.format(
+					Utils.Node.format(
 						DatabaseManager.errorNotFound,
 						"group",
 						nameOrId

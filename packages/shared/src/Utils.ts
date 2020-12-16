@@ -1,10 +1,16 @@
 import fs from "fs";
 import path from "path";
+import util from "util";
 
 /**
  * Some utility functions.
  */
 export class Utils {
+	/**
+	 * Since this import can hide Node's default util plugin, it is re-exported here for convenience.
+	 */
+	public static readonly Node = util;
+
 	/**
 	 * Returns a list of files, found inside folder. Also searches inside folder of folders.
 	 * @param pathString
