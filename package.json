@@ -6,6 +6,7 @@
   "scripts": {
     "clean": "# DOESN'T WORK ON WINDOWS -> pnpm recursive exec -- rm -rf node_modules; rm shrinkwrap.yaml; rm -rf node_modules",
     "build": "pnpm recursive run build --sort",
+    "build:watch": "pnpm recursive run build:watch --sort",
     "test": "pnpm recursive run test",
     "test:watch": "pnpm recursive run test:watch",
     "start": "cross-env NODE_ENV=\"production\" pnpm recursive run start",

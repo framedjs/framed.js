@@ -1,7 +1,7 @@
 /* eslint-disable no-mixed-spaces-and-tabs */
 import { EmbedHelper, FramedMessage, BasePlugin, BaseCommand } from "back-end";
-import { HelpData } from "back-end";
 import { oneLineInlineLists, stripIndent } from "common-tags";
+import { HelpData } from "back-end";
 import { logger } from "shared";
 
 const data: HelpData[] = [

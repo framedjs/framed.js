@@ -55,6 +55,12 @@ export default class DatabaseManager {
 	 */
 	async start(): Promise<void> {
 		this.connection = await TypeORM.createConnection(this.options);
+
+		this.prefixRepo = this.connection.getRepository(Prefix);
+		this.commandRepo = this.connection.getRepository(Command);
+		this.responseRepo = this.connection.getRepository(Response);
+		this.groupRepo = this.connection.getRepository(Group);
+
 		const freshInstalled = await this.checkFreshInstall();
 
 		// Generates default prefix, if none existed before
@@ -67,12 +73,6 @@ export default class DatabaseManager {
 				);
 			}
 		}
-
-		this.prefixRepo = this.connection.getRepository(Prefix);
-		this.commandRepo = this.connection.getRepository(Command);
-		this.responseRepo = this.connection.getRepository(Response);
-		this.groupRepo = this.connection.getRepository(Group);
-
 		await this.install();
 	}
 
@@ -81,7 +81,7 @@ export default class DatabaseManager {
 	 * Checks whether or not Framed has been initialized before,
 	 * by checking if the default prefix exists.
 	 *
-	 * @returns `true` if it is fresh
+	 * @returns Returns `true` if the database is fresh
 	 */
 	async checkFreshInstall(): Promise<boolean> {
 		const connection = this.connection;
@@ -90,7 +90,7 @@ export default class DatabaseManager {
 
 		const defaultPrefix = await this.prefixRepo?.findOne({
 			where: {
-				id: this.framedClient.defaultPrefix,
+				id: "default",
 			},
 		});
 

@@ -43,10 +43,9 @@ export default class DiscohookEmbed extends BaseCommand {
 						this.id
 					)
 						.setTitle("Discohook URL")
-						.setURL(shortUrl)
 						.setDescription(
 							stripIndent`
-							I've just recreated [this message](https://discordapp.com/channels/${
+							I've just recreated [this message](https://discord.com/channels/${
 								msg.discord.guild != null
 									? msg.discord.guild.id
 									: "@me"

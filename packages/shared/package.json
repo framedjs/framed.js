@@ -4,6 +4,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc --build",
+    "build:watch": "tsc --build --watch",
     "start": "pnpm build && node dist/index.js",
     "dev": "tsnd --inspect --transpile-only --project tsconfig.json --respawn -r tsconfig-paths/register ./src/index.ts --rs"
   },

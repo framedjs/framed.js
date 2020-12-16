@@ -1,6 +1,9 @@
 import fs from "fs";
 import path from "path";
 
+/**
+ * Some utility functions.
+ */
 export class Utils {
 	/**
 	 * Returns a list of files, found inside folder. Also searches inside folder of folders.
@@ -59,5 +62,14 @@ export class Utils {
 			variable = undefined;
 		}
 		return variable;
+	}
+
+	/**
+	 * Sleeps for a defined period of time.
+	 *
+	 * @param ms Milliseconds
+	 */
+	public static sleep(ms: number): Promise<void> {
+		return new Promise(resolve => setTimeout(resolve, ms));
 	}
 }

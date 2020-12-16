@@ -111,7 +111,6 @@ export abstract class BasePlugin {
 	): void {
 		for (const command of commands) {
 			try {
-				const a = command.toString();
 				const initCommand = new command(this);
 				if (
 					!(initCommand instanceof BaseSubcommand) &&

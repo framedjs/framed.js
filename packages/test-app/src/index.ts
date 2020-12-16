@@ -4,6 +4,8 @@ import path from "path";
 import settings from "../settings.json";
 import { version as appVersion } from "../package.json";
 
+logger.level = "verbose";
+
 logger.info("Starting Test App");
 
 const framedClient = new FramedClient({
@@ -22,7 +24,7 @@ const framedClient = new FramedClient({
 framedClient.pluginManager.loadPluginsIn({
 	dirname: path.join(__dirname, "plugins"),
 	filter: /^(.+plugin)\.(js|ts)$/,
-	excludeDirs: /^(.*)\.(git|svn)$|^(.*)subcommands(.*)\.(js|ts)$/,
+	excludeDirs: /^(.*)\.(git|svn)$|^(.*)subcommands(.*)$/,
 });
 
 framedClient.login(settings.token);

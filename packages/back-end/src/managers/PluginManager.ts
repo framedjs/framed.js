@@ -87,6 +87,7 @@ export default class PluginManager {
 					const success = importFilter.test(fileName);
 					return success ? fileName : false;
 				},
+				excludeDirs: /^(.*)\.(git|svn)$|^(.*)subcommands(.*)$/,
 			});
 		}
 
@@ -95,6 +96,7 @@ export default class PluginManager {
 			plugin.loadEventsIn({
 				dirname: plugin.paths.events,
 				filter: this.framedClient.importFilter,
+				excludeDirs: /^(.*)\.(git|svn)$|^(.*)subcommands(.*)$/,
 			});
 		}
 

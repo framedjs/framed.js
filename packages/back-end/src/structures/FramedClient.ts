@@ -4,27 +4,23 @@ import "reflect-metadata";
 import Discord from "discord.js";
 
 // File data related imports
-// import * as TypeORM from "typeorm";
 import { version } from "../../package.json";
 import path from "path";
 
 // Other imports
-import { logger, Utils } from "shared";
-import FramedMessage from "./FramedMessage";
-import PluginManager from "../managers/PluginManager";
+import { logger } from "shared";
 import { EventEmitter } from "events";
 import { FramedClientOptions } from "../interfaces/FramedClientOptions";
+import FramedMessage from "./FramedMessage";
+import PluginManager from "../managers/PluginManager";
 import DatabaseManager from "../managers/DatabaseManager";
 import APIManager from "../managers/APIManager";
-
-// logger.level = "verbose";
 
 export default class FramedClient extends EventEmitter {
 	public readonly apiManager: APIManager;
 	public readonly databaseManager: DatabaseManager;
 	public readonly pluginManager = new PluginManager(this);
 
-	public readonly utils = new Utils();
 	public readonly client = new Discord.Client();
 
 	/**

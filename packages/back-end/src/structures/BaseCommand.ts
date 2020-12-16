@@ -12,7 +12,7 @@ import { BaseSubcommand } from "./BaseSubcommand";
 import { oneLine } from "common-tags";
 
 export abstract class BaseCommand {
-	static readonly type: string = "BaseCommand";
+	// static readonly type: string = "BaseCommand";
 
 	readonly framedClient: FramedClient;
 
@@ -102,7 +102,7 @@ export abstract class BaseCommand {
 	/**
 	 * Permissions to compare to.
 	 *
-	 * WARNING: YOU NEED TO CHECK FOR THESE MANUALLY. See `hasPermission()` on how to do this.
+	 * **WARNING: YOU NEED TO CHECK FOR THESE MANUALLY.** See `hasPermission()` on how to do this.
 	 * It is also recommended you send a permission denied message too with `sendPermissionErrorMessage()`.
 	 *
 	 * Example:

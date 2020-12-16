@@ -2,7 +2,7 @@ import { BaseCommandOptions } from "../interfaces/BaseCommandOptions";
 import { BaseCommand } from "./BaseCommand";
 
 export abstract class BaseSubcommand extends BaseCommand {
-	static readonly type: string = "BaseSubcommand";
+	// static readonly type: string = "BaseSubcommand";
 
 	/**
 	 * Base command
