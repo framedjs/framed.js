@@ -6,7 +6,7 @@
     "build:watch": "tsc --build --watch",
     "test": "jest",
     "test:watch": "jest --watchAll",
-    "start": "node -r dotenv/config dist/src/index.js",
+    "start": "node -r dotenv/config dist/index.js",
     "dev": "tsnd -r dotenv/config --transpile-only --respawn ./src/index.ts --rs --deps"
   },
   "dependencies": {

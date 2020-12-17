@@ -1,4 +1,4 @@
-import { QuoteSections } from "../src/interfaces/FramedMessageArgsSettings";
+import { QuoteSections } from "../src/interfaces/QuoteSections";
 import FramedMessage from "../src/structures/FramedMessage";
 
 test(`Parses content by separating spaces, then into an array`, () => {

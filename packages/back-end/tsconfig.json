@@ -2,18 +2,17 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     /* Basic Options */
-    // If out path for a file is same as its src path, nothing will be emitted
     "outDir": "dist",
+    "rootDir": "src",
 
     /* Types */
     "declaration": true,
     "declarationMap": true,
-    // "inlineSourceMap": true,
     "sourceMap": true,
     "composite": true,
 
     /* Other */
     "incremental": true
   },
-  "include": ["src/**/*", "package.json"]
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]
 }
