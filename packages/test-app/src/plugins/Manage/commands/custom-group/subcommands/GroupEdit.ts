@@ -7,7 +7,6 @@ import {
 } from "back-end";
 import { logger } from "shared";
 import { oneLine } from "common-tags";
-import CustomGroup from "../CustomGroup";
 
 export default class CustomGroupEdit extends BaseSubcommand {
 	constructor(command: BaseCommand) {
@@ -42,8 +41,8 @@ export default class CustomGroupEdit extends BaseSubcommand {
 				return false;
 			}
 
-			const parseFirstArgs = CustomGroup.parseEmojiAndGroup(parse[0], []);
-			const parseSecondArg = CustomGroup.parseEmojiAndGroup(parse[1], []);
+			const parseFirstArgs = FramedMessage.parseEmojiAndString(parse[0], []);
+			const parseSecondArg = FramedMessage.parseEmojiAndString(parse[1], []);
 
 			if (parseFirstArgs && parseSecondArg) {
 				const oldGroup = await this.framedClient.databaseManager.findGroup(

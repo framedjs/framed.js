@@ -43,31 +43,31 @@ export default class APIManager {
 	 * Loads routes
 	 * @param options RequireAll options
 	 */
-	loadRoutersIn(options: Options): void {
+	loadRoutesIn(options: Options): void {
 		const routes = DiscordUtils.importScripts(options);
 		logger.debug(`Routers: ${util.inspect(routes)}`);
-		this.loadRouters(routes);
+		this.loadRoutes(routes);
 	}
 
 	/**
 	 * Loads routes
 	 * @param routes
 	 */
-	loadRouters<T extends BaseRouter>(
+	loadRoutes<T extends BaseRouter>(
 		routes: (new (framedClient: FramedClient) => T)[]
 	): void {
 		for (const router of routes) {
 			const initRouter = new router(this.framedClient);
 			// logger.debug(`initRouter: ${util.inspect(initRouter)}`);
-			this.loadRouter(initRouter);
+			this.loadRoute(initRouter);
 		}
 	}
 
 	/**
-	 * Loads routes
+	 * Loads route
 	 * @param router
 	 */
-	loadRouter<T extends BaseRouter>(router: T): void {
+	loadRoute<T extends BaseRouter>(router: T): void {
 		this.router.use(router.router.routes());
 		this.router.use(router.router.allowedMethods());
 		this.app.use(this.router.routes());

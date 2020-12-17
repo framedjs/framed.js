@@ -96,5 +96,10 @@ export interface BasePluginOptions {
 		 * Events path
 		 */
 		events?: string;
+
+		/**
+		 * Routes path
+		 */
+		routes?: string;
 	};
 }

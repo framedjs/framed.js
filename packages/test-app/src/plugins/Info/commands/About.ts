@@ -32,14 +32,14 @@ export default class extends BaseCommand {
 				<@359521958519504926> - Dailies Bot
 				<@150649616772235264> - Advising, API, RegEx
 				`
-				)
-				// .addField(
-				// 	"Special Thanks",
-				// 	stripIndent`
-				// <@000000000000000000> - Bot Name
-				// <@000000000000000000> - Profile Picture
-				// `
-				// );
+				);
+			// .addField(
+			// 	"Special Thanks",
+			// 	stripIndent`
+			// <@000000000000000000> - Bot Name
+			// <@000000000000000000> - Profile Picture
+			// `
+			// );
 			await msg.discord.channel.send(embed);
 		}
 		return true;

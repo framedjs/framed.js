@@ -7,6 +7,7 @@ import Response from "./database/entities/Response";
 import Group from "./database/entities/Group";
 import { SnowflakeUtil } from "discord.js";
 import FramedClient from "../structures/FramedClient";
+import Plugin from "./database/entities/Plugin";
 
 export default class DatabaseManager {
 	public static readonly defaultEntitiesPath = path.join(
@@ -33,15 +34,16 @@ export default class DatabaseManager {
 
 	public static readonly errorNoConnection =
 		"there is no connection to the database!";
-	public static readonly errorNotFound = `I couldn't find a %s with the name "%s".`;
+	public static readonly errorNotFound = `I couldn't find a %s with the name/ID "%s".`;
 
-	public connection?: TypeORM.Connection;
+	public connection!: TypeORM.Connection;
 	public options: TypeORM.ConnectionOptions;
 
-	public prefixRepo?: TypeORM.Repository<Prefix>;
-	public commandRepo?: TypeORM.Repository<Command>;
-	public responseRepo?: TypeORM.Repository<Response>;
-	public groupRepo?: TypeORM.Repository<Group>;
+	public prefixRepo!: TypeORM.Repository<Prefix>;
+	public commandRepo!: TypeORM.Repository<Command>;
+	public responseRepo!: TypeORM.Repository<Response>;
+	public groupRepo!: TypeORM.Repository<Group>;
+	public pluginRepo!: TypeORM.Repository<Plugin>;
 
 	constructor(
 		public readonly framedClient: FramedClient,
@@ -60,6 +62,7 @@ export default class DatabaseManager {
 		this.commandRepo = this.connection.getRepository(Command);
 		this.responseRepo = this.connection.getRepository(Response);
 		this.groupRepo = this.connection.getRepository(Group);
+		this.pluginRepo = this.connection.getRepository(Plugin);
 
 		const freshInstalled = await this.checkFreshInstall();
 
@@ -111,6 +114,7 @@ export default class DatabaseManager {
 	async install(): Promise<void> {
 		try {
 			await this.addScriptGroups();
+			await this.addScriptPlugins();
 		} catch (error) {
 			logger.error(
 				`Error happened while trying to install from scripts:\n${error.stack}`
@@ -276,6 +280,7 @@ export default class DatabaseManager {
 	//#endregion
 
 	//#region Groups
+
 	/**
 	 * Adds groups from scripts, such as plugins and commands.
 	 */
@@ -415,7 +420,7 @@ export default class DatabaseManager {
 				await groupRepo.remove(group);
 			} else {
 				throw new ReferenceError(
-					Utils.Node.format(
+					Utils.util.format(
 						DatabaseManager.errorNotFound,
 						"group",
 						nameOrId
@@ -499,5 +504,74 @@ export default class DatabaseManager {
 			throw new ReferenceError(DatabaseManager.errorNoConnection);
 		}
 	}
+	//#endregion
+
+	//#region Plugins
+
+	/**
+	 * Adds plugin entries from scripts.
+	 */
+	async addScriptPlugins(): Promise<void> {
+		const connection = this.connection;
+		if (!connection) {
+			throw new ReferenceError(DatabaseManager.errorNoConnection);
+		}
+
+		const pluginRepo = connection.getRepository(Plugin);
+		const pluginsFound = await pluginRepo.find();
+
+		// Adds an entry for all new plugins
+		const plugins: Plugin[] = [];
+		const installs: Promise<void>[] = [];
+		const postInstalls: Promise<void>[] = [];
+		for (const plugin of this.framedClient.pluginManager.pluginsArray) {
+			if (!pluginsFound.find(dbPlugin => dbPlugin.id == plugin.id)) {
+				// Pushes into an array to create the plugin
+				plugins.push(
+					pluginRepo.create({
+						id: plugin.id,
+						data: {},
+					})
+				);
+			}
+		}
+		await pluginRepo.save(plugins);
+
+		// Handles installs for all plugins that are new
+		for (const plugin of this.framedClient.pluginManager.pluginsArray) {
+			if (!pluginsFound.find(dbPlugin => dbPlugin.id == plugin.id)) {
+				if (plugin.install) {
+					installs.push(plugin.install());
+				}
+			}
+		}
+
+		await Promise.allSettled(installs);
+
+		// Handles post installs for all plugins
+		for (const plugin of this.framedClient.pluginManager.pluginsArray) {
+			if (plugin.postInstall) {
+				postInstalls.push(plugin.postInstall());
+			}
+		}
+
+		await Promise.allSettled(postInstalls);
+	}
+
+	/**
+	 * Finds the plugin entry in the database
+	 * @param pluginId Plugin ID
+	 */
+	async findPlugin(pluginId: string): Promise<Plugin | undefined> {
+		const connection = this.connection;
+		if (!connection) {
+			throw new ReferenceError(DatabaseManager.errorNoConnection);
+		}
+		const pluginRepo = connection.getRepository(Plugin);
+		return await pluginRepo.findOne({
+			where: { id: pluginId },
+		});
+	}
+
 	//#endregion
 }

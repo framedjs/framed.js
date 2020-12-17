@@ -49,6 +49,7 @@ export abstract class BasePlugin {
 	paths: {
 		commands?: string;
 		events?: string;
+		routes?: string;
 	};
 
 	commands = new Map<string, BaseCommand>();
@@ -83,6 +84,20 @@ export abstract class BasePlugin {
 		this.groupId = info.groupId ? info.groupId : "default";
 		this.fullGroupId = `${this.id}.group.${this.groupId}`;
 	}
+
+	/**
+	 * Installs anything onto the database the plugin would like to put in.
+	 *
+	 * This function will be called when the plugin is first ran.
+	 */
+	install?(): Promise<void>;
+
+	/**
+	 * This function will be called after the install of plugins.
+	 * 
+	 * This can be used for scenarios such as updating old install data.
+	 */
+	postInstall?(): Promise<void>;
 
 	//#region Command loading
 

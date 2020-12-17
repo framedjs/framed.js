@@ -1,10 +1,11 @@
-import { FramedMessage } from "back-end";
-import { BaseCommand } from "back-end";
-import { BaseSubcommand } from "back-end";
+import {
+	FramedMessage,
+	BaseCommand,
+	BaseSubcommand,
+	PluginManager,
+} from "back-end";
 import { logger } from "shared";
-import { PluginManager } from "back-end";
 import { oneLine } from "common-tags";
-import CustomGroup from "../CustomGroup";
 
 export default class CustomGroupAdd extends BaseSubcommand {
 	constructor(command: BaseCommand) {
@@ -28,7 +29,7 @@ export default class CustomGroupAdd extends BaseSubcommand {
 		}
 
 		if (msg.args) {
-			const parse = CustomGroup.parseEmojiAndGroup(msg, [this.id]);
+			const parse = FramedMessage.parseEmojiAndString(msg, [this.id]);
 			if (parse) {
 				const { newContent, newEmote } = parse;
 				try {

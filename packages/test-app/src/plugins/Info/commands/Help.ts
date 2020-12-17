@@ -1,5 +1,10 @@
 /* eslint-disable no-mixed-spaces-and-tabs */
-import { EmbedHelper, FramedMessage, BasePlugin, BaseCommand } from "back-end";
+import {
+	EmbedHelper,
+	FramedMessage,
+	BasePlugin,
+	BaseCommand,
+} from "back-end";
 import { oneLineInlineLists, stripIndent } from "common-tags";
 import { HelpData } from "back-end";
 import { logger } from "shared";
@@ -45,7 +50,7 @@ export default class Help extends BaseCommand {
 			if (msg.args[0]) {
 				// Sends help through Embed
 				if (msg.discord) {
-					const embeds = Help.showHelpForCommand(
+					const embeds = await Help.showHelpForCommand(
 						msg.args,
 						msg,
 						this.id,
@@ -118,7 +123,7 @@ export default class Help extends BaseCommand {
 	 * @param id Command ID for embed
 	 * @param processFunction The function that will parse and create all embeds.
 	 */
-	static showHelpForCommand(
+	static async showHelpForCommand(
 		args: string[],
 		msg: FramedMessage,
 		id: string,
@@ -128,7 +133,7 @@ export default class Help extends BaseCommand {
 			newArgs: string[],
 			command: BaseCommand
 		) => Discord.MessageEmbed | undefined
-	): Discord.MessageEmbed[] {
+	): Promise<Discord.MessageEmbed[]> {
 		const embeds: Discord.MessageEmbed[] = [];
 		if (msg.discord && args[0]) {
 			// Does a shallow clone of the array
@@ -142,9 +147,40 @@ export default class Help extends BaseCommand {
 					command
 				);
 
-				for (const command of matchingCommands) {
-					const embed = processFunction(msg, id, newArgs, command);
+				for (const baseCommand of matchingCommands) {
+					const embed = processFunction(
+						msg,
+						id,
+						newArgs,
+						baseCommand
+					);
 					if (embed) embeds.push(embed);
+				}
+
+				// Handles database commands
+				const dbCommand = await msg.framedClient.databaseManager.findCommand(
+					command,
+					msg.framedClient.defaultPrefix
+				);
+				if (dbCommand) {
+					const embed = EmbedHelper.getTemplate(
+						msg.discord,
+						msg.framedClient.helpCommands,
+						id
+					);
+					// Shows the command/subcommand chain
+					// ex. .command add
+					const commandRan = `${dbCommand.defaultPrefix.prefix}${dbCommand.id}`;
+					embed.setTitle(commandRan);
+
+					// Get the description
+					let description = dbCommand.response.description;
+					if (!description) {
+						description = `*No about or description set for the command.*`;
+					}
+					embed.setDescription(description);
+
+					embeds.push(embed);
 				}
 			}
 		}

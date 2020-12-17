@@ -123,6 +123,7 @@ importers:
       back-end: 'link:../back-end'
       common-tags: 1.8.0
       discord.js: 12.5.1
+      dotenv: 8.2.0
       front-end: 'link:../front-end'
       node-emoji: 1.10.0
       shared: 'link:../shared'
@@ -137,6 +138,7 @@ importers:
       back-end: 'workspace:back-end'
       common-tags: ^1.8.0
       discord.js: ^12.5.1
+      dotenv: ^8.2.0
       front-end: 'workspace:front-end'
       node-emoji: ^1.10.0
       shared: 'workspace:shared'

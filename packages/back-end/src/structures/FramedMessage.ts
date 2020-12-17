@@ -6,6 +6,7 @@ import { FramedMessageOptions } from "../interfaces/FramedMessageOptions";
 import { FramedArgumentOptions } from "../interfaces/FramedArgumentOptions";
 import { FramedArgument } from "../interfaces/FramedArgument";
 import { QuoteSections } from "../interfaces/QuoteSections";
+import Emoji from "node-emoji";
 
 enum ArgumentState {
 	Quoted,
@@ -442,5 +443,62 @@ export default class FramedMessage {
 		});
 
 		return newContent.trim();
+	}
+
+	/**
+	 * Parses the emoji and contents of a FramedMessage or string.
+	 *
+	 * @param msgOrString Framed Message object or string to parse from
+	 * @param parseOut String array to parse out. Only needed if prefix 
+	 * and command are still inside the msg string.
+	 */
+	static parseEmojiAndString(
+		msgOrString: FramedMessage | string,
+		parseOut: string[] = []
+	):
+		| {
+				newContent: string;
+				newEmote?: string;
+		  }
+		| undefined {
+		let argsContent: string;
+		if (msgOrString instanceof FramedMessage) {
+			argsContent = msgOrString.getArgsContent([...parseOut]);
+			if (argsContent[0] == `"`) {
+				argsContent = argsContent.substring(1, argsContent.length);
+			}
+			if (
+				argsContent[argsContent.length - 1] == `"` &&
+				argsContent[argsContent.length - 2] != "\\"
+			) {
+				argsContent = argsContent.substring(0, argsContent.length - 1);
+			}
+		} else {
+			argsContent = msgOrString;
+		}
+
+		if (!argsContent) return;
+
+		const newArgs = FramedMessage.getArgs(argsContent);
+
+		// https://stackoverflow.com/questions/62955907/discordjs-nodejs-how-can-i-check-if-a-message-only-contains-custom-emotes#62960102
+		const regex = /(:[^:\s]+:|<:[^:\s]+:[0-9]+>|<a:[^:\s]+:[0-9]+>)/g;
+		const markdownEmote = newArgs[0].match(regex);
+
+		const genericEmoji =
+			newArgs.length > 0 ? Emoji.find(newArgs[0])?.emoji : undefined;
+
+		const newEmote = markdownEmote ? markdownEmote[0] : genericEmoji;
+		const newContent = newEmote
+			? argsContent.replace(newEmote, "").trimLeft()
+			: argsContent;
+
+		// If there is going to be content, return what we got
+		if (newContent.length != 0) {
+			return {
+				newContent,
+				newEmote,
+			};
+		}
 	}
 }

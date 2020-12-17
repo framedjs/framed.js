@@ -5,13 +5,8 @@ import EmbedHelper from "../../../utils/discord/EmbedHelper";
 export default class extends BaseRouter {
 	constructor(framedClient: FramedClient) {
 		super(framedClient);
-
-		// this.router.param("icon_url", (id, ctx, next) => {
-		// 	ctx.
-		// 	return next();
-		// })
-
-		this.router.get("/api/discord/embedtemplate", async ctx => {
+		
+		this.router.get("/api/v0/discord/embedtemplate", async ctx => {
 			const footerUrl = ctx.query.footerUrl || "";
 			const commandUsed = ctx.query.commandUsed || "";
 

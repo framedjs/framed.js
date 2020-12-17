@@ -1,20 +1,54 @@
-import { FramedMessage } from "back-end";
-import { BaseCommand } from "back-end";
-import { BasePlugin } from "back-end";
+import {
+	BaseCommand,
+	BasePlugin,
+	DatabaseManager,
+	EmbedHelper,
+	FramedMessage,
+	Plugin,
+} from "back-end";
 import { stripIndent } from "common-tags";
-import { EmbedHelper } from "back-end";
+import { logger, Utils } from "shared";
 import os from "os";
 
 export default class extends BaseCommand {
 	constructor(plugin: BasePlugin) {
 		super(plugin, {
 			id: "botstats",
-			aliases: ["uptime", "botinfo"],
+			aliases: ["bot", "uptime", "botinfo", "version", "versions"],
 			about: "Get bot stats, including versions and uptime.",
 		});
 	}
 
 	async run(msg: FramedMessage): Promise<boolean> {
+		// Attempts to find dailies version
+		let version = "???";
+		try {
+			const connection = this.framedClient.databaseManager.connection;
+			if (!connection) {
+				throw new Error(DatabaseManager.errorNoConnection);
+			}
+			const pluginId = "com.geekoverdrivestudio.dailies";
+			const pluginRepo = connection.getRepository(Plugin);
+			const plugin = await pluginRepo.findOne({
+				where: {
+					id: pluginId,
+				},
+			});
+			if (!plugin) {
+				throw new Error(
+					Utils.util.format(
+						DatabaseManager.errorNotFound,
+						"plugin",
+						pluginId
+					)
+				);
+			}
+
+			version = plugin.data.version as string;
+		} catch (error) {
+			logger.error(error.stack);
+		}
+
 		const framedUser = msg.framedClient.client.user;
 		const nodeEnvironment = process.env.NODE_ENV
 			? ` ${process.env.NODE_ENV}`
@@ -33,11 +67,19 @@ export default class extends BaseCommand {
 				this.id
 			).setTitle("About the Bot").setDescription(stripIndent`
 				${codeblock}yml
-				Uptime:           ${this.secondsToDhms(uptime)}
-				OS/Arch:          ${os.platform()}/${os.arch()}
-				Framed Version:   v${msg.framedClient.version}
-				App Version:      v${msg.framedClient.appVersion}${nodeEnvironment}
-				Dailies Version:  v1.52
+				Uptime:              ${this.secondsToDhms(uptime)}
+				OS/Arch:             ${os.platform()}/${os.arch()}
+				Framed Back-End:     ${
+					msg.framedClient.version
+						? `v${msg.framedClient.version}`
+						: "???"
+				}
+				Framed Bot Version:  ${
+					msg.framedClient.appVersion
+						? `v${msg.framedClient.appVersion}`
+						: "???"
+				}${nodeEnvironment}
+				Dailies Bot Version: v${version}
 				${codeblock}
 				`);
 			await msg.discord.channel.send(embed);

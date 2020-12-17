@@ -1,12 +1,20 @@
 import { logger } from "shared";
 import { FramedClient, DatabaseManager } from "back-end";
+import fs from "fs";
 import path from "path";
-import settings from "../settings.json";
-import { version as appVersion } from "../package.json";
+let version: string | undefined;
 
-logger.level = "verbose";
+logger.level = "silly";
 
 logger.info("Starting Test App");
+
+try {
+	const packageFile = fs.readFileSync(path.resolve(__dirname, "../package.json"), "utf8");
+	const packageJson = JSON.parse(packageFile);
+	version = packageJson.version;
+} catch (error) {
+	logger.error(error.stack);
+}
 
 const framedClient = new FramedClient({
 	defaultConnection: {
@@ -18,7 +26,7 @@ const framedClient = new FramedClient({
 		entities: [DatabaseManager.defaultEntitiesPath],
 	},
 	defaultPrefix: ".",
-	appVersion: appVersion,
+	appVersion: version,
 });
 
 framedClient.pluginManager.loadPluginsIn({
@@ -27,4 +35,4 @@ framedClient.pluginManager.loadPluginsIn({
 	excludeDirs: /^(.*)\.(git|svn)$|^(.*)subcommands(.*)$/,
 });
 
-framedClient.login(settings.token);
+framedClient.login(process.env.DISCORD_TOKEN);

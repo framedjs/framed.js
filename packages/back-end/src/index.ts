@@ -25,6 +25,8 @@ export { ResponseData } from "./managers/database/interfaces/ResponseData";
 export { default as Command } from "./managers/database/entities/Command";
 export { default as Prefix } from "./managers/database/entities/Prefix";
 export { default as Response } from "./managers/database/entities/Response";
+export { default as Plugin } from "./managers/database/entities/Plugin";
+export { default as Group } from "./managers/database/entities/Group";
 
 // Utilities
 export { default as EmbedHelper } from "./utils/discord/EmbedHelper";

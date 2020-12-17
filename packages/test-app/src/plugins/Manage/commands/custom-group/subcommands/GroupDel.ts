@@ -4,7 +4,6 @@ import { BaseSubcommand } from "back-end";
 import { logger } from "shared";
 import { PluginManager } from "back-end";
 import { oneLine } from "common-tags";
-import CustomGroup from "../CustomGroup";
 
 export default class CustomGroupDel extends BaseSubcommand {
 	constructor(command: BaseCommand) {
@@ -28,7 +27,7 @@ export default class CustomGroupDel extends BaseSubcommand {
 		}
 
 		if (msg.args) {
-			const parse = CustomGroup.parseEmojiAndGroup(msg, [msg.args[0]]);
+			const parse = FramedMessage.parseEmojiAndString(msg, [msg.args[0]]);
 			if (parse) {
 				const { newContent } = parse;
 				try {

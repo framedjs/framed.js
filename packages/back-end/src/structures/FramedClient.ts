@@ -1,13 +1,7 @@
 import "reflect-metadata";
-
-// Platforms
 import Discord from "discord.js";
-
-// File data related imports
-import { version } from "../../package.json";
+import fs from "fs";
 import path from "path";
-
-// Other imports
 import { logger } from "shared";
 import { EventEmitter } from "events";
 import { FramedClientOptions } from "../interfaces/FramedClientOptions";
@@ -15,6 +9,19 @@ import FramedMessage from "./FramedMessage";
 import PluginManager from "../managers/PluginManager";
 import DatabaseManager from "../managers/DatabaseManager";
 import APIManager from "../managers/APIManager";
+
+let version: string | undefined;
+// Sets the versions
+try {
+	const packageFile = fs.readFileSync(
+		path.resolve(__dirname, "../../package.json"),
+		"utf8"
+	);
+	const packageJson = JSON.parse(packageFile);
+	version = packageJson.version;
+} catch (error) {
+	logger.error(error.stack);
+}
 
 export default class FramedClient extends EventEmitter {
 	public readonly apiManager: APIManager;
@@ -26,12 +33,12 @@ export default class FramedClient extends EventEmitter {
 	/**
 	 * Framed version
 	 */
-	public readonly version: string;
+	public readonly version: string | undefined;
 
 	/**
 	 * App version
 	 */
-	public readonly appVersion: string;
+	public readonly appVersion: string | undefined;
 
 	public readonly helpCommands = ["help", "dailies", "poll"];
 	public readonly importFilter = /^((?!\.d).)*\.(js|ts)$/;
@@ -44,8 +51,10 @@ export default class FramedClient extends EventEmitter {
 	constructor(info: FramedClientOptions) {
 		// I have no idea what capture rejections does, but I assume it's a good thing.
 		super({ captureRejections: true });
+
+		// Sets the versions
 		this.version = version;
-		this.appVersion = info?.appVersion ? info.appVersion : "unknown";
+		this.appVersion = info?.appVersion;
 
 		if (info) {
 			if (info.defaultPrefix) this.defaultPrefix = info?.defaultPrefix;
@@ -59,7 +68,7 @@ export default class FramedClient extends EventEmitter {
 		logger.verbose(
 			`Using entities path: ${DatabaseManager.defaultEntitiesPath}`
 		);
-		
+
 		this.databaseManager = new DatabaseManager(
 			this,
 			info.defaultConnection
@@ -69,10 +78,10 @@ export default class FramedClient extends EventEmitter {
 	/**
 	 * Logins through Discord
 	 */
-	async login(token: string): Promise<void> {
+	async login(token?: string): Promise<void> {
 		// Loads the API
 		logger.verbose(`Using routes path: ${APIManager.defaultPath}`);
-		this.apiManager.loadRoutersIn({
+		this.apiManager.loadRoutesIn({
 			dirname: APIManager.defaultPath,
 			filter: this.importFilter,
 			excludeDirs: /^(.*)\.(git|svn)$|^(.*)subcommands(.*)\.(js|ts)$/,

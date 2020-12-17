@@ -34,7 +34,7 @@ export default class extends BaseCommand {
 			if (msg.args[0]) {
 				// Send info through Embed
 				if (msg.discord) {
-					const embeds = Help.showHelpForCommand(
+					const embeds = await Help.showHelpForCommand(
 						msg.args,
 						msg,
 						this.id,

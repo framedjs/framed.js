@@ -51,7 +51,7 @@ export default class PluginManager {
 	}
 
 	/**
-	 *
+	 * Loads plugins
 	 * @param plugins
 	 */
 	loadPlugins<T extends BasePlugin>(
@@ -65,7 +65,7 @@ export default class PluginManager {
 	}
 
 	/**
-	 *
+	 * Loads plugin
 	 * @param plugin
 	 */
 	loadPlugin<T extends BasePlugin>(plugin: T): void {
@@ -98,6 +98,14 @@ export default class PluginManager {
 				filter: this.framedClient.importFilter,
 				excludeDirs: /^(.*)\.(git|svn)$|^(.*)subcommands(.*)$/,
 			});
+		}
+
+		if (plugin.paths.routes) {
+			this.framedClient.apiManager.loadRoutesIn({
+				dirname: plugin.paths.routes,
+				filter: this.framedClient.importFilter,
+				// excludeDirs: /^(.*)\.(git|svn)$|^(.*)subcommands(.*)$/,
+			})
 		}
 
 		logger.verbose(
