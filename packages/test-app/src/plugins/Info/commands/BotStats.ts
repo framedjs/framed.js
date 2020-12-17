@@ -65,7 +65,7 @@ export default class extends BaseCommand {
 				msg.discord,
 				this.framedClient.helpCommands,
 				this.id
-			).setTitle("About the Bot").setDescription(stripIndent`
+			).setTitle("Bot Stats").setDescription(stripIndent`
 				${codeblock}yml
 				Uptime:              ${this.secondsToDhms(uptime)}
 				OS/Arch:             ${os.platform()}/${os.arch()}
