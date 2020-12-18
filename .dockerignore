@@ -2,19 +2,19 @@
 .env
 settings.json
 
-# Data
+# Database that shouldn't be transferred over
 data/*
 
 # Other folders and files
 **/dist/
 **/node_modules/
-**/tests
-
 .vscode/
 .git/
 coverage/
 
+# Unneeded to build
 .gitignore
 .prettierrc.json
 docker-compose.yml
 README.md
+Dockerfile

@@ -4,6 +4,7 @@
   "license": "MIT",
   "private": true,
   "scripts": {
+    "preinstall": "npx only-allow pnpm",
     "node:version": "which node && node --version",
     "clean": "# DOESN'T WORK ON WINDOWS -> pnpm recursive exec -- rm -rf node_modules; rm shrinkwrap.yaml; rm -rf node_modules",
     "build": "pnpm recursive run build --sort",
