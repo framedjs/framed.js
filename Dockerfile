@@ -5,6 +5,10 @@ WORKDIR /app
 # Installs pnpm
 RUN npm i -g pnpm
 
+# Copies package.json
+COPY package.json /app
+RUN pnpm install
+
 # Copy dependacies
 COPY . /app
 
