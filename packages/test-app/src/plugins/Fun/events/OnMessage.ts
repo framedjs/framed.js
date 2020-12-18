@@ -26,6 +26,8 @@ export default class extends BaseEvent {
 					},
 				})
 			);
+		} else if (msg.content.toLocaleLowerCase().includes("tim is inno")) {
+			// await msg.channel.send(`${msg.author}, TIM IS GUILTY`);
 		}
 	}
 }

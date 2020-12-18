@@ -1,6 +1,6 @@
-import Discord from "discord.js";
 import { BaseEvent, FramedMessage, BasePlugin } from "back-end";
 import { logger } from "shared";
+import Discord from "discord.js";
 
 export default class extends BaseEvent {
 	constructor(plugin: BasePlugin) {
@@ -11,9 +11,7 @@ export default class extends BaseEvent {
 
 	async run(msg: Discord.Message): Promise<void> {
 		const content = msg.content.toLocaleLowerCase();
-		if (content.includes("tim is inno")) {
-			await msg.channel.send(`${msg.author}, TIM IS GUILTY`);
-		} else if (content == `<@!${msg.client.user?.id}>`) {
+		if (content == `<@!${msg.client.user?.id}>`) {
 			logger.warn(`OnMsg.ts: Content: ${content}`);
 			// msg.content = `${this.framedClient.defaultPrefix}ping`;
 
