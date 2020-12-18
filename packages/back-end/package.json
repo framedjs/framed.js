@@ -9,7 +9,7 @@
     "build:watch": "tsc --build --watch",
     "test": "jest",
     "test:watch": "jest --watchAll",
-    "start": "pnpm build && node dist/src/index.js",
+    "start": "node dist/src/index.js",
     "dev": "tsnd --transpile-only --respawn ./src/index.ts --rs --deps"
   },
   "dependencies": {
