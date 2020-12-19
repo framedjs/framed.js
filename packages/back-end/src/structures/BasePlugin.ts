@@ -150,6 +150,7 @@ export abstract class BasePlugin {
 			return;
 		}
 		this.commands.set(command.id, command);
+		command.parseCustomFormatting();
 
 		// Skip over subcommand scripts
 		// if (command instanceof BaseSubcommand) {
@@ -174,6 +175,7 @@ export abstract class BasePlugin {
 			command.loadSubcommandsIn({
 				dirname: command.paths.subcommands,
 				filter: this.framedClient.importFilter,
+				recursive: false
 			});
 		}
 

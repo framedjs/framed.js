@@ -182,26 +182,91 @@ export abstract class BaseCommand {
 			this.prefixes.push(this.defaultPrefix);
 		}
 
-		this.about = info.about;
-		this.description = info.description;
-		this.usage = info.usage;
-		this.hideUsageInHelp = info.hideUsageInHelp;
-		this.examples = info.examples;
+		this.about = this.parseBasicFormatting(info.about);
+		this.description = this.parseBasicFormatting(info.description);
+		this.usage = this.parseBasicFormatting(info.usage);
+		this.examples = this.parseBasicFormatting(info.examples);
 		this.permissions = info.permissions;
+		this.hideUsageInHelp = info.hideUsageInHelp;
 		this.inlineCharacterLimit = info.inlineCharacterLimit;
-
-		if (this.examples) {
-			this.examples = this.examples?.replace(
-				/{{prefix}}/gi,
-				this.defaultPrefix
-			);
-		}
 
 		this.inline = info.inline ? info.inline : false;
 		this.inlineAliases = info.inlineAliases ? info.inlineAliases : false;
 
 		this.rawInfo = info;
 		this.subcommands = new Map();
+	}
+
+	/**
+	 * Parses custom {{}} formatting
+	 * @param arg 
+	 */
+	parseBasicFormatting(arg?: string): string | undefined {
+		if (arg) {
+			return arg
+				.replace(/{{prefix}}/gi, this.defaultPrefix)
+				.replace(/{{id}}/gi, this.id);
+		}
+	}
+
+	/**
+	 * Parses custom $() formatting
+	 */
+	async parseCustomFormatting(): Promise<void> {
+		const keys: string[] = [];
+		const queue = new Map<string, Promise<string>>();
+
+		const addToQueue = (name: string, text?: string): void => {
+			if (!text) return;
+			keys.push(name);
+			queue.set(
+				name,
+				FramedMessage.parseCustomFormatting(text, this.framedClient)
+			);
+		};
+
+		addToQueue("examples", this.examples);
+		addToQueue("usage", this.usage);
+		addToQueue("about", this.about);
+		addToQueue("description", this.description);
+
+		const settledQueue = await Promise.allSettled(queue.values());
+		const finalKeys = [...queue.keys()];
+		const finalSettledQueue = [...settledQueue];
+
+		for (let i = 0; i < finalKeys.length; i++) {
+			const finalKey = finalKeys[i];
+			const finalQueue = finalSettledQueue[i];
+
+			if (finalQueue.status == "fulfilled") {
+				const matchingKey = keys.find(k => k == finalKey);
+				if (matchingKey) {
+					switch (matchingKey) {
+						case "examples":
+							this.examples = finalQueue.value;
+							break;
+						case "usage":
+							this.usage = finalQueue.value;
+							break;
+						case "about":
+							this.about = finalQueue.value;
+							break;
+						case "description":
+							this.description = finalQueue.value;
+							break;
+						default:
+							logger.error(
+								`BaseCommand.ts: Key "${finalKey}" is unknown`
+							);
+							break;
+					}
+				}
+			} else {
+				logger.error(
+					`BaseCommand.ts: ${finalQueue.status} - ${finalQueue.reason}`
+				);
+			}
+		}
 	}
 
 	/**
@@ -399,8 +464,8 @@ export abstract class BaseCommand {
 			logger.error(`Subcommand with id ${subcommand.id} already exists!`);
 			return;
 		}
-
 		this.subcommands.set(subcommand.id, subcommand);
+		subcommand.parseCustomFormatting();
 
 		logger.debug(`Finished loading subcommand ${subcommand.id}.`);
 	}

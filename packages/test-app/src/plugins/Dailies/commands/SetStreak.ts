@@ -14,9 +14,9 @@ export default class extends BaseCommand {
 			`,
 			usage: `<user> <number> [today]`,
 			examples: stripIndent`
-			\`{{prefix}}setstreak @Gman1cus 14 today\`
-			\`{{prefix}}setstreak @Gman1cus 14\`
-			\`{{prefix}}setstreak\` 474802647602561056 16\`
+			\`{{prefix}}{{id}} @Gman1cus 14 today\`
+			\`{{prefix}}{{id}} @Gman1cus 14\`
+			\`{{prefix}}{{id}}\` 474802647602561056 16\`
 			`,
 		});
 	}

@@ -6,7 +6,7 @@ export default class extends BaseCommand {
 	constructor(plugin: BasePlugin) {
 		super(plugin, {
 			id: "dailies",
-			prefixes: ["!", "."],
+			prefixes: ["!"],
 			aliases: ["daily", "dailychallenge", "dc"],
 			about: "View what is the daily challenge, and how to use it.",
 		});
@@ -84,7 +84,9 @@ export default class extends BaseCommand {
 				embed.setFooter(
 					`${
 						embed.footer?.text ? embed.footer.text : ""
-					}\n${oneLine`Page ${pageNum}/${max} - Use .dailies [page number] to access a new page.`}`,
+					}\n${this.parseBasicFormatting(
+						oneLine`Page ${pageNum}/${max} - Use {{prefix}}{{id}} [page number] to access a new page.`
+					)}`,
 					embed.footer?.iconURL
 				);
 				await msg.discord.channel.send(embed);

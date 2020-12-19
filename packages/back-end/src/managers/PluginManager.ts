@@ -105,7 +105,7 @@ export default class PluginManager {
 				dirname: plugin.paths.routes,
 				filter: this.framedClient.importFilter,
 				// excludeDirs: /^(.*)\.(git|svn)$|^(.*)subcommands(.*)$/,
-			})
+			});
 		}
 
 		logger.verbose(
@@ -113,10 +113,18 @@ export default class PluginManager {
 		);
 	}
 
+	/**
+	 * BasePlugin array
+	 * @returns List of all plugins imported
+	 */
 	get pluginsArray(): BasePlugin[] {
 		return Array.from(this.plugins.values());
 	}
 
+	/**
+	 * BaseCommand array
+	 * @returns List of all the base commands from all plugins
+	 */
 	get commandsArray(): BaseCommand[] {
 		const commands: BaseCommand[] = [];
 		this.plugins.forEach(plugin => {
@@ -125,6 +133,22 @@ export default class PluginManager {
 		return commands;
 	}
 
+	/**
+	 * BaseEvent array
+	 * @returns List of all the base arrays from all plugins
+	 */
+	get eventsArray(): BaseEvent[] {
+		const events: BaseEvent[] = [];
+		this.plugins.forEach(plugin => {
+			events.push(...plugin.events);
+		});
+		return events;
+	}
+
+	/**
+	 * List of all the default prefixes
+	 * @returns String array of default prefixes
+	 */
 	get defaultPrefixes(): string[] {
 		const prefixes: string[] = [
 			this.framedClient.defaultPrefix,
@@ -136,6 +160,10 @@ export default class PluginManager {
 		return prefixes;
 	}
 
+	/**
+	 * List of all possible prefixes
+	 * @returns String array of all possible prefixes
+	 */
 	get allPossiblePrefixes(): string[] {
 		const prefixes = this.defaultPrefixes;
 		// Adds to the list of potential prefixes
@@ -150,12 +178,14 @@ export default class PluginManager {
 		return prefixes;
 	}
 
-	get eventsArray(): BaseEvent[] {
-		const events: BaseEvent[] = [];
-		this.plugins.forEach(plugin => {
-			events.push(...plugin.events);
-		});
-		return events;
+	getCommand(command: string, prefix?: string): BaseCommand | undefined;
+	getCommand(msg: FramedMessage): BaseCommand | undefined;
+
+	getCommand(
+		msgOrCommand: FramedMessage | string,
+		prefix?: string
+	): BaseCommand | undefined {
+		return this.internalGetCommands(msgOrCommand, prefix, true)[0];
 	}
 
 	/**
@@ -189,6 +219,19 @@ export default class PluginManager {
 		msgOrCommand: FramedMessage | string,
 		prefix?: string
 	): BaseCommand[] {
+		return this.internalGetCommands(msgOrCommand, prefix);
+	}
+
+	/**
+	 * Internal get commands function to reduce code duplication.
+	 * 
+	 * Intentionally only gives commands for subcommand inputs.
+	 */
+	private internalGetCommands(
+		msgOrCommand: FramedMessage | string,
+		prefix?: string,
+		findOne?: boolean
+	): BaseCommand[] {
 		const commandList: BaseCommand[] = [];
 
 		let commandString: string;
@@ -201,33 +244,66 @@ export default class PluginManager {
 			return commandList;
 		}
 
-		// Tries to the find the command in plugins
-		for (const pluginElement of this.plugins) {
-			const plugin = pluginElement[1];
-			let command = plugin.commands.get(commandString);
+		// If the command string isn't referencing an ID
+		if (commandString.indexOf(".") == -1) {
+			// Tries to the find the command in plugins
+			for (const pluginElement of this.plugins) {
+				const plugin = pluginElement[1];
+				let command = plugin.commands.get(commandString);
 
-			if (!command) {
-				// Tries to find the command from an alias
-				command = plugin.aliases.get(commandString);
-			}
+				if (!command) {
+					// Tries to find the command from an alias
+					command = plugin.aliases.get(commandString);
+				}
 
-			if (command) {
-				// If the prefix matches by default, or the command has it,
-				// OR there is no specified prefix to match against, push
-				if (
-					(prefix &&
-						(this.defaultPrefixes.includes(prefix) ||
-							command.prefixes.includes(prefix))) ||
-					!prefix
-				) {
-					commandList.push(command);
+				if (command) {
+					// If the prefix matches by default, or the command has it,
+					// OR there is no specified prefix to match against, push
+					if (
+						(prefix &&
+							(this.defaultPrefixes.includes(prefix) ||
+								command.prefixes.includes(prefix))) ||
+						!prefix
+					) {
+						if (!findOne) commandList.push(command);
+						else return [command];
+					}
 				}
 			}
+		} else {
+			// It's an ID, so we should search for it.
+			const commandStringArgs = commandString.split(".");
+			if (commandStringArgs.length < 5) {
+				return [];
+			}
+
+			const clone = [...commandStringArgs];
+			const pluginId = clone.splice(0, 3).join(".");
+
+			// Removes the command identifier from x.x.x.command.x
+			clone.shift();
+
+			const plugin = this.plugins.get(pluginId);
+			if (!plugin) return [];
+
+			let command = plugin.commands.get(clone[0]);
+			if (!command) {
+				command = plugin.aliases.get(clone[0]);
+				if (!command) {
+					return [];
+				}
+			}
+
+			return [command];
 		}
 
 		return commandList;
 	}
 
+	/**
+	 * Runs a command, based on the FramedMessage parameters
+	 * @param msg FramedMessage object
+	 */
 	async runCommand(msg: FramedMessage): Promise<void> {
 		if (msg.command && msg.prefix) {
 			logger.debug(
@@ -401,13 +477,14 @@ export default class PluginManager {
 		});
 
 		// Goes through all of the help elements, and assigns something to print out
-		for await (const helpElement of helpList) {
+		for (const helpElement of helpList) {
 			// Check in each command in array
-			for (const command of helpElement.commands) {
+			for await (const command of helpElement.commands) {
 				// Gets all plugin command and alias references, along
 				// with exhausting all possible categories
-				pluginCommandMap.forEach(baseCommands => {
-					baseCommands.forEach(baseCommand => {
+				for await (const element of pluginCommandMap) {
+					const baseCommands = element[1];
+					for await (const baseCommand of baseCommands) {
 						// Group
 						groupIconMap.set(
 							baseCommand.group,
@@ -437,8 +514,8 @@ export default class PluginManager {
 								small: baseCommand.about != undefined,
 							});
 						}
-					});
-				});
+					}
+				}
 
 				// Searches through database
 				for (const command of databaseCommands) {

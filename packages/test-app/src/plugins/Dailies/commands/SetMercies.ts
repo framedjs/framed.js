@@ -13,8 +13,8 @@ export default class extends BaseCommand {
 			`,
 			usage: `<user> <number>`,
 			examples: stripIndent`
-			\`{{prefix}}setmercies @Gman1cus 4\` 
-			\`{{prefix}}setmercies 474802647602561056 6\`
+			\`{{prefix}}{{id}} @Gman1cus 4\` 
+			\`{{prefix}}{{id}} 474802647602561056 6\`
 			`,
 		});
 	}

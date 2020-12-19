@@ -1,10 +1,5 @@
 /* eslint-disable no-mixed-spaces-and-tabs */
-import {
-	EmbedHelper,
-	FramedMessage,
-	BasePlugin,
-	BaseCommand,
-} from "back-end";
+import { EmbedHelper, FramedMessage, BasePlugin, BaseCommand } from "back-end";
 import { oneLineInlineLists, stripIndent } from "common-tags";
 import { HelpData } from "back-end";
 import { logger } from "shared";
@@ -36,8 +31,8 @@ export default class Help extends BaseCommand {
 			`,
 			usage: "[command]",
 			examples: stripIndent`
-				\`{{prefix}}help\`
-				\`{{prefix}}help poll\`
+				\`{{prefix}}{{id}}\`
+				\`{{prefix}}{{id}} poll\`
 			`,
 			inline: true,
 		});
@@ -84,10 +79,13 @@ export default class Help extends BaseCommand {
 			)
 				.setTitle("Command Help")
 				.setDescription(
-					stripIndent`
-					For more info about this bot, use the \`.about\` command.
-					For more info on certain commands, use \`.help poll\` (or a different command)!
-					`
+					await FramedMessage.parseCustomFormatting(
+						stripIndent`
+						For more info about this bot, use the \`$(command about)\` command.
+						For more info on certain commands, use \`$(command help) dailies\` (or a different command)!
+						`,
+						this.framedClient
+					)
 				)
 				.addFields(helpFields)
 				.addField(
@@ -132,7 +130,7 @@ export default class Help extends BaseCommand {
 			id: string,
 			newArgs: string[],
 			command: BaseCommand
-		) => Discord.MessageEmbed | undefined
+		) => Promise<Discord.MessageEmbed | undefined>
 	): Promise<Discord.MessageEmbed[]> {
 		const embeds: Discord.MessageEmbed[] = [];
 		if (msg.discord && args[0]) {
@@ -148,7 +146,7 @@ export default class Help extends BaseCommand {
 				);
 
 				for (const baseCommand of matchingCommands) {
-					const embed = processFunction(
+					const embed = await processFunction(
 						msg,
 						id,
 						newArgs,
@@ -194,12 +192,12 @@ export default class Help extends BaseCommand {
 	 * @param newArgs Message arguments
 	 * @param command BaseCommand
 	 */
-	static processEmbedForHelp(
+	static async processEmbedForHelp(
 		msg: FramedMessage,
 		id: string,
 		newArgs: string[],
 		command: BaseCommand
-	): Discord.MessageEmbed | undefined {
+	): Promise<Discord.MessageEmbed | undefined> {
 		if (!msg.discord) return undefined;
 
 		const embed = EmbedHelper.getTemplate(
@@ -241,7 +239,10 @@ export default class Help extends BaseCommand {
 
 		// Gets the usage text
 		if (primaryCommand.usage) {
-			const guideMsg = `Type \`.usage\` for important info.`;
+			const guideMsg = await FramedMessage.parseCustomFormatting(
+				`Type \`$(command default.bot.info.command.usage)\` for important info.`,
+				msg.framedClient
+			);
 			const usageMsg = `\`${commandRan} ${primaryCommand.usage}\``;
 			embed.addField(
 				"Usage",

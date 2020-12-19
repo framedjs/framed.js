@@ -5,7 +5,7 @@ import {
 	BaseCommand,
 	PluginManager,
 } from "back-end";
-import { oneLineInlineLists, stripIndent } from "common-tags";
+import { oneLine, oneLineInlineLists, stripIndent } from "common-tags";
 import Help from "./Help";
 import Discord from "discord.js";
 
@@ -13,15 +13,16 @@ export default class extends BaseCommand {
 	constructor(plugin: BasePlugin) {
 		super(plugin, {
 			id: "info",
-			aliases: ["i", "analyze"],
-			about: `Analyzes commands in more detail than \`.help\`.`,
-			description: stripIndent`
-			Analyzes commands in more detail than \`.help\`. This includes aliases.
+			aliases: ["i", "analyze", "inspect"],
+			about: `Analyzes commands in more detail than \`$(command default.bot.info.command.help)\`.`,
+			description: oneLine`
+			Analyzes commands in more detail than \`$(command default.bot.info.command.help)\`.
+			This includes aliases.
 			`,
 			usage: "[command]",
 			examples: stripIndent`
-			\`{{prefix}}info help\`
-			\`{{prefix}}info streaks\`
+			\`{{prefix}}{{id}} help\`
+			\`{{prefix}}{{id}} streaks\`
 			`,
 			inline: true,
 		});
@@ -58,13 +59,13 @@ export default class extends BaseCommand {
 	 * @param newArgs Message arguments
 	 * @param command BaseCommand
 	 */
-	private processEmbedForHelp(
+	private async processEmbedForHelp(
 		msg: FramedMessage,
 		id: string,
 		newArgs: string[],
 		command: BaseCommand
-	): Discord.MessageEmbed | undefined {
-		const embed = Help.processEmbedForHelp(msg, id, newArgs, command);
+	): Promise<Discord.MessageEmbed | undefined> {
+		const embed = await Help.processEmbedForHelp(msg, id, newArgs, command);
 
 		if (!msg.discord || !embed) return undefined;
 

@@ -9,7 +9,10 @@ logger.level = "silly";
 logger.info("Starting Test App");
 
 try {
-	const packageFile = fs.readFileSync(path.resolve(__dirname, "../package.json"), "utf8");
+	const packageFile = fs.readFileSync(
+		path.resolve(__dirname, "../package.json"),
+		"utf8"
+	);
 	const packageJson = JSON.parse(packageFile);
 	version = packageJson.version;
 } catch (error) {
@@ -25,7 +28,7 @@ const framedClient = new FramedClient({
 		logging: true,
 		entities: [DatabaseManager.defaultEntitiesPath],
 	},
-	defaultPrefix: ".",
+	defaultPrefix: "/",
 	appVersion: version,
 });
 

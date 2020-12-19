@@ -24,10 +24,10 @@ export default class Poll extends BaseCommand {
 			usage: '[single] <question> [..."options"]',
 			hideUsageInHelp: true,
 			examples: stripIndent`
-				\`{{prefix}}poll Do you like pineapple on pizza?\` - Simple Poll
-				\`{{prefix}}poll Rename \\"Pixel Pete\\"\` - Simple Poll With Quotes at the End
-				\`{{prefix}}poll Ban Bim? "Yes" "Sure" "Why Not"\` - Custom Options
-				\`{{prefix}}poll single PC or Console? "PC" "Console"\` - Choose One Only
+				\`{{prefix}}{{id}} Do you like pineapple on pizza?\` - Simple Poll
+				\`{{prefix}}{{id}} Rename \\"Pixel Pete\\"\` - Simple Poll With Quotes at the End
+				\`{{prefix}}{{id}} Ban Bim? "Yes" "Sure" "Why Not"\` - Custom Options
+				\`{{prefix}}{{id}} single PC or Console? "PC" "Console"\` - Choose One Only
 			`,
 		});
 	}

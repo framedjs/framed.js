@@ -14,8 +14,9 @@ export default class extends BaseCommand {
 			description: oneLine`Suggest something for the server, such as event ideas and new features.
 			If you have any concerns that you'd like to be private, please DM one of the <@&462342299171684364>.`,
 			usage: "<suggestion>",
-			examples: stripIndent`
-			\`{{prefix}}suggest Give the {{prefix}}suggest example a better suggestion than this.\``,
+			examples: oneLine`
+			\`{{prefix}}{{id}} Give the
+			{{prefix}}{{id}} example a better suggestion than this.\``,
 		});
 	}
 

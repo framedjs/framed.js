@@ -7,6 +7,8 @@ import { FramedArgumentOptions } from "../interfaces/FramedArgumentOptions";
 import { FramedArgument } from "../interfaces/FramedArgument";
 import { QuoteSections } from "../interfaces/QuoteSections";
 import Emoji from "node-emoji";
+import FramedClient from "./FramedClient";
+import { logger } from "shared";
 
 enum ArgumentState {
 	Quoted,
@@ -449,7 +451,7 @@ export default class FramedMessage {
 	 * Parses the emoji and contents of a FramedMessage or string.
 	 *
 	 * @param msgOrString Framed Message object or string to parse from
-	 * @param parseOut String array to parse out. Only needed if prefix 
+	 * @param parseOut String array to parse out. Only needed if prefix
 	 * and command are still inside the msg string.
 	 */
 	static parseEmojiAndString(
@@ -500,5 +502,76 @@ export default class FramedMessage {
 				newEmote,
 			};
 		}
+	}
+
+	/**
+	 * Parses custom $() formatting
+	 */
+	static async parseCustomFormatting(
+		arg: string,
+		framedClient: FramedClient
+	): Promise<string> {
+		// Matches $(test) pattern
+		const regex = /(\$\(.*?\))/g;
+		const array = [...arg.matchAll(regex)];
+
+		for await (const element of array) {
+			// Removes the $()
+			const formatArgs = element[0]
+				.slice(2, element[0].length - 1)
+				.split(" ");
+			const formatCommand = formatArgs.shift();
+
+			switch (formatCommand) {
+				case "commandnoprefix":
+					try {
+						const command = formatArgs[0];
+						if (command) {
+							const baseCommand = framedClient.pluginManager.getCommand(
+								command
+							);
+
+							if (!baseCommand) {
+								throw new ReferenceError();
+							}
+
+							arg = arg.replace(element[0], `${baseCommand.id}`);
+						} else {
+							throw new ReferenceError();
+						}
+					} catch (error) {
+						logger.error(error.stack);
+					}
+					break;
+				case "command":
+					try {
+						const command = formatArgs[0];
+						if (command) {
+							const baseCommand = framedClient.pluginManager.getCommand(
+								command
+							);
+
+							if (!baseCommand) {
+								throw new ReferenceError();
+							}
+
+							arg = arg.replace(
+								element[0],
+								`${baseCommand.defaultPrefix}${baseCommand.id}`
+							);
+						} else {
+							throw new ReferenceError();
+						}
+					} catch (error) {
+						logger.error(error.stack);
+					}
+
+					break;
+				default:
+					break;
+			}
+		}
+
+		return arg;
 	}
 }

@@ -12,10 +12,10 @@ export default class extends BaseCommand {
 			usage: `[top|all|userid]`,
 			hideUsageInHelp: true,
 			examples: stripIndent`
-			\`{{prefix}}streaks\`
-			\`{{prefix}}streaks top\`
-			\`{{prefix}}streaks all\`
-			\`{{prefix}}streaks 359521958519504926\``,
+			\`{{prefix}}{{id}}\`
+			\`{{prefix}}{{id}} top\`
+			\`{{prefix}}{{id}} all\`
+			\`{{prefix}}{{id}} 359521958519504926\``,
 		});
 	}
 

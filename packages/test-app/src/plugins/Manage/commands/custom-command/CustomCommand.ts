@@ -34,9 +34,9 @@ export default class CustomCommand extends BaseCommand {
 			delete custom commands. See \`.addcom\`, \`.editcom\`, and \`.delcom\`.`,
 			usage: `<add|edit|delete> <command ID> <content> "[description]"`,
 			examples: stripIndent`
-			\`{{prefix}}command add newcommand This is a test message.\`
-			\`{{prefix}}command edit newcommand We've edited the message! "New description!"\`
-			\`{{prefix}}command delete newcommand\``,
+			\`{{prefix}}{{id}} add newcommand This is a test message.\`
+			\`{{prefix}}{{id}} edit newcommand We've edited the message! "New description!"\`
+			\`{{prefix}}{{id}} delete newcommand\``,
 			permissions: {
 				discord: {
 					permissions: ["MANAGE_MESSAGES"],

@@ -40,7 +40,11 @@ export default class FramedClient extends EventEmitter {
 	 */
 	public readonly appVersion: string | undefined;
 
-	public readonly helpCommands = ["help", "dailies", "poll"];
+	public readonly helpCommands = [
+		"$(command default.bot.info.command.help)",
+		"$(command default.bot.fun.command.poll)",
+		"$(command com.geekoverdrivestudio.dailies.command.dailies)",
+	];
 	public readonly importFilter = /^((?!\.d).)*\.(js|ts)$/;
 	// public readonly importFilter = /(?<!\.d)(\.(js|ts))$/;
 	public defaultPrefix = "!";
@@ -93,6 +97,14 @@ export default class FramedClient extends EventEmitter {
 			filter: /^(.+plugin)\.(js|ts)$/,
 			excludeDirs: /^(.*)\.(git|svn)$|^(.*)subcommands(.*)\.(js|ts)$/,
 		});
+
+		// Properly sets up the help command display
+		for (let i = 0; i < this.helpCommands.length; i++) {
+			this.helpCommands[i] = await FramedMessage.parseCustomFormatting(
+				this.helpCommands[i],
+				this
+			);
+		}
 
 		// Loads the database
 		await this.databaseManager.start();
