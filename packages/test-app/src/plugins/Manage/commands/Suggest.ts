@@ -82,10 +82,19 @@ export default class extends BaseCommand {
 						.setDescription(thanks)
 						.setFooter("");
 
-					const thankMsg = await msg.discord.channel.send(thanksEmbed);
+					const thankMsg = await msg.discord.channel.send(
+						thanksEmbed
+					);
+
+					try {
+						await msg.discord.msg?.react("👍");
+					} catch (error) {
+						logger.error(error);
+					}
+
 					await Utils.sleep(3000);
 					try {
-						await thankMsg.delete();						
+						await thankMsg.delete();
 					} catch (error) {
 						logger.error(error.stack);
 					}
