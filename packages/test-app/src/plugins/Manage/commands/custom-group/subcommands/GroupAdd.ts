@@ -11,7 +11,7 @@ export default class CustomGroupAdd extends BaseSubcommand {
 	constructor(command: BaseCommand) {
 		super(command, {
 			id: "add",
-			aliases: ["create"],
+			aliases: ["a", "create", "cr"],
 			about: "Adds a custom group.",
 			usage: `"<emote + group name>"`,
 			examples: oneLine`

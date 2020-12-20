@@ -8,6 +8,9 @@ import Group from "./database/entities/Group";
 import { SnowflakeUtil } from "discord.js";
 import FramedClient from "../structures/FramedClient";
 import Plugin from "./database/entities/Plugin";
+import FramedMessage from "../structures/FramedMessage";
+import { ResponseData } from "./database/interfaces/ResponseData";
+import { PrefixResolvable } from "./database/types/PrefixResolvable";
 
 export default class DatabaseManager {
 	public static readonly defaultEntitiesPath = path.join(
@@ -35,6 +38,8 @@ export default class DatabaseManager {
 	public static readonly errorNoConnection =
 		"there is no connection to the database!";
 	public static readonly errorNotFound = `I couldn't find a %s with the name/ID "%s".`;
+	public static readonly errorAlreadyExists = `%s with ID "%s" already exists!`;
+	public static readonly errorAlreadyExistsName = `%s with ID "%s" (with name "%s") already exists!`;
 
 	public connection!: TypeORM.Connection;
 	public options: TypeORM.ConnectionOptions;
@@ -160,6 +165,83 @@ export default class DatabaseManager {
 			throw new Error(DatabaseManager.errorNoConnection);
 		}
 	}
+
+	/**
+	 * Finds a prefix with a resolvable, by its ID and name.
+	 * Almost never this will return more than one, but this is
+	 * just in case it does.
+	 *
+	 * @param prefixResolvable
+	 *
+	 * @returns Prefixes
+	 */
+	async findPrefixPossibilities(
+		prefixResolvable: PrefixResolvable,
+		prefixRelations: TypeORM.FindOptionsRelationKeyName<Prefix>[] = []
+	): Promise<Prefix[]> {
+		if (prefixResolvable instanceof Prefix) return [prefixResolvable];
+
+		// Name/ID
+		const connection = this.connection;
+		if (!connection) {
+			throw new Error(DatabaseManager.errorNoConnection);
+		}
+
+		const prefixRepo = connection.getRepository(Prefix);
+		const newPrefixes = await prefixRepo.find({
+			where: [
+				{
+					id: prefixResolvable,
+				},
+				{
+					prefix: prefixResolvable,
+				},
+			],
+			relations: prefixRelations,
+		});
+
+		return newPrefixes;
+	}
+
+	/**
+	 * Finds and returns a single prefix entity, or undefined.
+	 *
+	 * @param prefixResolvable
+	 *
+	 * @returns Prefix entity or undefined
+	 */
+	async findPrefix(
+		prefixResolvable: PrefixResolvable,
+		prefixRelations: TypeORM.FindOptionsRelationKeyName<Prefix>[] = []
+	): Promise<Prefix | undefined> {
+		const prefixes = await this.findPrefixPossibilities(
+			prefixResolvable,
+			prefixRelations
+		);
+
+		const prefixesFoundById: Prefix[] = [];
+		const prefixesFoundByName: Prefix[] = [];
+
+		for await (const prefix of prefixes) {
+			// If the resolvable is the ID, it's good
+			if (prefix.id == prefixResolvable) {
+				prefixesFoundById.push(prefix);
+			} else {
+				prefixesFoundByName.push(prefix);
+			}
+		}
+
+		if (prefixesFoundById.length >= 1) {
+			return prefixesFoundById[0];
+		}
+
+		if (prefixesFoundByName.length >= 1) {
+			return prefixesFoundByName[0];
+		}
+
+		return undefined;
+	}
+
 	//#endregion
 
 	//#region Commands
@@ -233,29 +315,146 @@ export default class DatabaseManager {
 	}
 
 	/**
+	 * Adds a command.
+	 *
+	 * @param id Command ID string
+	 * @param response Response entity
+	 * @param bypassAlreadyExists Bypasses the check for if the element
+	 * already exists. Default is set to false.
+	 *
+	 * @returns New command
+	 */
+	async addCommand(
+		id: string,
+		response: Response,
+		defaultPrefix: PrefixResolvable,
+		bypassAlreadyExists = false
+	): Promise<Command> {
+		const connection = this.framedClient.databaseManager.connection;
+		if (!connection) {
+			throw new ReferenceError(DatabaseManager.errorNoConnection);
+		}
+
+		// Checks if the command already exists
+		const commandRepo = connection.getRepository(Command);
+		if (
+			(await commandRepo.findOne({ where: { id: id } })) &&
+			!bypassAlreadyExists
+		) {
+			throw new ReferenceError(
+				Utils.util.format(
+					DatabaseManager.errorAlreadyExists,
+					"command",
+					id
+				)
+			);
+		}
+
+		// Tries and writes the command. If it fails,
+		// send an error message to console and delete the new response data.
+		try {
+			const prefix = await this.findPrefix(defaultPrefix);
+
+			if (!prefix) {
+				throw new ReferenceError(
+					Utils.util.format(
+						DatabaseManager.errorNotFound,
+						defaultPrefix
+					)
+				);
+			}
+
+			const command = commandRepo.create({
+				id: id.toLocaleLowerCase(),
+				response: response,
+				defaultPrefix: await this.findPrefix(defaultPrefix),
+				prefixes: [prefix],
+			});
+
+			return await commandRepo.save(command);
+		} catch (error) {
+			// try {
+			// 	await this.framedClient.databaseManager.deleteResponse(
+			// 		response.id
+			// 	);
+			// } catch (error) {
+			// 	throw new Error(`Failed to delete response\n${error.stack}`);
+			// }
+			throw new Error(`Failed to add command\n${error.stack}`);
+		}
+	}
+
+	/**
 	 * Deletes command from the database
 	 * @param id Command ID
 	 */
 	async deleteCommand(id: string): Promise<void> {
-		if (this.connection) {
-			// Deletes command
-			await this.connection
-				.createQueryBuilder()
-				.delete()
-				.from(Command)
-				.where("id = :id", {
-					id: id,
-				})
-				.execute();
-		} else {
-			throw new Error(
-				"No connection to database while trying to delete Response!"
-			);
+		const connection = this.connection;
+		if (!connection) {
+			throw new Error(DatabaseManager.errorNoConnection);
 		}
+
+		// Deletes command
+		await connection
+			.createQueryBuilder()
+			.delete()
+			.from(Command)
+			.where("id = :id", {
+				id: id,
+			})
+			.execute();
 	}
 	//#endregion
 
 	//#region Responses
+
+	/**
+	 * Adds a response
+	 *
+	 * @param description
+	 * @param list
+	 *
+	 * @returns Response
+	 */
+	async addResponse(
+		description: string,
+		list: ResponseData[],
+		commands: Command[],
+		id = SnowflakeUtil.generate(new Date()),
+		bypassAlreadyExists = false
+	): Promise<Response> {
+		const connection = this.connection;
+		if (!connection) {
+			throw new ReferenceError(DatabaseManager.errorNoConnection);
+		}
+
+		const responseRepo = connection.getRepository(Response);
+
+		if (
+			responseRepo.findOne({ where: { id: id } }) &&
+			!bypassAlreadyExists
+		) {
+			throw new ReferenceError(
+				Utils.util.format(
+					DatabaseManager.errorNotFound,
+					
+				)
+			);
+		}
+
+		// Add response, if command doesn't exist
+		return await responseRepo.save(
+			responseRepo.create({
+				id: id,
+				description: description,
+				responseData: {
+					list: list,
+				},
+				commandResponses: commands,
+			})
+		);
+	}
+
 	/**
 	 * Deletes response from database
 	 * @param id Response ID
@@ -336,18 +535,36 @@ export default class DatabaseManager {
 	}
 
 	/**
-	 * Adds a new group
+	 * Adds a new group.
 	 *
 	 * @param name Name of the group
 	 */
-	async addGroup(name: string, emote?: string): Promise<Group> {
+	async addGroup(
+		name: string,
+		emote?: string,
+		id = SnowflakeUtil.generate(new Date()),
+		bypassAlreadyExists = false
+	): Promise<Group> {
 		const connection = this.connection;
 		if (connection) {
 			const groupRepo = connection.getRepository(Group);
 
+			if (
+				groupRepo.findOne({ where: { id: id } }) &&
+				!bypassAlreadyExists
+			) {
+				throw new ReferenceError(
+					Utils.util.format(
+						DatabaseManager.errorAlreadyExists,
+						"group",
+						id
+					)
+				);
+			}
+
 			return await groupRepo.save(
 				groupRepo.create({
-					id: SnowflakeUtil.generate(new Date()),
+					id: id,
 					name: name,
 					emote: emote,
 				})

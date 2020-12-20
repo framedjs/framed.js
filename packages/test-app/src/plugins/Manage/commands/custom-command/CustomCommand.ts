@@ -2,9 +2,8 @@
 
 import { oneLine, stripIndent } from "common-tags";
 import { logger } from "shared";
-
 import { SnowflakeUtil } from "discord.js";
-
+import path from "path";
 import {
 	BaseCommand,
 	BasePlugin,
@@ -19,11 +18,6 @@ import {
 } from "back-end";
 
 export default class CustomCommand extends BaseCommand {
-	/**
-	 * Map to store aliases of the add/edit/remove argument
-	 */
-	private addEditRemoveAliases: Map<string, string>;
-
 	constructor(plugin: BasePlugin) {
 		super(plugin, {
 			id: "command",
@@ -45,125 +39,17 @@ export default class CustomCommand extends BaseCommand {
 				},
 			},
 			hideUsageInHelp: true,
+			paths: {
+				subcommands: path.join(__dirname, "subcommands"),
+			},
 		});
-
-		this.addEditRemoveAliases = CustomCommand.createAddEditRemoveAliases();
-	}
-
-	/**
-	 * Generates the add/edit/remove aliases
-	 * @returns Add/edit/remove aliases in a map
-	 */
-	public static createAddEditRemoveAliases(): Map<string, string> {
-		const addEditRemoveAliases = new Map<string, string>();
-
-		// Creates some aliases for the subcommand
-		// Ex. "add" will turn into "add" and "a"
-		const addString = "add";
-		addEditRemoveAliases
-			.set(addString, addString)
-			.set(addString[0], addString);
-
-		// "create" will have an alias of "cr"
-		const createString = "create";
-		addEditRemoveAliases
-			.set(createString, createString)
-			.set(createString.substring(0, 2), createString);
-
-		// "change" will have an alias of "ch"
-		const changeString = "change";
-		addEditRemoveAliases
-			.set(changeString, changeString)
-			.set(changeString.substring(0, 2), changeString);
-
-		// "edit" will have an alias of "e"
-		const editString = "edit";
-		addEditRemoveAliases
-			.set(editString, editString)
-			.set(editString[0], editString);
-
-		// "delete" will have aliases of "del", "d"
-		const deleteString = "delete";
-		addEditRemoveAliases
-			.set(deleteString, deleteString)
-			.set(deleteString.substring(0, 3), deleteString)
-			.set(deleteString.substring(0, 1), deleteString)
-			.set(deleteString[0], deleteString);
-
-		// "remove" will have aliases of "rem", "rm"
-		const removeString = "remove";
-		addEditRemoveAliases
-			.set(removeString, deleteString)
-			.set("rm", deleteString)
-			.set(removeString.substring(0, 2), deleteString);
-
-		return addEditRemoveAliases;
 	}
 
 	async run(msg: FramedMessage): Promise<boolean> {
-		if (msg.prefix && msg.command && msg.args) {
-			// If there's content
-			if (msg.args.length > 0) {
-				const parse = CustomCommand.customParse(
-					msg.prefix,
-					msg.command,
-					msg.content,
-					msg.args,
-					this.addEditRemoveAliases
-				);
-
-				if (parse) {
-					const {
-						subcommand: addEditRemoveParam,
-						newCommandId: commandId,
-						args: newArgs,
-					} = parse;
-
-					// Tries and get the aliases
-					const state = this.addEditRemoveAliases?.get(
-						addEditRemoveParam
-					);
-					if (state) {
-						const hasPermission = this.hasPermission(msg);
-
-						if (!hasPermission) {
-							await this.sendPermissionErrorMessage(msg);
-							return false;
-						}
-
-						switch (state?.toLocaleLowerCase()) {
-							case "add":
-								return (
-									(await this.addCommand(
-										commandId,
-										newArgs,
-										msg
-									)) != undefined
-								);
-							case "edit":
-								return (
-									(await this.editCommand(
-										commandId,
-										newArgs,
-										msg
-									)) != undefined
-								);
-							case "delete":
-								return (
-									(await this.deleteCommand(
-										commandId,
-										msg
-									)) != undefined
-								);
-						}
-					}
-				} else {
-					await PluginManager.showHelpForCommand(msg);
-					return true;
-				}
-			}
+		if (msg.discord) {
+			await PluginManager.showHelpForCommand(msg);
+			return true;
 		}
-		await PluginManager.showHelpForCommand(msg);
 		return false;
 	}
 
@@ -184,8 +70,7 @@ export default class CustomCommand extends BaseCommand {
 		prefix: string,
 		command: string,
 		content: string,
-		args: string[],
-		addEditRemove: Map<string, string>
+		args: string[]
 	):
 		| {
 				subcommand: string;
@@ -205,25 +90,22 @@ export default class CustomCommand extends BaseCommand {
 				.replace(newCommandId, "")
 				.trim();
 
-			const state = addEditRemove.get(subcommand);
-			if (state) {
-				const questionArgs = FramedMessage.getArgs(questionContent, {
-					quoteSections: QuoteSections.Flexible,
-				});
+			const questionArgs = FramedMessage.getArgs(questionContent, {
+				quoteSections: QuoteSections.Flexible,
+			});
 
-				logger.debug(stripIndent`
-					Command.ts: 
-					questionContent: '${questionContent}'
-					questionArgs: '${questionArgs}'
-				`);
+			logger.debug(stripIndent`
+				Command.ts: 
+				questionContent: '${questionContent}'
+				questionArgs: '${questionArgs}'
+			`);
 
-				return {
-					subcommand: subcommand,
-					newCommandId: newCommandId,
-					questionContent: questionContent,
-					args: questionArgs,
-				};
-			}
+			return {
+				subcommand: subcommand,
+				newCommandId: newCommandId,
+				questionContent: questionContent,
+				args: questionArgs,
+			};
 		}
 
 		return undefined;
@@ -379,105 +261,7 @@ export default class CustomCommand extends BaseCommand {
 		return undefined;
 	}
 
-	/**
-	 * Adds a command.
-	 *
-	 * @param newCommandId Command ID string
-	 * @param newContents Contents to add, in an array
-	 * @param msg FramedMessage object
-	 *
-	 * @returns New command
-	 */
-	async addCommand(
-		newCommandId: string,
-		newContents: string[],
-		msg?: FramedMessage,
-		silent?: boolean
-	): Promise<Command | undefined> {
-		const connection = this.framedClient.databaseManager.connection;
-		if (!connection) {
-			logger.error("No connection to a database found!");
-			return undefined;
-		}
 
-		const parse = await CustomCommand.customParseCommand(
-			this.framedClient.databaseManager,
-			newCommandId,
-			newContents,
-			msg
-		);
-
-		// If the user didn't enter the command right, show help
-		if (!parse) {
-			if (msg && !silent) {
-				await PluginManager.showHelpForCommand(msg);
-			}
-			return undefined;
-		}
-
-		const prefix = parse.prefix;
-		let command = parse.command;
-		const response = parse.newResponse;
-
-		// If there's no response, if newContents is undefined
-		if (!response) {
-			logger.error(
-				"No response returned for CustomCommand.ts addCommand()!"
-			);
-			return undefined;
-		}
-
-		// Checks if the command already exists
-		const commandRepo = connection.getRepository(Command);
-		if (command) {
-			if (msg && !silent) {
-				await msg?.discord?.channel.send(
-					`${msg.discord.author}, the command already exists!`
-				);
-			}
-			return undefined;
-		}
-
-		// Tries and writes the command. If it fails,
-		// send an error message to console and delete the new response data.
-		try {
-			command = commandRepo.create({
-				id: newCommandId.toLocaleLowerCase(),
-				response: response,
-			});
-
-			command.defaultPrefix = prefix;
-			command.prefixes = [prefix];
-
-			command = await commandRepo.save(command);
-		} catch (error) {
-			try {
-				await this.framedClient.databaseManager.deleteResponse(
-					response.id
-				);
-			} catch (error) {
-				logger.error(`Failed to delete response\n${error.stack}`);
-			}
-			logger.error(`Failed to add command\n${error.stack}`);
-		}
-
-		// If the command was valid, and (probably) didn't error out
-		if (command) {
-			if (msg?.discord) {
-				// await msg.discord.channel.send(
-				// 	`${prefix.id} ${command.id} ${prefix.id}`
-				// );
-				// await msg.discord.channel.send(
-				// 	`${prefix.prefix}${command.id} ${util.inspect(
-				// 		response.responseData
-				// 	)}`
-				// );
-				await msg.discord.channel.send(
-					`${msg.discord.author}, I've added the \`${prefix.prefix}${command.id}\` command.`
-				);
-			}
-		}
-	}
 
 	/**
 	 * Edits a command.
