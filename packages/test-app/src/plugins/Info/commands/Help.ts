@@ -18,6 +18,10 @@ const data: HelpData[] = [
 		group: "Dailies",
 		commands: ["dailies", "streaks", "alert", "casual"],
 	},
+	{
+		group: "Manage",
+		commands: ["suggest"],
+	},
 ];
 
 export default class Help extends BaseCommand {

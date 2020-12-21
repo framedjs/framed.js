@@ -24,8 +24,7 @@ export default class CustomCommand extends BaseCommand {
 			aliases: ["customcommand", "cmd", "com"],
 			about: "Manages commands.",
 			description: oneLine`
-			This command also allows you to add, edit, and
-			delete custom commands. See \`.addcom\`, \`.editcom\`, and \`.delcom\`.`,
+			This command also allows you to add, edit, and delete custom commands.`,
 			usage: `<add|edit|delete> <command ID> <content> "[description]"`,
 			examples: stripIndent`
 			\`{{prefix}}{{id}} add newcommand This is a test message.\`
@@ -75,36 +74,36 @@ export default class CustomCommand extends BaseCommand {
 		| {
 				subcommand: string;
 				newCommandId: string;
-				questionContent: string;
-				args: string[];
+				newContent: string;
+				newArgs: string[];
 		  }
 		| undefined {
 		const subcommand = args[0];
 		const newCommandId = args[1];
 
 		if (subcommand && newCommandId) {
-			const questionContent = content
+			const newContent = content
 				.replace(prefix, "")
 				.replace(command, "")
 				.replace(subcommand, "")
 				.replace(newCommandId, "")
 				.trim();
 
-			const questionArgs = FramedMessage.getArgs(questionContent, {
+			const newArgs = FramedMessage.getArgs(newContent, {
 				quoteSections: QuoteSections.Flexible,
 			});
 
 			logger.debug(stripIndent`
 				Command.ts: 
-				questionContent: '${questionContent}'
-				questionArgs: '${questionArgs}'
+				newContent: '${newContent}'
+				newArgs: '${newArgs}'
 			`);
 
 			return {
 				subcommand: subcommand,
 				newCommandId: newCommandId,
-				questionContent: questionContent,
-				args: questionArgs,
+				newArgs: newArgs,
+				newContent: newContent,
 			};
 		}
 
@@ -138,12 +137,10 @@ export default class CustomCommand extends BaseCommand {
 	> {
 		const connection = databaseManager.connection;
 		if (!connection) {
-			logger.error("No connection to a database found!");
-			return undefined;
+			throw new ReferenceError(DatabaseManager.errorNoConnection);
 		}
 
 		// Repositories
-		const prefixRepo = connection.getRepository(Prefix);
 		const commandRepo = connection.getRepository(Command);
 		const responseRepo = connection.getRepository(Response);
 
@@ -175,9 +172,7 @@ export default class CustomCommand extends BaseCommand {
 		}
 
 		// Uses the default prefix by default
-		const defaultPrefix = await prefixRepo.findOne({
-			id: "default",
-		});
+		const defaultPrefix = await databaseManager.getDefaultPrefix();
 		if (defaultPrefix) {
 			let newResponse: Response | undefined;
 
@@ -259,202 +254,5 @@ export default class CustomCommand extends BaseCommand {
 		}
 
 		return undefined;
-	}
-
-
-
-	/**
-	 * Edits a command.
-	 *
-	 * @param newCommandId Command ID string
-	 * @param newContents Contents to add, in an array. If undefined, the response
-	 * will be generated through
-	 * @param msg FramedMessage object
-	 *
-	 * @returns Edited command
-	 */
-	async editCommand(
-		newCommandId: string,
-		newContents: string[],
-		msg?: FramedMessage,
-		silent?: boolean
-	): Promise<Command | undefined> {
-		const connection = this.framedClient.databaseManager.connection;
-		if (!connection) {
-			logger.error("No connection to a database found!");
-			return undefined;
-		}
-
-		const parse = await CustomCommand.customParseCommand(
-			this.framedClient.databaseManager,
-			newCommandId,
-			newContents,
-			msg
-		);
-
-		// If the user didn't enter the command right, show help
-		if (!parse) {
-			if (msg && !silent) {
-				await PluginManager.showHelpForCommand(msg);
-			}
-			return undefined;
-		}
-
-		const prefix = parse.prefix;
-		let command = parse.command;
-		const response = parse.newResponse;
-
-		// If there's no response, if newContents is undefined
-		if (!response) {
-			logger.error(
-				"No response returned for CustomCommand.ts editCommand()!"
-			);
-			return undefined;
-		}
-
-		// Checks if the command exists
-		if (command) {
-			// Tries and writes the command. If it fails,
-			// send an error message to console and delete the new response data.
-			const commandRepo = connection.getRepository(Command);
-			try {
-				command = commandRepo.create({
-					id: newCommandId.toLocaleLowerCase(),
-					response: response,
-				});
-
-				command.defaultPrefix = prefix;
-				command.prefixes = [prefix];
-
-				command = await commandRepo.save(command);
-			} catch (error) {
-				// Outputs error
-				logger.error(`${error.stack}`);
-			}
-
-			// If the command was valid, and (probably) didn't error out
-			if (command) {
-				if (msg?.discord) {
-					// await msg.discord.channel.send(
-					// 	`${prefix.id} ${command.id} ${prefix.id}`
-					// );
-					// await msg.discord.channel.send(
-					// 	`${prefix.prefix}${command.id} ${util.inspect(
-					// 		response.responseData
-					// 	)}`
-					// );
-					await msg.discord.channel.send(
-						`${msg.discord.author}, I've edited the \`${prefix.prefix}${command.id}\` command.`
-					);
-				}
-			}
-		} else {
-			if (msg && !silent) {
-				await msg?.discord?.channel.send(
-					`${msg.discord.author}, the command doesn't exists!`
-				);
-			}
-			return undefined;
-		}
-	}
-
-	/**
-	 * Deletes a command.
-	 *
-	 * @param newCommandId Command ID string
-	 * @param msg FramedMessage object
-	 */
-	async deleteCommand(
-		newCommandId: string,
-		msg?: FramedMessage,
-		silent?: boolean
-	): Promise<void> {
-		const parse = await CustomCommand.customParseCommand(
-			this.framedClient.databaseManager,
-			newCommandId,
-			undefined,
-			msg
-		);
-
-		// If the user didn't enter the command right, show help
-		if (!parse) {
-			if (msg && !silent) {
-				await PluginManager.showHelpForCommand(msg);
-			}
-			return;
-		}
-
-		const prefix = parse.prefix;
-		const command = parse.command;
-		const response = parse.oldResponse;
-
-		if (!command) {
-			if (msg && !silent) {
-				msg.discord?.channel.send(
-					`${msg.discord.author}, the comamnd doesn't exist!`
-				);
-				return;
-			}
-		} else if (!response) {
-			// If there's no response, if newContents is undefined
-			logger.error(
-				"No response returned for CustomCommand.ts deleteCommand()!"
-			);
-			return undefined;
-		} else {
-			// Checks if the command exists
-			if (command) {
-				// Tries and deletes the command
-				try {
-					await this.framedClient.databaseManager.deleteCommand(
-						command.id
-					);
-
-					// Tries and deletes the response
-					// TODO: don't delete the command if there's anything else connected to it
-					if (
-						response.commandResponses &&
-						response.commandResponses.length <= 1
-					) {
-						try {
-							await this.framedClient.databaseManager.deleteResponse(
-								response.id
-							);
-						} catch (error) {
-							logger.error(
-								`Failed to delete response\n${error.stack}`
-							);
-						}
-					}
-				} catch (error) {
-					// Outputs error
-					logger.error(`${error.stack}`);
-				}
-
-				// If the command was valid, and (probably) didn't error out
-				if (command) {
-					if (msg?.discord) {
-						// await msg.discord.channel.send(
-						// 	`${prefix.id} ${command.id} ${prefix.id}`
-						// );
-						// await msg.discord.channel.send(
-						// 	`${prefix.prefix}${command.id} ${util.inspect(
-						// 		response.responseData
-						// 	)}`
-						// );
-						await msg.discord.channel.send(
-							`${msg.discord.author}, I've deleted the \`${prefix.prefix}${command.id}\` command.`
-						);
-					}
-				}
-			} else {
-				if (msg && !silent) {
-					await msg?.discord?.channel.send(
-						`${msg.discord.author}, the command doesn't exists!`
-					);
-				}
-				return undefined;
-			}
-		}
 	}
 }

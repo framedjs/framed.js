@@ -15,7 +15,7 @@ export default class CustomGroupAdd extends BaseSubcommand {
 			about: "Adds a custom group.",
 			usage: `"<emote + group name>"`,
 			examples: oneLine`
-			\`{{prefix}}group add "🍎 Food Stuff"\``,
+			\`{{prefix}}{{id}} add "🍎 Food Stuff"\``,
 		});
 	}
 

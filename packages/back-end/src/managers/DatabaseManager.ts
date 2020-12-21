@@ -109,7 +109,6 @@ export default class DatabaseManager {
 	 * Starts installing default entries in the database.
 	 */
 	async installDefaults(): Promise<void> {
-		await this.addDefaultPrefix();
 		await this.addGroup("Other", "❔");
 	}
 
@@ -130,7 +129,7 @@ export default class DatabaseManager {
 
 	//#region Prefixes
 	/**
-	 * Adds the default prefix
+	 * Adds the default prefix. This will be ran every time FramedClient is launched.
 	 */
 	async addDefaultPrefix(): Promise<void> {
 		const connection = this.connection;
@@ -273,44 +272,43 @@ export default class DatabaseManager {
 
 		const commandRepo = connection.getRepository(Command);
 		const prefixRepo = connection.getRepository(Prefix);
-		if (commandRepo && prefixRepo) {
-			const findingPrefixes = prefixRepo.find({
-				where: {
-					prefix: prefix,
-				},
-				relations: prefixRelations,
-			});
+		const findingPrefixes = prefixRepo.find({
+			where: {
+				prefix: prefix,
+			},
+			relations: prefixRelations,
+		});
 
-			const findingCommand = commandRepo.findOne({
-				where: {
-					id: commandId,
-				},
-				relations: commandRelations,
-			});
+		const findingCommand = commandRepo.findOne({
+			where: {
+				id: commandId,
+			},
+			relations: commandRelations,
+		});
 
-			const [foundPrefixes, foundCommand] = await Promise.all([
-				findingPrefixes,
-				findingCommand,
-			]);
+		const [foundPrefixes, foundCommand] = await Promise.all([
+			findingPrefixes,
+			findingCommand,
+		]);
 
-			if (foundCommand) {
-				let matchingCommand: Command | undefined;
+		if (foundCommand) {
+			let matchingCommand: Command | undefined;
 
-				// Attempts to match the prefix with the matching command ID
-				foundPrefixes.forEach(prefix => {
-					foundCommand.prefixes.forEach(cmdPrefix => {
-						if (cmdPrefix.id == prefix.id) {
-							logger.debug(
-								`DatabaseManager.ts: returning command ${foundCommand.id}`
-							);
-							matchingCommand = foundCommand;
-						}
-					});
+			// Attempts to match the prefix with the matching command ID
+			foundPrefixes.forEach(prefix => {
+				foundCommand.prefixes.forEach(cmdPrefix => {
+					if (cmdPrefix.id == prefix.id) {
+						logger.debug(
+							`DatabaseManager.ts: returning command ${foundCommand.id}`
+						);
+						matchingCommand = foundCommand;
+					}
 				});
+			});
 
-				return matchingCommand;
-			}
+			return matchingCommand;
 		}
+
 		return undefined;
 	}
 
@@ -435,10 +433,7 @@ export default class DatabaseManager {
 			!bypassAlreadyExists
 		) {
 			throw new ReferenceError(
-				Utils.util.format(
-					DatabaseManager.errorNotFound,
-					
-				)
+				Utils.util.format(DatabaseManager.errorNotFound)
 			);
 		}
 

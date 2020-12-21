@@ -5,7 +5,7 @@ export default class extends BasePlugin {
 	constructor(framedClient: FramedClient) {
 		super(framedClient, {
 			id: "default.bot.manage",
-			name: "Commands",
+			name: "Manage",
 			description: "Manages certain things, such as commands.",
 			version: "0.1.0",
 			paths: {
@@ -16,4 +16,5 @@ export default class extends BasePlugin {
 			groupName: "Manage",
 		});
 	}
+
 }

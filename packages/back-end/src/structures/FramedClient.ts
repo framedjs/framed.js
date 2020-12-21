@@ -61,7 +61,9 @@ export default class FramedClient extends EventEmitter {
 		this.appVersion = info?.appVersion;
 
 		if (info) {
-			if (info.defaultPrefix) this.defaultPrefix = info?.defaultPrefix;
+			if (info.defaultPrefix) {
+				this.defaultPrefix = info?.defaultPrefix;
+			}
 		}
 
 		this.apiManager = new APIManager(this);
