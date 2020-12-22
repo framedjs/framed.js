@@ -12,7 +12,7 @@ export default class Command {
 	// name!: string;
 
 	@ManyToOne(() => Group, group => group.commands)
-	group?: Group;
+	group!: Group;
 
 	@ManyToOne(() => Prefix, prefix => prefix.defaultCommands)
 	@JoinColumn()

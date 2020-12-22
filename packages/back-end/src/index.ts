@@ -31,3 +31,7 @@ export { default as Group } from "./managers/database/entities/Group";
 // Utilities
 export { default as EmbedHelper } from "./utils/discord/EmbedHelper";
 export { default as DiscordUtils } from "./utils/discord/DiscordUtils";
+
+// Resolvable types
+export { PluginResolvable } from "./managers/database/types/PluginResolvable";
+export { PrefixResolvable } from "./managers/database/types/PrefixResolvable";

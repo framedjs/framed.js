@@ -8,14 +8,14 @@ import {
 import { logger } from "shared";
 import { oneLine } from "common-tags";
 
-export default class CustomGroupSet extends BaseSubcommand {
+export default class extends BaseSubcommand {
 	constructor(command: BaseCommand) {
 		super(command, {
 			id: "set",
 			about: "Sets a custom command to a group.",
 			usage: `<command> "<group>"`,
 			examples: oneLine`
-			\`{{prefix}}group set newcommand "Food Stuff"\``,
+			\`{{prefix}}group {{id}} newcommand "Food Stuff"\``,
 		});
 	}
 

@@ -9,6 +9,7 @@ import { QuoteSections } from "../interfaces/QuoteSections";
 import Emoji from "node-emoji";
 import FramedClient from "./FramedClient";
 import { logger } from "shared";
+import { BaseSubcommand } from "./BaseSubcommand";
 
 enum ArgumentState {
 	Quoted,
@@ -523,27 +524,9 @@ export default class FramedMessage {
 			const formatCommand = formatArgs.shift();
 
 			switch (formatCommand) {
-				case "commandnoprefix":
-					try {
-						const command = formatArgs[0];
-						if (command) {
-							const baseCommand = framedClient.pluginManager.getCommand(
-								command
-							);
-
-							if (!baseCommand) {
-								throw new ReferenceError();
-							}
-
-							arg = arg.replace(element[0], `${baseCommand.id}`);
-						} else {
-							throw new ReferenceError();
-						}
-					} catch (error) {
-						logger.error(error.stack);
-					}
-					break;
 				case "command":
+				case "commandnoprefix":
+				case "subcommand":
 					try {
 						const command = formatArgs[0];
 						if (command) {
@@ -555,10 +538,39 @@ export default class FramedMessage {
 								throw new ReferenceError();
 							}
 
-							arg = arg.replace(
-								element[0],
-								`${baseCommand.defaultPrefix}${baseCommand.id}`
-							);
+							let toReplace = `${baseCommand.defaultPrefix}${baseCommand.id}`;
+							if (formatCommand == "commandnoprefix") {
+								toReplace = baseCommand.id;
+							}
+
+							if (formatCommand != "subcommand") {
+								arg = arg.replace(element[0], toReplace);
+							} else {
+								const clone = [...formatArgs];
+								clone.shift();
+
+								let baseSubcommands: BaseSubcommand[] | undefined;
+
+								if (clone.length > 0) {
+									baseSubcommands = baseCommand.getSubcommandChain(clone);
+								} else {
+									// TODO
+									// baseSubcommand = framedClient.pluginManager.getSubcommand(command);
+								}
+
+								if (!baseSubcommands) {
+									throw new ReferenceError();
+								}
+
+								let list = "";
+								baseSubcommands.forEach(baseSubcommand => {
+									list += `${baseSubcommand.id} `
+								});
+								list = list.trim();
+
+								toReplace = `${toReplace}${list}`;
+								arg = arg.replace(element[0], toReplace);
+							}
 						} else {
 							throw new ReferenceError();
 						}
@@ -567,6 +579,7 @@ export default class FramedMessage {
 					}
 
 					break;
+
 				default:
 					break;
 			}

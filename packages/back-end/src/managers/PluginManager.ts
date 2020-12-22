@@ -12,6 +12,8 @@ import Discord from "discord.js";
 import DatabaseManager from "./DatabaseManager";
 import { oneLineInlineLists } from "common-tags";
 import * as TypeORM from "typeorm";
+import { BaseSubcommand } from "../structures/BaseSubcommand";
+import { PluginResolvable } from "./database/types/PluginResolvable";
 
 export interface HelpGroup {
 	group: string;
@@ -222,9 +224,21 @@ export default class PluginManager {
 		return this.internalGetCommands(msgOrCommand, prefix);
 	}
 
+	// getSubcommand(command: string): BaseSubcommand | undefined;
+
+	// getSubcommand(
+	// 	plugin: PluginResolvable,
+	// 	command: string
+	// ): BaseSubcommand | undefined;
+
+	// getSubcommand(
+	// 	commandOrPlugin: string | PluginResolvable,
+	// 	command?: string
+	// ) {}
+
 	/**
 	 * Internal get commands function to reduce code duplication.
-	 * 
+	 *
 	 * Intentionally only gives commands for subcommand inputs.
 	 */
 	private internalGetCommands(
@@ -490,7 +504,7 @@ export default class PluginManager {
 							baseCommand.group,
 							baseCommand.groupEmote
 								? baseCommand.groupEmote
-								: "🐛"
+								: "❔"
 						);
 
 						// If there's a matching command or alias,
@@ -531,14 +545,10 @@ export default class PluginManager {
 						small = true;
 					}
 
-					let group = "Other";
-					let emote = "❔";
-					if (command.group) {
-						group = command.group.name;
-						emote = command.group.emote
-							? command.group.emote
-							: emote;
-					}
+					const group = command.group.name;
+					const emote = command.group.emote
+						? command.group.emote
+						: "❔";
 
 					groupIconMap.set(group, emote);
 
@@ -558,7 +568,7 @@ export default class PluginManager {
 		// Goes through the new help list to add database commands
 		clonedHelpList.forEach(helpElement => {
 			databaseCommands.forEach(command => {
-				const groupName = command.group?.name;
+				const groupName = command.group.name;
 
 				if (groupName) {
 					// If there's a matching group, add it to the list
@@ -577,23 +587,23 @@ export default class PluginManager {
 
 		// Put all unparsed commands that didn't have any matching group to
 		// be in the Other group. Then, if there is any new data, push it in.
-		let newHelpData: HelpData | undefined;
+		const newHelpData: HelpData[] = [];
 		unparsedCommands.forEach(command => {
-			const groupName = "Other";
+			const matchingHelpData = newHelpData.find(
+				data => data.group == command.group.name
+			);
 
-			// If there's a matching group, add it to the list
-			if (!newHelpData) {
-				newHelpData = {
-					group: groupName,
-					commands: [],
+			if (!matchingHelpData) {
+				const data: HelpData = {
+					group: command.group.name,
+					commands: [command.id],
 				};
+				newHelpData.push(data);
+			} else {
+				matchingHelpData.commands.push(command.id);
 			}
-
-			newHelpData.commands.push(command.id);
 		});
-		if (newHelpData) {
-			clonedHelpList.push(newHelpData);
-		}
+		clonedHelpList.push(...newHelpData);
 
 		// Loops through all of the help elements,
 		// in order to sort them properly like in the data

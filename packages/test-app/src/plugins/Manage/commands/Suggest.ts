@@ -1,4 +1,10 @@
-import { FramedMessage, BasePlugin, BaseCommand, EmbedHelper } from "back-end";
+import {
+	FramedMessage,
+	BasePlugin,
+	BaseCommand,
+	EmbedHelper,
+	PluginManager,
+} from "back-end";
 import { oneLine, stripIndent, stripIndents } from "common-tags";
 import { logger, Utils } from "shared";
 import Discord from "discord.js";
@@ -10,8 +16,8 @@ export default class extends BaseCommand {
 		super(plugin, {
 			id: "suggest",
 			aliases: ["suggestion"],
-			about: `Suggest something for the server, such as event ideas and new features.`,
-			description: oneLine`Suggest something for the server, such as event ideas and new features.
+			about: `Suggest something, such as event ideas and new features.`,
+			description: oneLine`Suggest something, such as event ideas and bot features.
 			If you have any concerns that you'd like to be private, please DM one of the <@&462342299171684364>.`,
 			usage: "<suggestion>",
 			examples: oneLine`
@@ -27,7 +33,7 @@ export default class extends BaseCommand {
 			return false;
 		}
 
-		if (msg.args) {
+		if (msg.args && msg.args.length > 0) {
 			// Things
 			const argsContent = msg.getArgsContent();
 
@@ -109,6 +115,7 @@ export default class extends BaseCommand {
 			}
 		}
 
+		await PluginManager.showHelpForCommand(msg);
 		return false;
 	}
 }

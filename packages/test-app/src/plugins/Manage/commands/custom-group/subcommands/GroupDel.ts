@@ -5,7 +5,7 @@ import { logger } from "shared";
 import { PluginManager } from "back-end";
 import { oneLine } from "common-tags";
 
-export default class CustomGroupDel extends BaseSubcommand {
+export default class extends BaseSubcommand {
 	constructor(command: BaseCommand) {
 		super(command, {
 			id: "delete",
@@ -13,7 +13,7 @@ export default class CustomGroupDel extends BaseSubcommand {
 			about: "Deletes a custom group.",
 			usage: `"<group>"`,
 			examples: oneLine`
-			\`{{prefix}}group delete "Food"\``,
+			\`{{prefix}}group {{id}} "Food"\``,
 		});
 	}
 
@@ -39,7 +39,10 @@ export default class CustomGroupDel extends BaseSubcommand {
 						`${msg.discord.author}, I've deleted the group "${newContent}" succesfully!`
 					);
 				} catch (error) {
-					if (error instanceof ReferenceError) {
+					if (
+						error instanceof ReferenceError ||
+						(error.message as string).includes("default group")
+					) {
 						await msg.discord?.channel.send(
 							`${msg.discord.author}, ${error.message}`
 						);

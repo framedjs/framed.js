@@ -62,6 +62,9 @@ export default class DatabaseManager {
 	 */
 	async start(): Promise<void> {
 		this.connection = await TypeORM.createConnection(this.options);
+		if (!this.connection) {
+			throw new ReferenceError(DatabaseManager.errorNotFound);
+		}
 
 		this.prefixRepo = this.connection.getRepository(Prefix);
 		this.commandRepo = this.connection.getRepository(Command);
@@ -109,7 +112,8 @@ export default class DatabaseManager {
 	 * Starts installing default entries in the database.
 	 */
 	async installDefaults(): Promise<void> {
-		await this.addGroup("Other", "❔");
+		await this.addGroup("Other", "❔", "default");
+		await this.addPrefix(this.framedClient.defaultPrefix, "default");
 	}
 
 	/**
@@ -129,20 +133,28 @@ export default class DatabaseManager {
 
 	//#region Prefixes
 	/**
-	 * Adds the default prefix. This will be ran every time FramedClient is launched.
+	 * Adds a prefix
+	 *
+	 * @param prefix Prefix
+	 * @param id Prefix ID. Defaults to a Discord Snowflake.
+	 *
+	 * @returns Created prefix
 	 */
-	async addDefaultPrefix(): Promise<void> {
+	async addPrefix(
+		prefix: string,
+		id = SnowflakeUtil.generate()
+	): Promise<Prefix> {
 		const connection = this.connection;
-		if (connection) {
-			const prefixRepo = connection.getRepository(Prefix);
-			const defaultPrefix = prefixRepo.create({
-				id: "default",
-				prefix: ".",
-			});
-			await prefixRepo.save(defaultPrefix);
-		} else {
+		if (!connection) {
 			throw new Error(DatabaseManager.errorNoConnection);
 		}
+
+		const prefixRepo = connection.getRepository(Prefix);
+		const newPrefix = prefixRepo.create({
+			id: id,
+			prefix: prefix,
+		});
+		return await prefixRepo.save(newPrefix);
 	}
 
 	/**
@@ -152,17 +164,16 @@ export default class DatabaseManager {
 		relations: TypeORM.FindOptionsRelationKeyName<Prefix>[] = []
 	): Promise<Prefix> {
 		const connection = this.connection;
-		if (connection) {
-			const prefixRepo = connection.getRepository(Prefix);
-			return prefixRepo.findOneOrFail({
-				where: {
-					id: "default",
-				},
-				relations: relations,
-			});
-		} else {
+		if (!connection) {
 			throw new Error(DatabaseManager.errorNoConnection);
 		}
+		const prefixRepo = connection.getRepository(Prefix);
+		return prefixRepo.findOneOrFail({
+			where: {
+				id: "default",
+			},
+			relations: relations,
+		});
 	}
 
 	/**
@@ -429,7 +440,7 @@ export default class DatabaseManager {
 		const responseRepo = connection.getRepository(Response);
 
 		if (
-			responseRepo.findOne({ where: { id: id } }) &&
+			(await responseRepo.findOne({ where: { id: id } })) &&
 			!bypassAlreadyExists
 		) {
 			throw new ReferenceError(
@@ -530,6 +541,25 @@ export default class DatabaseManager {
 	}
 
 	/**
+	 * Get the default prefix
+	 */
+	async getDefaultGroup(
+		relations: TypeORM.FindOptionsRelationKeyName<Group>[] = []
+	): Promise<Group> {
+		const connection = this.connection;
+		if (!connection) {
+			throw new Error(DatabaseManager.errorNoConnection);
+		}
+		const groupRepo = connection.getRepository(Group);
+		return groupRepo.findOneOrFail({
+			where: {
+				id: "default",
+			},
+			relations: relations,
+		});
+	}
+
+	/**
 	 * Adds a new group.
 	 *
 	 * @param name Name of the group
@@ -545,7 +575,7 @@ export default class DatabaseManager {
 			const groupRepo = connection.getRepository(Group);
 
 			if (
-				groupRepo.findOne({ where: { id: id } }) &&
+				(await groupRepo.findOne({ where: { id: id } })) &&
 				!bypassAlreadyExists
 			) {
 				throw new ReferenceError(
@@ -616,12 +646,16 @@ export default class DatabaseManager {
 		if (connection) {
 			const groupRepo = connection.getRepository(Group);
 			const commandRepo = connection.getRepository(Command);
-			const group = await this.findGroup(nameOrId);
+			const group = await this.findGroup(nameOrId, ["commands"]);
+			const defaultGroup = await this.getDefaultGroup();
 
 			if (group) {
+				if (group.id == "default") {
+					throw new Error("You can't delete the default group!");
+				}
 				if (group.commands) {
 					for (const command of group.commands) {
-						command.group = undefined;
+						command.group = defaultGroup;
 					}
 
 					await Promise.all(await commandRepo.save(group.commands));
@@ -649,12 +683,16 @@ export default class DatabaseManager {
 	 * @param nameOrId Name or ID of the group
 	 * @returns Group entity, or undefined if none found
 	 */
-	async findGroup(nameOrId: string): Promise<Group | undefined> {
+	async findGroup(
+		nameOrId: string,
+		relations: TypeORM.FindOptionsRelationKeyName<Group>[] = []
+	): Promise<Group | undefined> {
 		const connection = this.connection;
 		if (connection) {
 			const groupRepo = connection.getRepository(Group);
 			let newGroup = await groupRepo.findOne({
 				where: { name: nameOrId },
+				relations: relations,
 			});
 			if (!newGroup) {
 				newGroup = await groupRepo.findOne({
@@ -758,7 +796,7 @@ export default class DatabaseManager {
 			}
 		}
 
-		await Promise.allSettled(installs);
+		await Promise.allSettled(installs);	
 
 		// Handles post installs for all plugins
 		for (const plugin of this.framedClient.pluginManager.pluginsArray) {

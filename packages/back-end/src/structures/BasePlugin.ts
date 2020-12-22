@@ -94,7 +94,7 @@ export abstract class BasePlugin {
 
 	/**
 	 * This function will be called after the install of plugins.
-	 * 
+	 *
 	 * This can be used for scenarios such as updating old install data.
 	 */
 	postInstall?(): Promise<void>;
@@ -174,8 +174,11 @@ export abstract class BasePlugin {
 		if (command.paths?.subcommands) {
 			command.loadSubcommandsIn({
 				dirname: command.paths.subcommands,
-				filter: this.framedClient.importFilter,
-				recursive: false
+				filter: (name: string, path: string) => {
+					const match = name.match(this.framedClient.importFilter);
+					if (match) return name;
+				},
+				recursive: false,
 			});
 		}
 

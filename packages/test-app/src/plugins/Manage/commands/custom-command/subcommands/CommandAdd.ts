@@ -1,16 +1,20 @@
 import { Command, FramedMessage, PluginManager } from "back-end";
 import { BaseCommand } from "back-end";
 import { BaseSubcommand } from "back-end";
+import { stripIndents } from "common-tags";
 import { logger } from "shared";
 import CustomCommand from "../CustomCommand";
 
-export default class CustomCommandAdd extends BaseSubcommand {
+export default class extends BaseSubcommand {
 	constructor(command: BaseCommand) {
 		super(command, {
 			id: "add",
 			aliases: ["a", "create", "cr"],
 			about: "Adds a custom command.",
-			examples: `\`{{prefix}}{{id}} add newcommand This is a test message.\``,
+			examples: stripIndents`
+			\`{{prefix}}command {{id}} newcommand This is a test message.\`
+			\`{{prefix}}command {{id}} newcommand Test message! "Test description!"\`
+			`,
 			hideUsageInHelp: true,
 		});
 	}
@@ -101,14 +105,15 @@ export default class CustomCommandAdd extends BaseSubcommand {
 
 		// Tries and writes the command. If it fails,
 		// send an error message to console and delete the new response data.
+		const defaultGroup = await this.framedClient.databaseManager.getDefaultGroup();
 		try {
 			command = commandRepo.create({
 				id: newCommandId.toLocaleLowerCase(),
 				response: response,
+				group: defaultGroup,
+				defaultPrefix: prefix,
+				prefixes: [prefix]
 			});
-
-			command.defaultPrefix = prefix;
-			command.prefixes = [prefix];
 
 			command = await commandRepo.save(command);
 		} catch (error) {

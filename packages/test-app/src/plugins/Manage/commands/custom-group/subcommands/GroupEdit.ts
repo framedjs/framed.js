@@ -8,7 +8,7 @@ import {
 import { logger } from "shared";
 import { oneLine } from "common-tags";
 
-export default class CustomGroupEdit extends BaseSubcommand {
+export default class extends BaseSubcommand {
 	constructor(command: BaseCommand) {
 		super(command, {
 			id: "edit",
@@ -16,7 +16,7 @@ export default class CustomGroupEdit extends BaseSubcommand {
 			about: "Edits a custom group.",
 			usage: `"<group>" "<emote + group name>"`,
 			examples: oneLine`
-			\`{{prefix}}group edit "Food Stuff" "🍏 Food"\``,
+			\`{{prefix}}{{id}} edit "Food Stuff" "🍏 Food"\``,
 		});
 	}
 

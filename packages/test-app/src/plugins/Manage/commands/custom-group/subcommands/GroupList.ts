@@ -6,11 +6,11 @@ import {
 } from "back-end";
 import { oneLine } from "common-tags";
 
-export default class CustomGroupEdit extends BaseSubcommand {
+export default class extends BaseSubcommand {
 	constructor(command: BaseCommand) {
 		super(command, {
 			id: "list",
-			aliases: ["show"],
+			aliases: ["ls", "l", "show"],
 			about: "Lists all custom groups.",
 		});
 	}

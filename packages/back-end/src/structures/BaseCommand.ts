@@ -531,6 +531,8 @@ export abstract class BaseCommand {
 	 * Gets the subcommand to run from command arguments.
 	 *
 	 * @param args Message arguments
+	 * 
+	 * @returns Subcommand or undefined
 	 */
 	getSubcommand(args: string[]): BaseSubcommand | undefined {
 		return BaseCommand.getSubcommand(this, args);

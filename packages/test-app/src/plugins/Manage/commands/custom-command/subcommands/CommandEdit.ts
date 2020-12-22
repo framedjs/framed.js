@@ -1,16 +1,20 @@
 import { Command, FramedMessage, PluginManager } from "back-end";
 import { BaseCommand } from "back-end";
 import { BaseSubcommand } from "back-end";
+import { stripIndents } from "common-tags";
 import { logger } from "shared";
 import CustomCommand from "../CustomCommand";
 
-export default class CustomCommandAdd extends BaseSubcommand {
+export default class extends BaseSubcommand {
 	constructor(command: BaseCommand) {
 		super(command, {
 			id: "edit",
 			aliases: ["e", "change", "ch"],
 			about: "Edits a custom command.",
-			examples: `\`{{prefix}}{{id}} edit newcommand .\``,
+			examples: stripIndents`
+			\`{{prefix}}command {{id}} newcommand This has been edited.\`
+			\`{{prefix}}command {{id}} newcommand Edited message! "Edited description"\`
+			\`{{prefix}}command {{id}} newcommand This will have no description! ""\``,
 			hideUsageInHelp: true,
 		});
 	}
