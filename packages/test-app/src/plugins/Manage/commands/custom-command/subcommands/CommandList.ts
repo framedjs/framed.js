@@ -37,7 +37,7 @@ export default class extends BaseSubcommand {
 					await FramedMessage.parseCustomFormatting(
 						oneLine`
 						This is a list of custom commands.
-						To see the rest of the commands, use \`$(command default.bot.info.help)\`.`,
+						To see the rest of the commands, use \`$(command default.bot.info.command.help)\`.`,
 						this.framedClient
 					)
 				);
@@ -58,10 +58,10 @@ export default class extends BaseSubcommand {
 			// Finds all commands, and adds them into an interface that contains both
 			// Description commands and no-description commands
 			for await (const command of commands) {
-				const groupEmote = command.group.emote
+				const groupEmote = command.group
 					? command.group.emote
 					: "❔";
-				const groupDisplay = `${groupEmote} ${command.group.name}`;
+				const groupDisplay = `${groupEmote} ${command.group ? command.group.name : "Unknown (An Error Occured!)"}`;
 				const description = command.response.description
 					? ` - ${command.response.description}`
 					: ``;
