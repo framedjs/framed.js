@@ -510,7 +510,9 @@ export abstract class BaseCommand {
 
 		for (let i = 0; i < maxSubcommandNesting + 1; i++) {
 			const commandToCompare = newSubcommand ? newSubcommand : command;
-			const subcommand = commandToCompare.subcommandAliases.get(args[i]);
+			let subcommand = commandToCompare.subcommands.get(args[i]);
+			if (!subcommand)
+				subcommand = commandToCompare.subcommandAliases.get(args[i]);
 
 			if (subcommand) {
 				// If it hit max and isn't done
@@ -568,7 +570,9 @@ export abstract class BaseCommand {
 
 		for (let i = 0; i < maxSubcommandNesting + 1; i++) {
 			const commandToCompare = newSubcommand ? newSubcommand : command;
-			const subcommand = commandToCompare.subcommandAliases.get(args[i]);
+			let subcommand = commandToCompare.subcommands.get(args[i]);
+			if (!subcommand)
+				subcommand = commandToCompare.subcommandAliases.get(args[i]);
 
 			if (subcommand) {
 				// If it hit max and isn't done
