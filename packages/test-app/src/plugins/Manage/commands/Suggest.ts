@@ -16,8 +16,8 @@ export default class extends BaseCommand {
 		super(plugin, {
 			id: "suggest",
 			aliases: ["suggestion"],
-			about: `Suggest something, such as event ideas and new features.`,
-			description: oneLine`Suggest something, such as event ideas and bot features.
+			about: `Suggest something, such as event ideas or features.`,
+			description: oneLine`Suggest something for the server, such as event ideas or bot features.
 			If you have any concerns that you'd like to be private, please DM one of the <@&462342299171684364>.`,
 			usage: "<suggestion>",
 			examples: oneLine`
