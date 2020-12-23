@@ -9,7 +9,7 @@ export default class extends BaseSubcommand {
 		super(command, {
 			id: "delete",
 			aliases: ["del", "d", "remove", "rm"],
-			about: "Adds a custom command.",
+			about: "Deletes a custom command.",
 			examples: `\`{{prefix}}command {{id}} newcommand\``,
 			hideUsageInHelp: true,
 		});

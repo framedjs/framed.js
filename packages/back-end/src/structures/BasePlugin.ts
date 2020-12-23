@@ -150,6 +150,8 @@ export abstract class BasePlugin {
 			return;
 		}
 		this.commands.set(command.id, command);
+
+		// Note that this normally is async. Should that be changed?
 		command.parseCustomFormatting();
 
 		// Skip over subcommand scripts
@@ -174,7 +176,7 @@ export abstract class BasePlugin {
 		if (command.paths?.subcommands) {
 			command.loadSubcommandsIn({
 				dirname: command.paths.subcommands,
-				filter: (name: string, path: string) => {
+				filter: (name: string) => {
 					const match = name.match(this.framedClient.importFilter);
 					if (match) return name;
 				},

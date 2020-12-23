@@ -24,9 +24,10 @@ export default class CustomCommand extends BaseCommand {
 			aliases: ["customcommand", "cmd", "com"],
 			about: "Manages commands.",
 			description: oneLine`
-			This command also allows you to add, edit, and delete custom commands.`,
+			This command also allows you to list, add, edit, and delete custom commands.`,
 			usage: `<add|edit|delete> <command ID> <content> "[description]"`,
 			examples: stripIndent`
+			\`{{prefix}}{{id}} list\`
 			\`{{prefix}}{{id}} add newcommand This is a test message.\`
 			\`{{prefix}}{{id}} edit newcommand We've edited the message! "New description!"\`
 			\`{{prefix}}{{id}} delete newcommand\``,

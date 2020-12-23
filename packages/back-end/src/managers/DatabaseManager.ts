@@ -8,7 +8,6 @@ import Group from "./database/entities/Group";
 import { SnowflakeUtil } from "discord.js";
 import FramedClient from "../structures/FramedClient";
 import Plugin from "./database/entities/Plugin";
-import FramedMessage from "../structures/FramedMessage";
 import { ResponseData } from "./database/interfaces/ResponseData";
 import { PrefixResolvable } from "./database/types/PrefixResolvable";
 
@@ -88,6 +87,7 @@ export default class DatabaseManager {
 	}
 
 	//#region Install
+
 	/**
 	 * Checks whether or not Framed has been initialized before,
 	 * by checking if the default prefix exists.
@@ -99,13 +99,10 @@ export default class DatabaseManager {
 		if (!connection)
 			throw new ReferenceError(DatabaseManager.errorNoConnection);
 
-		const defaultPrefix = await this.prefixRepo?.findOne({
-			where: {
-				id: "default",
-			},
-		});
+		const defaultPrefix = await this.getDefaultPrefix();
+		const defaultGroup = await this.getDefaultGroup();
 
-		return defaultPrefix == undefined;
+		return defaultPrefix == undefined || defaultGroup == undefined;
 	}
 
 	/**
@@ -545,13 +542,13 @@ export default class DatabaseManager {
 	 */
 	async getDefaultGroup(
 		relations: TypeORM.FindOptionsRelationKeyName<Group>[] = []
-	): Promise<Group> {
+	): Promise<Group | undefined> {
 		const connection = this.connection;
 		if (!connection) {
 			throw new Error(DatabaseManager.errorNoConnection);
 		}
 		const groupRepo = connection.getRepository(Group);
-		return groupRepo.findOneOrFail({
+		return groupRepo.findOne({
 			where: {
 				id: "default",
 			},
@@ -648,6 +645,16 @@ export default class DatabaseManager {
 			const commandRepo = connection.getRepository(Command);
 			const group = await this.findGroup(nameOrId, ["commands"]);
 			const defaultGroup = await this.getDefaultGroup();
+
+			if (!defaultGroup) {
+				throw new ReferenceError(
+					Utils.util.format(
+						DatabaseManager.errorNotFound,
+						"group",
+						"default"
+					)
+				);
+			}
 
 			if (group) {
 				if (group.id == "default") {
@@ -796,7 +803,7 @@ export default class DatabaseManager {
 			}
 		}
 
-		await Promise.allSettled(installs);	
+		await Promise.allSettled(installs);
 
 		// Handles post installs for all plugins
 		for (const plugin of this.framedClient.pluginManager.pluginsArray) {

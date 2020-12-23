@@ -65,7 +65,7 @@ export default class extends BaseCommand {
 		newArgs: string[],
 		command: BaseCommand
 	): Promise<Discord.MessageEmbed | undefined> {
-		const embed = await Help.processEmbedForHelp(msg, id, newArgs, command);
+		const embed = await Help.generateEmbedForHelp(msg, id, newArgs, command);
 
 		if (!msg.discord || !embed) return undefined;
 

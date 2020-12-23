@@ -53,7 +53,7 @@ export default class Help extends BaseCommand {
 						msg.args,
 						msg,
 						this.id,
-						Help.processEmbedForHelp
+						Help.generateEmbedForHelp
 					);
 					for await (const embed of embeds) {
 						await msg.discord.channel.send(embed);
@@ -196,7 +196,7 @@ export default class Help extends BaseCommand {
 	 * @param newArgs Message arguments
 	 * @param command BaseCommand
 	 */
-	static async processEmbedForHelp(
+	static async generateEmbedForHelp(
 		msg: FramedMessage,
 		id: string,
 		newArgs: string[],

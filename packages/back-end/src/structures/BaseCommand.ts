@@ -50,6 +50,11 @@ export abstract class BaseCommand {
 	subcommands: Map<string, BaseSubcommand>;
 
 	/**
+	 * Subcommands aliases
+	 */
+	subcommandAliases: Map<string, BaseSubcommand>;
+
+	/**
 	 * Stores a list of command aliases possible to trigger the command.
 	 */
 	aliases?: string[];
@@ -195,11 +200,12 @@ export abstract class BaseCommand {
 
 		this.rawInfo = info;
 		this.subcommands = new Map();
+		this.subcommandAliases = new Map();
 	}
 
 	/**
 	 * Parses custom {{}} formatting
-	 * @param arg 
+	 * @param arg
 	 */
 	parseBasicFormatting(arg?: string): string | undefined {
 		if (arg) {
@@ -460,12 +466,27 @@ export abstract class BaseCommand {
 	 * @param subcommand
 	 */
 	loadSubcommand<T extends BaseSubcommand>(subcommand: T): void {
+		// Sets up the subcommand into the Map
 		if (this.subcommands.get(subcommand.id)) {
 			logger.error(`Subcommand with id ${subcommand.id} already exists!`);
 			return;
 		}
 		this.subcommands.set(subcommand.id, subcommand);
+
+		// Note that this normally is async. Should that be changed?
 		subcommand.parseCustomFormatting();
+
+		if (subcommand.aliases) {
+			for (const alias of subcommand.aliases) {
+				if (this.subcommandAliases.get(alias)) {
+					logger.error(
+						`Alias "${alias}" from subcommand "${subcommand.fullId}" already exists!`
+					);
+					continue;
+				}
+				this.subcommandAliases.set(alias, subcommand);
+			}
+		}
 
 		logger.debug(`Finished loading subcommand ${subcommand.id}.`);
 	}
@@ -488,17 +509,8 @@ export abstract class BaseCommand {
 		let newSubcommand: BaseSubcommand | undefined;
 
 		for (let i = 0; i < maxSubcommandNesting + 1; i++) {
-			let subcommand = command.subcommands.get(args[i]);
-
-			// If it can't be found, check the all of the command's
-			// subcommand aliases
-			if (!subcommand) {
-				command.subcommands.forEach(element => {
-					if (element.aliases?.includes(args[i])) {
-						subcommand = element;
-					}
-				});
-			}
+			const commandToCompare = newSubcommand ? newSubcommand : command;
+			const subcommand = commandToCompare.subcommandAliases.get(args[i]);
 
 			if (subcommand) {
 				// If it hit max and isn't done
@@ -531,7 +543,7 @@ export abstract class BaseCommand {
 	 * Gets the subcommand to run from command arguments.
 	 *
 	 * @param args Message arguments
-	 * 
+	 *
 	 * @returns Subcommand or undefined
 	 */
 	getSubcommand(args: string[]): BaseSubcommand | undefined {
@@ -550,12 +562,15 @@ export abstract class BaseCommand {
 	): BaseSubcommand[] {
 		const maxSubcommandNesting = 3;
 		const subcommands: BaseSubcommand[] = [];
+
 		let finalSubcommand: BaseSubcommand | undefined;
+		let newSubcommand: BaseSubcommand | undefined;
 
 		for (let i = 0; i < maxSubcommandNesting + 1; i++) {
-			const element = command.subcommands.get(args[i]);
+			const commandToCompare = newSubcommand ? newSubcommand : command;
+			const subcommand = commandToCompare.subcommandAliases.get(args[i]);
 
-			if (element) {
+			if (subcommand) {
 				// If it hit max and isn't done
 				if (i == maxSubcommandNesting) {
 					logger.error(oneLine`
@@ -565,7 +580,8 @@ export abstract class BaseCommand {
 				}
 
 				// Else, simply add the new subcommand to our list
-				subcommands.push(element);
+				subcommands.push(subcommand);
+				newSubcommand = subcommand;
 			} else {
 				// There are no new subcommand, so we return the array
 				return subcommands;
