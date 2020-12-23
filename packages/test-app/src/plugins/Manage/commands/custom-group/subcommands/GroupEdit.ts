@@ -14,7 +14,7 @@ export default class extends BaseSubcommand {
 			id: "edit",
 			aliases: ["change", "rename"],
 			about: "Edits a custom group.",
-			usage: `"<group>" "<emote + group name>"`,
+			usage: `"<old group>" "<[emote] new group>"`,
 			examples: oneLine`
 			\`{{prefix}}{{id}} edit "Food Stuff" "🍏 Food"\``,
 		});
@@ -30,7 +30,7 @@ export default class extends BaseSubcommand {
 		}
 
 		if (msg.args) {
-			const argsContent = msg.getArgsContent([this.id]);
+			const argsContent = msg.getArgsContent([msg.args[0]]);
 			const parse = FramedMessage.getArgs(argsContent, {
 				quoteSections: QuoteSections.Flexible,
 			});

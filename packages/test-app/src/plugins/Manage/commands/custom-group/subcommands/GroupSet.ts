@@ -29,7 +29,7 @@ export default class extends BaseSubcommand {
 		}
 
 		if (msg.args) {
-			const argsContent = msg.getArgsContent([this.id]);
+			const argsContent = msg.getArgsContent([msg.args[0]]);
 			const parse = FramedMessage.getArgs(argsContent, {
 				quoteSections: QuoteSections.Flexible,
 			});

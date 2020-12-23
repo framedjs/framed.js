@@ -13,7 +13,7 @@ export default class extends BaseSubcommand {
 			id: "add",
 			aliases: ["a", "create", "cr"],
 			about: "Adds a custom group.",
-			usage: `"<emote + group name>"`,
+			usage: `"<[emote] group>"`,
 			examples: oneLine`
 			\`{{prefix}}group {{id}} "🍎 Food Stuff"\``,
 		});
@@ -29,7 +29,7 @@ export default class extends BaseSubcommand {
 		}
 
 		if (msg.args) {
-			const parse = FramedMessage.parseEmojiAndString(msg, [this.id]);
+			const parse = FramedMessage.parseEmojiAndString(msg, [msg.args[0]]);
 			if (parse) {
 				const { newContent, newEmote } = parse;
 				try {
