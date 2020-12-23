@@ -1,5 +1,5 @@
 import { FramedMessage, BasePlugin, BaseCommand, EmbedHelper } from "back-end";
-import EscapeMarkdown from "./EscapeMarkdown";
+import Raw from "./Raw";
 import Discord from "discord.js";
 import { logger } from "shared";
 import * as ShortenURL from "../utils/ShortenURL";
@@ -8,16 +8,20 @@ import { stripIndent } from "common-tags";
 export default class DiscohookEmbed extends BaseCommand {
 	constructor(plugin: BasePlugin) {
 		super(plugin, {
-			id: "discohook",
-			aliases: ["discohookembed"],
-			about: "Creates JSON data usable in Discohook.",
+			id: "embed",
+			aliases: ["discohook", "discohookembed"],
+			about: "Converts a Discord embed into Discohook.",
 			usage: "[id|link|content]",
 		});
 	}
 
 	async run(msg: FramedMessage): Promise<boolean> {
+		if (!this.hasPermission(msg)) {
+			this.sendPermissionErrorMessage(msg);
+		}
+
 		if (msg.discord) {
-			const parse = await EscapeMarkdown.getNewMessage(msg);
+			const parse = await Raw.getNewMessage(msg);
 			const longLink = await DiscohookEmbed.getLink(
 				msg,
 				parse?.newContent,
@@ -108,7 +112,7 @@ export default class DiscohookEmbed extends BaseCommand {
 
 			// Makes TypeScript get less complaints with changing parameters
 			const secondPassJson = JSON.parse(
-				JSON.stringify(firstPassMessage, EscapeMarkdown.removeNulls, 0)
+				JSON.stringify(firstPassMessage, Raw.removeNulls, 0)
 			);
 
 			if (secondPassJson.messages[0].data.embeds) {
@@ -131,7 +135,7 @@ export default class DiscohookEmbed extends BaseCommand {
 			}
 
 			const thirdPassJson = JSON.parse(
-				JSON.stringify(secondPassJson, EscapeMarkdown.removeNulls, 0)
+				JSON.stringify(secondPassJson, Raw.removeNulls, 0)
 			);
 
 			// Make content null

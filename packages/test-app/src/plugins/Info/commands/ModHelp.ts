@@ -20,7 +20,7 @@ const data: HelpData[] = [
 	},
 	{
 		group: "Utilities",
-		commands: ["embed", "discohook", "escapemd"],
+		commands: ["embed", "render", "raw"],
 	},
 	{
 		group: "Dailies",
@@ -60,13 +60,6 @@ export default class extends BaseCommand {
 						`
 				)
 				.addFields(helpFields);
-
-			// embed.setFooter(
-			// 	`${
-			// 		embed.footer?.text ? embed.footer.text : ""
-			// 	}\nUse .help <command> to see more info.`,
-			// 	embed.footer?.iconURL
-			// );
 
 			try {
 				await msg.discord.channel.send(embed);

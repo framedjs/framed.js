@@ -4,11 +4,11 @@ import { oneLine, stripIndent } from "common-tags";
 import Discord from "discord.js";
 import { logger } from "shared";
 
-export default class EscapeMarkdown extends BaseCommand {
+export default class Raw extends BaseCommand {
 	constructor(plugin: BasePlugin) {
 		super(plugin, {
-			id: "escapemd",
-			aliases: ["escapemarkdown", "markdown", "md"],
+			id: "raw",
+			aliases: ["escapemd", "escapemarkdown", "markdown", "md"],
 			about: "Escapes all markdown in a message.",
 			description: oneLine`
 			Escapes all markdown in a message, including code blocks,
@@ -16,8 +16,8 @@ export default class EscapeMarkdown extends BaseCommand {
 			This allows the message to be copy and pastable.`,
 			usage: "[id|link|content]",
 			examples: stripIndent`
-			\`{{prefix}}escapemd\`
-			\`{{prefix}}escapemd This ~~is~~ a **test**!\``,
+			\`{{prefix}}{{id}}\`
+			\`{{prefix}}{{id}} This ~~is~~ a **test**!\``,
 			permissions: {
 				discord: {
 					roles: ["462342299171684364", "758771336289583125"],
@@ -35,8 +35,8 @@ export default class EscapeMarkdown extends BaseCommand {
 		}
 
 		if (msg.discord?.guild && msg.args) {
-			const parse = await EscapeMarkdown.getNewMessage(msg, true);
-			return await EscapeMarkdown.showStrippedMessage(
+			const parse = await Raw.getNewMessage(msg, true);
+			return await Raw.showStrippedMessage(
 				msg,
 				parse?.newContent,
 				parse?.newMsg
@@ -77,7 +77,7 @@ export default class EscapeMarkdown extends BaseCommand {
 					"0000000000000000000000000000000000000000000000000000000000000000" &&
 				/^\d+$/.test(content);
 			if (validSnowflake) {
-				snowflakeMsg = await EscapeMarkdown.getMessageFromSnowflake(
+				snowflakeMsg = await Raw.getMessageFromSnowflake(
 					content,
 					Array.from(msg.discord.client.channels.cache.values()),
 					msg.discord.channel
@@ -87,7 +87,7 @@ export default class EscapeMarkdown extends BaseCommand {
 			// Link logic
 			let linkMsg: Discord.Message | string | undefined;
 			if (!snowflakeMsg) {
-				linkMsg = await EscapeMarkdown.getMessageFromLink(
+				linkMsg = await Raw.getMessageFromLink(
 					content,
 					msg.discord.client,
 					msg.discord.author,
@@ -221,7 +221,7 @@ export default class EscapeMarkdown extends BaseCommand {
 					await msg.discord.channel.send(
 						`\`\`\`${JSON.stringify(
 							embed.toJSON(),
-							EscapeMarkdown.removeNulls,
+							Raw.removeNulls,
 							2
 						)}\`\`\``
 					);
