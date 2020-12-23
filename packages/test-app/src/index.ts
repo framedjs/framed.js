@@ -28,7 +28,7 @@ const framedClient = new FramedClient({
 		logging: true,
 		entities: [DatabaseManager.defaultEntitiesPath],
 	},
-	defaultPrefix: "/",
+	defaultPrefix: process.env.DEFAULT_PREFIX ? process.env.DEFAULT_PREFIX : "/",
 	appVersion: version,
 });
 
