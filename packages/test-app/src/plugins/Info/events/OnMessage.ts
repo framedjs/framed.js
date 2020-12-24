@@ -28,8 +28,6 @@ export default class extends BaseEvent {
 			} catch (error) {
 				logger.error(error.stack);
 			}
-
-			logger.warn("Finished");
 		}
 	}
 }
