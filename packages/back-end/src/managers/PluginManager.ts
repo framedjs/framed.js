@@ -154,7 +154,6 @@ export default class PluginManager {
 	get defaultPrefixes(): string[] {
 		const prefixes: string[] = [
 			this.framedClient.defaultPrefix,
-			`${this.framedClient.client.user}`,
 			`<@!${this.framedClient.client.user?.id}>`,
 		];
 
@@ -327,9 +326,12 @@ export default class PluginManager {
 			// Runs the commands
 			const commandList = this.getCommands(msg);
 			for await (const command of commandList) {
-				// Gets the base command's prefixes, and see if they match.
+				// Gets the base command's prefixes or default prefixes, and see if they match.
 				// Subcommands are not allowed to declare new prefixes.
-				if (command.prefixes.includes(msg.prefix)) {
+				if (
+					command.prefixes.includes(msg.prefix) ||
+					this.defaultPrefixes.includes(msg.prefix)
+				) {
 					try {
 						// Checks for subcommands
 						if (msg.args) {
