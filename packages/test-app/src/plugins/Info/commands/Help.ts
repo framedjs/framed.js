@@ -86,7 +86,7 @@ export default class Help extends BaseCommand {
 					await FramedMessage.parseCustomFormatting(
 						stripIndent`
 						For more info about this bot, use the \`$(command about)\` command.
-						For more info on certain commands, use \`$(command help) dailies\` (or a different command)!
+						For more info on certain commands, use \`$(command help) streaks\` (or a different command)!
 						`,
 						this.framedClient
 					)
