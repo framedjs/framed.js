@@ -4,7 +4,7 @@ import fs from "fs";
 import path from "path";
 let version: string | undefined;
 
-logger.level = "silly";
+logger.level = process.env.LOGGER_LEVEL ? process.env.LOGGER_LEVEL : "silly";
 
 logger.info("Starting Test App");
 
@@ -28,7 +28,9 @@ const framedClient = new FramedClient({
 		logging: true,
 		entities: [DatabaseManager.defaultEntitiesPath],
 	},
-	defaultPrefix: process.env.DEFAULT_PREFIX ? process.env.DEFAULT_PREFIX : "/",
+	defaultPrefix: process.env.DEFAULT_PREFIX
+		? process.env.DEFAULT_PREFIX
+		: "/",
 	appVersion: version,
 });
 
