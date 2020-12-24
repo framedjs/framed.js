@@ -71,10 +71,10 @@ export default class DatabaseManager {
 		this.groupRepo = this.connection.getRepository(Group);
 		this.pluginRepo = this.connection.getRepository(Plugin);
 
-		const freshInstalled = await this.checkFreshInstall();
+		const needsInstall = await this.checkNeedsInstall();
 
 		// Generates default prefix, if none existed before
-		if (freshInstalled) {
+		if (needsInstall) {
 			try {
 				await this.installDefaults();
 			} catch (error) {
@@ -89,28 +89,35 @@ export default class DatabaseManager {
 	//#region Install
 
 	/**
-	 * Checks whether or not Framed has been initialized before,
-	 * by checking if the default prefix exists.
+	 * Checks whether or not Framed needs an install.
 	 *
 	 * @returns Returns `true` if the database is fresh
 	 */
-	async checkFreshInstall(): Promise<boolean> {
+	async checkNeedsInstall(): Promise<boolean> {
 		const connection = this.connection;
 		if (!connection)
 			throw new ReferenceError(DatabaseManager.errorNoConnection);
 
+		// Gets defaults
 		const defaultPrefix = await this.getDefaultPrefix();
 		const defaultGroup = await this.getDefaultGroup();
 
-		return defaultPrefix == undefined || defaultGroup == undefined;
+		// Figures out if defaults are ready to be used
+		const prefixReady =
+			defaultPrefix &&
+			defaultPrefix.prefix == this.framedClient.defaultPrefix;
+		const groupReady = defaultGroup;
+
+		// Will return true if everything is not ready
+		return !(prefixReady && groupReady);
 	}
 
 	/**
 	 * Starts installing default entries in the database.
 	 */
 	async installDefaults(): Promise<void> {
-		await this.addGroup("Other", "❔", "default");
-		await this.addPrefix(this.framedClient.defaultPrefix, "default");
+		await this.addGroup("Other", "❔", "default", true);
+		await this.addPrefix(this.framedClient.defaultPrefix, "default", true);
 	}
 
 	/**
@@ -139,7 +146,8 @@ export default class DatabaseManager {
 	 */
 	async addPrefix(
 		prefix: string,
-		id = SnowflakeUtil.generate()
+		id = SnowflakeUtil.generate(),
+		bypassAlreadyExists = false
 	): Promise<Prefix> {
 		const connection = this.connection;
 		if (!connection) {
@@ -147,25 +155,41 @@ export default class DatabaseManager {
 		}
 
 		const prefixRepo = connection.getRepository(Prefix);
-		const newPrefix = prefixRepo.create({
-			id: id,
-			prefix: prefix,
-		});
-		return await prefixRepo.save(newPrefix);
+
+		// Checks if the group already exists, and will throw an error if so
+		// and the setting to bypass this is set to false
+		if (!bypassAlreadyExists) {
+			if (await prefixRepo.findOne({ where: { id: id } })) {
+				throw new ReferenceError(
+					Utils.util.format(
+						DatabaseManager.errorAlreadyExists,
+						"prefix",
+						id
+					)
+				);
+			}
+		}
+
+		return await prefixRepo.save(
+			prefixRepo.create({
+				id: id,
+				prefix: prefix,
+			})
+		);
 	}
 
 	/**
 	 * Get the default prefix
 	 */
 	async getDefaultPrefix(
-		relations: TypeORM.FindOptionsRelationKeyName<Prefix>[] = []
-	): Promise<Prefix> {
+		relations: TypeORM.FindOptionsRelationKeyName<Prefix>[] = [],
+	): Promise<Prefix | undefined> {
 		const connection = this.connection;
 		if (!connection) {
 			throw new Error(DatabaseManager.errorNoConnection);
 		}
 		const prefixRepo = connection.getRepository(Prefix);
-		return prefixRepo.findOneOrFail({
+		return await prefixRepo.findOne({
 			where: {
 				id: "default",
 			},
@@ -568,13 +592,16 @@ export default class DatabaseManager {
 		bypassAlreadyExists = false
 	): Promise<Group> {
 		const connection = this.connection;
-		if (connection) {
-			const groupRepo = connection.getRepository(Group);
+		if (!connection) {
+			throw new ReferenceError(DatabaseManager.errorNoConnection);
+		}
 
-			if (
-				(await groupRepo.findOne({ where: { id: id } })) &&
-				!bypassAlreadyExists
-			) {
+		const groupRepo = connection.getRepository(Group);
+
+		// Checks if the group already exists, and will throw an error if so
+		// and the setting to bypass this is set to false
+		if (!bypassAlreadyExists) {
+			if (await groupRepo.findOne({ where: { id: id } })) {
 				throw new ReferenceError(
 					Utils.util.format(
 						DatabaseManager.errorAlreadyExists,
@@ -583,17 +610,15 @@ export default class DatabaseManager {
 					)
 				);
 			}
-
-			return await groupRepo.save(
-				groupRepo.create({
-					id: id,
-					name: name,
-					emote: emote,
-				})
-			);
-		} else {
-			throw new ReferenceError(DatabaseManager.errorNoConnection);
 		}
+
+		return await groupRepo.save(
+			groupRepo.create({
+				id: id,
+				name: name,
+				emote: emote,
+			})
+		);
 	}
 
 	/**
@@ -728,14 +753,13 @@ export default class DatabaseManager {
 			const groupRepo = connection.getRepository(Group);
 			const commandRepo = connection.getRepository(Command);
 			const group = await this.findGroup(nameOrId);
-			const command = await this.findCommand(
-				commandName,
-				commandPrefix
-					? commandPrefix
-					: (await this.getDefaultPrefix()).prefix
-			);
+			const prefix = await this.getDefaultPrefix();
 
-			if (group) {
+			if (group && prefix) {
+				const command = await this.findCommand(
+					commandName,
+					commandPrefix ? commandPrefix : prefix.prefix
+				);
 				if (command) {
 					const commands: Command[] = [];
 					if (group.commands) {
@@ -753,9 +777,15 @@ export default class DatabaseManager {
 					);
 				}
 			} else {
-				throw new ReferenceError(
-					`Couldn't find group with name "${nameOrId}"`
-				);
+				if (!prefix) {
+					throw new ReferenceError(`Couldn't find default prefix!`);
+				} else if (!group) {
+					throw new ReferenceError(
+						`Couldn't find group with name "${nameOrId}"`
+					);
+				} else {
+					throw new Error();
+				}
 			}
 		} else {
 			throw new ReferenceError(DatabaseManager.errorNoConnection);
