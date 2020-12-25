@@ -35,10 +35,12 @@ export default class extends BaseSubcommand {
 			);
 			if (parse) {
 				const { newCommandId, newArgs } = parse;
-				await this.addCommand(newCommandId, newArgs, msg);
-				return true;
+				return (
+					(await this.addCommand(newCommandId, newArgs, msg)) !=
+					undefined
+				);
 			}
-		} 
+		}
 
 		await PluginManager.showHelpForCommand(msg);
 		return false;
@@ -112,7 +114,7 @@ export default class extends BaseSubcommand {
 				response: response,
 				group: defaultGroup,
 				defaultPrefix: prefix,
-				prefixes: [prefix]
+				prefixes: [prefix],
 			});
 
 			command = await commandRepo.save(command);
@@ -125,6 +127,7 @@ export default class extends BaseSubcommand {
 				logger.error(`Failed to delete response\n${error.stack}`);
 			}
 			logger.error(`Failed to add command\n${error.stack}`);
+			return undefined;
 		}
 
 		// If the command was valid, and (probably) didn't error out
@@ -135,5 +138,6 @@ export default class extends BaseSubcommand {
 				);
 			}
 		}
+		return command;
 	}
 }

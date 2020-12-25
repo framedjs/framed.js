@@ -35,8 +35,10 @@ export default class extends BaseSubcommand {
 			);
 			if (parse) {
 				const { newCommandId, newArgs } = parse;
-				await this.editCommand(newCommandId, newArgs, msg);
-				return true;
+				return (
+					(await this.editCommand(newCommandId, newArgs, msg)) !=
+					undefined
+				);
 			}
 		}
 

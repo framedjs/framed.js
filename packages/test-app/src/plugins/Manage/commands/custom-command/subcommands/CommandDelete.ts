@@ -31,8 +31,9 @@ export default class extends BaseSubcommand {
 			);
 			if (parse) {
 				const { newCommandId } = parse;
-				await this.deleteCommand(newCommandId, msg);
-				return true;
+				return (
+					(await this.deleteCommand(newCommandId, msg)) != undefined
+				);
 			}
 		}
 
@@ -111,6 +112,7 @@ export default class extends BaseSubcommand {
 				} catch (error) {
 					// Outputs error
 					logger.error(`${error.stack}`);
+					return undefined;
 				}
 
 				// If the command was valid, and (probably) didn't error out

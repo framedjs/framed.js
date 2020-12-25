@@ -25,7 +25,7 @@ const framedClient = new FramedClient({
 		database: "./data/FramedDB.sqlite",
 		synchronize: true,
 		dropSchema: false,
-		logging: true,
+		logging: false,
 		entities: [DatabaseManager.defaultEntitiesPath],
 	},
 	defaultPrefix: process.env.DEFAULT_PREFIX

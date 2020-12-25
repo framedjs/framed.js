@@ -56,6 +56,7 @@ export default class extends BaseSubcommand {
 					} else {
 						logger.error(error);
 					}
+					return false;
 				}
 			} else {
 				await PluginManager.showHelpForCommand(msg);

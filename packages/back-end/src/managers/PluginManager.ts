@@ -317,7 +317,9 @@ export default class PluginManager {
 	 * Runs a command, based on the FramedMessage parameters
 	 * @param msg FramedMessage object
 	 */
-	async runCommand(msg: FramedMessage): Promise<void> {
+	async runCommand(msg: FramedMessage): Promise<Map<string, boolean>> {
+		const map = new Map<string, boolean>();
+
 		if (msg.command && msg.prefix) {
 			logger.debug(
 				`PluginManager.ts: runCommand() - ${msg.prefix}${msg.command}`
@@ -339,16 +341,19 @@ export default class PluginManager {
 
 							// If there was a final subcommand, run it
 							if (subcommand) {
-								await subcommand.run(msg);
+								const success = await subcommand.run(msg);
+								map.set(subcommand.fullId, success);
 							} else {
-								await command.run(msg);
+								const success = await command.run(msg);
+								map.set(command.fullId, success);
 							}
 						} else {
 							// Safety
 							logger.warn(
 								"msg.args was undefined! Attempting to run command anyways."
 							);
-							await command.run(msg);
+							const success = await command.run(msg);
+							map.set(command.fullId, success);
 						}
 					} catch (error) {
 						logger.error(error.stack);
@@ -365,9 +370,12 @@ export default class PluginManager {
 			);
 
 			if (dbCommand) {
-				await this.sendCommandFromDB(dbCommand, msg);
+				const success = await this.sendCommandFromDB(dbCommand, msg);
+				map.set(dbCommand.id, success);
 			}
 		}
+
+		return map;
 	}
 
 	/**
@@ -379,7 +387,7 @@ export default class PluginManager {
 	async sendCommandFromDB(
 		dbCommand: Command,
 		msg: FramedMessage
-	): Promise<void> {
+	): Promise<boolean> {
 		const responseData = dbCommand.response.responseData;
 		if (responseData) {
 			for await (const data of responseData.list) {
@@ -393,12 +401,14 @@ export default class PluginManager {
 				} else {
 					await msg.discord?.channel.send(data.content);
 				}
+				return true;
 			}
 		} else {
 			logger.error(
 				`PluginManager.ts: tried to output the response data, but there was none!`
 			);
 		}
+		return false;
 	}
 
 	/**

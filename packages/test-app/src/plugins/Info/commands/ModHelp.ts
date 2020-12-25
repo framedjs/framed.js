@@ -20,7 +20,7 @@ const data: HelpData[] = [
 	},
 	{
 		group: "Utilities",
-		commands: ["embed", "render", "raw"],
+		commands: ["embed", "render", "raw", "multi"],
 	},
 	{
 		group: "Dailies",

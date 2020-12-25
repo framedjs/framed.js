@@ -164,9 +164,16 @@ export default class FramedMessage {
 	 * Gets the command of the message.
 	 */
 	private getCommand(): string | undefined {
-		return this.prefix && this.args
-			? this.args.shift()?.toLocaleLowerCase()
-			: undefined;
+		// Gets the first arg from args, and sets it to all lowercase
+		let command = this.args?.shift()?.toLocaleLowerCase();
+
+		// Normally, args don't split on \n so we do that here
+		if (command) {
+			command = command.split("\n")[0];
+		}
+
+		// If there was a prefix, and there was args, we can 
+		return this.prefix && this.args ? command : undefined;
 	}
 
 	/**
@@ -176,7 +183,7 @@ export default class FramedMessage {
 	 * would return the following arguments:
 	 *
 	 * ```ts
-	 * ["test", "woah spaces", "that", "is", 2, "cool", "aaa"]
+	 * ["test", "woah spaces", "that", "is", "2", "cool", "aaa"]
 	 * ```
 	 */
 	private getArgs(): string[] | undefined {
@@ -549,10 +556,14 @@ export default class FramedMessage {
 								const clone = [...formatArgs];
 								clone.shift();
 
-								let baseSubcommands: BaseSubcommand[] | undefined;
+								let baseSubcommands:
+									| BaseSubcommand[]
+									| undefined;
 
 								if (clone.length > 0) {
-									baseSubcommands = baseCommand.getSubcommandChain(clone);
+									baseSubcommands = baseCommand.getSubcommandChain(
+										clone
+									);
 								} else {
 									// TODO
 									// baseSubcommand = framedClient.pluginManager.getSubcommand(command);
@@ -564,7 +575,7 @@ export default class FramedMessage {
 
 								let list = "";
 								baseSubcommands.forEach(baseSubcommand => {
-									list += `${baseSubcommand.id} `
+									list += `${baseSubcommand.id} `;
 								});
 								list = list.trim();
 

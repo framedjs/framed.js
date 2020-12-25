@@ -31,12 +31,13 @@ export default class Help extends BaseCommand {
 			aliases: ["h", "commands"],
 			about: "View help for certain commands and extra info.",
 			description: stripIndent`
-				Shows a list of useful commands, or detail specific commands for you.
+			Shows a list of useful commands, or detail specific commands for you.
 			`,
 			usage: "[command]",
 			examples: stripIndent`
-				\`{{prefix}}{{id}}\`
-				\`{{prefix}}{{id}} poll\`
+			\`{{prefix}}{{id}}\`
+			\`{{prefix}}{{id}} poll\`
+			\`{{prefix}}{{id}} dailies\`
 			`,
 			inline: true,
 		});
@@ -59,6 +60,7 @@ export default class Help extends BaseCommand {
 						await msg.discord.channel.send(embed);
 					}
 				}
+				return true;
 			} else {
 				return this.showHelpAll(msg);
 			}
