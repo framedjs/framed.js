@@ -174,25 +174,6 @@ export default class FramedClient extends EventEmitter {
 						logger.info(`Generated bot invite link: ${link}`)
 					)
 					.catch(logger.error);
-
-				this.client.user
-					?.setPresence({
-						activity: {
-							name: `${this.defaultPrefix}help | Maintaining Streaks`,
-						},
-					})
-					// .then(a => logger.debug(util.inspect(a)))
-					.catch(logger.error);
-
-				// this.client.user
-				// 	?.setPresence({
-				// 		activity: {
-				// 			name: `${this.defaultPrefix}help | Maintaining Streaks`,
-				// 			type: "CUSTOM_STATUS",
-				// 		},
-				// 	})
-				// 	.then(a => logger.debug(util.inspect(a)))
-				// 	.catch(logger.error);
 			} catch (error) {
 				logger.error(error.stack);
 			}
@@ -208,6 +189,14 @@ export default class FramedClient extends EventEmitter {
 			});
 			this.processMsg(msg);
 		});
+
+		this.client.on("warn", warning => {
+			logger.warn(`Discord.js: ${warning}`);
+		})
+
+		this.client.on("error", error => {
+			logger.error(`Discord.js: ${error}`);
+		})
 
 		this.client.on("rateLimit", info => {
 			// logger.warn(`We're being rate-limited! ${util.inspect(info)}`);

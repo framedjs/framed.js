@@ -5,7 +5,11 @@ import Discord from "discord.js";
 export default class extends BaseEvent {
 	constructor(plugin: BasePlugin) {
 		super(plugin, {
-			name: "message",
+			id: "helpMessage",
+			discord: {
+				client: plugin.framedClient.client,
+				name: "message",
+			},
 		});
 	}
 

@@ -12,8 +12,6 @@ import Discord from "discord.js";
 import DatabaseManager from "./DatabaseManager";
 import { oneLineInlineLists } from "common-tags";
 import * as TypeORM from "typeorm";
-import { BaseSubcommand } from "../structures/BaseSubcommand";
-import { PluginResolvable } from "./database/types/PluginResolvable";
 
 export interface HelpGroup {
 	group: string;
@@ -142,7 +140,7 @@ export default class PluginManager {
 	get eventsArray(): BaseEvent[] {
 		const events: BaseEvent[] = [];
 		this.plugins.forEach(plugin => {
-			events.push(...plugin.events);
+			events.push(...Array.from(plugin.events.values()));
 		});
 		return events;
 	}

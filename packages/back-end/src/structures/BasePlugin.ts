@@ -54,11 +54,7 @@ export abstract class BasePlugin {
 
 	commands = new Map<string, BaseCommand>();
 	aliases = new Map<string, BaseCommand>();
-	/**
-	 * To get an event, put in its
-	 */
-	// events = new Map<string, BaseEvent>();
-	events: BaseEvent[] = [];
+	events = new Map<string, BaseEvent>();
 
 	constructor(framedClient: FramedClient, info: BasePluginOptions) {
 		this.framedClient = framedClient;
@@ -219,9 +215,24 @@ export abstract class BasePlugin {
 	 * @param event
 	 */
 	loadEvent<T extends BaseEvent>(event: T): void {
-		this.events.push(event);
-		this.framedClient.client.on(event.name, event.run.bind(event));
-		logger.verbose(`Finished loading event "${event.name}".`);
+		// Sets up some commands
+		if (this.events.get(event.id)) {
+			logger.error(`Event with ID "${event.id}" already exists!`);
+			return;
+		}
+		this.events.set(event.id, event);
+		
+		if (event.discord) {
+			this.framedClient.client.on(
+				event.discord.name,
+				event.run.bind(event)
+			);
+			logger.verbose(`Finished loading event "${event.discord.name}".`);
+		} else {
+			logger.warn(
+				`There was an imported event with no Discord event! Only Discord is supported currently`
+			);
+		}
 	}
 
 	//#endregion

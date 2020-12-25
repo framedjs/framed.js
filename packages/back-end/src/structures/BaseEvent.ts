@@ -1,14 +1,16 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { ClientEvents } from "discord.js";
 import { BaseEventOptions } from "../interfaces/BaseEventOptions";
 import { BasePlugin } from "./BasePlugin";
 import FramedClient from "./FramedClient";
+import { BaseEventDiscordOptions } from "../interfaces/BaseEventDiscordOptions";
 
 export abstract class BaseEvent {
 	public readonly framedClient: FramedClient;
-	public readonly plugin: BasePlugin
-	public readonly name: keyof ClientEvents;
+	public readonly plugin: BasePlugin;
+	public readonly discord: BaseEventDiscordOptions | undefined;
+
+	public readonly id: string;
 	public readonly description?: string;
 
 	/**
@@ -19,13 +21,10 @@ export abstract class BaseEvent {
 	constructor(plugin: BasePlugin, info: BaseEventOptions) {
 		this.framedClient = plugin.framedClient;
 		this.plugin = plugin;
-		this.name = info.name;
-		this.description = info.description;
+		this.discord = info.discord;		
 
-		// console.log("BaseEvent.ts: ");
-		// console.log(this.framedClient != undefined);
-		// console.log(plugin != undefined);
-		// console.log(plugin.framedClient != undefined);
+		this.id = `${this.plugin.id}.event.${info.id}`;
+		this.description = info.description;
 	}
 
 	/**

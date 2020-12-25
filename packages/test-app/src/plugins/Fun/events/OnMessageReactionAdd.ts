@@ -10,7 +10,11 @@ import Poll from "../commands/Poll";
 export default class extends BaseEvent {
 	constructor(plugin: BasePlugin) {
 		super(plugin, {
-			name: "messageReactionAdd",
+			id: "pollMessageReactionAdd",
+			discord: {
+				client: plugin.framedClient.client,
+				name: "messageReactionAdd",
+			},
 		});
 	}
 

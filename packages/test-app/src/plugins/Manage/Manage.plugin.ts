@@ -1,7 +1,7 @@
 import { BasePlugin, FramedClient } from "back-end";
 import path from "path";
 
-export default class extends BasePlugin {
+export default class Manage extends BasePlugin {
 	constructor(framedClient: FramedClient) {
 		super(framedClient, {
 			id: "default.bot.manage",
@@ -16,5 +16,4 @@ export default class extends BasePlugin {
 			groupName: "Manage",
 		});
 	}
-
 }

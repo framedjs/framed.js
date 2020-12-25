@@ -4,7 +4,11 @@ import Discord from "discord.js";
 export default class extends BaseEvent {
 	constructor(plugin: BasePlugin) {
 		super(plugin, {
-			name: "message",
+			id: "pollMessage",
+			discord: {
+				client: plugin.framedClient.client,
+				name: "message",
+			},
 		});
 	}
 
@@ -22,7 +26,7 @@ export default class extends BaseEvent {
 					framedClient: this.framedClient,
 					content: newContent,
 					discord: {
-						base: msg
+						base: msg,
 					},
 				})
 			);

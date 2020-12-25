@@ -1,13 +1,18 @@
-import { ClientEvents } from "discord.js";
+import { BaseEventDiscordOptions } from "./BaseEventDiscordOptions";
 
 /**
  * Used for BaseEvent.
  */
 export interface BaseEventOptions {
 	/**
-	 * Name of the client event.
+	 * Discord options
 	 */
-	name: keyof ClientEvents;
+	discord?: BaseEventDiscordOptions;
+
+	/**
+	 * ID to reference this event
+	 */
+	id: string;
 
 	/**
 	 * Description of what the event is about.

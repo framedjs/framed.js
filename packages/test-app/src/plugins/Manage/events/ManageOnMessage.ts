@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable no-irregular-whitespace */
 import Discord from "discord.js";
 import { BasePlugin, BaseEvent } from "back-end";
@@ -6,7 +7,11 @@ import { logger } from "shared";
 export default class extends BaseEvent {
 	constructor(plugin: BasePlugin) {
 		super(plugin, {
-			name: "message",
+			id: "manageMessage",
+			discord: {
+				client: plugin.framedClient.client,
+				name: "message",
+			},
 		});
 	}
 
