@@ -5,12 +5,13 @@ import { logger } from "shared";
 import * as ShortenURL from "../utils/ShortenURL";
 import { stripIndent } from "common-tags";
 
-export default class DiscohookEmbed extends BaseCommand {
+export default class Link extends BaseCommand {
 	constructor(plugin: BasePlugin) {
 		super(plugin, {
-			id: "embed",
-			aliases: ["discohook", "discohookembed"],
-			about: "Converts a Discord embed into Discohook.",
+			id: "link",
+			prefixes: [plugin.defaultPrefix, "d."],
+			aliases: ["discohook", "discohookembed", "embed"],
+			about: "Recreates a Discord message into Discohook.",
 			usage: "[id|link|content]",
 		});
 	}
@@ -22,7 +23,7 @@ export default class DiscohookEmbed extends BaseCommand {
 
 		if (msg.discord) {
 			const parse = await Raw.getNewMessage(msg);
-			const longLink = await DiscohookEmbed.getLink(
+			const longLink = await Link.getLink(
 				msg,
 				parse?.newContent,
 				parse?.newMsg
@@ -46,20 +47,9 @@ export default class DiscohookEmbed extends BaseCommand {
 						this.framedClient.helpCommands,
 						this.id
 					)
-						.setTitle("Discohook URL")
+						.setTitle("Message Link")
 						.setDescription(
-							stripIndent`
-							I've just recreated [this message](https://discord.com/channels/${
-								msg.discord.guild != null
-									? msg.discord.guild.id
-									: "@me"
-							}/${msg.discord.channel.id}/${
-								parse?.newMsg
-									? parse?.newMsg.id
-									: msg.discord.id
-							} "Discord Message") into Discohook for embed testing.
-							Click the shortened link to view: ${shortUrl}
-						`
+							`[${shortUrl}](${shortUrl} "Discord message recreated into Discohook")`
 						);
 
 					await msg.discord.channel.send(embed);

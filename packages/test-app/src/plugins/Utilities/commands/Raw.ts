@@ -1,5 +1,5 @@
 /* eslint-disable no-mixed-spaces-and-tabs */
-import { FramedMessage, BasePlugin, BaseCommand } from "back-end";
+import { FramedMessage, BasePlugin, BaseCommand, EmbedHelper } from "back-end";
 import { oneLine, stripIndent } from "common-tags";
 import Discord from "discord.js";
 import { logger } from "shared";
@@ -8,6 +8,7 @@ export default class Raw extends BaseCommand {
 	constructor(plugin: BasePlugin) {
 		super(plugin, {
 			id: "raw",
+			prefixes: [plugin.defaultPrefix, "d."],
 			aliases: ["escapemd", "escapemarkdown", "markdown", "md"],
 			about: "Escapes all markdown in a message.",
 			description: oneLine`
@@ -38,6 +39,7 @@ export default class Raw extends BaseCommand {
 			const parse = await Raw.getNewMessage(msg, true);
 			return await Raw.showStrippedMessage(
 				msg,
+				this.id,
 				parse?.newContent,
 				parse?.newMsg
 			);
@@ -55,17 +57,17 @@ export default class Raw extends BaseCommand {
 		msg: FramedMessage,
 		cleanUp?: boolean,
 		silent?: boolean
-	): Promise<{ newMsg?: Discord.Message; newContent?: string } | undefined> {
+	): Promise<
+		| {
+				newMsg: Discord.Message;
+				newContent: string;
+				newCleanContent: string;
+		  }
+		| undefined
+	> {
 		if (msg.discord?.guild && msg.args) {
 			// Grabs the argument of the thing
-			let content = msg.content;
-
-			if (msg.prefix) {
-				content = content.replace(msg.prefix, "");
-			}
-			if (msg.command) {
-				content = content.replace(msg.command, "");
-			}
+			let content = msg.getArgsContent();
 
 			content = content.trimLeft();
 
@@ -115,61 +117,48 @@ export default class Raw extends BaseCommand {
 			}
 
 			// Sends the output
-			let newMsg: Discord.Message | undefined;
-			let newContent: string | undefined;
+			let newMsg: Discord.Message;
+			let newContent: string;
 
 			if (validSnowflake) {
 				if (snowflakeMsg) {
-					if (cleanUp) {
-						newContent = `${Discord.Util.escapeMarkdown(
-							snowflakeMsg.content
-						)}`;
-					} else {
-						newContent = snowflakeMsg.content;
-					}
+					newContent = snowflakeMsg.content;
 					newMsg = snowflakeMsg;
 				} else {
-					if (!silent)
+					if (!silent) {
 						await msg.discord.channel.send(oneLine`
 					${msg.discord.author}, I think you inputted a message ID, but I couldn't retrieve it.
 					Try running \`${msg.prefix}${msg.command}\` again in the channel the message exists in,
 					or copy the message link and use that instead.`);
+					}
 					return undefined;
 				}
 			} else if (linkMsg) {
 				if (linkMsg instanceof Discord.Message) {
-					if (cleanUp) {
-						newContent = `${Discord.Util.escapeMarkdown(
-							linkMsg.content
-						)}`;
-					} else {
-						newContent = linkMsg.content;
-					}
+					newContent = linkMsg.content;
 					newMsg = linkMsg;
 				} else {
-					if (!silent)
+					if (!silent) {
 						await msg.discord.channel.send(
 							`${msg.discord.author}, ${linkMsg}`
 						);
+					}
 				}
 			} else if (content.length > 0) {
-				if (cleanUp)
-					newContent = `${Discord.Util.escapeMarkdown(content)}`;
-				else newContent = content;
+				newContent = `${Discord.Util.escapeMarkdown(content)}`;
+				newContent = content;
 			} else if (previousMsg) {
-				if (cleanUp) {
-					newContent = `${Discord.Util.escapeMarkdown(
-						previousMsg.content
-					)}`;
-				} else {
-					newContent = previousMsg.content;
-				}
+				newContent = previousMsg.content;
 				newMsg = previousMsg;
 			} else {
+				newContent = "";
 				if (!silent)
 					await msg.discord.channel.send(oneLine`
 					${msg.discord.author}, I'm unable to give you an escaped version of anything!`);
 				return undefined;
+			}
+
+			if (!cleanUp) {
 			}
 
 			// Returns the output
@@ -194,29 +183,36 @@ export default class Raw extends BaseCommand {
 	 */
 	static async showStrippedMessage(
 		msg: FramedMessage,
+		id: string,
 		newContent?: string,
 		newMsg?: Discord.Message,
 		silent?: boolean
 	): Promise<boolean> {
 		if (msg.discord) {
-			const successMessage = `${msg.discord.author}, here is your stripped markdown message:`;
-
-			let sentAnything = false;
+			const embed = EmbedHelper.getTemplate(
+				msg.discord,
+				msg.framedClient.helpCommands,
+				id
+			).setTitle("Raw Formatting");
 
 			// Handles contents
 			if (newContent && newContent?.length > 0) {
-				sentAnything = true;
-				await msg.discord.channel.send(successMessage);
+				const newContentNoCodeblock = Discord.Util.escapeCodeBlock(
+					newContent
+				);
+				if (newContent != newContentNoCodeblock) {
+					embed.setDescription(
+						"The message contains a codeblock, so it will be sent as a separate message."
+					);
+					await msg.discord.channel.send(embed);
+					await msg.discord.channel.send(newContent);
+				}
+
 				await msg.discord.channel.send(newContent);
 			}
 
 			// Handles messages that might have embeds
 			if (newMsg && newMsg.embeds.length > 0) {
-				if (!sentAnything) {
-					await msg.discord.channel.send(successMessage);
-					sentAnything = true;
-				}
-
 				for await (const embed of newMsg.embeds) {
 					await msg.discord.channel.send(
 						`\`\`\`${JSON.stringify(
@@ -226,13 +222,6 @@ export default class Raw extends BaseCommand {
 						)}\`\`\``
 					);
 				}
-			}
-
-			if (!sentAnything) {
-				if (!silent)
-					await msg.discord.channel.send(oneLine`
-					${msg.discord.author}, I'm unable to give you an escaped version of anything!`);
-				return false;
 			}
 
 			return true;

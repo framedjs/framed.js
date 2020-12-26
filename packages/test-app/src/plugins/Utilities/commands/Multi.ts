@@ -18,7 +18,7 @@ export default class Multi extends BaseCommand {
 			about: "Run multiple commands with one message.",
 			description: oneLine`
 			Run multiple commands with one message. Separate each command with a semicolon (;)
-			and a new line`,
+			and a new line.`,
 			examples: stripIndents`
 			${section1}${section2}
 			`,

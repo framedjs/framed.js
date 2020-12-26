@@ -13,9 +13,9 @@ export default class CustomGroup extends BaseCommand {
 		super(plugin, {
 			id: "group",
 			aliases: ["groups", "grp", "category", "customcategory"],
-			about: "Lists all the groups available.",
+			about: "Manages groups.",
 			description: oneLine`
-			This command allows you to add, edit, delete, and list custom groups.
+			Add, edit, delete, and list custom groups.
 			These groups are shown with commands in them, which can be set with this command.`,
 			usage: `<add|edit|delete|set|list> "<group|command>" "<group>"`,
 			examples: stripIndent`
