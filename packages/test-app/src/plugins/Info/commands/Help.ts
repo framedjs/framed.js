@@ -8,7 +8,9 @@ import Discord from "discord.js";
 const data: HelpData[] = [
 	{
 		group: "Info",
-		commands: ["help", "usage", "info", "about", "ping"],
+		// TODO: Sorting alphabetically should probably be done programatically
+		// commands: ["help", "usage", "info", "about", "ping"],
+		commands: [ "about", "help", "info", "ping", "usage" ]
 	},
 	{
 		group: "Fun",

@@ -112,8 +112,8 @@ export default class EmbedHelper {
 	 * (hopefully) be a consistent design language.
 	 *
 	 * @param msg FramedMessage object or Discord message
-	 * @param commandUsed Command used (as a non-alias) to be potentially removed from a list.
 	 * @param commands Commands listed under check out footer message. In most cases, use `framedClient.helpCommands`.
+	 * @param commandUsed Command used (as a non-alias) to be potentially removed from a list.
 	 * @param baseEmbed Base Discord embed to apply the template to
 	 *
 	 * @returns Discord embed
@@ -205,7 +205,7 @@ export default class EmbedHelper {
 			if (!process.env.PREFIX) process.env.PREFIX = "";
 			output += `${process.env.PREFIX}${element}`;
 
-			// If it's not the last one, put a 
+			// If it's not the last one, put a
 			if (i != clonedArray.length - 1) {
 				output += " | ";
 				// output += "  ";

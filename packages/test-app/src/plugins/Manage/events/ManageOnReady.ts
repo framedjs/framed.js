@@ -37,7 +37,7 @@ export default class extends BaseEvent {
 			`$(command default.bot.info.command.help) | `,
 			this.framedClient
 		);
-		const names = [`${help}Maintaining Streaks`, `${help}Testing Things`];
+		const names = [`${help}Managing Streaks`, `${help}Testing Things`];
 
 		names.forEach(name => {
 			this.presences.push({

@@ -10,9 +10,9 @@ export default class extends BaseCommand {
 	}
 
 	async run(msg: FramedMessage): Promise<boolean> {
-		const framedUser = msg.framedClient.client.user;
+		const discordUser = msg.framedClient.client.user;
 
-		if (msg.discord && framedUser) {
+		if (msg.discord && discordUser) {
 			const embed = EmbedHelper.getTemplate(
 				msg.discord,
 				this.framedClient.helpCommands,
@@ -21,7 +21,7 @@ export default class extends BaseCommand {
 				.setTitle("About the Bot")
 				.setDescription(
 					stripIndent`
-				${oneLine`Pixel Pete is a collection of custom bots for
+				${oneLine`${discordUser} is a collection of custom bots for
 				<:gdu:766718483983368212> **Game Dev Underground**.`}
 				`
 				)

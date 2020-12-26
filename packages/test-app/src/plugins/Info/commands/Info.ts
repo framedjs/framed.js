@@ -14,10 +14,10 @@ export default class extends BaseCommand {
 		super(plugin, {
 			id: "info",
 			aliases: ["i", "analyze", "inspect"],
-			about: `Analyzes commands in more detail than \`$(command default.bot.info.command.help)\`.`,
+			about: `Similar to \`$(command default.bot.info.command.help)\`, but with more detail (ex. aliases).`,
 			description: oneLine`
 			Analyzes commands in more detail than \`$(command default.bot.info.command.help)\`.
-			This includes aliases.
+			This includes aliases, prefixes, and plugin IDs.
 			`,
 			usage: "[command]",
 			examples: stripIndent`

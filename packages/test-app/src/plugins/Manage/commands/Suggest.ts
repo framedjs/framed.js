@@ -21,8 +21,8 @@ export default class extends BaseCommand {
 			If you have any concerns that you'd like to be private, please DM one of the <@&462342299171684364>.`,
 			usage: "<suggestion>",
 			examples: oneLine`
-			\`{{prefix}}{{id}} Give the
-			{{prefix}}{{id}} example a better suggestion than this.\``,
+			\`{{prefix}}{{id}} Give the {{prefix}}{{id}} example
+			a better suggestion than this.\``,
 		});
 	}
 

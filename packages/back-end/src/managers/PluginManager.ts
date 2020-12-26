@@ -318,6 +318,16 @@ export default class PluginManager {
 	async runCommand(msg: FramedMessage): Promise<Map<string, boolean>> {
 		const map = new Map<string, boolean>();
 
+		// If the author is a bot, we ignore their command.
+		/*
+		 * This is to patch any security exploits, such as using the Raw.ts command
+		 * to print out a plain message that contains a comamnd. Then, the command will
+		 * run with elevated permissions, as the bot likely has higher permissions than the user.
+		 */
+		if (msg.discord?.author.bot) {
+			return map;
+		}
+
 		if (msg.command && msg.prefix) {
 			logger.debug(
 				`PluginManager.ts: runCommand() - ${msg.prefix}${msg.command}`
