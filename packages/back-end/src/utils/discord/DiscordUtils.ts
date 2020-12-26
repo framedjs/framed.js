@@ -4,6 +4,8 @@ import util from "util";
 import RequireAll from "require-all";
 import Options from "../../interfaces/RequireAllOptions";
 import { existsSync } from "fs";
+import { MessageInvalidError } from "../../structures/errors/discord/MessageInvalidError";
+import { NotFoundError } from "../../structures/errors/NotFoundError";
 
 export default class DiscordUtils {
 	/**
@@ -24,7 +26,6 @@ export default class DiscordUtils {
 			[key: number]: { key: number; value: { default: any } };
 		} = RequireAll(options);
 		logger.debug(`requiredScripts: ${util.inspect(requiredScripts)}`);
-
 
 		const requiredScriptsValues = Object.values(requiredScripts);
 		logger.debug(
@@ -145,6 +146,66 @@ export default class DiscordUtils {
 
 			return client.users.cache.get(mention);
 		}
+	}
+
+	/**
+	 * Gets a Discord message object from a link
+	 *
+	 * @param link Message link
+	 * @param client Discord client
+	 * @param guild Discord guild
+	 *
+	 * @returns Discord message or an error message string
+	 */
+	static async getMessageFromLink(
+		link: string,
+		client: Discord.Client,
+		author: Discord.User,
+		guild: Discord.Guild
+	): Promise<Discord.Message | undefined> {
+		// If it's not an actual link, return undefined
+		if (!link.includes(".com")) {
+			return undefined;
+		}
+
+		const args = link
+			.replace("https://", "")
+			.replace("http://", "")
+			.replace("discordapp.com/", "")
+			.replace("discord.com/", "")
+			.replace("channels/", "")
+			.split("/");
+
+		if (args.length != 3) {
+			throw new MessageInvalidError("the message link isn't valid!");
+		}
+
+		if (guild.id != args[0]) {
+			throw new MessageInvalidError(
+				"the message link cannot be from another server!"
+			);
+		}
+
+		const channel = client.channels.cache.get(args[1]) as
+			| Discord.TextChannel
+			| Discord.NewsChannel
+			| Discord.DMChannel;
+		if (!channel) {
+			throw new NotFoundError(
+				`I couldn't find the channel from the message link!`
+			);
+		}
+
+		let message = channel.messages.cache.get(args[2]);
+		if (!message) {
+			try {
+				message = await channel.messages.fetch(args[2]);
+			} catch (error) {
+				throw new NotFoundError("I couldn't fetch the channel ID!");
+			}
+		}
+
+		return message;
 	}
 }
 
