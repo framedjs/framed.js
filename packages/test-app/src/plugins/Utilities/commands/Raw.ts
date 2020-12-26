@@ -1,15 +1,22 @@
 /* eslint-disable no-mixed-spaces-and-tabs */
-import { FramedMessage, BasePlugin, BaseCommand, EmbedHelper } from "back-end";
-import { oneLine, stripIndent } from "common-tags";
+import {
+	FramedMessage,
+	BasePlugin,
+	BaseCommand,
+	EmbedHelper,
+	DiscordUtils,
+	FriendlyError,
+} from "back-end";
+import { oneLine, stripIndent, stripIndents } from "common-tags";
 import Discord from "discord.js";
 import { logger } from "shared";
+import Hastebin from "hastebin";
 
 export default class Raw extends BaseCommand {
 	constructor(plugin: BasePlugin) {
 		super(plugin, {
 			id: "raw",
 			prefixes: [plugin.defaultPrefix, "d."],
-			aliases: ["escapemd", "escapemarkdown", "markdown", "md"],
 			about: "Escapes all markdown in a message.",
 			description: oneLine`
 			Escapes all markdown in a message, including code blocks,
@@ -40,8 +47,7 @@ export default class Raw extends BaseCommand {
 			return await Raw.showStrippedMessage(
 				msg,
 				this.id,
-				parse?.newContent,
-				parse?.newMsg
+				parse?.newContent
 			);
 		}
 
@@ -55,13 +61,11 @@ export default class Raw extends BaseCommand {
 	 */
 	static async getNewMessage(
 		msg: FramedMessage,
-		cleanUp?: boolean,
 		silent?: boolean
 	): Promise<
 		| {
-				newMsg: Discord.Message;
+				newMsg?: Discord.Message;
 				newContent: string;
-				newCleanContent: string;
 		  }
 		| undefined
 	> {
@@ -87,14 +91,23 @@ export default class Raw extends BaseCommand {
 			}
 
 			// Link logic
-			let linkMsg: Discord.Message | string | undefined;
+			let linkMsg: Discord.Message | undefined;
+			let linkError: FriendlyError | undefined;
 			if (!snowflakeMsg) {
-				linkMsg = await Raw.getMessageFromLink(
-					content,
-					msg.discord.client,
-					msg.discord.author,
-					msg.discord.guild
-				);
+				try {
+					linkMsg = await DiscordUtils.getMessageFromLink(
+						content,
+						msg.discord.client,
+						msg.discord.author,
+						msg.discord.guild
+					);
+				} catch (error) {
+					if (linkError instanceof FriendlyError) {
+						linkError = error;
+					} else {
+						throw error;
+					}
+				}
 			}
 
 			// Previous message logic
@@ -117,7 +130,7 @@ export default class Raw extends BaseCommand {
 			}
 
 			// Sends the output
-			let newMsg: Discord.Message;
+			let newMsg: Discord.Message | undefined;
 			let newContent: string;
 
 			if (validSnowflake) {
@@ -138,27 +151,21 @@ export default class Raw extends BaseCommand {
 					newContent = linkMsg.content;
 					newMsg = linkMsg;
 				} else {
-					if (!silent) {
-						await msg.discord.channel.send(
-							`${msg.discord.author}, ${linkMsg}`
-						);
-					}
+					await msg.discord.channel.send(
+						`${msg.discord.author}, ${linkError?.message}`
+					);
+					return undefined;
 				}
 			} else if (content.length > 0) {
-				newContent = `${Discord.Util.escapeMarkdown(content)}`;
 				newContent = content;
 			} else if (previousMsg) {
 				newContent = previousMsg.content;
 				newMsg = previousMsg;
 			} else {
-				newContent = "";
 				if (!silent)
 					await msg.discord.channel.send(oneLine`
 					${msg.discord.author}, I'm unable to give you an escaped version of anything!`);
 				return undefined;
-			}
-
-			if (!cleanUp) {
 			}
 
 			// Returns the output
@@ -176,17 +183,16 @@ export default class Raw extends BaseCommand {
 	/**
 	 * Shows the message that has markdown stripped.
 	 *
-	 * @param msg
-	 * @param newContent
-	 * @param newMsg
-	 * @param silent
+	 * @param msg Base FramedMessage
+	 * @param id Command used, for EmbedHelper.getTemplate()
+	 * @param newContent Parse new content
+	 * @param useOnCodeblock Options to upload on codeblock
 	 */
 	static async showStrippedMessage(
 		msg: FramedMessage,
 		id: string,
-		newContent?: string,
-		newMsg?: Discord.Message,
-		silent?: boolean
+		newContent: string | undefined,
+		useOnCodeblock: "file" | "hastebin" | "none" = "none"
 	): Promise<boolean> {
 		if (msg.discord) {
 			const embed = EmbedHelper.getTemplate(
@@ -197,31 +203,93 @@ export default class Raw extends BaseCommand {
 
 			// Handles contents
 			if (newContent && newContent?.length > 0) {
-				const newContentNoCodeblock = Discord.Util.escapeCodeBlock(
-					newContent
+				const newContentNoCodeblock = Discord.Util.escapeMarkdown(
+					newContent,
+					{
+						codeBlock: false,
+					}
 				);
-				if (newContent != newContentNoCodeblock) {
-					embed.setDescription(
-						"The message contains a codeblock, so it will be sent as a separate message."
-					);
+				const newCleanContent = Discord.Util.escapeMarkdown(newContent);
+				let attachment: Discord.MessageAttachment;
+				let link = "";
+
+				if (newCleanContent != newContentNoCodeblock) {
+					switch (useOnCodeblock) {
+						case "none":
+							embed.setDescription(
+								await FramedMessage.parseCustomFormatting(
+									oneLine`Due to the message contained a codeblock, a separate message has been sent.
+									Please note that it may not be completely accurate. If full accuracy is wanted, please
+									use \`$(command default.bot.utils.command.raw).\` or \`$(command default.bot.utils.command.rawhastebin).\`
+									instead.`,
+									msg.framedClient
+								)
+							);
+							await msg.discord.channel.send(embed);
+							await msg.discord.channel.send(newCleanContent);
+							break;
+						case "file":
+							attachment = new Discord.MessageAttachment(
+								Buffer.from(newContent),
+								`raw.txt`
+							);
+							embed.setDescription(
+								oneLine`The message contains a codeblock, so it has been sent as a file.`
+							);
+							await msg.discord.channel.send({
+								embed: embed,
+								files: [attachment],
+							});
+							break;
+						case "hastebin":
+							try {
+								link = await Hastebin.createPaste(
+									newContent,
+									{
+										raw: true,
+										contentType: true,
+									},
+									{ contentType: "text/plain" }
+								);
+							} catch (error) {
+								logger.error(error.stack);
+								await msg.discord.channel.send(
+									`${msg.discord.author}, something went wrong when creating the paste!`
+								);
+								return false;
+							}
+
+							embed
+								.setDescription(
+									oneLine`
+								The message contains a codeblock, so it has been sent to hastebin.`
+								)
+								.addField(
+									"🔗 Links",
+									stripIndents`
+								Hastebin link: ${link.replace("/raw/", "/")}
+								Raw link: ${link}`
+								);
+							await msg.discord.channel.send(embed);
+							break;
+						default:
+							throw new TypeError(
+								`useOnCodeblock should equal "file", "hastebin", or "none", not "${useOnCodeblock}"`
+							);
+					}
+				} else {
+					const codeblock = "```";
+					embed.setDescription(stripIndents`
+					${codeblock}
+					${newContent}
+					${codeblock}`);
 					await msg.discord.channel.send(embed);
-					await msg.discord.channel.send(newContent);
 				}
-
-				await msg.discord.channel.send(newContent);
-			}
-
-			// Handles messages that might have embeds
-			if (newMsg && newMsg.embeds.length > 0) {
-				for await (const embed of newMsg.embeds) {
-					await msg.discord.channel.send(
-						`\`\`\`${JSON.stringify(
-							embed.toJSON(),
-							Raw.removeNulls,
-							2
-						)}\`\`\``
-					);
-				}
+			} else {
+				await msg.discord.channel.send(
+					`${msg.discord.author}, the message is empty!`
+				);
+				return false;
 			}
 
 			return true;
@@ -231,7 +299,7 @@ export default class Raw extends BaseCommand {
 	}
 
 	/**
-	 * JSON.stringify replacer that removes things that are null
+	 * JSON.stringify replacer that removes any entires that are null.
 	 *
 	 * @param key
 	 * @param value

@@ -7,7 +7,7 @@ import {
 } from "back-end";
 import { logger, Utils } from "shared";
 import Discord from "discord.js";
-import { oneLine, stripIndent } from "common-tags";
+import { oneLine, stripIndent, stripIndents } from "common-tags";
 import Axios from "axios";
 
 export default class extends BaseCommand {
@@ -79,6 +79,7 @@ export default class extends BaseCommand {
 				for (const match of matches) {
 					link = match[0];
 					domain = match[2];
+					logger.debug(`Link: ${link} | Domain: ${domain}`)
 					break;
 				}
 			}
@@ -117,13 +118,17 @@ export default class extends BaseCommand {
 				} catch (error) {
 					logger.warn(error.stack);
 					await msg.discord.channel.send(
-						`${msg.discord.author}, I couldn't parse that into an embed! See console logs for more details.`
+						stripIndents`${msg.discord.author}, I couldn't parse that into an embed!
+						\`${error}\`
+						See console logs for more details.
+						`
 					);
 					return false;
 				}
 			}
 
 			// Renders the Discohook message
+			let renderedOnce = false;
 			for (
 				let i = 0;
 				i < (newEmbedData.embeds ? newEmbedData.embeds.length : 1);
@@ -152,12 +157,20 @@ export default class extends BaseCommand {
 				if (content) {
 					if (embed) {
 						await msg.discord.channel.send(content, embed);
+						renderedOnce = true;
 					} else {
 						await msg.discord.channel.send(content);
+						renderedOnce = true;
 					}
 				} else if (embed) {
 					await msg.discord.channel.send(embed);
+					renderedOnce = true;
 				}
+			}
+
+			if (!renderedOnce) {
+				await msg.discord.channel.send(`${msg.discord.author}, there was nothing to render.`);
+				return false;
 			}
 
 			return true;

@@ -3,14 +3,13 @@ import Raw from "./Raw";
 import Discord from "discord.js";
 import { logger } from "shared";
 import * as ShortenURL from "../utils/ShortenURL";
-import { stripIndent } from "common-tags";
 
 export default class Link extends BaseCommand {
 	constructor(plugin: BasePlugin) {
 		super(plugin, {
 			id: "link",
 			prefixes: [plugin.defaultPrefix, "d."],
-			aliases: ["discohook", "discohookembed", "embed"],
+			aliases: ["discohook", "discohookembed", "embed", "lnk"],
 			about: "Recreates a Discord message into Discohook.",
 			usage: "[id|link|content]",
 		});
@@ -97,7 +96,15 @@ export default class Link extends BaseCommand {
 				}
 			}
 
-			data.username = msg.discord.client.user?.username;
+			let nickname: string | undefined | null;
+			if (msg.discord.client.user) {
+				nickname = msg.discord.guild?.members.cache.get(
+					msg.discord.client.user?.id
+				)?.nickname;
+			}
+			data.username = nickname
+				? nickname
+				: msg.discord.client.user?.username;
 			data.avatar_url = msg.discord.client.user?.avatarURL();
 
 			// Makes TypeScript get less complaints with changing parameters
