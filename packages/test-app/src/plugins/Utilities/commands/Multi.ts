@@ -44,7 +44,7 @@ export default class Multi extends BaseCommand {
 						base: msg,
 					},
 				});
-				const results = await this.framedClient.pluginManager.runCommand(
+				const results = await this.framedClient.plugins.runCommand(
 					newMsg
 				);
 				let somethingWentWrong = false;

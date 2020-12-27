@@ -41,7 +41,7 @@ export default class extends BaseSubcommand {
 						this.framedClient
 					)
 				);
-			const databaseManager = this.framedClient.databaseManager;
+			const databaseManager = this.framedClient.database;
 			const connection = databaseManager.connection;
 
 			if (!connection) {
@@ -114,7 +114,7 @@ export default class extends BaseSubcommand {
 		silent?: boolean
 	): Promise<void> {
 		const parse = await CustomCommand.customParseCommand(
-			this.framedClient.databaseManager,
+			this.framedClient.database,
 			newCommandId,
 			undefined,
 			msg
@@ -123,7 +123,7 @@ export default class extends BaseSubcommand {
 		// If the user didn't enter the command right, show help
 		if (!parse) {
 			if (msg && !silent) {
-				await PluginManager.showHelpForCommand(msg);
+				await PluginManager.sendHelpForCommand(msg);
 			}
 			return;
 		}
@@ -150,7 +150,7 @@ export default class extends BaseSubcommand {
 			if (command) {
 				// Tries and deletes the command
 				try {
-					await this.framedClient.databaseManager.deleteCommand(
+					await this.framedClient.database.deleteCommand(
 						command.id
 					);
 
@@ -161,7 +161,7 @@ export default class extends BaseSubcommand {
 						response.commandResponses.length <= 1
 					) {
 						try {
-							await this.framedClient.databaseManager.deleteResponse(
+							await this.framedClient.database.deleteResponse(
 								response.id
 							);
 						} catch (error) {

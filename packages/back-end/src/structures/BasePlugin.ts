@@ -11,7 +11,7 @@ import { BaseSubcommand } from "./BaseSubcommand";
 
 export abstract class BasePlugin {
 	readonly framedClient: FramedClient;
-	readonly pluginManager: PluginManager;
+	readonly plugins: PluginManager;
 
 	id: string;
 
@@ -58,7 +58,7 @@ export abstract class BasePlugin {
 
 	constructor(framedClient: FramedClient, info: BasePluginOptions) {
 		this.framedClient = framedClient;
-		this.pluginManager = framedClient.pluginManager;
+		this.plugins = framedClient.plugins;
 
 		this.id = info.id;
 		this.defaultPrefix =

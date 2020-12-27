@@ -133,7 +133,7 @@ export default class Poll extends BaseCommand {
 					return false;
 				}
 			} else {
-				await PluginManager.showHelpForCommand(msg);
+				await PluginManager.sendHelpForCommand(msg);
 				return false;
 			}
 		}

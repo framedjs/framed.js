@@ -24,7 +24,7 @@ export default class extends BaseSubcommand {
 			return false;
 		}
 
-		const groupRepo = this.framedClient.databaseManager.groupRepo;
+		const groupRepo = this.framedClient.database.groupRepo;
 		if (groupRepo) {
 			let template = "";
 			const groups = await groupRepo.find();
@@ -35,7 +35,7 @@ export default class extends BaseSubcommand {
 			});
 
 			if (msg.discord) {
-				const helpCommand = this.framedClient.pluginManager.plugins
+				const helpCommand = this.framedClient.plugins.plugins
 					.get("default.bot.info")
 					?.commands.get("help");
 				const helpPrefix = helpCommand?.defaultPrefix;

@@ -147,9 +147,7 @@ export default class FramedMessage {
 	 * Gets the prefix of the message.
 	 */
 	getPrefix(): string | undefined {
-		const prefixes = [
-			...this.framedClient.pluginManager.allPossiblePrefixes,
-		];
+		const prefixes = [...this.framedClient.plugins.allPossiblePrefixes];
 		let prefix: string | undefined;
 		for (const testPrefix of prefixes) {
 			if (this.content.startsWith(testPrefix)) {
@@ -172,7 +170,7 @@ export default class FramedMessage {
 			command = command.split("\n")[0];
 		}
 
-		// If there was a prefix, and there was args, we can 
+		// If there was a prefix, and there was args, we can
 		return this.prefix && this.args ? command : undefined;
 	}
 
@@ -494,14 +492,20 @@ export default class FramedMessage {
 		// https://stackoverflow.com/questions/62955907/discordjs-nodejs-how-can-i-check-if-a-message-only-contains-custom-emotes#62960102
 		const regex = /(:[^:\s]+:|<:[^:\s]+:[0-9]+>|<a:[^:\s]+:[0-9]+>)/g;
 		const markdownEmote = newArgs[0].match(regex);
+		const genericEmoji = Emoji.unemojify(newArgs[0]).match(regex);
 
-		const genericEmoji =
-			newArgs.length > 0 ? Emoji.find(newArgs[0])?.emoji : undefined;
-
-		const newEmote = markdownEmote ? markdownEmote[0] : genericEmoji;
-		const newContent = newEmote
-			? argsContent.replace(newEmote, "").trimLeft()
-			: argsContent;
+		let newContent = argsContent;
+		let newEmote = markdownEmote
+			? markdownEmote[0]
+			: genericEmoji
+			? genericEmoji[0]
+			: undefined;
+		if (newEmote) {
+			newEmote = Emoji.emojify(newEmote);
+			newContent = newEmote
+				? argsContent.replace(newEmote, "").trimLeft()
+				: argsContent;
+		}
 
 		// If there is going to be content, return what we got
 		if (newContent.length != 0) {
@@ -537,7 +541,7 @@ export default class FramedMessage {
 					try {
 						const command = formatArgs[0];
 						if (command) {
-							const baseCommand = framedClient.pluginManager.getCommand(
+							const baseCommand = framedClient.plugins.getCommand(
 								command
 							);
 

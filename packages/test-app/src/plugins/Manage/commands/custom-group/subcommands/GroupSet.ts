@@ -36,7 +36,7 @@ export default class extends BaseSubcommand {
 
 			// If there's no first or second argument, show help
 			if (parse.length < 2) {
-				await PluginManager.showHelpForCommand(msg);
+				await PluginManager.sendHelpForCommand(msg);
 				return false;
 			}
 
@@ -44,7 +44,7 @@ export default class extends BaseSubcommand {
 			const parseSecondArg = FramedMessage.parseEmojiAndString(parse[1], []);
 
 			if (parseFirstArgs && parseSecondArg) {
-				const command = this.framedClient.databaseManager.findCommand(
+				const command = this.framedClient.database.findCommand(
 					parseFirstArgs,
 					this.defaultPrefix
 				);
@@ -67,7 +67,7 @@ export default class extends BaseSubcommand {
 
 				const { newContent } = parseSecondArg;
 				try {
-					await this.framedClient.databaseManager.setGroup(
+					await this.framedClient.database.setGroup(
 						parseFirstArgs,
 						newContent
 					);
@@ -85,7 +85,7 @@ export default class extends BaseSubcommand {
 					return false;
 				}
 			} else {
-				await PluginManager.showHelpForCommand(msg);
+				await PluginManager.sendHelpForCommand(msg);
 				return false;
 			}
 

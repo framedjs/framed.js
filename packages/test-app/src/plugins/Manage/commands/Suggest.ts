@@ -115,7 +115,7 @@ export default class extends BaseCommand {
 			}
 		}
 
-		await PluginManager.showHelpForCommand(msg);
+		await PluginManager.sendHelpForCommand(msg);
 		return false;
 	}
 }

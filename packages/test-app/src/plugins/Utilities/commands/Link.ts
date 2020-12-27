@@ -48,7 +48,7 @@ export default class Link extends BaseCommand {
 					)
 						.setTitle("Message Link")
 						.setDescription(
-							`[${shortUrl}](${shortUrl} "Discord message recreated into Discohook")`
+							`[${shortUrl}](${shortUrl})`
 						);
 
 					await msg.discord.channel.send(embed);

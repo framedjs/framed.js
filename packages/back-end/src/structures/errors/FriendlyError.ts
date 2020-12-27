@@ -1,6 +1,8 @@
 export class FriendlyError extends Error {
-	constructor(description: string) {
-		super(description);
+	friendlyName = "Something Went Wrong";
+
+	constructor(message?: string) {
+		super(message ? message : `An unknown error occured.`);
 		this.name = FriendlyError.name;
 	}
 }

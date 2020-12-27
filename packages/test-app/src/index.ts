@@ -34,7 +34,7 @@ const framedClient = new FramedClient({
 	appVersion: version,
 });
 
-framedClient.pluginManager.loadPluginsIn({
+framedClient.plugins.loadPluginsIn({
 	dirname: path.join(__dirname, "plugins"),
 	filter: /^(.+plugin)\.(js|ts)$/,
 	excludeDirs: /^(.*)\.(git|svn)$|^(.*)subcommands(.*)$/,

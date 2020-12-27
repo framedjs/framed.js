@@ -27,13 +27,13 @@ export default class extends BasePlugin {
 	}
 
 	async install(): Promise<void> {
-		const dbPlugin = await this.framedClient.databaseManager.findPlugin(
+		const dbPlugin = await this.framedClient.database.findPlugin(
 			this.id
 		);
 		if (!dbPlugin) {
 			throw new Error("Couldn't find plugin in database!");
 		}
-		const pluginRepo = this.framedClient.databaseManager.pluginRepo;
+		const pluginRepo = this.framedClient.database.pluginRepo;
 		if (!pluginRepo) {
 			throw new Error("Couldn't find plugin repo in database!");
 		}

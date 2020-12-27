@@ -42,7 +42,7 @@ export default class extends BaseSubcommand {
 			}
 		}
 
-		await PluginManager.showHelpForCommand(msg);
+		await PluginManager.sendHelpForCommand(msg);
 		return false;
 	}
 
@@ -62,14 +62,14 @@ export default class extends BaseSubcommand {
 		msg?: FramedMessage,
 		silent?: boolean
 	): Promise<Command | undefined> {
-		const connection = this.framedClient.databaseManager.connection;
+		const connection = this.framedClient.database.connection;
 		if (!connection) {
 			logger.error("No connection to a database found!");
 			return undefined;
 		}
 
 		const parse = await CustomCommand.customParseCommand(
-			this.framedClient.databaseManager,
+			this.framedClient.database,
 			newCommandId,
 			newContents,
 			msg
@@ -78,7 +78,7 @@ export default class extends BaseSubcommand {
 		// If the user didn't enter the command right, show help
 		if (!parse) {
 			if (msg && !silent) {
-				await PluginManager.showHelpForCommand(msg);
+				await PluginManager.sendHelpForCommand(msg);
 			}
 			return undefined;
 		}

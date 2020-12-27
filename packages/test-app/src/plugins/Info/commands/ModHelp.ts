@@ -42,7 +42,7 @@ export default class extends BaseCommand {
 	}
 
 	private async showHelpAll(msg: FramedMessage): Promise<boolean> {
-		const helpFields = await this.framedClient.pluginManager.createHelpFields(
+		const helpFields = await this.framedClient.plugins.createHelpFields(
 			data
 		);
 

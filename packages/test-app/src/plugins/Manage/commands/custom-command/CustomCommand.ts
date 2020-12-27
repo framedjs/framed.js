@@ -47,7 +47,7 @@ export default class CustomCommand extends BaseCommand {
 
 	async run(msg: FramedMessage): Promise<boolean> {
 		if (msg.discord) {
-			await PluginManager.showHelpForCommand(msg);
+			await PluginManager.sendHelpForCommand(msg);
 			return true;
 		}
 		return false;

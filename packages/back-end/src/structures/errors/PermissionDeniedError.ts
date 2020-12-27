@@ -1,8 +1,8 @@
 import { FriendlyError } from "./FriendlyError";
 
 export class PermissionDeniedError extends FriendlyError {
-	constructor(description: string) {
-		super(description);
+	constructor(message: string) {
+		super(message);
 		this.name = PermissionDeniedError.name;
 	}
 }

@@ -6,8 +6,8 @@ export default class extends BaseCommand {
 		super(plugin, {
 			id: "user",
 			prefixes: [plugin.defaultPrefix, "d."],
-			about: "Get the user's ",
-			usage: "<name|tag|id>",
+			about: "Gets the user for Discord markdown formatting.",
+			usage: "<@mention|nickname|username|tag|id>",
 		});
 	}
 

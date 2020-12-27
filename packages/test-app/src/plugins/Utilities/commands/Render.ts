@@ -40,11 +40,14 @@ export default class extends BaseCommand {
 			this.sendPermissionErrorMessage(msg);
 		}
 
+		logger.warn("Render command is being ran");
+		logger.warn("Check for any duplicate run sequences");
+
 		if (msg.discord && msg.args && msg.prefix && msg.command) {
 			let newContents = msg.getArgsContent();
 
 			if (newContents.trim().length == 0) {
-				await PluginManager.showHelpForCommand(msg);
+				await PluginManager.sendHelpForCommand(msg);
 				return false;
 			}
 
@@ -79,7 +82,7 @@ export default class extends BaseCommand {
 				for (const match of matches) {
 					link = match[0];
 					domain = match[2];
-					logger.debug(`Link: ${link} | Domain: ${domain}`)
+					logger.warn(`Link: ${link} | Domain: ${domain}`);
 					break;
 				}
 			}
@@ -127,6 +130,8 @@ export default class extends BaseCommand {
 				}
 			}
 
+			logger.warn(`newEmbedData: ${Utils.util.inspect(newEmbedData)}`);
+
 			// Renders the Discohook message
 			let renderedOnce = false;
 			for (
@@ -134,6 +139,12 @@ export default class extends BaseCommand {
 				i < (newEmbedData.embeds ? newEmbedData.embeds.length : 1);
 				i++
 			) {
+				logger.warn(oneLine`i: ${i} |
+				(newEmbedData.embeds ? newEmbedData.embeds.length : 1): ${
+					newEmbedData.embeds ? newEmbedData.embeds.length : 1
+				} |
+				renderedOnce: ${renderedOnce}`);
+
 				// Embed data is generated if it exists
 				const embedData = newEmbedData.embeds
 					? newEmbedData.embeds[i]
@@ -169,7 +180,9 @@ export default class extends BaseCommand {
 			}
 
 			if (!renderedOnce) {
-				await msg.discord.channel.send(`${msg.discord.author}, there was nothing to render.`);
+				await msg.discord.channel.send(
+					`${msg.discord.author}, there was nothing to render.`
+				);
 				return false;
 			}
 

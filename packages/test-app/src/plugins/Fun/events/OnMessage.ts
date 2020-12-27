@@ -21,7 +21,7 @@ export default class extends BaseEvent {
 			.trim();
 
 		if (msg.content.startsWith(legacyPollString)) {
-			this.framedClient.pluginManager.runCommand(
+			this.framedClient.plugins.runCommand(
 				new FramedMessage({
 					framedClient: this.framedClient,
 					content: newContent,

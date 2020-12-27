@@ -28,7 +28,7 @@ export default class extends BaseEvent {
 					},
 				});
 
-				await this.plugin.pluginManager.runCommand(newFramedMsg);
+				await this.plugin.plugins.runCommand(newFramedMsg);
 			} catch (error) {
 				logger.error(error.stack);
 			}

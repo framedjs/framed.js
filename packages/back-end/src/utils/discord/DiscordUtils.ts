@@ -4,8 +4,11 @@ import util from "util";
 import RequireAll from "require-all";
 import Options from "../../interfaces/RequireAllOptions";
 import { existsSync } from "fs";
-import { MessageInvalidError } from "../../structures/errors/discord/MessageInvalidError";
 import { NotFoundError } from "../../structures/errors/NotFoundError";
+import { InvalidError } from "../../structures/errors/InvalidError";
+import { DiscordChannelResolvable } from "../../types/discord/DiscordChannelResolvable";
+import { DiscordGuildChannelResolvable } from "../../types/discord/DiscordGuildChannelResolvable";
+import FramedMessage from "../../structures/FramedMessage";
 
 export default class DiscordUtils {
 	/**
@@ -96,35 +99,11 @@ export default class DiscordUtils {
 		if (user) {
 			return user.username;
 		} else {
-			throw new Error("User ID was invalid!");
+			throw new InvalidError({
+				input: userId,
+				name: "User ID",
+			});
 		}
-	}
-
-	/**
-	 * Get member from a user's message
-	 * @param msg Discord Message
-	 */
-	static getMemberFromUserMsg(
-		msg: Discord.Message
-	): Discord.GuildMember | undefined {
-		let member;
-		if (msg.member) {
-			member = msg.member;
-		} else {
-			if (process.env.FALLBACK_GUILD_ID) {
-				const guild = msg.client.guilds.cache.get(
-					process.env.FALLBACK_GUILD_ID
-				);
-				if (guild?.available) {
-					const tempMember = guild.members.cache.get(msg.author.id);
-					if (tempMember) {
-						member = tempMember;
-					}
-				}
-			}
-		}
-
-		return member;
 	}
 
 	/**
@@ -177,12 +156,19 @@ export default class DiscordUtils {
 			.split("/");
 
 		if (args.length != 3) {
-			throw new MessageInvalidError("the message link isn't valid!");
+			throw new InvalidError({
+				name: "Message Link",
+				input: args[0],
+			});
 		}
 
 		if (guild.id != args[0]) {
-			throw new MessageInvalidError(
-				"the message link cannot be from another server!"
+			throw new InvalidError(
+				{
+					name: "Message Link",
+					input: args[0],
+				},
+				"The message link cannot be from another server!"
 			);
 		}
 
@@ -192,6 +178,10 @@ export default class DiscordUtils {
 			| Discord.DMChannel;
 		if (!channel) {
 			throw new NotFoundError(
+				{
+					input: args[1],
+					name: "Channel",
+				},
 				`I couldn't find the channel from the message link!`
 			);
 		}
@@ -201,11 +191,105 @@ export default class DiscordUtils {
 			try {
 				message = await channel.messages.fetch(args[2]);
 			} catch (error) {
-				throw new NotFoundError("I couldn't fetch the channel ID!");
+				throw new NotFoundError({
+					input: args[2],
+					name: "Message",
+				});
 			}
 		}
 
 		return message;
+	}
+
+	/**
+	 * Resolves a DiscordChannelResolvable into a Discord channel
+	 *
+	 * @param channel DiscordChannelResolvable
+	 * @param channels Discord Channel Manager
+	 *
+	 * @returns Discord channel, or undefined
+	 */
+	static resolveChannel(
+		channel: DiscordChannelResolvable,
+		channels: Discord.ChannelManager
+	): Discord.Channel | undefined {
+		let newChannel: Discord.Channel | null | undefined = channels.resolve(
+			channel
+		);
+
+		if (!newChannel) {
+			newChannel = channels.cache.find(cachedChannels => {
+				if (cachedChannels.isText()) {
+					const textChannel = cachedChannels as Discord.TextChannel;
+
+					const parse = FramedMessage.parseEmojiAndString(
+						textChannel.name
+					);
+
+					// Finds the name of the channel, also with
+					// excluding the emotes at the beginning
+					if (
+						channel == textChannel.name ||
+						channel == parse?.newContent
+					) {
+						return true;
+					}
+				}
+				return false;
+			});
+		}
+
+		if (newChannel) {
+			return newChannel;
+		} else {
+			return undefined;
+		}
+	}
+
+	/**
+	 * Resolves a DiscordGuildChannelResolvable into a Discord channel
+	 *
+	 * @param channel DiscordGuildChannelResolvable
+	 * @param channels Discord Guild Channel Manager
+	 *
+	 * @returns Discord guild channel, or undefined
+	 */
+	static resolveGuildChannel(
+		channel: DiscordGuildChannelResolvable,
+		channels: Discord.GuildChannelManager
+	): Discord.GuildChannel | undefined {
+		let newChannel:
+			| Discord.GuildChannel
+			| null
+			| undefined = channels.resolve(channel);
+
+		if (!newChannel) {
+			newChannel = channels.cache.find(cachedChannels => {
+				if (cachedChannels.isText()) {
+					const textChannel = cachedChannels as Discord.TextChannel;
+
+					const parse = FramedMessage.parseEmojiAndString(
+						textChannel.name
+					);
+
+					// Finds the name of the channel, also with
+					// excluding the emotes at the beginning
+					if (
+						channel == textChannel.name ||
+						channel == parse?.newContent
+					) {
+						return true;
+					}
+				}
+				return false;
+			});
+		}
+
+		if (newChannel) {
+			return newChannel;
+		} else {
+			return undefined;
+		}
 	}
 }
 

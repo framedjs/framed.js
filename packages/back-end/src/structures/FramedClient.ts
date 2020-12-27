@@ -24,9 +24,9 @@ try {
 }
 
 export default class FramedClient extends EventEmitter {
-	public readonly apiManager: APIManager;
-	public readonly databaseManager: DatabaseManager;
-	public readonly pluginManager = new PluginManager(this);
+	public readonly api: APIManager;
+	public readonly database: DatabaseManager;
+	public readonly plugins = new PluginManager(this);
 
 	public readonly client = new Discord.Client();
 
@@ -66,7 +66,7 @@ export default class FramedClient extends EventEmitter {
 			}
 		}
 
-		this.apiManager = new APIManager(this);
+		this.api = new APIManager(this);
 
 		logger.verbose(
 			`Using database path: ${info.defaultConnection.database}`
@@ -75,7 +75,7 @@ export default class FramedClient extends EventEmitter {
 			`Using entities path: ${DatabaseManager.defaultEntitiesPath}`
 		);
 
-		this.databaseManager = new DatabaseManager(
+		this.database = new DatabaseManager(
 			this,
 			info.defaultConnection
 		);
@@ -87,14 +87,14 @@ export default class FramedClient extends EventEmitter {
 	async login(token?: string): Promise<void> {
 		// Loads the API
 		logger.verbose(`Using routes path: ${APIManager.defaultPath}`);
-		this.apiManager.loadRoutesIn({
+		this.api.loadRoutesIn({
 			dirname: APIManager.defaultPath,
 			filter: this.importFilter,
 			excludeDirs: /^(.*)\.(git|svn)$|^(.*)subcommands(.*)\.(js|ts)$/,
 		});
 
 		// Loads the default plugins, which loads commands and events
-		this.pluginManager.loadPluginsIn({
+		this.plugins.loadPluginsIn({
 			dirname: path.join(__dirname, "..", "plugins"),
 			filter: /^(.+plugin)\.(js|ts)$/,
 			excludeDirs: /^(.*)\.(git|svn)$|^(.*)subcommands(.*)\.(js|ts)$/,
@@ -109,7 +109,7 @@ export default class FramedClient extends EventEmitter {
 		}
 
 		// Loads the database
-		await this.databaseManager.start();
+		await this.database.start();
 
 		// Logs into Discord
 		await this.client.login(token);
@@ -205,15 +205,27 @@ export default class FramedClient extends EventEmitter {
 			);
 		});
 
-		this.client.on("messageUpdate", async partial => {
+		this.client.on("messageUpdate", async (oldMessage, newMessage) => {
 			try {
-				const discordMsg = await partial.channel.messages.fetch(
-					partial.id
+				logger.debug(`Message Update`);
+				logger.debug(`oldMessage.content: "${oldMessage.content}" | ${oldMessage.channel}`);
+				logger.debug(`newMessage.content: "${newMessage.content}" | ${newMessage.channel}`);
+				
+				// If the content is the same, ignore it.
+				/**
+				 * Assumably, this can trigger randomly before a command with an embed (ex. link) 
+				 * is sent, or after it is sent. By comparing the contents, and seeing if they're the same,
+				 * we don't need to accidentally run the same command again.
+				 */
+				if (oldMessage.content == newMessage.content) return;
+
+				newMessage = await newMessage.channel.messages.fetch(
+					newMessage.id
 				);
 				const msg = new FramedMessage({
 					framedClient: this,
 					discord: {
-						base: discordMsg,
+						base: newMessage,
 					},
 				});
 				this.processMsg(msg);
@@ -302,7 +314,7 @@ export default class FramedClient extends EventEmitter {
 			logger.debug(
 				`FramedClient.ts: Found command! Contents are: "${msg.content}"`
 			);
-			this.pluginManager.runCommand(msg);
+			this.plugins.runCommand(msg);
 		}
 	}
 }

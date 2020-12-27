@@ -42,7 +42,7 @@ export default class extends BaseSubcommand {
 			}
 		}
 
-		await PluginManager.showHelpForCommand(msg);
+		await PluginManager.sendHelpForCommand(msg);
 		return false;
 	}
 
@@ -61,14 +61,14 @@ export default class extends BaseSubcommand {
 		msg?: FramedMessage,
 		silent?: boolean
 	): Promise<Command | undefined> {
-		const connection = this.framedClient.databaseManager.connection;
+		const connection = this.framedClient.database.connection;
 		if (!connection) {
 			logger.error("No connection to a database found!");
 			return undefined;
 		}
 
 		const parse = await CustomCommand.customParseCommand(
-			this.framedClient.databaseManager,
+			this.framedClient.database,
 			newCommandId,
 			newContents,
 			msg
@@ -77,7 +77,7 @@ export default class extends BaseSubcommand {
 		// If the user didn't enter the command right, show help
 		if (!parse) {
 			if (msg && !silent) {
-				await PluginManager.showHelpForCommand(msg);
+				await PluginManager.sendHelpForCommand(msg);
 			}
 			return undefined;
 		}
@@ -107,7 +107,7 @@ export default class extends BaseSubcommand {
 
 		// Tries and writes the command. If it fails,
 		// send an error message to console and delete the new response data.
-		const defaultGroup = await this.framedClient.databaseManager.getDefaultGroup();
+		const defaultGroup = await this.framedClient.database.getDefaultGroup();
 		try {
 			command = commandRepo.create({
 				id: newCommandId.toLocaleLowerCase(),
@@ -120,7 +120,7 @@ export default class extends BaseSubcommand {
 			command = await commandRepo.save(command);
 		} catch (error) {
 			try {
-				await this.framedClient.databaseManager.deleteResponse(
+				await this.framedClient.database.deleteResponse(
 					response.id
 				);
 			} catch (error) {

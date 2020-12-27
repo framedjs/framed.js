@@ -7,7 +7,7 @@ export default class extends BasePlugin {
 			id: "default.bot.utils",
 			name: "Utilities",
 			description: "Utility commands.",
-			version: "0.1.0",
+			version: "0.2.0",
 			paths: {
 				commands: path.join(__dirname, "commands"),
 				// events: path.join(__dirname, "events"),

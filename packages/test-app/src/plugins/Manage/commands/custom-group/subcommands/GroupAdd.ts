@@ -33,7 +33,7 @@ export default class extends BaseSubcommand {
 			if (parse) {
 				const { newContent, newEmote } = parse;
 				try {
-					await this.framedClient.databaseManager.addGroup(
+					await this.framedClient.database.addGroup(
 						newContent,
 						newEmote
 					);
@@ -59,7 +59,7 @@ export default class extends BaseSubcommand {
 					return false;
 				}
 			} else {
-				await PluginManager.showHelpForCommand(msg);
+				await PluginManager.sendHelpForCommand(msg);
 				return false;
 			}
 

@@ -13,7 +13,7 @@ export default class extends BaseRouter {
 					throw new Error("No version query found in URL.");
 				}
 
-				const pluginRepo = framedClient.databaseManager.pluginRepo;
+				const pluginRepo = framedClient.database.pluginRepo;
 				const id = "com.geekoverdrivestudio.dailies";
 				const plugin = await pluginRepo.findOne({
 					where: { id: id },

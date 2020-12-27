@@ -360,7 +360,7 @@ export default class DatabaseManager {
 		defaultPrefix: PrefixResolvable,
 		bypassAlreadyExists = false
 	): Promise<Command> {
-		const connection = this.framedClient.databaseManager.connection;
+		const connection = this.framedClient.database.connection;
 		if (!connection) {
 			throw new ReferenceError(DatabaseManager.errorNoConnection);
 		}
@@ -517,7 +517,7 @@ export default class DatabaseManager {
 			const groupIds: string[] = [];
 			const groupRepo = connection.getRepository(Group);
 
-			for (const plugin of this.framedClient.pluginManager.pluginsArray) {
+			for (const plugin of this.framedClient.plugins.pluginsArray) {
 				// If it doesn't exist, add it
 				// if (!(await groupRepo.findOne(plugin.group))) {
 				if (!groupIds.find(groupId => groupId == plugin.fullGroupId)) {
@@ -811,7 +811,7 @@ export default class DatabaseManager {
 		const plugins: Plugin[] = [];
 		const installs: Promise<void>[] = [];
 		const postInstalls: Promise<void>[] = [];
-		for (const plugin of this.framedClient.pluginManager.pluginsArray) {
+		for (const plugin of this.framedClient.plugins.pluginsArray) {
 			if (!pluginsFound.find(dbPlugin => dbPlugin.id == plugin.id)) {
 				// Pushes into an array to create the plugin
 				plugins.push(
@@ -825,7 +825,7 @@ export default class DatabaseManager {
 		await pluginRepo.save(plugins);
 
 		// Handles installs for all plugins that are new
-		for (const plugin of this.framedClient.pluginManager.pluginsArray) {
+		for (const plugin of this.framedClient.plugins.pluginsArray) {
 			if (!pluginsFound.find(dbPlugin => dbPlugin.id == plugin.id)) {
 				if (plugin.install) {
 					installs.push(plugin.install());
@@ -836,7 +836,7 @@ export default class DatabaseManager {
 		await Promise.allSettled(installs);
 
 		// Handles post installs for all plugins
-		for (const plugin of this.framedClient.pluginManager.pluginsArray) {
+		for (const plugin of this.framedClient.plugins.pluginsArray) {
 			if (plugin.postInstall) {
 				postInstalls.push(plugin.postInstall());
 			}

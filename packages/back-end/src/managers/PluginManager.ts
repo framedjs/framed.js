@@ -10,8 +10,10 @@ import Options from "../interfaces/RequireAllOptions";
 import Command from "./database/entities/Command";
 import Discord from "discord.js";
 import DatabaseManager from "./DatabaseManager";
-import { oneLineInlineLists } from "common-tags";
+import { oneLine, oneLineInlineLists } from "common-tags";
 import * as TypeORM from "typeorm";
+import { FriendlyError } from "../structures/errors/FriendlyError";
+import EmbedHelper from "../utils/discord/EmbedHelper";
 
 export interface HelpGroup {
 	group: string;
@@ -31,7 +33,7 @@ export default class PluginManager {
 	/**
 	 * The key is the plugin's full ID
 	 */
-	public plugins = new Map<string, BasePlugin>();
+	public map = new Map<string, BasePlugin>();
 	// public importingCommand?: BaseCommand;
 
 	/**
@@ -69,12 +71,12 @@ export default class PluginManager {
 	 * @param plugin
 	 */
 	loadPlugin<T extends BasePlugin>(plugin: T): void {
-		if (this.plugins.get(plugin.id)) {
+		if (this.map.get(plugin.id)) {
 			logger.error(`Plugin with id ${plugin.id} already exists!`);
 			return;
 		}
 
-		this.plugins.set(plugin.id, plugin);
+		this.map.set(plugin.id, plugin);
 
 		// Load commands
 		// TODO: excluding subcommands doesn't work
@@ -101,7 +103,7 @@ export default class PluginManager {
 		}
 
 		if (plugin.paths.routes) {
-			this.framedClient.apiManager.loadRoutesIn({
+			this.framedClient.api.loadRoutesIn({
 				dirname: plugin.paths.routes,
 				filter: this.framedClient.importFilter,
 				// excludeDirs: /^(.*)\.(git|svn)$|^(.*)subcommands(.*)$/,
@@ -118,7 +120,7 @@ export default class PluginManager {
 	 * @returns List of all plugins imported
 	 */
 	get pluginsArray(): BasePlugin[] {
-		return Array.from(this.plugins.values());
+		return Array.from(this.map.values());
 	}
 
 	/**
@@ -127,7 +129,7 @@ export default class PluginManager {
 	 */
 	get commandsArray(): BaseCommand[] {
 		const commands: BaseCommand[] = [];
-		this.plugins.forEach(plugin => {
+		this.map.forEach(plugin => {
 			commands.push(...Array.from(plugin.commands.values()));
 		});
 		return commands;
@@ -139,7 +141,7 @@ export default class PluginManager {
 	 */
 	get eventsArray(): BaseEvent[] {
 		const events: BaseEvent[] = [];
-		this.plugins.forEach(plugin => {
+		this.map.forEach(plugin => {
 			events.push(...Array.from(plugin.events.values()));
 		});
 		return events;
@@ -258,7 +260,7 @@ export default class PluginManager {
 		// If the command string isn't referencing an ID
 		if (commandString.indexOf(".") == -1) {
 			// Tries to the find the command in plugins
-			for (const pluginElement of this.plugins) {
+			for (const pluginElement of this.map) {
 				const plugin = pluginElement[1];
 				let command = plugin.commands.get(commandString);
 
@@ -294,7 +296,7 @@ export default class PluginManager {
 			// Removes the command identifier from x.x.x.command.x
 			clone.shift();
 
-			const plugin = this.plugins.get(pluginId);
+			const plugin = this.map.get(pluginId);
 			if (!plugin) return [];
 
 			let command = plugin.commands.get(clone[0]);
@@ -328,59 +330,69 @@ export default class PluginManager {
 			return map;
 		}
 
-		if (msg.command && msg.prefix) {
-			logger.debug(
-				`PluginManager.ts: runCommand() - ${msg.prefix}${msg.command}`
-			);
+		try {
+			if (msg.command && msg.prefix) {
+				logger.debug(
+					`PluginManager.ts: runCommand() - ${msg.prefix}${msg.command}`
+				);
 
-			// Runs the commands
-			const commandList = this.getCommands(msg);
-			for await (const command of commandList) {
-				// Gets the base command's prefixes or default prefixes, and see if they match.
-				// Subcommands are not allowed to declare new prefixes.
-				if (
-					command.prefixes.includes(msg.prefix) ||
-					this.defaultPrefixes.includes(msg.prefix)
-				) {
-					try {
-						// Checks for subcommands
+				// Runs the commands
+				const commandList = this.getCommands(msg);
+				for await (const command of commandList) {
+					// Gets the base command's prefixes or default prefixes, and see if they match.
+					// Subcommands are not allowed to declare new prefixes.
+					if (
+						command.prefixes.includes(msg.prefix) ||
+						this.defaultPrefixes.includes(msg.prefix)
+					) {
+						// Attempts to get the subcommand if it exists.
+						// If not, use the base command.
+						let tempCommand = command;
 						if (msg.args) {
 							const subcommand = command.getSubcommand(msg.args);
-
-							// If there was a final subcommand, run it
-							if (subcommand) {
-								const success = await subcommand.run(msg);
-								map.set(subcommand.fullId, success);
-							} else {
-								const success = await command.run(msg);
-								map.set(command.fullId, success);
-							}
-						} else {
-							// Safety
-							logger.warn(
-								"msg.args was undefined! Attempting to run command anyways."
-							);
-							const success = await command.run(msg);
-							map.set(command.fullId, success);
+							tempCommand = subcommand ? subcommand : command;
 						}
-					} catch (error) {
-						logger.error(error.stack);
+
+						// Attempts to run the command
+						try {
+							const success = await tempCommand.run(msg);
+							map.set(tempCommand.fullId, success);
+						} catch (error) {
+							if (error instanceof FriendlyError) {
+								logger.warn(oneLine`
+								A Friendly Error occured! Likely, this warning is completely
+								safe to ignore, unless it's needed for debug purposes.`);
+								logger.warn(error.stack);
+
+								await PluginManager.sendErrorMessage(
+									msg,
+									error
+								);
+							} else {
+								logger.error(error.stack);
+							}
+						}
 					}
 				}
-			}
 
-			// Attempts to runs commands through database
-			const dbCommand:
-				| Command
-				| undefined = await this.framedClient.databaseManager.findCommand(
-				msg.command,
-				msg.prefix
-			);
+				// Attempts to runs commands through database
+				const dbCommand:
+					| Command
+					| undefined = await this.framedClient.database.findCommand(
+					msg.command,
+					msg.prefix
+				);
 
-			if (dbCommand) {
-				const success = await this.sendCommandFromDB(dbCommand, msg);
-				map.set(dbCommand.id, success);
+				if (dbCommand) {
+					const success = await this.sendCommandFromDB(
+						dbCommand,
+						msg
+					);
+					map.set(dbCommand.id, success);
+				}
 			}
+		} catch (error) {
+			logger.error(error.stack);
 		}
 
 		return map;
@@ -427,10 +439,10 @@ export default class PluginManager {
 	 *
 	 * @returns boolean value `true` if help is shown.
 	 */
-	static async showHelpForCommand(msg: FramedMessage): Promise<boolean> {
-		const pluginManager = msg.framedClient.pluginManager;
+	static async sendHelpForCommand(msg: FramedMessage): Promise<boolean> {
+		const pluginManager = msg.framedClient.plugins;
 
-		const helpPrefix = pluginManager.plugins
+		const helpPrefix = pluginManager.map
 			.get("default.bot.info")
 			?.commands.get("help")?.defaultPrefix;
 
@@ -438,7 +450,7 @@ export default class PluginManager {
 			const content = oneLineInlineLists`${
 				helpPrefix ? helpPrefix : msg.prefix
 			}help ${msg.command} ${msg.args ? msg.args : ""}`;
-			await msg.framedClient.pluginManager.runCommand(
+			await msg.framedClient.plugins.runCommand(
 				new FramedMessage({
 					framedClient: msg.framedClient,
 					content: content,
@@ -458,6 +470,32 @@ export default class PluginManager {
 	}
 
 	/**
+	 * Sends error message
+	 *
+	 * @param commandId Command ID for EmbedHelper.getTemplate
+	 */
+	static async sendErrorMessage(
+		msg: FramedMessage,
+		friendlyError: FriendlyError,
+		commandId?: string
+	): Promise<void> {
+		let embed: Discord.MessageEmbed | undefined;
+		if (msg.discord) {
+			embed = EmbedHelper.getTemplate(
+				msg.discord,
+				msg.framedClient.helpCommands,
+				commandId
+			)
+				.setTitle(friendlyError.friendlyName)
+				.setDescription(friendlyError.message);
+
+			await msg.discord.channel.send(embed);
+		} else {
+			throw new Error("Non-Discord platforms not implemented as of yet");
+		}
+	}
+
+	/**
 	 * Creates Discord embed field data from plugin commands, showing commands.
 	 *
 	 * @param helpList Data to choose certain commands
@@ -467,10 +505,10 @@ export default class PluginManager {
 	async createHelpFields(
 		helpList: HelpData[]
 	): Promise<Discord.EmbedFieldData[] | undefined> {
-		const connection = this.framedClient.databaseManager.connection;
+		const connection = this.framedClient.database.connection;
 		if (connection) {
 			return await PluginManager.createHelpFields(
-				this.plugins,
+				this.map,
 				helpList,
 				connection
 			);
@@ -671,9 +709,7 @@ export default class PluginManager {
 	async createInfoHelpFields(): Promise<
 		Discord.EmbedFieldData[] | undefined
 	> {
-		return PluginManager.createDBHelpFields(
-			this.framedClient.databaseManager
-		);
+		return PluginManager.createDBHelpFields(this.framedClient.database);
 	}
 
 	/**

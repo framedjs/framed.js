@@ -151,10 +151,7 @@ export default class Raw extends BaseCommand {
 					newContent = linkMsg.content;
 					newMsg = linkMsg;
 				} else {
-					await msg.discord.channel.send(
-						`${msg.discord.author}, ${linkError?.message}`
-					);
-					return undefined;
+					throw linkError;
 				}
 			} else if (content.length > 0) {
 				newContent = content;
@@ -186,13 +183,13 @@ export default class Raw extends BaseCommand {
 	 * @param msg Base FramedMessage
 	 * @param id Command used, for EmbedHelper.getTemplate()
 	 * @param newContent Parse new content
-	 * @param useOnCodeblock Options to upload on codeblock
+	 * @param mode Options to upload on
 	 */
 	static async showStrippedMessage(
 		msg: FramedMessage,
 		id: string,
 		newContent: string | undefined,
-		useOnCodeblock: "file" | "hastebin" | "none" = "none"
+		mode: "file" | "hastebin" | "none" = "none"
 	): Promise<boolean> {
 		if (msg.discord) {
 			const embed = EmbedHelper.getTemplate(
@@ -210,80 +207,91 @@ export default class Raw extends BaseCommand {
 					}
 				);
 				const newCleanContent = Discord.Util.escapeMarkdown(newContent);
+				const rawCommand =
+					"$(command default.bot.utils.command.rawfile)";
+				const rawHastebin =
+					"$(command default.bot.utils.command.rawhastebin)";
 				let attachment: Discord.MessageAttachment;
 				let link = "";
 
-				if (newCleanContent != newContentNoCodeblock) {
-					switch (useOnCodeblock) {
-						case "none":
-							embed.setDescription(
-								await FramedMessage.parseCustomFormatting(
-									oneLine`Due to the message contained a codeblock, a separate message has been sent.
-									Please note that it may not be completely accurate. If full accuracy is wanted, please
-									use \`$(command default.bot.utils.command.raw).\` or \`$(command default.bot.utils.command.rawhastebin).\`
-									instead.`,
-									msg.framedClient
-								)
-							);
-							await msg.discord.channel.send(embed);
-							await msg.discord.channel.send(newCleanContent);
-							break;
-						case "file":
-							attachment = new Discord.MessageAttachment(
-								Buffer.from(newContent),
-								`raw.txt`
-							);
-							embed.setDescription(
-								oneLine`The message contains a codeblock, so it has been sent as a file.`
-							);
-							await msg.discord.channel.send({
-								embed: embed,
-								files: [attachment],
-							});
-							break;
-						case "hastebin":
-							try {
-								link = await Hastebin.createPaste(
-									newContent,
-									{
-										raw: true,
-										contentType: true,
-									},
-									{ contentType: "text/plain" }
-								);
-							} catch (error) {
-								logger.error(error.stack);
-								await msg.discord.channel.send(
-									`${msg.discord.author}, something went wrong when creating the paste!`
-								);
-								return false;
+				switch (mode) {
+					case "none":
+						if (newCleanContent != newContentNoCodeblock) {
+							switch (mode) {
+								case "none":
+									embed.setDescription(
+										await FramedMessage.parseCustomFormatting(
+											oneLine`The message contains a codeblock, so it has been sent as a separate message.
+											Please note that it may not be completely accurate. If full accuracy is wanted, please
+											use \`${rawCommand}\` or \`${rawHastebin}\` instead.`,
+											msg.framedClient
+										)
+									);
+									await msg.discord.channel.send(embed);
+									await msg.discord.channel.send(
+										newCleanContent
+									);
+									break;
+								default:
+									throw new Error();
 							}
+						} else {
+							const codeblock = "```";
+							embed.setDescription(stripIndents`
+							${codeblock}
+							${newContent}
+							${codeblock}`);
+							await msg.discord.channel.send(embed);
+						}
+						break;
+					case "file":
+						attachment = new Discord.MessageAttachment(
+							Buffer.from(newContent),
+							`raw.txt`
+						);
+						embed.setDescription(
+							oneLine`The raw message has been sent as a .txt file.`
+						);
+						await msg.discord.channel.send({
+							embed: embed,
+							files: [attachment],
+						});
+						break;
+					case "hastebin":
+						try {
+							link = await Hastebin.createPaste(
+								newContent,
+								{
+									raw: true,
+									contentType: true,
+								},
+								{ contentType: "text/plain" }
+							);
+						} catch (error) {
+							logger.error(error.stack);
+							await msg.discord.channel.send(
+								`${msg.discord.author}, something went wrong when creating the paste!`
+							);
+							return false;
+						}
 
-							embed
-								.setDescription(
-									oneLine`
-								The message contains a codeblock, so it has been sent to hastebin.`
-								)
-								.addField(
-									"🔗 Links",
-									stripIndents`
+						embed
+							.setDescription(
+								oneLine`
+								The raw message has been sent to Hastebin.`
+							)
+							.addField(
+								"🔗 Links",
+								stripIndents`
 								Hastebin link: ${link.replace("/raw/", "/")}
 								Raw link: ${link}`
-								);
-							await msg.discord.channel.send(embed);
-							break;
-						default:
-							throw new TypeError(
-								`useOnCodeblock should equal "file", "hastebin", or "none", not "${useOnCodeblock}"`
 							);
-					}
-				} else {
-					const codeblock = "```";
-					embed.setDescription(stripIndents`
-					${codeblock}
-					${newContent}
-					${codeblock}`);
-					await msg.discord.channel.send(embed);
+						await msg.discord.channel.send(embed);
+						break;
+					default:
+						throw new TypeError(
+							`useOnCodeblock should equal "file", "hastebin", or "none", not "${mode}"`
+						);
 				}
 			} else {
 				await msg.discord.channel.send(

@@ -36,10 +36,12 @@ export { default as DiscordUtils } from "./utils/discord/DiscordUtils";
 export { PluginResolvable } from "./managers/database/types/PluginResolvable";
 export { PrefixResolvable } from "./managers/database/types/PrefixResolvable";
 
+export { DiscordChannelResolvable } from "./types/discord/DiscordChannelResolvable";
+export { DiscordGuildChannelResolvable } from "./types/discord/DiscordGuildChannelResolvable";
+
 // Errors
 export { FriendlyError } from "./structures/errors/FriendlyError";
 export { InvalidError } from "./structures/errors/InvalidError";
 export { NotFoundError } from "./structures/errors/NotFoundError";
 export { PermissionDeniedError } from "./structures/errors/PermissionDeniedError";
-export { MessageInvalidError } from "./structures/errors/discord/MessageInvalidError";
 

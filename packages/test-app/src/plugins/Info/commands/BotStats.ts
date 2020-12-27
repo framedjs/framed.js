@@ -23,7 +23,7 @@ export default class extends BaseCommand {
 		// Attempts to find dailies version
 		let version = "???";
 		try {
-			const connection = this.framedClient.databaseManager.connection;
+			const connection = this.framedClient.database.connection;
 			if (!connection) {
 				throw new Error(DatabaseManager.errorNoConnection);
 			}

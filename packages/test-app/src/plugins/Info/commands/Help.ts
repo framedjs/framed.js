@@ -18,7 +18,8 @@ const data: HelpData[] = [
 	},
 	{
 		group: "Dailies",
-		commands: ["dailies", "streaks", "alert", "casual"],
+		// commands: ["dailies", "streaks", "alert", "casual"],
+		commands: ["alert", "casual", "dailies", "streaks"],
 	},
 	{
 		group: "Manage",
@@ -75,7 +76,7 @@ export default class Help extends BaseCommand {
 	 * @param msg Framed message
 	 */
 	private async showHelpAll(msg: FramedMessage): Promise<boolean> {
-		const helpFields = await this.framedClient.pluginManager.createHelpFields(
+		const helpFields = await this.framedClient.plugins.createHelpFields(
 			data
 		);
 
@@ -149,7 +150,7 @@ export default class Help extends BaseCommand {
 			if (command) {
 				// Goes through all matching commands. Hopefully, there's only one, but
 				// this allows for edge cases in where two plugins share the same command.
-				const matchingCommands = msg.framedClient.pluginManager.getCommands(
+				const matchingCommands = msg.framedClient.plugins.getCommands(
 					command
 				);
 
@@ -164,7 +165,7 @@ export default class Help extends BaseCommand {
 				}
 
 				// Handles database commands
-				const dbCommand = await msg.framedClient.databaseManager.findCommand(
+				const dbCommand = await msg.framedClient.database.findCommand(
 					command,
 					msg.framedClient.defaultPrefix
 				);
