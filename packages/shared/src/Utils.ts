@@ -9,14 +9,14 @@ export class Utils {
 	/**
 	 * Since this import can hide Node's default util plugin, it is re-exported here for convenience.
 	 */
-	public static readonly util = util;
+	static readonly util = util;
 
 	/**
 	 * Returns a list of files, found inside folder. Also searches inside folder of folders.
 	 * @param pathString
 	 * @param filter
 	 */
-	public static findFileNested(
+	static findFileNested(
 		pathString: string,
 		filter: (file: string) => boolean
 	): string[] {
@@ -48,7 +48,7 @@ export class Utils {
 	 * @param min - Minimum number
 	 * @param max - Maxiumum number (inclusive)
 	 */
-	public static randomNumber(min: number, max: number): number {
+	static randomNumber(min: number, max: number): number {
 		return Math.floor(Math.random() * (max + 1 - min) + min);
 	}
 
@@ -63,7 +63,7 @@ export class Utils {
 	 * let nonNullVariable = turnUndefinedIfNull(newString) as string;
 	 * ```
 	 */
-	public static turnUndefinedIfNull(variable: unknown): unknown | undefined {
+	static turnUndefinedIfNull(variable: unknown): unknown | undefined {
 		if (variable == null) {
 			variable = undefined;
 		}
@@ -75,7 +75,7 @@ export class Utils {
 	 *
 	 * @param ms Milliseconds
 	 */
-	public static sleep(ms: number): Promise<void> {
+	static sleep(ms: number): Promise<void> {
 		return new Promise(resolve => setTimeout(resolve, ms));
 	}
 }

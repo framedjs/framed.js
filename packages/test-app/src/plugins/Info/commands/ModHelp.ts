@@ -51,6 +51,20 @@ export default class extends BaseCommand {
 		);
 
 		if (msg.discord && helpFields) {
+			let modRoleString = msg.discord.guild?.roles.cache
+				.find(role => role.name == "Mods")
+				?.toString();
+			if (!modRoleString) {
+				modRoleString = "<@&462342299171684364>";
+			}
+
+			let communitySupportRole = msg.discord.guild?.roles.cache
+				.find(role => role.name == "Community Support")
+				?.toString();
+			if (!communitySupportRole) {
+				communitySupportRole = "<@&758771336289583125>";
+			}
+
 			const embed = EmbedHelper.getTemplate(
 				msg.discord,
 				this.framedClient.helpCommands,
@@ -59,8 +73,8 @@ export default class extends BaseCommand {
 				.setTitle("Mod Command Help")
 				.setDescription(
 					oneLine`
-						These are commands designed for <@&462342299171684364> and
-						<@&758771336289583125> use only.
+						These are commands designed for ${modRoleString} and
+						${communitySupportRole} use only.
 						`
 				)
 				.addFields(helpFields);

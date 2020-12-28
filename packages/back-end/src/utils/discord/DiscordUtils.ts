@@ -362,15 +362,11 @@ export default class DiscordUtils {
 			// ...try to parse out a mention
 			let userId = DiscordUtils.getIdFromMention(user);
 
-			// ...try to get it by their tag (username#0000)
+			// ...try to get it by their tag (username#0000) or username
 			if (!userId) {
-				userId = users.cache.find(newUser => newUser.tag == user)?.id;
-			}
-
-			// ...try to get it by their username
-			if (!userId) {
-				userId = users.cache.find(newUser => newUser.username == user)
-					?.id;
+				userId = users.cache.find(
+					newUser => newUser.tag == user || newUser.username == user
+				)?.id;
 			}
 
 			// If it was found, set that as the new user ID
@@ -488,24 +484,13 @@ export default class DiscordUtils {
 			// ...try to parse out a mention
 			newMemberID = DiscordUtils.getIdFromMention(user);
 
-			// ...try to get it by their tag (username#0000)
+			// ...try to get it by their tag (username#0000), username, or nickname
 			if (!newMemberID) {
 				newMemberID = members.cache.find(
-					member => member.user.tag == user
-				)?.id;
-			}
-
-			// ...try to get it by their username
-			if (!newMemberID) {
-				newMemberID = members.cache.find(
-					member => member.user.username == user
-				)?.id;
-			}
-
-			// ...try to get it by their nickname
-			if (!newMemberID) {
-				newMemberID = members.cache.find(
-					member => member.nickname == user
+					member =>
+						member.user.tag == user ||
+						member.nickname == user ||
+						member.user.username == user
 				)?.id;
 			}
 		}

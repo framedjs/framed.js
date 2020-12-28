@@ -1,5 +1,5 @@
 import { BasePlugin, BaseEvent, FramedMessage } from "back-end";
-import { logger, Utils } from "shared";
+import { logger } from "shared";
 import Discord from "discord.js";
 import Schedule from "node-schedule";
 
@@ -8,6 +8,7 @@ export default class extends BaseEvent {
 	job: Schedule.Job | undefined;
 	presenceIndex = 0;
 	cron = "*/30 * * * * *";
+	// cron = "*/15 * * * * *";
 
 	constructor(plugin: BasePlugin) {
 		super(plugin, {
@@ -37,7 +38,11 @@ export default class extends BaseEvent {
 			`$(command default.bot.info.command.help) | `,
 			this.framedClient
 		);
-		const names = [`${help}Managing Streaks`, `${help}Testing Things`];
+		const names = [
+			`${help}Managing Streaks`,
+			`${help}Testing Things`,
+			`${help}Fixing "Features"`,
+		];
 
 		names.forEach(name => {
 			this.presences.push({

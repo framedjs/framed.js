@@ -37,54 +37,53 @@ export default class extends BaseCommand {
 		if (msg.args) {
 			if (msg.discord) {
 				// Makes sure newContent actually is a valid parameter
-				if (newContent && newContent.length > 0) {
-					let newMemberOrUser:
-						| Discord.GuildMember
-						| Discord.User
-						| undefined;
+				if (newContent && newContent.length == 0) {
+					await PluginManager.sendHelpForCommand(msg);
+					return false;
+				}
+				let newMemberOrUser:
+					| Discord.GuildMember
+					| Discord.User
+					| undefined;
 
-					// Gets from a guild if it can. If not, fallback to getting from client.users
-					if (msg.discord.guild && msg.discord.guild.available) {
-						try {
-							newMemberOrUser = await DiscordUtils.resolveMemberFetch(
-								newContent,
-								msg.discord.guild.members
-							);
-						} catch (error) {
-							logger.warn(error);
-						}
-					} else {
-						try {
-							newMemberOrUser = await DiscordUtils.resolveUserFetch(
-								newContent,
-								msg.discord.client.users
-							);
-						} catch (error) {
-							logger.debug(error);
-						}
-					}
-
-					if (newMemberOrUser) {
-						const embed = EmbedHelper.getTemplate(
-							msg.discord,
-							this.framedClient.helpCommands,
-							this.id
-						)
-							.setTitle("User Formatting")
-							.setDescription(`\`${newMemberOrUser}\``)
-							.addField("Output", `${newMemberOrUser}`);
-
-						await msg.discord.channel.send(embed);
-						return true;
-					} else {
-						throw new NotFoundError({
-							input: newContent,
-							name: "User",
-						});
+				// Gets from a guild if it can. If not, fallback to getting from client.users
+				if (msg.discord.guild && msg.discord.guild.available) {
+					try {
+						newMemberOrUser = await DiscordUtils.resolveMemberFetch(
+							newContent,
+							msg.discord.guild.members
+						);
+					} catch (error) {
+						logger.warn(error);
 					}
 				} else {
-					await PluginManager.sendHelpForCommand(msg);
+					try {
+						newMemberOrUser = await DiscordUtils.resolveUserFetch(
+							newContent,
+							msg.discord.client.users
+						);
+					} catch (error) {
+						logger.debug(error);
+					}
+				}
+
+				if (newMemberOrUser) {
+					const embed = EmbedHelper.getTemplate(
+						msg.discord,
+						this.framedClient.helpCommands,
+						this.id
+					)
+						.setTitle("User Formatting")
+						.setDescription(`\`${newMemberOrUser}\``)
+						.addField("Output", `${newMemberOrUser}`);
+
+					await msg.discord.channel.send(embed);
 					return true;
+				} else {
+					throw new NotFoundError({
+						input: newContent,
+						name: "User",
+					});
 				}
 			} else {
 				logger.warn("unsupported");
