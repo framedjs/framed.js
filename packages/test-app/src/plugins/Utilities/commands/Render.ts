@@ -40,9 +40,6 @@ export default class extends BaseCommand {
 			this.sendPermissionErrorMessage(msg);
 		}
 
-		logger.warn("Render command is being ran");
-		logger.warn("Check for any duplicate run sequences");
-
 		if (msg.discord && msg.args && msg.prefix && msg.command) {
 			let newContents = msg.getArgsContent();
 
@@ -82,7 +79,6 @@ export default class extends BaseCommand {
 				for (const match of matches) {
 					link = match[0];
 					domain = match[2];
-					logger.warn(`Link: ${link} | Domain: ${domain}`);
 					break;
 				}
 			}

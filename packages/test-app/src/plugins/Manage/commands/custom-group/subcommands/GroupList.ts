@@ -35,7 +35,7 @@ export default class extends BaseSubcommand {
 			});
 
 			if (msg.discord) {
-				const helpCommand = this.framedClient.plugins.plugins
+				const helpCommand = this.framedClient.plugins.map
 					.get("default.bot.info")
 					?.commands.get("help");
 				const helpPrefix = helpCommand?.defaultPrefix;

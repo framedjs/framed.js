@@ -360,7 +360,7 @@ export default class PluginManager {
 						} catch (error) {
 							if (error instanceof FriendlyError) {
 								logger.warn(oneLine`
-								A Friendly Error occured! Likely, this warning is completely
+								A Friendly Error occured! Likely, this warning is
 								safe to ignore, unless it's needed for debug purposes.`);
 								logger.warn(error.stack);
 
