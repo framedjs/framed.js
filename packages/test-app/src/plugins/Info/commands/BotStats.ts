@@ -21,7 +21,7 @@ export default class extends BaseCommand {
 
 	async run(msg: FramedMessage): Promise<boolean> {
 		// Attempts to find dailies version
-		let version = "???";
+		let dailiesVersion = "???";
 		try {
 			const connection = this.framedClient.database.connection;
 			if (!connection) {
@@ -44,42 +44,55 @@ export default class extends BaseCommand {
 				);
 			}
 
-			version = plugin.data.version as string;
+			dailiesVersion = plugin.data.version as string;
 		} catch (error) {
 			logger.error(error.stack);
 		}
-
-		const framedUser = msg.framedClient.client.user;
-		const nodeEnvironment = process.env.NODE_ENV
-			? ` ${process.env.NODE_ENV}`
-			: "";
 
 		// For debugging
 		// eslint-disable-next-line prefer-const
 		let uptime = process.uptime();
 		// uptime = 216120;
 
-		if (msg.discord && framedUser) {
+		if (msg.discord) {
 			const codeblock = "```";
+
+			const osArch = `${os.platform()}/${os.arch()}`;
+			const nodeEnvironment = process.env.NODE_ENV
+				? `${process.env.NODE_ENV}`
+				: "";
+
+
+			const uptimeText = this.secondsToDhms(uptime);
+			const ramUsage = process.memoryUsage().heapUsed / 1024 / 1024;
+			const ramUsageText = `${Math.round(ramUsage * 100) / 100}`;
+			const backEnd = msg.framedClient.version
+				? `v${msg.framedClient.version}`
+				: "???";
+			const botVersion = `${
+				msg.framedClient.appVersion
+					? `v${msg.framedClient.appVersion}`
+					: "???"
+			}`;
+
 			const embed = EmbedHelper.getTemplate(
 				msg.discord,
 				this.framedClient.helpCommands,
 				this.id
 			).setTitle("Bot Stats").setDescription(stripIndent`
 				${codeblock}yml
-				Uptime:              ${this.secondsToDhms(uptime)}
-				OS/Arch:             ${os.platform()}/${os.arch()}
-				Framed Back-End:     ${
-					msg.framedClient.version
-						? `v${msg.framedClient.version}`
-						: "???"
-				}
-				Framed Bot Version:  ${
-					msg.framedClient.appVersion
-						? `v${msg.framedClient.appVersion}`
-						: "???"
-				}${nodeEnvironment}
-				Dailies Bot Version: v${version}
+				Server:
+				- OS/Arch:      ${osArch}
+				- Environment:  ${nodeEnvironment}
+				${codeblock}${codeblock}yml
+				Framed Bot:
+				- Uptime:       ${uptimeText}
+				- RAM Usage:    ${ramUsageText} MB
+				- Back-End:     ${backEnd}
+				- Bot Version:  ${botVersion}
+				${codeblock}${codeblock}yml
+				Dailies:
+				- Bot Version:  v${dailiesVersion}
 				${codeblock}
 				`);
 			await msg.discord.channel.send(embed);
