@@ -199,7 +199,18 @@ export default class DiscordUtils {
 			channel
 		);
 
+		if (!newChannel && typeof channel == "string") {
+			// If the resolve didn't work...
+
+			// ...try to parse out a mention
+			const newChannelId = DiscordUtils.getIdFromMention(channel);
+			if (newChannelId) {
+				newChannel = channels.resolve(newChannelId);
+			}
+		}
+
 		if (!newChannel) {
+			// Gets name
 			newChannel = channels.cache.find(cachedChannels => {
 				if (cachedChannels.isText()) {
 					const textChannel = cachedChannels as Discord.TextChannel;
@@ -244,6 +255,16 @@ export default class DiscordUtils {
 			| Discord.GuildChannel
 			| null
 			| undefined = channels.resolve(channel);
+
+		if (!newChannel && typeof channel == "string") {
+			// If the resolve didn't work...
+
+			// ...try to parse out a mention
+			const newChannelId = DiscordUtils.getIdFromMention(channel);
+			if (newChannelId) {
+				newChannel = channels.resolve(newChannelId);
+			}
+		}
 
 		if (!newChannel) {
 			newChannel = channels.cache.find(cachedChannels => {
@@ -437,7 +458,9 @@ export default class DiscordUtils {
 			if (results instanceof Discord.Collection) {
 				return DiscordUtils.resolveMember(user, members);
 			} else {
-				throw new Error(`Members fetch timed out! This is likely an Intents issue.`);
+				throw new Error(
+					`Members fetch timed out! This is likely an Intents issue.`
+				);
 			}
 		}
 
