@@ -1,13 +1,11 @@
 import Discord from "discord.js";
-import { logger } from "shared";
+import { logger, Utils } from "shared";
 import util from "util";
 import RequireAll from "require-all";
 import Options from "../../interfaces/RequireAllOptions";
 import { existsSync } from "fs";
 import { NotFoundError } from "../../structures/errors/NotFoundError";
 import { InvalidError } from "../../structures/errors/InvalidError";
-import { DiscordChannelResolvable } from "../../types/discord/DiscordChannelResolvable";
-import { DiscordGuildChannelResolvable } from "../../types/discord/DiscordGuildChannelResolvable";
 import FramedMessage from "../../structures/FramedMessage";
 
 export default class DiscordUtils {
@@ -71,6 +69,7 @@ export default class DiscordUtils {
 
 	/**
 	 * Gets the user's display name on a guild. Contains a fallback to the user's username.
+	 *
 	 * @param msg - Discord Message
 	 * @param userId - Discord User ID
 	 */
@@ -107,28 +106,7 @@ export default class DiscordUtils {
 	}
 
 	/**
-	 * https://discordjs.guide/miscellaneous/parsing-mention-arguments.html#implementation
-	 * @param mention Message content, that contains the message
-	 */
-	static getUserFromMention(
-		client: Discord.Client,
-		mention: string
-	): Discord.User | undefined {
-		if (!mention) return;
-
-		if (mention.startsWith("<@") && mention.endsWith(">")) {
-			mention = mention.slice(2, -1);
-
-			if (mention.startsWith("!")) {
-				mention = mention.slice(1);
-			}
-
-			return client.users.cache.get(mention);
-		}
-	}
-
-	/**
-	 * Gets a Discord message object from a link
+	 * Gets a Discord message object from a link.
 	 *
 	 * @param link Message link
 	 * @param client Discord client
@@ -201,8 +179,12 @@ export default class DiscordUtils {
 		return message;
 	}
 
+	//#region Resolver Functions
+
+	//#region Channels
+
 	/**
-	 * Resolves a DiscordChannelResolvable into a Discord channel
+	 * Resolves a DiscordChannelResolvable into a Discord channel.
 	 *
 	 * @param channel DiscordChannelResolvable
 	 * @param channels Discord Channel Manager
@@ -210,7 +192,7 @@ export default class DiscordUtils {
 	 * @returns Discord channel, or undefined
 	 */
 	static resolveChannel(
-		channel: DiscordChannelResolvable,
+		channel: Discord.ChannelResolvable,
 		channels: Discord.ChannelManager
 	): Discord.Channel | undefined {
 		let newChannel: Discord.Channel | null | undefined = channels.resolve(
@@ -247,7 +229,7 @@ export default class DiscordUtils {
 	}
 
 	/**
-	 * Resolves a DiscordGuildChannelResolvable into a Discord channel
+	 * Resolves a DiscordGuildChannelResolvable into a Discord channel.
 	 *
 	 * @param channel DiscordGuildChannelResolvable
 	 * @param channels Discord Guild Channel Manager
@@ -255,7 +237,7 @@ export default class DiscordUtils {
 	 * @returns Discord guild channel, or undefined
 	 */
 	static resolveGuildChannel(
-		channel: DiscordGuildChannelResolvable,
+		channel: Discord.GuildChannelResolvable | string,
 		channels: Discord.GuildChannelManager
 	): Discord.GuildChannel | undefined {
 		let newChannel:
@@ -291,83 +273,297 @@ export default class DiscordUtils {
 			return undefined;
 		}
 	}
+
+	//#endregion
+
+	//#region Users
+
+	/**
+	 * Resolves a Discord UserResolvable, username, or tag into a Discord.User.
+	 * This function doesn't account for non-cached members.
+	 *
+	 * @param user Discord UserResolvable, username, or tag
+	 * @param users Discord users
+	 *
+	 * @returns Discord user or undefined
+	 */
+	static resolveUser(
+		user: Discord.UserResolvable | string,
+		users: Discord.UserManager
+	): Discord.User | undefined {
+		const id = DiscordUtils.resolveUserID(user, users);
+		if (id) {
+			return users.cache.get(id);
+		}
+	}
+
+	/**
+	 * Resolves a Discord UserResolvable, username, or tag into a Discord.User.
+	 * This function accounts for non-cached users, but will throw an error
+	 * if it tries to fetch, and fails.
+	 *
+	 * @param user Discord UserResolvable, username, or tag (username#0000)
+	 * @param users Discord users
+	 *
+	 * @returns Discord user or undefined
+	 */
+	static async resolveUserFetch(
+		user: Discord.UserResolvable | string,
+		users: Discord.UserManager
+	): Promise<Discord.User | undefined> {
+		const newUser = DiscordUtils.resolveUser(user, users);
+		if (!newUser) {
+			if (!Number.isNaN(user) && typeof user == "string") {
+				return users.fetch(user);
+			}
+		}
+		return newUser;
+	}
+
+	/**
+	 * Resolves a Discord UserResolvable, username, or tag into a user ID.
+	 * This function doesn't account for non-cached users.
+	 *
+	 * @param user Discord UserResolvable, username, or tag
+	 * @param users Discord users
+	 *
+	 * @returns Discord user ID or undefined
+	 */
+	static resolveUserID(
+		user: Discord.UserResolvable | string,
+		users: Discord.UserManager
+	): string | undefined {
+		let newUserID: string | undefined = users.resolve(user)?.id;
+
+		if (!newUserID && typeof user == "string") {
+			// If the resolve didn't work...
+
+			// ...try to parse out a mention
+			let userId = DiscordUtils.getIdFromMention(user);
+
+			// ...try to get it by their tag (username#0000)
+			if (!userId) {
+				userId = users.cache.find(newUser => newUser.tag == user)?.id;
+			}
+
+			// ...try to get it by their username
+			if (!userId) {
+				userId = users.cache.find(newUser => newUser.username == user)
+					?.id;
+			}
+
+			// If it was found, set that as the new user ID
+			if (userId) {
+				newUserID = userId;
+			}
+		}
+
+		// Returns the user if it's not null or undefined
+		if (newUserID) {
+			return newUserID;
+		} else {
+			return undefined;
+		}
+	}
+
+	/**
+	 * Resolves a Discord UserResolvable, username, or tag into a user ID.
+	 * This function accounts for non-cached users, but will throw an error
+	 * if it tries to fetch the member, and fails.
+	 *
+	 * @param user Discord UserResolvable, username, or tag
+	 * @param users Discord users
+	 *
+	 * @returns Discord user ID or undefined
+	 */
+	static async resolveUserIDFetch(
+		user: Discord.UserResolvable | string,
+		users: Discord.UserManager
+	): Promise<string | undefined> {
+		const userId = DiscordUtils.resolveUserID(user, users);
+
+		if (!userId && typeof user == "string") {
+			return (await DiscordUtils.resolveUserFetch(user, users))?.id;
+		}
+
+		return userId;
+	}
+
+	//#endregion
+
+	//#region GuildMembers
+
+	/**
+	 * Resolves a Discord UserResolvable to a Discord.GuildMember.
+	 * This function doesn't account for non-cached members.
+	 *
+	 * @param user Discord UserResolvable, username, tag (username#0000), or nickname
+	 * @param members Discord guild members
+	 *
+	 * @returns Discord guild member or undefined
+	 */
+	static resolveMember(
+		user: Discord.UserResolvable | string,
+		members: Discord.GuildMemberManager
+	): Discord.GuildMember | undefined {
+		const id = DiscordUtils.resolveMemberID(user, members);
+		if (id) {
+			return members.cache.get(id);
+		}
+	}
+
+	/**
+	 * Resolves a Discord UserResolvable to a Discord.GuildMember.
+	 * This function accounts for non-cached members, but will throw an error
+	 * if it tries to fetch, and fails.
+	 *
+	 * @param user Discord UserResolvable, username, tag (username#0000), or nickname
+	 * @param members Discord guild members
+	 *
+	 * @returns Discord guild member or undefined
+	 */
+	static async resolveMemberFetch(
+		user: Discord.UserResolvable | string,
+		members: Discord.GuildMemberManager
+	): Promise<Discord.GuildMember | undefined> {
+		const newMember = DiscordUtils.resolveMember(user, members);
+
+		// If it's still not found, fetch everything, and try again
+		if (!newMember) {
+			const longTask = members.fetch();
+			const timeout = Utils.sleep(3000);
+
+			const results = await Promise.race([longTask, timeout]);
+			if (results instanceof Discord.Collection) {
+				return DiscordUtils.resolveMember(user, members);
+			} else {
+				throw new Error(`Members fetch timed out! This is likely an Intents issue.`);
+			}
+		}
+
+		return newMember;
+	}
+
+	/**
+	 * Resolves a Discord UserResolvable, username, or tag into a user ID.
+	 * This function doesn't account for non-cached members.
+	 *
+	 * @param user Discord UserResolvable, username, or tag
+	 * @param members Discord Guild members
+	 *
+	 * @returns Discord user ID or undefined
+	 */
+	static resolveMemberID(
+		user: Discord.UserResolvable | string,
+		members: Discord.GuildMemberManager
+	): string | undefined {
+		let newMemberID: string | undefined = members.resolve(user)?.id;
+
+		if (!newMemberID && typeof user == "string") {
+			// If the resolve didn't work...
+
+			// ...try to parse out a mention
+			newMemberID = DiscordUtils.getIdFromMention(user);
+
+			// ...try to get it by their tag (username#0000)
+			if (!newMemberID) {
+				newMemberID = members.cache.find(
+					member => member.user.tag == user
+				)?.id;
+			}
+
+			// ...try to get it by their username
+			if (!newMemberID) {
+				newMemberID = members.cache.find(
+					member => member.user.username == user
+				)?.id;
+			}
+
+			// ...try to get it by their nickname
+			if (!newMemberID) {
+				newMemberID = members.cache.find(
+					member => member.nickname == user
+				)?.id;
+			}
+		}
+
+		// Returns the member if it's not null or undefined
+		if (newMemberID) {
+			return newMemberID;
+		} else {
+			return undefined;
+		}
+	}
+
+	/**
+	 * Resolves a Discord UserResolvable, username, or tag into a user ID.
+	 * This function accounts for non-cached members.
+	 *
+	 * @param user Discord UserResolvable, username, or tag
+	 * @param members Discord users
+	 *
+	 * @returns Discord user ID or undefined
+	 */
+	static async resolveMemberIDFetch(
+		user: Discord.UserResolvable | string,
+		members: Discord.GuildMemberManager
+	): Promise<string | undefined> {
+		const memberId = DiscordUtils.resolveMemberID(user, members);
+
+		// If it's still not found, fetch everything, and try again
+		if (!memberId) {
+			await members.fetch();
+			return DiscordUtils.resolveMemberID(user, members);
+		}
+
+		return memberId;
+	}
+
+	//#endregion
+
+	//#region Related Utils
+
+	/**
+	 * Gets the ID from the mention
+	 *
+	 * @param argument Discord Mention string
+	 *
+	 * @returns ID
+	 */
+	static getIdFromMention(argument: string): string | undefined {
+		// Parses out a mention
+		if (
+			(argument.startsWith("<@") || argument.startsWith("<#")) &&
+			argument.endsWith(">")
+		) {
+			argument = argument.slice(2, -1);
+
+			if (argument.startsWith("!") || argument.startsWith("&")) {
+				argument = argument.slice(1);
+			}
+			return argument;
+		}
+	}
+
+	/**
+	 * Gets the discriminator from a Discord tag
+	 *
+	 * @param argument Text to see if it has a discriminator
+	 *
+	 * @returns Discriminator or undefined
+	 */
+	static getDiscriminator(argument: string): string | undefined {
+		const discriminator = argument.split("#")[1];
+		if (
+			discriminator &&
+			!Number.isNaN(discriminator) &&
+			discriminator.length == 4
+		) {
+			return discriminator;
+		}
+	}
+
+	//#endregion
+
+	//#endregion
 }
-
-// interface CodeBlockTable {
-// 	rows: CodeBlockRow[];
-// }
-
-// interface CodeBlockRow {
-// 	columns: string[];
-// }
-
-// static createCodeBlockTable(rows: CodeBlockRow[]): CodeBlockTable {
-// 	const newRows: CodeBlockRow[] = [];
-// 	const newColumns: string[] = [];
-
-// 	const largestColumnElementAmount = getLargestColumnElementAmount(rows)
-// 		.columns.length;
-
-// 	// Goes through all the rows
-// 	for (let i = 0; i < rows.length; i++) {
-// 		const row = rows[i];
-
-// 		// Goes through all the columns
-// 		for (let j = 0; j < largestColumnElementAmount; j++) {
-// 			let column = row.columns[i];
-// 			if (!column) column = "";
-// 			newColumns.push(column);
-// 		}
-
-// 		// Gets the largest column string in length
-// 		const largestColumnString = getLargestString(newColumns);
-// 		const maxColumnStringLength = largestColumnString.length;
-
-// 		// Goes through all the columns once more to add spacing
-// 		for (let j = 0; j < newColumns.length; j++) {
-// 			const column = row.columns[j];
-// 			newColumns.push(
-// 				column.padEnd(maxColumnStringLength - column.length)
-// 			);
-// 		}
-// 	}
-
-// 	return {
-// 		rows: newRows,
-// 	};
-// }
-
-// static renderCodeBlockTable(table: CodeBlockTable): string {
-// 	let tableOutput = "";
-// 	for (const row of table.rows) {
-
-// 	}
-// }
-
-// /**
-//  * Gets the row array that has the most column elements.
-//  * @param rows
-//  */
-// function getLargestColumnElementAmount(rows: CodeBlockRow[]): CodeBlockRow {
-// 	let largestRow: CodeBlockRow = {
-// 		columns: [],
-// 	};
-// 	rows.forEach(element => {
-// 		if (element.columns.length > largestRow.columns.length) {
-// 			largestRow = element;
-// 		}
-// 	});
-
-// 	return largestRow;
-// }
-
-// function getLargestString(array: string[]) {
-// 	// https://stackoverflow.com/questions/52989099/finding-the-largest-string-in-an-array-of-strings
-// 	const reducer = (array: string[]) =>
-// 		array.reduce(
-// 			(largest, comparing) =>
-// 				largest.length >= comparing.length ? largest : comparing,
-// 			""
-// 		);
-// 	return reducer(array);
-// }

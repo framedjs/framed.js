@@ -1,5 +1,5 @@
 import { FramedMessage, BasePlugin, BaseCommand, EmbedHelper } from "back-end";
-import Raw from "./Raw";
+import Raw from "../../Markdown/commands/Raw";
 import Discord from "discord.js";
 import { logger } from "shared";
 import * as ShortenURL from "../utils/ShortenURL";
@@ -47,9 +47,7 @@ export default class Link extends BaseCommand {
 						this.id
 					)
 						.setTitle("Message Link")
-						.setDescription(
-							`[${shortUrl}](${shortUrl})`
-						);
+						.setDescription(`[${shortUrl}](${shortUrl})`);
 
 					await msg.discord.channel.send(embed);
 					return true;
@@ -109,7 +107,7 @@ export default class Link extends BaseCommand {
 
 			// Makes TypeScript get less complaints with changing parameters
 			const secondPassJson = JSON.parse(
-				JSON.stringify(firstPassMessage, Raw.removeNulls, 0)
+				JSON.stringify(firstPassMessage, Link.removeNulls, 0)
 			);
 
 			if (secondPassJson.messages[0].data.embeds) {
@@ -132,7 +130,7 @@ export default class Link extends BaseCommand {
 			}
 
 			const thirdPassJson = JSON.parse(
-				JSON.stringify(secondPassJson, Raw.removeNulls, 0)
+				JSON.stringify(secondPassJson, Link.removeNulls, 0)
 			);
 
 			// Make content null
@@ -167,5 +165,20 @@ export default class Link extends BaseCommand {
 		}
 
 		return undefined;
+	}
+
+	/**
+	 * JSON.stringify replacer that removes any entires that are null.
+	 *
+	 * @param key
+	 * @param value
+	 *
+	 * @returns value, if not null
+	 */
+	static removeNulls(_key: string, value: unknown): unknown {
+		if (value === null) {
+			return undefined;
+		}
+		return value;
 	}
 }

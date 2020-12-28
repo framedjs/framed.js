@@ -19,12 +19,16 @@ const data: HelpData[] = [
 		],
 	},
 	{
+		group: "Markdown",
+		commands: ["channel", "emoji", "user", "role", "raw"],
+	},
+	{
 		group: "Utilities",
-		commands: ["link", "render", "raw", "multi"],
+		commands: ["avatar", "link", "multi", "render"],
 	},
 	{
 		group: "Dailies",
-		commands: ["setstreak", "setmercies", "bumpstreak"],
+		commands: ["bumpstreak", "setmercies", "setstreak"],
 	},
 ];
 

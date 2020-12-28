@@ -413,10 +413,12 @@ export default class FramedMessage {
 	}
 
 	/**
-	 * Get the arguments, represented as contents. In other words, this gets the
-	 * contents after the command.
+	 * Get the arguments, represented as a whole string.
+	 * In other words, this gets the contents after the `!command`.
 	 *
 	 * @param argsToTrim Optional arguments to trim out.
+	 *
+	 * @returns Contents after the `!command`
 	 */
 	getArgsContent(argsToTrim?: string[]): string {
 		return FramedMessage.getArgsContent(
@@ -428,13 +430,15 @@ export default class FramedMessage {
 	}
 
 	/**
-	 * Get the arguments, represented as contents. In other words, this gets the
-	 * contents after the command.
+	 * Get the arguments, represented as a whole string.
+	 * In other words, this gets the contents after the `!command`.
 	 *
 	 * @param content Message content
 	 * @param argsToTrim Arguments to trim out
 	 * @param prefix Message prefix to trim out
 	 * @param command Command prefix to trim out
+	 *
+	 * @returns Contents after the `!command`
 	 */
 	static getArgsContent(
 		content: string,
