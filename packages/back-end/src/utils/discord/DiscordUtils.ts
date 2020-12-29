@@ -141,13 +141,11 @@ export default class DiscordUtils {
 		}
 
 		if (guild.id != args[0]) {
-			throw new InvalidError(
-				{
-					name: "Message Link",
-					input: args[0],
-				},
-				"The message link cannot be from another server!"
-			);
+			throw new InvalidError({
+				name: "Message Link",
+				input: args[0],
+				extraMessage: "The message link cannot be from another server!",
+			});
 		}
 
 		const channel = client.channels.cache.get(args[1]) as
@@ -155,13 +153,11 @@ export default class DiscordUtils {
 			| Discord.NewsChannel
 			| Discord.DMChannel;
 		if (!channel) {
-			throw new NotFoundError(
-				{
-					input: args[1],
-					name: "Channel",
-				},
-				`I couldn't find the channel from the message link!`
-			);
+			throw new NotFoundError({
+				input: args[1],
+				name: "Channel",
+				extraMessage: `I couldn't find the channel from the message link!`,
+			});
 		}
 
 		let message = channel.messages.cache.get(args[2]);
@@ -180,6 +176,11 @@ export default class DiscordUtils {
 	}
 
 	//#region Resolver Functions
+
+	/**
+	 * Fetch timeout for getting all guild members in a server
+	 */
+	static fetchTimeout = 3000;
 
 	//#region Channels
 
@@ -300,10 +301,10 @@ export default class DiscordUtils {
 	//#region Users
 
 	/**
-	 * Resolves a Discord UserResolvable, username, or tag into a Discord.User.
+	 * Resolves a Discord.UserResolvable, username, or tag into a Discord.User.
 	 * This function doesn't account for non-cached members.
 	 *
-	 * @param user Discord UserResolvable, username, or tag
+	 * @param user Discord.UserResolvable, username, or tag
 	 * @param users Discord users
 	 *
 	 * @returns Discord user or undefined
@@ -312,18 +313,18 @@ export default class DiscordUtils {
 		user: Discord.UserResolvable | string,
 		users: Discord.UserManager
 	): Discord.User | undefined {
-		const id = DiscordUtils.resolveUserID(user, users);
+		const id = DiscordUtils.resolveUserId(user, users);
 		if (id) {
 			return users.cache.get(id);
 		}
 	}
 
 	/**
-	 * Resolves a Discord UserResolvable, username, or tag into a Discord.User.
+	 * Resolves a Discord.UserResolvable, username, or tag into a Discord.User.
 	 * This function accounts for non-cached users, but will throw an error
 	 * if it tries to fetch, and fails.
 	 *
-	 * @param user Discord UserResolvable, username, or tag (username#0000)
+	 * @param user Discord.UserResolvable, username, or tag (username#0000)
 	 * @param users Discord users
 	 *
 	 * @returns Discord user or undefined
@@ -342,21 +343,21 @@ export default class DiscordUtils {
 	}
 
 	/**
-	 * Resolves a Discord UserResolvable, username, or tag into a user ID.
+	 * Resolves a Discord.UserResolvable, username, or tag into a user ID.
 	 * This function doesn't account for non-cached users.
 	 *
-	 * @param user Discord UserResolvable, username, or tag
+	 * @param user Discord.UserResolvable, username, or tag
 	 * @param users Discord users
 	 *
 	 * @returns Discord user ID or undefined
 	 */
-	static resolveUserID(
+	static resolveUserId(
 		user: Discord.UserResolvable | string,
 		users: Discord.UserManager
 	): string | undefined {
-		let newUserID: string | undefined = users.resolve(user)?.id;
+		let newUserId: string | undefined = users.resolve(user)?.id;
 
-		if (!newUserID && typeof user == "string") {
+		if (!newUserId && typeof user == "string") {
 			// If the resolve didn't work...
 
 			// ...try to parse out a mention
@@ -371,33 +372,33 @@ export default class DiscordUtils {
 
 			// If it was found, set that as the new user ID
 			if (userId) {
-				newUserID = userId;
+				newUserId = userId;
 			}
 		}
 
 		// Returns the user if it's not null or undefined
-		if (newUserID) {
-			return newUserID;
+		if (newUserId) {
+			return newUserId;
 		} else {
 			return undefined;
 		}
 	}
 
 	/**
-	 * Resolves a Discord UserResolvable, username, or tag into a user ID.
+	 * Resolves a Discord.UserResolvable, username, or tag into a user ID.
 	 * This function accounts for non-cached users, but will throw an error
 	 * if it tries to fetch the member, and fails.
 	 *
-	 * @param user Discord UserResolvable, username, or tag
+	 * @param user Discord.UserResolvable, username, or tag
 	 * @param users Discord users
 	 *
 	 * @returns Discord user ID or undefined
 	 */
-	static async resolveUserIDFetch(
+	static async resolveUserIdFetch(
 		user: Discord.UserResolvable | string,
 		users: Discord.UserManager
 	): Promise<string | undefined> {
-		const userId = DiscordUtils.resolveUserID(user, users);
+		const userId = DiscordUtils.resolveUserId(user, users);
 
 		if (!userId && typeof user == "string") {
 			return (await DiscordUtils.resolveUserFetch(user, users))?.id;
@@ -411,10 +412,10 @@ export default class DiscordUtils {
 	//#region GuildMembers
 
 	/**
-	 * Resolves a Discord UserResolvable to a Discord.GuildMember.
+	 * Resolves a Discord.UserResolvable, username, tag (username#0000), or nickname to a Discord.GuildMember.
 	 * This function doesn't account for non-cached members.
 	 *
-	 * @param user Discord UserResolvable, username, tag (username#0000), or nickname
+	 * @param user Discord.UserResolvable, username, tag (username#0000), or nickname
 	 * @param members Discord guild members
 	 *
 	 * @returns Discord guild member or undefined
@@ -423,18 +424,18 @@ export default class DiscordUtils {
 		user: Discord.UserResolvable | string,
 		members: Discord.GuildMemberManager
 	): Discord.GuildMember | undefined {
-		const id = DiscordUtils.resolveMemberID(user, members);
+		const id = DiscordUtils.resolveMemberId(user, members);
 		if (id) {
 			return members.cache.get(id);
 		}
 	}
 
 	/**
-	 * Resolves a Discord UserResolvable to a Discord.GuildMember.
+	 * Resolves a Discord.UserResolvable, username, tag (username#0000), or nickname to a Discord.GuildMember.
 	 * This function accounts for non-cached members, but will throw an error
 	 * if it tries to fetch, and fails.
 	 *
-	 * @param user Discord UserResolvable, username, tag (username#0000), or nickname
+	 * @param user Discord.UserResolvable, username, tag (username#0000), or nickname
 	 * @param members Discord guild members
 	 *
 	 * @returns Discord guild member or undefined
@@ -448,7 +449,7 @@ export default class DiscordUtils {
 		// If it's still not found, fetch everything, and try again
 		if (!newMember) {
 			const longTask = members.fetch();
-			const timeout = Utils.sleep(3000);
+			const timeout = Utils.sleep(DiscordUtils.fetchTimeout);
 
 			const results = await Promise.race([longTask, timeout]);
 			if (results instanceof Discord.Collection) {
@@ -464,29 +465,29 @@ export default class DiscordUtils {
 	}
 
 	/**
-	 * Resolves a Discord UserResolvable, username, or tag into a user ID.
+	 * Resolves a Discord.UserResolvable, username, or tag into a user ID.
 	 * This function doesn't account for non-cached members.
 	 *
-	 * @param user Discord UserResolvable, username, or tag
+	 * @param user Discord.UserResolvable, username, or tag
 	 * @param members Discord Guild members
 	 *
 	 * @returns Discord user ID or undefined
 	 */
-	static resolveMemberID(
+	static resolveMemberId(
 		user: Discord.UserResolvable | string,
 		members: Discord.GuildMemberManager
 	): string | undefined {
-		let newMemberID: string | undefined = members.resolve(user)?.id;
+		let newMemberId: string | undefined = members.resolve(user)?.id;
 
-		if (!newMemberID && typeof user == "string") {
+		if (!newMemberId && typeof user == "string") {
 			// If the resolve didn't work...
 
 			// ...try to parse out a mention
-			newMemberID = DiscordUtils.getIdFromMention(user);
+			newMemberId = DiscordUtils.getIdFromMention(user);
 
 			// ...try to get it by their tag (username#0000), username, or nickname
-			if (!newMemberID) {
-				newMemberID = members.cache.find(
+			if (!newMemberId) {
+				newMemberId = members.cache.find(
 					member =>
 						member.user.tag == user ||
 						member.nickname == user ||
@@ -496,35 +497,152 @@ export default class DiscordUtils {
 		}
 
 		// Returns the member if it's not null or undefined
-		if (newMemberID) {
-			return newMemberID;
+		if (newMemberId) {
+			return newMemberId;
 		} else {
 			return undefined;
 		}
 	}
 
 	/**
-	 * Resolves a Discord UserResolvable, username, or tag into a user ID.
+	 * Resolves a Discord.UserResolvable, username, or tag into a user ID.
 	 * This function accounts for non-cached members.
 	 *
-	 * @param user Discord UserResolvable, username, or tag
+	 * @param user Discord.UserResolvable, username, or tag
 	 * @param members Discord users
 	 *
 	 * @returns Discord user ID or undefined
 	 */
-	static async resolveMemberIDFetch(
+	static async resolveMemberIdFetch(
 		user: Discord.UserResolvable | string,
 		members: Discord.GuildMemberManager
 	): Promise<string | undefined> {
-		const memberId = DiscordUtils.resolveMemberID(user, members);
+		const memberId = DiscordUtils.resolveMemberId(user, members);
 
 		// If it's still not found, fetch everything, and try again
 		if (!memberId) {
 			await members.fetch();
-			return DiscordUtils.resolveMemberID(user, members);
+			return DiscordUtils.resolveMemberId(user, members);
 		}
 
 		return memberId;
+	}
+
+	//#endregion
+
+	//#region Roles
+
+	/**
+	 * Resolves a Discord.RoleResolvable into a Discord.Role, with added searching functionality.
+	 * This function doesn't account for non-cached members.
+	 *
+	 * @param role Discord.RoleResolvable or name
+	 * @param roles Discord Roles
+	 *
+	 * @returns Discord.Role or undefined
+	 */
+	static resolveRole(
+		role: Discord.RoleResolvable | string,
+		roles: Discord.RoleManager
+	): Discord.Role | undefined {
+		const id = DiscordUtils.resolveRoleId(role, roles);
+		if (id) {
+			return roles.cache.get(id);
+		}
+	}
+
+	/**
+	 * Resolves a Discord.UserResolvable to a Discord.GuildMember.
+	 * This function accounts for non-cached members, but will throw an error
+	 * if it tries to fetch, and fails.
+	 *
+	 * @param role Discord.RoleResolvable or name
+	 * @param roles Discord Roles
+	 *
+	 * @returns Discord.Role or or undefined
+	 */
+	static async resolveRoleFetch(
+		role: Discord.RoleResolvable | string,
+		roles: Discord.RoleManager
+	): Promise<Discord.Role | undefined> {
+		const newMember = DiscordUtils.resolveRole(role, roles);
+
+		// If it's still not found, fetch everything, and try again
+		if (!newMember) {
+			const longTask = roles.fetch();
+			const timeout = Utils.sleep(DiscordUtils.fetchTimeout);
+
+			const results = await Promise.race([longTask, timeout]);
+			if (results instanceof Discord.Collection) {
+				return DiscordUtils.resolveRole(role, roles);
+			} else {
+				throw new Error(
+					`Members fetch timed out! This is likely an Intents issue.`
+				);
+			}
+		}
+
+		return newMember;
+	}
+
+	/**
+	 * Resolves a Discord.RoleResolvable, username, or tag into a user ID.
+	 * This function doesn't account for non-cached members.
+	 *
+	 * @param role Discord.RoleResolvable or name
+	 * @param roles Discord Roles
+	 *
+	 * @returns Discord.Role or or undefined
+	 */
+	static resolveRoleId(
+		role: Discord.RoleResolvable | string,
+		roles: Discord.RoleManager
+	): string | undefined {
+		let newRoleId: string | undefined = roles.resolve(role)?.id;
+
+		if (!newRoleId && typeof role == "string") {
+			// If the resolve didn't work...
+
+			// ...try to parse out a mention
+			newRoleId = DiscordUtils.getIdFromMention(role);
+
+			// ...try to get it by their tag (username#0000), username, or nickname
+			if (!newRoleId) {
+				newRoleId = roles.cache.find(newRole => newRole.name == role)
+					?.id;
+			}
+		}
+
+		// Returns the member if it's not null or undefined
+		if (newRoleId) {
+			return newRoleId;
+		} else {
+			return undefined;
+		}
+	}
+
+	/**
+	 * Resolves a Discord.UserResolvable, username, or tag into a user ID.
+	 * This function accounts for non-cached members.
+	 *
+	 * @param role Discord.RoleResolvable or name
+	 * @param roles Discord Roles
+	 *
+	 * @returns Discord.Role or or undefined
+	 */
+	static async resolveRoleIdFetch(
+		role: Discord.RoleResolvable | string,
+		roles: Discord.RoleManager
+	): Promise<string | undefined> {
+		const roleId = DiscordUtils.resolveRoleId(role, roles);
+
+		// If it's still not found, fetch everything, and try again
+		if (!roleId) {
+			await roles.fetch();
+			return DiscordUtils.resolveRoleId(role, roles);
+		}
+
+		return roleId;
 	}
 
 	//#endregion
