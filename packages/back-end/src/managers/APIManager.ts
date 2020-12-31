@@ -44,7 +44,9 @@ export default class APIManager {
 	 * @param options RequireAll options
 	 */
 	loadRoutesIn(options: Options): void {
-		const routes = DiscordUtils.importScripts(options);
+		const routes = DiscordUtils.importScripts(options) as (new (
+			framedClient: FramedClient
+		) => BaseRouter)[];
 		logger.debug(`Routers: ${util.inspect(routes)}`);
 		this.loadRoutes(routes);
 	}

@@ -14,7 +14,7 @@ export default class extends BaseCommand {
 	constructor(plugin: BasePlugin) {
 		super(plugin, {
 			id: "botstats",
-			aliases: ["bot", "uptime", "botinfo", "version", "versions"],
+			aliases: ["bot", "uptime", "botinfo", "ver", "version", "versions"],
 			about: "Get bot stats, including versions and uptime.",
 		});
 	}
@@ -62,10 +62,9 @@ export default class extends BaseCommand {
 				? `${process.env.NODE_ENV}`
 				: "";
 
-
 			const uptimeText = this.secondsToDhms(uptime);
 			const ramUsage = process.memoryUsage().heapUsed / 1024 / 1024;
-			const ramUsageText = `${Math.round(ramUsage * 100) / 100}`;
+			const ramUsageText = `${Number(ramUsage).toFixed(1)}`;
 			const backEnd = msg.framedClient.version
 				? `v${msg.framedClient.version}`
 				: "???";

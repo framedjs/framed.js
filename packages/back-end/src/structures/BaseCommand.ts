@@ -441,7 +441,9 @@ export abstract class BaseCommand {
 	 */
 	loadSubcommandsIn(options: Options): void {
 		try {
-			const subcommands = DiscordUtils.importScripts(options);
+			const subcommands = DiscordUtils.importScripts(options) as (new (
+				command: BaseCommand
+			) => BaseSubcommand)[];
 			this.loadSubcommands(subcommands);
 		} catch (error) {
 			logger.error(error.stack);

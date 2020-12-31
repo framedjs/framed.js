@@ -17,7 +17,7 @@ export default class extends BaseCommand {
 			about: "Gets the channel for Discord markdown formatting.",
 			description: oneLine`
 			Gets the channel for Discord markdown formatting.
-			The channel parameter can be the #channel, name, or ID.
+			The channel parameter can be the #channel identifier, name, or ID.
 			`,
 			usage: "<channel>",
 		});

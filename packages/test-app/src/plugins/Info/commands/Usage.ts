@@ -31,7 +31,7 @@ export default class extends BaseCommand {
 					"Notes",
 					stripIndent`
 					${bulletPoint}In most cases, **do not use brackets** while trying to run commands.
-					${bulletPoint}If asked for, quotes are *usually* needed (ex. fields with spaces), but not always. 
+					${bulletPoint}If shown, quotes are *usually* needed (ex. fields with spaces), but not always. 
 					${bulletPoint}The usage statements may be inaccurate in order to simplify them.
 					`
 				);

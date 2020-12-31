@@ -13,18 +13,14 @@ export default class DiscordUtils {
 	 * Imports scripts from a path, gets all the default exports, then puts it into an array
 	 * @param options RequireAll Options
 	 */
-	// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-	/* eslint-disable @typescript-eslint/no-explicit-any */
-	static importScripts(options: Options): any[] {
-		// I have no idea how the hell this code is supposed to work in TypeScript
-
-		const scripts: any[] = [];
+	static importScripts(options: Options): unknown[] {
+		const scripts: unknown[] = [];
 
 		// Sanity check
 		if (!existsSync(options.dirname)) return scripts;
 
 		const requiredScripts: {
-			[key: number]: { key: number; value: { default: any } };
+			[key: number]: { key: number; value: { default: unknown } };
 		} = RequireAll(options);
 		logger.debug(`requiredScripts: ${util.inspect(requiredScripts)}`);
 
@@ -54,12 +50,6 @@ export default class DiscordUtils {
 				scripts.push(exports);
 			}
 		}
-
-		// let commandsPath = "";
-		// if (typeof options === "string" && !this.commandsPath)
-		// 	this.commandsPath = options;
-		// else if (typeof options === "object" && !this.commandsPath)
-		// 	this.commandsPath = options.dirname;
 
 		logger.debug(`Scripts: ${util.inspect(scripts)}`);
 

@@ -5,7 +5,7 @@ export default class extends BaseCommand {
 	constructor(plugin: BasePlugin) {
 		super(plugin, {
 			id: "about",
-			about: "Get info about the bot, including its creators.",
+			about: "View info about the bot, including its creators.",
 		});
 	}
 

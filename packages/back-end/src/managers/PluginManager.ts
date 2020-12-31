@@ -47,7 +47,9 @@ export default class PluginManager {
 	 * @param options RequireAll options
 	 */
 	loadPluginsIn(options: Options): void {
-		const plugins = DiscordUtils.importScripts(options);
+		const plugins = DiscordUtils.importScripts(options) as (new (
+			framedClient: FramedClient
+		) => BasePlugin)[];
 		logger.debug(`Plugins: ${util.inspect(plugins)}`);
 		this.loadPlugins(plugins);
 	}

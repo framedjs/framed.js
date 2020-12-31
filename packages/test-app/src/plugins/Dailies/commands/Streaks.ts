@@ -6,9 +6,9 @@ export default class extends BaseCommand {
 		super(plugin, {
 			id: "streaks",
 			aliases: ["streak", "s"],
-			about: "Shows streak stats for users.",
+			about: "View streak stats for users.",
 			description: oneLine`
-			Shows streak stats for users.`,
+			View streak stats for users.`,
 			usage: `[top|all|userid]`,
 			hideUsageInHelp: true,
 			examples: stripIndent`

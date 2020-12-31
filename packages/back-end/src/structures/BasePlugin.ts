@@ -102,7 +102,9 @@ export abstract class BasePlugin {
 	 * @param options
 	 */
 	loadCommandsIn(options: Options): void {
-		const commands = DiscordUtils.importScripts(options);
+		const commands = DiscordUtils.importScripts(options) as (new (
+			plugin: BasePlugin
+		) => BaseCommand)[];
 		logger.debug(`Commands: ${util.inspect(commands)}`);
 		this.loadCommands(commands);
 	}
@@ -192,7 +194,9 @@ export abstract class BasePlugin {
 	 * @param options
 	 */
 	loadEventsIn(options: Options): void {
-		const events = DiscordUtils.importScripts(options);
+		const events = DiscordUtils.importScripts(options) as (new (
+			plugin: BasePlugin
+		) => BaseEvent)[];
 		logger.debug(`Events: ${util.inspect(events)}`);
 		this.loadEvents(events);
 	}
@@ -205,8 +209,12 @@ export abstract class BasePlugin {
 		events: (new (plugin: BasePlugin) => T)[]
 	): void {
 		for (const event of events) {
-			const initEvent = new event(this);
-			this.loadEvent(initEvent);
+			try {
+				const initEvent = new event(this);
+				this.loadEvent(initEvent);
+			} catch (error) {
+				logger.error(error.stack);
+			}
 		}
 	}
 
@@ -221,7 +229,7 @@ export abstract class BasePlugin {
 			return;
 		}
 		this.events.set(event.id, event);
-		
+
 		if (event.discord) {
 			this.framedClient.client.on(
 				event.discord.name,
