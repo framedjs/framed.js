@@ -32,111 +32,109 @@ export default class FramedMessage {
 	 * @param info Framed Message info
 	 */
 	constructor(info: FramedMessageOptions) {
-		if (info.discord) {
-			const newMsg =
-				info.discord.id && info.discord.channel
-					? info.discord.channel.messages.cache.get(info.discord.id)
-					: info.discord.base instanceof Discord.Message
-					? info.discord.base
-					: info.discord.base?.discord?.id &&
-					  info.discord.base?.discord?.channel
-					? info.discord.base?.discord?.channel?.messages.cache.get(
-							info.discord.base.discord.id
-					  )
+		// Grabs the base
+		const base:
+			| FramedMessageOptions
+			| FramedMessage
+			| Discord.Message
+			| undefined = info.base
+			? info.base
+			: info.discord?.base
+			? info.discord.base
+			: undefined;
+
+		let channel:
+			| Discord.TextChannel
+			| Discord.DMChannel
+			| Discord.NewsChannel
+			| undefined;
+		let id: string | undefined;
+		let msg: Discord.Message | undefined;
+		let author: Discord.User | undefined;
+		let client: Discord.Client | undefined;
+		let guild: Discord.Guild | null = null;
+		let member: Discord.GuildMember | undefined;
+
+		// Gets the Discord Base for elements such as author, channel, etc.
+		const discordBase =
+			base instanceof Discord.Message
+				? base
+				: base?.discord
+				? base.discord
+				: info.discord;
+
+		if (discordBase) {
+			channel = discordBase?.channel;
+			id = discordBase?.id;
+			msg =
+				discordBase instanceof Discord.Message
+					? discordBase
+					: id && channel
+					? channel.messages.cache.get(id)
 					: undefined;
+			channel = channel ? channel : msg?.channel;
+			id = id ? id : msg?.id;
 
-			const newDiscordClient = info.discord.client
-				? info.discord.client
-				: info.discord.base instanceof Discord.Message
-				? info.discord.base.client
-				: info.discord.base?.discord?.client;
-
-			const newId = info.discord.id
-				? info.discord.id
-				: newMsg
-				? newMsg.id
-				: info.discord.base instanceof Discord.Message
-				? info.discord.base.id
-				: info.discord.base?.discord?.id;
-
-			const newChannel = info.discord.channel
-				? info.discord.channel
-				: newMsg
-				? newMsg.channel
-				: info.discord.base instanceof Discord.Message
-				? info.discord.base.channel
-				: info.discord.base?.discord?.channel;
-
-			const newAuthor = info.discord.author
-				? info.discord.author
-				: newMsg
-				? newMsg.author
+			client = discordBase?.client ? discordBase.client : msg?.client;
+			guild = discordBase?.guild
+				? discordBase?.guild
+				: msg?.guild
+				? msg.guild
+				: null;
+			member = discordBase?.member
+				? discordBase.member
+				: msg?.member
+				? msg.member
 				: undefined;
-
-			const newGuild = info.discord.guild
-				? info.discord.guild
-				: newMsg
-				? newMsg.guild
-				: null;
-
-			const newMember = info.discord.member
-				? info.discord.member
-				: newAuthor?.id
-				? newGuild?.member(newAuthor.id)
-				: null;
-
-			// Gets client or throws error
-			if (!newDiscordClient) {
-				throw new Error(
-					oneLine`Parameter discord.client wasn't set when creating FramedMessage!
-						This value should be set if the discord.msg parameter hasn't been set.`
-				);
-			}
-
-			// Gets channel or throws error
-			if (!newChannel) {
-				throw new Error(
-					oneLine`Parameter discord.channel wasn't set when creating FramedMessage!
-						This value should be set if the discord.msg parameter hasn't been set.`
-				);
-			}
-
-			// Gets author or throws error
-			if (!newAuthor) {
-				throw new Error(
-					oneLine`discordClient.user is null, and discord.author is undefined.`
-				);
-			}
-
-			// If there's an msg object, we set all the relevant values here
-			this.discord = {
-				msg: newMsg,
-				client: newDiscordClient,
-				id: newId,
-				channel: newChannel,
-				author: newAuthor,
-				member: newMember,
-				guild: newGuild,
-			};
-
-			// Sets the content
-			let newContent = info.content;
-			if (!newContent) {
-				if (newId) {
-					newContent = newChannel.messages.cache.get(newId)?.content;
-					if (!newContent) {
-						newContent = "";
-					}
-				} else {
-					newContent = "";
-				}
-			}
-
-			this.content = newContent;
-
-			// logger.debug(util.inspect(this.discord, undefined, 0));
+			author = discordBase?.author
+				? discordBase.author
+				: msg?.author
+				? member?.user
+				: undefined;
 		}
 
+		// Gets client or throws error
+		if (!client) {
+			throw new Error(
+				oneLine`Parameter discord.client wasn't set when creating FramedMessage!
+					This value should be set if the discord.msg parameter hasn't been set.`
+			);
+		}
+
+		// Gets channel or throws error
+		if (!channel) {
+			throw new Error(
+				oneLine`Parameter discord.channel wasn't set when creating FramedMessage!
+					This value should be set if the discord.msg parameter hasn't been set.`
+			);
+		}
+
+		// Gets author or throws error
+		if (!author) {
+			throw new Error(oneLine`Parameter discord.author is undefined.`);
+		}
+
+		// If there's an msg object, we set all the relevant values here
+		this.discord = {
+			msg: msg,
+			client: client,
+			id: id,
+			channel: channel,
+			author: author,
+			member: member,
+			guild: guild,
+		};
+
+		// Sets the content
+		let content = info.content;
+		if (!content && id) {
+			content = msg?.channel.messages.cache.get(id)?.content;
+		}
+		if (!content) {
+			content = "";
+		}
+
+		this.content = content;
 		this.framedClient = info.framedClient;
 		this.prefix = this.getPrefix();
 		this.args = this.getArgs();
