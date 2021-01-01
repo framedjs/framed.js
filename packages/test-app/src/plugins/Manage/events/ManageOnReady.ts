@@ -14,7 +14,6 @@ export default class extends BaseEvent {
 		super(plugin, {
 			id: "manageReady",
 			discord: {
-				client: plugin.framedClient.client,
 				name: "ready",
 			},
 		});
@@ -26,6 +25,7 @@ export default class extends BaseEvent {
 			this.job = Schedule.scheduleJob(this.cron, () =>
 				this.setPresence()
 			);
+			this.setPresence();
 		} else {
 			logger.warn(
 				`Event "${this.discord?.name}" from ${this.plugin.id} already has its job running!`
@@ -59,7 +59,7 @@ export default class extends BaseEvent {
 				logger.debug(
 					`Setting activity to "${this.presences[presenceIndex].activity?.name}"`
 				);
-				await this.discord.client.user?.setPresence(
+				await this.discord.client?.user?.setPresence(
 					this.presences[presenceIndex]
 				);
 			} catch (error) {

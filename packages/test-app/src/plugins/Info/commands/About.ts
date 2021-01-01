@@ -10,9 +10,7 @@ export default class extends BaseCommand {
 	}
 
 	async run(msg: FramedMessage): Promise<boolean> {
-		const discordUser = msg.framedClient.client.user;
-
-		if (msg.discord && discordUser) {
+		if (msg.discord) {
 			const embed = EmbedHelper.getTemplate(
 				msg.discord,
 				this.framedClient.helpCommands,
@@ -21,7 +19,7 @@ export default class extends BaseCommand {
 				.setTitle("About the Bot")
 				.setDescription(
 					stripIndent`
-				${oneLine`${discordUser} is a collection of custom bots for
+				${oneLine`${msg.discord?.client.user} is a collection of custom bots for
 				<:gdu:766718483983368212> **Game Dev Underground**.`}
 				`
 				)
@@ -41,7 +39,10 @@ export default class extends BaseCommand {
 			// `
 			// );
 			await msg.discord.channel.send(embed);
+			return true;
+		} else {
+			msg.send(`Pixel Pete is a collection of custom bots for Game Dev Underground.`);
 		}
-		return true;
+		return false;
 	}
 }

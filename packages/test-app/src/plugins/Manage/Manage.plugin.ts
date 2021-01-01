@@ -7,7 +7,7 @@ export default class Manage extends BasePlugin {
 			id: "default.bot.manage",
 			name: "Manage",
 			description: "Manages certain things, such as commands.",
-			version: "0.2.0",
+			version: "0.2.1",
 			paths: {
 				commands: path.join(__dirname, "commands"),
 				events: path.join(__dirname, "events"),

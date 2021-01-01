@@ -1,6 +1,7 @@
 import FramedClient from "../structures/FramedClient";
 import FramedMessage from "../structures/FramedMessage";
 import { FramedDiscordMessageOptions } from "./FramedDiscordMessageOptions";
+import { FramedTwitchMessageOptions } from "./FramedTwitchMessageOptions";
 
 export interface FramedMessageOptions {
 	/**
@@ -26,4 +27,9 @@ export interface FramedMessageOptions {
 	 * Discord data.
 	 */
 	discord?: FramedDiscordMessageOptions;
+
+	/**
+	 * Twitch data.
+	 */
+	twitch?: FramedTwitchMessageOptions;
 }

@@ -12,7 +12,6 @@ export default class extends BaseEvent {
 		super(plugin, {
 			id: "pollMessageReactionAdd",
 			discord: {
-				client: plugin.framedClient.client,
 				name: "messageReactionAdd",
 			},
 		});

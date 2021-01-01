@@ -105,7 +105,7 @@ export abstract class BasePlugin {
 		const commands = DiscordUtils.importScripts(options) as (new (
 			plugin: BasePlugin
 		) => BaseCommand)[];
-		logger.debug(`Commands: ${util.inspect(commands)}`);
+		logger.silly(`Commands: ${util.inspect(commands)}`);
 		this.loadCommands(commands);
 	}
 
@@ -182,7 +182,7 @@ export abstract class BasePlugin {
 			});
 		}
 
-		logger.verbose(`Finished loading command "${command.id}".`);
+		logger.debug(`Finished loading command "${command.id}".`);
 	}
 
 	//#endregion
@@ -197,7 +197,7 @@ export abstract class BasePlugin {
 		const events = DiscordUtils.importScripts(options) as (new (
 			plugin: BasePlugin
 		) => BaseEvent)[];
-		logger.debug(`Events: ${util.inspect(events)}`);
+		logger.silly(`Events: ${util.inspect(events)}`);
 		this.loadEvents(events);
 	}
 
@@ -230,15 +230,33 @@ export abstract class BasePlugin {
 		}
 		this.events.set(event.id, event);
 
+		// Initializes the events if there is an availiable client right now
+		if (
+			this.framedClient.discord.client &&
+			this.framedClient.discord.client.readyTimestamp
+		) {
+			this.initEvent(event);
+		}
+	}
+
+	/**
+	 *
+	 * @param event BaseEvent
+	 */
+	initEvent(event: BaseEvent): void {
 		if (event.discord) {
-			this.framedClient.client.on(
+			if (!this.framedClient.discord.client) {
+				throw new Error(`Discord client doesn't exist!`);
+			}
+			event.init();
+			this.framedClient.discord.client.on(
 				event.discord.name,
 				event.run.bind(event)
 			);
-			logger.verbose(`Finished loading event "${event.discord.name}".`);
+			logger.debug(`Finished loading event with ID "${event.id}" (${event.plugin.id})`);
 		} else {
 			logger.warn(
-				`There was an imported event with no Discord event! Only Discord is supported currently`
+				`There was an imported event with no Discord event! Only Discord is supported currently.`
 			);
 		}
 	}

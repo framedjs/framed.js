@@ -1,5 +1,6 @@
 import { FramedMessage, BasePlugin, BaseCommand } from "back-end";
 import { oneLine, stripIndents } from "common-tags";
+import { FramedMessageOptions } from "packages/back-end/dist/interfaces/FramedMessageOptions";
 import { logger } from "shared";
 
 export default class Multi extends BaseCommand {
@@ -37,13 +38,12 @@ export default class Multi extends BaseCommand {
 			const parsed = Multi.parse(content);
 
 			for await (const parse of parsed) {
-				const newMsg = new FramedMessage({
-					framedClient: this.framedClient,
+				const info: FramedMessageOptions = {
+					base: msg,
 					content: parse,
-					discord: {
-						base: msg,
-					},
-				});
+					framedClient: this.framedClient,
+				};
+				const newMsg = new FramedMessage(info);
 				const results = await this.framedClient.plugins.runCommand(
 					newMsg
 				);

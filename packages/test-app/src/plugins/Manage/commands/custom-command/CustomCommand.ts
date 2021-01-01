@@ -46,10 +46,7 @@ export default class CustomCommand extends BaseCommand {
 	}
 
 	async run(msg: FramedMessage): Promise<boolean> {
-		if (msg.discord) {
-			await PluginManager.sendHelpForCommand(msg);
-			return true;
-		}
+		await PluginManager.sendHelpForCommand(msg);
 		return false;
 	}
 
@@ -246,14 +243,7 @@ export default class CustomCommand extends BaseCommand {
 				newResponse: newResponse,
 			};
 		} else {
-			logger.error("Couldn't find prefix!");
-			if (msg && !silent) {
-				await msg.discord?.channel.send(oneLine`
-				${msg.discord?.author}, something went wrong with getting a prefix inside a database. 
-				It is probably not your fault. Contact the developers about this error message!`);
-			}
+			throw new ReferenceError("Couldn't find prefix!");
 		}
-
-		return undefined;
 	}
 }

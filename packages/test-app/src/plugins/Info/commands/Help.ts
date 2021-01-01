@@ -47,9 +47,7 @@ export default class Help extends BaseCommand {
 	}
 
 	async run(msg: FramedMessage): Promise<boolean> {
-		const framedUser = this.framedClient.client.user;
-
-		if (msg.args && framedUser) {
+		if (msg.args) {
 			if (msg.args[0]) {
 				// Sends help through Embed
 				if (msg.discord) {

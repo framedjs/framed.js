@@ -52,6 +52,8 @@ export default class extends BaseCommand {
 			await newDiscordMsg.edit(newDiscordMsg.content, embed);
 
 			return true;
+		} else {
+			msg.send("Pong!");
 		}
 		return false;
 	}

@@ -53,6 +53,8 @@ export default class Link extends BaseCommand {
 					return true;
 				}
 			}
+		} else {
+			
 		}
 		return false;
 	}

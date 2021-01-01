@@ -22,7 +22,10 @@ export default class APIManager {
 		// https://inviqa.com/blog/how-build-basic-api-typescript-koa-and-typeorm
 		this.app.use(async (ctx: Koa.Context, next: () => Promise<unknown>) => {
 			try {
+				const start = Date.now();
 				await next();
+				const ms = Date.now() - start;
+				logger.http(`${ctx.method} ${ctx.url} - ${ms}ms`);
 			} catch (error) {
 				ctx.status = 500;
 				error.status = ctx.status;
@@ -35,8 +38,9 @@ export default class APIManager {
 		this.app.on("error", logger.error);
 
 		// Send to port
-		const PORT: number = Number(process.env.API_PORT) || 42069;
-		this.app.listen(PORT);
+		const port: number = Number(process.env.API_PORT) || 42069;
+		this.app.listen(port);
+		logger.http(`API is listening on port ${port}`);
 	}
 
 	/**
@@ -47,7 +51,7 @@ export default class APIManager {
 		const routes = DiscordUtils.importScripts(options) as (new (
 			framedClient: FramedClient
 		) => BaseRouter)[];
-		logger.debug(`Routers: ${util.inspect(routes)}`);
+		logger.silly(`Routers: ${util.inspect(routes)}`);
 		this.loadRoutes(routes);
 	}
 

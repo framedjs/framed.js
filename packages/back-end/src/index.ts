@@ -14,8 +14,11 @@ export { BaseEvent } from "./structures/BaseEvent";
 export { BaseRouter } from "./structures/BaseRouter";
 
 // Interfaces
-export { QuoteSections } from "./interfaces/QuoteSections";
+export { FramedMessageOptions } from "./interfaces/FramedMessageOptions";
+export { FramedLoginOptions } from "./interfaces/FramedLoginOptions";
 export { FramedArgument } from "./interfaces/FramedArgument";
+
+export { QuoteSections } from "./interfaces/QuoteSections";
 export { BaseCommandOptions } from "./interfaces/BaseCommandOptions";
 
 export { HelpData } from "./interfaces/HelpData";
@@ -41,4 +44,3 @@ export { FriendlyError } from "./structures/errors/FriendlyError";
 export { InvalidError } from "./structures/errors/InvalidError";
 export { NotFoundError } from "./structures/errors/NotFoundError";
 export { PermissionDeniedError } from "./structures/errors/PermissionDeniedError";
-

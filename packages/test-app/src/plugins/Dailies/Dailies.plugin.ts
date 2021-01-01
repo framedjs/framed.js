@@ -16,7 +16,7 @@ export default class extends BasePlugin {
 				},
 			],
 			description: "Challenge yourself to do something every day.",
-			version: "1.52.0",
+			version: "0.2.0",
 			paths: {
 				commands: path.join(__dirname, "commands"),
 				routes: path.join(__dirname, "routes"),

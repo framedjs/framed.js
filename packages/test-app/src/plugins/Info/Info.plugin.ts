@@ -7,7 +7,7 @@ export default class extends BasePlugin {
 			id: "default.bot.info",
 			name: "Info",
 			description: "Info commands.",
-			version: "0.2.0",
+			version: "0.3.0",
 			paths: {
 				commands: path.join(__dirname, "commands"),
 				events: path.join(__dirname, "events"),

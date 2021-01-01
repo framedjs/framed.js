@@ -25,11 +25,6 @@ export interface FramedDiscordMessageOptions {
 	channel?: Discord.TextChannel | Discord.DMChannel | Discord.NewsChannel;
 
 	/**
-	 * The content of the Discord message.
-	 */
-	// content?: string;
-
-	/**
 	 * The author of the message.
 	 */
 	author?: Discord.User;

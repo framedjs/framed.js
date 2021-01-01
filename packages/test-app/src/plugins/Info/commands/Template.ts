@@ -17,7 +17,7 @@ export default class extends BaseCommand {
 		}
 
 		if (msg.args) {
-			// await msg.discord?.channel.send("test"); // Uncomment me!
+			await msg.send("test"); // Uncomment me!
 			return true;
 		}
 
