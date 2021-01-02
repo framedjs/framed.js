@@ -1,3 +1,5 @@
+import { ChatClientOptions } from "twitch-chat-client/lib/ChatClient";
+
 export interface FramedLoginOptions {
 	type: "discord" | "twitch";
 	discord?: FramedDiscordLoginOptions;
@@ -13,5 +15,5 @@ export interface FramedTwitchLoginOptions {
 	clientId: string;
 	clientSecret: string;
 	refreshToken: string;
-	channels: string[];
+	clientOptions: ChatClientOptions;
 }

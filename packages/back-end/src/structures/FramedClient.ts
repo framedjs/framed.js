@@ -15,6 +15,9 @@ import DatabaseManager from "../managers/DatabaseManager";
 import APIManager from "../managers/APIManager";
 import { BasePlugin } from "./BasePlugin";
 
+const DEFAULT_PREFIX = "!";
+
+
 let version: string | undefined;
 // Sets the versions
 try {
@@ -28,17 +31,25 @@ try {
 	logger.error(error.stack);
 }
 
+
 export default class FramedClient extends EventEmitter {
 	public readonly api: APIManager;
 	public readonly database: DatabaseManager;
 	public readonly plugins = new PluginManager(this);
+
 	public discord: {
 		client?: Discord.Client;
-	} = {};
+		defaultPrefix: string;
+	} = {
+		defaultPrefix: DEFAULT_PREFIX,
+	};
 	public twitch: {
 		auth?: TwitchAuth.RefreshableAuthProvider;
 		chatClient?: Twitch.ChatClient;
-	} = {};
+		defaultPrefix: string;
+	} = {
+		defaultPrefix: DEFAULT_PREFIX,
+	};
 
 	/**
 	 * Framed version
@@ -58,33 +69,33 @@ export default class FramedClient extends EventEmitter {
 	public readonly importFilter = /^((?!\.d).)*\.(js|ts)$/;
 	// public readonly importFilter = /(?<!\.d)(\.(js|ts))$/;
 
-	public defaultPrefix = "!";
+	public defaultPrefix = DEFAULT_PREFIX;
 
 	private readonly clientOptions: FramedClientOptions;
 
-	constructor(info: FramedClientOptions) {
+	constructor(options: FramedClientOptions) {
 		// I have no idea what capture rejections does, but I assume it's a good thing.
 		super({ captureRejections: true });
 
-		this.clientOptions = info;
+		this.clientOptions = options;
 
 		// Sets the app version
-		this.appVersion = info?.appVersion;
+		this.appVersion = options.appVersion;
 
-		if (info) {
-			if (info.defaultPrefix) {
-				this.defaultPrefix = info?.defaultPrefix;
-			}
+		if (options.defaultPrefix) {
+			this.defaultPrefix = options?.defaultPrefix;
 		}
 
 		this.api = new APIManager(this);
 
-		logger.debug(`Using database path: ${info.defaultConnection.database}`);
+		logger.debug(
+			`Using database path: ${options.defaultConnection.database}`
+		);
 		logger.debug(
 			`Using entities path: ${DatabaseManager.defaultEntitiesPath}`
 		);
 
-		this.database = new DatabaseManager(this, info.defaultConnection);
+		this.database = new DatabaseManager(this, options.defaultConnection);
 	}
 
 	/**
@@ -165,7 +176,7 @@ export default class FramedClient extends EventEmitter {
 					);
 					this.twitch.chatClient = new Twitch.ChatClient(
 						this.twitch.auth,
-						{ channels: option.twitch.channels }
+						option.twitch.clientOptions
 					);
 					this.setupTwitchEvents(this.twitch.chatClient);
 					await this.twitch.chatClient.connect();
@@ -221,7 +232,7 @@ export default class FramedClient extends EventEmitter {
 		}
 	}
 
-	private setupDiscordEvents(client: Discord.Client) {
+	private setupDiscordEvents(client: Discord.Client): void {
 		client.on("ready", async () => {
 			logger.info(`Logged in as ${client.user?.tag}.`);
 

@@ -33,9 +33,7 @@ const framedClient = new FramedClient({
 		logging: false,
 		entities: [DatabaseManager.defaultEntitiesPath],
 	},
-	defaultPrefix: process.env.DEFAULT_PREFIX
-		? process.env.DEFAULT_PREFIX
-		: "/",
+	defaultPrefix: process.env.DEFAULT_PREFIX,
 	appVersion: version,
 });
 
@@ -64,7 +62,15 @@ if (
 			clientId: process.env.TWITCH_CLIENT_ID,
 			clientSecret: process.env.TWITCH_CLIENT_SECRET,
 			refreshToken: process.env.TWITCH_REFRESH_TOKEN,
-			channels: process.env.TWITCH_CHANNELS.split(","),
+			clientOptions: {
+				channels: process.env.TWITCH_CHANNELS.split(","),
+				logger: {
+					// name: "",
+					timestamps: false,
+					// colors: false,
+					emoji: false,
+				},
+			},
 		},
 	});
 }
