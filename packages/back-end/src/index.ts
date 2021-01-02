@@ -17,8 +17,6 @@ export { BaseEvent } from "./structures/BaseEvent";
 export { BaseRouter } from "./structures/BaseRouter";
 
 // Interfaces
-<<<<<<< Updated upstream
-=======
 export { FramedArgument } from "./interfaces/FramedArgument";
 // export { FramedArgumentOptions } from "./interfaces/FramedArgumentOptions"
 // export { FramedClientOptions } from "./interfaces/FramedClientOptions";
@@ -28,9 +26,7 @@ export { FramedFoundCommandData as FramedCommandData } from "./interfaces/Framed
 export { FramedMessageOptions } from "./interfaces/FramedMessageOptions";
 export { FramedLoginOptions } from "./interfaces/FramedLoginOptions";
 
->>>>>>> Stashed changes
 export { QuoteSections } from "./interfaces/QuoteSections";
-export { FramedArgument } from "./interfaces/FramedArgument";
 export { BaseCommandOptions } from "./interfaces/BaseCommandOptions";
 
 export { HelpData } from "./interfaces/HelpData";
@@ -57,9 +53,6 @@ export { InvalidError } from "./structures/errors/InvalidError";
 export { NotFoundError } from "./structures/errors/NotFoundError";
 export { PermissionDeniedError } from "./structures/errors/PermissionDeniedError";
 
-<<<<<<< Updated upstream
-=======
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const version = require("../package.json").version as string;
 export { version };
->>>>>>> Stashed changes

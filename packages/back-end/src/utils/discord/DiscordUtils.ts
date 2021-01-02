@@ -22,27 +22,27 @@ export default class DiscordUtils {
 		const requiredScripts: {
 			[key: number]: { key: number; value: { default: unknown } };
 		} = RequireAll(options);
-		logger.debug(`requiredScripts: ${util.inspect(requiredScripts)}`);
+		logger.silly(`requiredScripts: ${util.inspect(requiredScripts)}`);
 
 		const requiredScriptsValues = Object.values(requiredScripts);
-		logger.debug(
+		logger.silly(
 			`requiredScriptsValues: ${util.inspect(requiredScriptsValues)}`
 		);
 
 		for (const key in requiredScriptsValues) {
 			const pluginScript = requiredScriptsValues[key];
-			logger.debug(`Key: ${key} | ${util.inspect(pluginScript)}`);
+			logger.silly(`Key: ${key} | ${util.inspect(pluginScript)}`);
 
 			const values = Object.values(pluginScript);
 			for (const key in values) {
-				logger.debug(`Key: ${key}`);
+				logger.silly(`Key: ${key}`);
 
 				let exports = values[key];
 
 				// For some reason, TypeScript thinks this value can be a number
 				if (typeof exports == "object") {
 					if (typeof exports.default === "function") {
-						logger.debug("Exported default is a function");
+						logger.silly("Exported default is a function");
 						exports = exports.default;
 					}
 				}
@@ -51,7 +51,7 @@ export default class DiscordUtils {
 			}
 		}
 
-		logger.debug(`Scripts: ${util.inspect(scripts)}`);
+		logger.silly(`Scripts: ${util.inspect(scripts)}`);
 
 		return scripts;
 	}

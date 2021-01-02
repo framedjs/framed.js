@@ -57,9 +57,8 @@ export default class extends BaseCommand {
 					}
 					return true;
 				} else {
-					logger.error(
-						"This command isn't supported on other platforms!"
-					);
+					msg.send("This command isn't supported on other platforms!");
+					return false;
 				}
 			}
 		}

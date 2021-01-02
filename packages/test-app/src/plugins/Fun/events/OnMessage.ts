@@ -6,7 +6,6 @@ export default class extends BaseEvent {
 		super(plugin, {
 			id: "pollMessage",
 			discord: {
-				client: plugin.framedClient.client,
 				name: "message",
 			},
 		});

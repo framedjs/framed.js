@@ -9,7 +9,7 @@ export interface FramedClientOptions {
 	 * the default entities are.
 	 */
 	defaultConnection: TypeORM.ConnectionOptions;
-	
+
 	/**
 	 * The prefix used for all commands, except when a plugin or commands explicitly uses something else
 	 */
@@ -19,4 +19,14 @@ export interface FramedClientOptions {
 	 * A version number, separate from the Framed framework itself.
 	 */
 	appVersion?: string;
+
+	/** 
+	 * Import default API routes
+	 */
+	loadDefaultRoutes?: boolean;
+
+	/**
+	 * Import default plugins
+	 */
+	loadDefaultPlugins?: boolean;
 }

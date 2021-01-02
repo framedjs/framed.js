@@ -78,4 +78,37 @@ export class Utils {
 	static sleep(ms: number): Promise<void> {
 		return new Promise(resolve => setTimeout(resolve, ms));
 	}
+
+	/**
+	 * Gets the time elapsed between high-resolution times with `process.hrtime()`
+	 * @param startTime The start high-resolution time
+	 */
+	static hrTimeElapsed(
+		startTime: [number, number]
+	): string {
+		// Gets the difference between the start time, and now
+		const diffTime = process.hrtime(startTime);
+
+		// Fixed decimal places (ex. if set to 3, decimals will be 0.000)
+		const fixedDecimals = 3;
+
+		// diffTime[1] is the decimal number as a whole number, so
+		// we need to convert that. This will remove some trailing numbers.
+		const endDecimalString = String(diffTime[1]).slice(
+			0,
+			fixedDecimals + 1
+		);
+
+		// Negative exponent (for example, 10 ^ -3)
+		const negativeExponent = Math.pow(10, -Number(fixedDecimals + 1));
+
+		// Larger number (that should be a decimal) * negative exponent
+		// will turn it into a decimal
+		const endDecimalNumber = Number(
+			Number(endDecimalString) * negativeExponent
+		).toFixed(fixedDecimals);
+
+		// Startup time
+		return (diffTime[0] + Number(endDecimalNumber)).toFixed(fixedDecimals);
+	}
 }

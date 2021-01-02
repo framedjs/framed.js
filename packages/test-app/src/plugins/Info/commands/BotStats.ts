@@ -3,6 +3,7 @@ import {
 	BasePlugin,
 	DatabaseManager,
 	EmbedHelper,
+	FramedClient,
 	FramedMessage,
 	Plugin,
 } from "back-end";
@@ -54,26 +55,25 @@ export default class extends BaseCommand {
 		let uptime = process.uptime();
 		// uptime = 216120;
 
+		// The rest of the data
+		const osArch = `${os.platform()}/${os.arch()}`;
+		const nodeEnvironment = process.env.NODE_ENV
+			? `${process.env.NODE_ENV}`
+			: "";
+		const uptimeText = this.secondsToDhms(uptime);
+		const ramUsage = process.memoryUsage().heapUsed / 1024 / 1024;
+		const ramUsageText = `${Number(ramUsage).toFixed(1)}`;
+		const backEnd = FramedClient.version
+			? `v${FramedClient.version}`
+			: "???";
+		const botVersion = `${
+			msg.framedClient.appVersion
+				? `v${msg.framedClient.appVersion}`
+				: "???"
+		}`;
+
 		if (msg.discord) {
 			const codeblock = "```";
-
-			const osArch = `${os.platform()}/${os.arch()}`;
-			const nodeEnvironment = process.env.NODE_ENV
-				? `${process.env.NODE_ENV}`
-				: "";
-
-			const uptimeText = this.secondsToDhms(uptime);
-			const ramUsage = process.memoryUsage().heapUsed / 1024 / 1024;
-			const ramUsageText = `${Number(ramUsage).toFixed(1)}`;
-			const backEnd = msg.framedClient.version
-				? `v${msg.framedClient.version}`
-				: "???";
-			const botVersion = `${
-				msg.framedClient.appVersion
-					? `v${msg.framedClient.appVersion}`
-					: "???"
-			}`;
-
 			const embed = EmbedHelper.getTemplate(
 				msg.discord,
 				this.framedClient.helpCommands,
@@ -95,8 +95,14 @@ export default class extends BaseCommand {
 				${codeblock}
 				`);
 			await msg.discord.channel.send(embed);
+			return true;
+		} else {
+			if (msg.command != "uptime") {
+				await msg.send(`Bot ${botVersion} running Framed ${backEnd}`);
+				return true;
+			}
 		}
-		return true;
+		return false;
 	}
 
 	private secondsToDhms(seconds: number): string {

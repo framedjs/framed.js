@@ -2,6 +2,7 @@
 import { oneLine } from "common-tags";
 import Discord from "discord.js";
 import { FramedDiscordMessage } from "../interfaces/FramedDiscordMessage";
+import { FramedTwitchMessage } from "../interfaces/FramedTwitchMessage";
 import { FramedMessageOptions } from "../interfaces/FramedMessageOptions";
 import { FramedArgumentOptions } from "../interfaces/FramedArgumentOptions";
 import { FramedArgument } from "../interfaces/FramedArgument";
@@ -10,6 +11,7 @@ import Emoji from "node-emoji";
 import FramedClient from "./FramedClient";
 import { logger } from "shared";
 import { BaseSubcommand } from "./BaseSubcommand";
+import { FramedTwitchMessageOptions } from "../interfaces/FramedTwitchMessageOptions";
 
 enum ArgumentState {
 	Quoted,
@@ -20,6 +22,7 @@ export default class FramedMessage {
 	public readonly framedClient;
 
 	public discord?: FramedDiscordMessage;
+	public twitch?: FramedTwitchMessage;
 
 	public content = "";
 	public prefix?: string;
@@ -27,21 +30,13 @@ export default class FramedMessage {
 	public command?: string;
 
 	/**
-	 * Create a new Framed message instance
+	 * Create a new Framed Message Instance.
 	 *
-	 * @param info Framed Message info
+	 * @param options Framed Message Options
 	 */
-	constructor(info: FramedMessageOptions) {
+	constructor(options: FramedMessageOptions) {
 		// Grabs the base
-		const base:
-			| FramedMessageOptions
-			| FramedMessage
-			| Discord.Message
-			| undefined = info.base
-			? info.base
-			: info.discord?.base
-			? info.discord.base
-			: undefined;
+		const base = options.base;
 
 		let channel:
 			| Discord.TextChannel
@@ -56,12 +51,20 @@ export default class FramedMessage {
 		let member: Discord.GuildMember | undefined;
 
 		// Gets the Discord Base for elements such as author, channel, etc.
-		const discordBase =
-			base instanceof Discord.Message
-				? base
-				: base?.discord
-				? base.discord
-				: info.discord;
+		// First check for any entries in info.discord.base
+		const discordBase = options.discord?.base
+			? options.discord.base
+			: base?.discord
+			? base.discord
+			: options.discord;
+
+		const twitchBase:
+			| FramedTwitchMessageOptions
+			| undefined = options.twitch
+			? options.twitch
+			: base?.twitch
+			? base.twitch
+			: options.twitch;
 
 		if (discordBase) {
 			channel = discordBase?.channel;
@@ -91,60 +94,89 @@ export default class FramedMessage {
 				: msg?.author
 				? member?.user
 				: undefined;
-		}
 
-		// Gets client or throws error
-		if (!client) {
-			throw new Error(
-				oneLine`Parameter discord.client wasn't set when creating FramedMessage!
+			// Gets client or throws error
+			if (!client) {
+				throw new ReferenceError(
+					oneLine`Parameter discord.client wasn't set when creating FramedMessage!
 					This value should be set if the discord.msg parameter hasn't been set.`
-			);
-		}
+				);
+			}
 
-		// Gets channel or throws error
-		if (!channel) {
-			throw new Error(
-				oneLine`Parameter discord.channel wasn't set when creating FramedMessage!
+			// Gets channel or throws error
+			if (!channel) {
+				throw new ReferenceError(
+					oneLine`Parameter discord.channel wasn't set when creating FramedMessage!
 					This value should be set if the discord.msg parameter hasn't been set.`
-			);
+				);
+			}
+
+			// Gets author or throws error
+			if (!author) {
+				throw new ReferenceError(
+					oneLine`Parameter discord.author is undefined.`
+				);
+			}
+
+			// If there's an msg object, we set all the relevant values here
+			this.discord = {
+				msg: msg,
+				client: client,
+				id: id,
+				channel: channel,
+				author: author,
+				member: member,
+				guild: guild,
+			};
+		} else if (twitchBase) {
+			const chatClient = twitchBase.chatClient;
+			const channel = twitchBase.channel;
+			const user = twitchBase.user;
+
+			if (!chatClient) {
+				throw new ReferenceError(`Parameter twitch.chatClient`);
+			}
+
+			if (!channel) {
+				throw new ReferenceError(
+					`Parameter twitch.channel is undefined.`
+				);
+			}
+
+			if (!user) {
+				throw new ReferenceError(`Parameter twitch.user is undefined.`);
+			}
+
+			this.twitch = {
+				chatClient: chatClient,
+				channel: channel,
+				user: user,
+			};
 		}
 
-		// Gets author or throws error
-		if (!author) {
-			throw new Error(oneLine`Parameter discord.author is undefined.`);
-		}
-
-		// If there's an msg object, we set all the relevant values here
-		this.discord = {
-			msg: msg,
-			client: client,
-			id: id,
-			channel: channel,
-			author: author,
-			member: member,
-			guild: guild,
-		};
+		this.framedClient = options.framedClient;
 
 		// Sets the content
-		let content = info.content;
+		let content = options.content;
 		if (!content && id) {
 			content = msg?.channel.messages.cache.get(id)?.content;
 		}
 		if (!content) {
 			content = "";
 		}
-
 		this.content = content;
-		this.framedClient = info.framedClient;
+
 		this.prefix = this.getPrefix();
 		this.args = this.getArgs();
 		this.command = this.getCommand();
 	}
 
+	//#region Basic gets for the constructor
+
 	/**
 	 * Gets the prefix of the message.
 	 */
-	getPrefix(): string | undefined {
+	private getPrefix(): string | undefined {
 		const prefixes = [...this.framedClient.plugins.allPossiblePrefixes];
 		let prefix: string | undefined;
 		for (const testPrefix of prefixes) {
@@ -194,6 +226,10 @@ export default class FramedMessage {
 			return undefined;
 		}
 	}
+
+	//#endregion
+
+	//#region Arg parsing related functions
 
 	/**
 	 * Get the command arguments from a string
@@ -455,6 +491,8 @@ export default class FramedMessage {
 		return newContent.trim();
 	}
 
+	//#endregion
+
 	/**
 	 * Parses the emoji and contents of a FramedMessage or string.
 	 *
@@ -603,5 +641,20 @@ export default class FramedMessage {
 		}
 
 		return arg;
+	}
+
+	/**
+	 * Sends a message, regardless of platform.
+	 *
+	 * @param content
+	 */
+	async send(content: string): Promise<void> {
+		if (this.discord) {
+			await this.discord.channel.send(content);
+		} else if (this.twitch) {
+			this.twitch.chatClient.say(this.twitch.channel, content);
+		} else {
+			throw new Error("There was no valid platform!");
+		}
 	}
 }

@@ -43,12 +43,12 @@ export default class PluginManager {
 	 * Loads the plugins
 	 * @param options RequireAll options
 	 */
-	loadPluginsIn(options: Options): void {
+	loadPluginsIn(options: Options): BasePlugin[] {
 		const plugins = DiscordUtils.importScripts(options) as (new (
 			framedClient: FramedClient
 		) => BasePlugin)[];
-		logger.debug(`Plugins: ${util.inspect(plugins)}`);
-		this.loadPlugins(plugins);
+		logger.silly(`Plugins: ${util.inspect(plugins)}`);
+		return this.loadPlugins(plugins);
 	}
 
 	/**
@@ -57,19 +57,21 @@ export default class PluginManager {
 	 */
 	loadPlugins<T extends BasePlugin>(
 		plugins: (new (framedClient: FramedClient) => T)[]
-	): void {
+	): BasePlugin[] {
+		const pluginArray: BasePlugin[] = [];
 		for (const plugin of plugins) {
 			const initPlugin = new plugin(this.framedClient);
-			// logger.debug(`initPlugin: ${util.inspect(initPlugin)}`);
-			this.loadPlugin(initPlugin);
+			const loadedPlugin = this.loadPlugin(initPlugin);
+			if (loadedPlugin) pluginArray.push(loadedPlugin);
 		}
+		return pluginArray;
 	}
 
 	/**
 	 * Loads plugin
 	 * @param plugin
 	 */
-	loadPlugin<T extends BasePlugin>(plugin: T): void {
+	loadPlugin<T extends BasePlugin>(plugin: T): BasePlugin | undefined {
 		if (this.map.get(plugin.id)) {
 			logger.error(`Plugin with id ${plugin.id} already exists!`);
 			return;
@@ -112,6 +114,7 @@ export default class PluginManager {
 		logger.verbose(
 			`Finished loading plugin ${plugin.name} v${plugin.version}.`
 		);
+		return plugin;
 	}
 
 	/**
@@ -153,7 +156,7 @@ export default class PluginManager {
 	get defaultPrefixes(): string[] {
 		const prefixes: string[] = [
 			this.framedClient.defaultPrefix,
-			`<@!${this.framedClient.client.user?.id}>`,
+			`<@!${this.framedClient.discord.client?.user?.id}>`,
 		];
 
 		// logger.debug(`PluginManager.ts: Default prefixes: ${prefixes}`);
@@ -467,18 +470,34 @@ export default class PluginManager {
 	): Promise<boolean> {
 		const responseData = dbCommand.response.responseData;
 		if (responseData) {
-			for await (const data of responseData.list) {
-				const embeds = data.discord?.embeds;
-				let embed: Discord.MessageEmbed | undefined;
-				if (embeds && embeds[0]) {
-					embed = embeds[0];
+			const discordEmbedsExist = responseData.list.some(
+				data => data.discord?.embeds != undefined
+			);
+
+			if (msg.twitch) {
+				if (discordEmbedsExist) {
+					return false;
 				}
-				if (embed) {
-					await msg.discord?.channel.send(data.content, embed);
-				} else {
-					await msg.discord?.channel.send(data.content);
+			}
+
+			if (msg.discord) {
+				for await (const data of responseData.list) {
+					const embeds = data.discord?.embeds;
+					let embed: Discord.MessageEmbed | undefined;
+					if (embeds && embeds[0]) {
+						embed = embeds[0];
+					}
+					if (embed) {
+						await msg.discord?.channel.send(data.content, embed);
+					} else {
+						await msg.discord?.channel.send(data.content);
+					}
+					return true;
 				}
-				return true;
+			} else {
+				for await (const data of responseData.list) {
+					await msg.send(data.content);
+				}
 			}
 		} else {
 			logger.error(
@@ -502,10 +521,11 @@ export default class PluginManager {
 			.get("default.bot.info")
 			?.commands.get("help")?.defaultPrefix;
 
+		const content = oneLineInlineLists`${
+			helpPrefix ? helpPrefix : msg.prefix
+		}help ${msg.command} ${msg.args ? msg.args : ""}`;
+
 		if (msg.discord) {
-			const content = oneLineInlineLists`${
-				helpPrefix ? helpPrefix : msg.prefix
-			}help ${msg.command} ${msg.args ? msg.args : ""}`;
 			await msg.framedClient.plugins.runCommand(
 				new FramedMessage({
 					framedClient: msg.framedClient,
@@ -518,8 +538,19 @@ export default class PluginManager {
 					},
 				})
 			);
-
 			return true;
+		} else if (msg.twitch) {
+			await msg.framedClient.plugins.runCommand(
+				new FramedMessage({
+					framedClient: msg.framedClient,
+					content: content,
+					twitch: {
+						chatClient: msg.twitch.chatClient,
+						channel: msg.twitch.channel,
+						user: msg.twitch.user,
+					},
+				})
+			);
 		}
 
 		return false;
@@ -535,9 +566,8 @@ export default class PluginManager {
 		friendlyError: FriendlyError,
 		commandId?: string
 	): Promise<void> {
-		let embed: Discord.MessageEmbed | undefined;
 		if (msg.discord) {
-			embed = EmbedHelper.getTemplate(
+			const embed = EmbedHelper.getTemplate(
 				msg.discord,
 				msg.framedClient.helpCommands,
 				commandId
@@ -547,7 +577,9 @@ export default class PluginManager {
 
 			await msg.discord.channel.send(embed);
 		} else {
-			throw new Error("Non-Discord platforms not implemented as of yet");
+			await msg.send(
+				`${friendlyError.friendlyName}: ${friendlyError.message}`
+			);
 		}
 	}
 

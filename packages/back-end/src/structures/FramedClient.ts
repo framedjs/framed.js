@@ -1,14 +1,22 @@
+/* eslint-disable no-mixed-spaces-and-tabs */
 import "reflect-metadata";
 import Discord from "discord.js";
+import * as TwitchAuth from "twitch-auth";
+import * as Twitch from "twitch-chat-client";
 import fs from "fs";
 import path from "path";
 import { logger } from "shared";
 import { EventEmitter } from "events";
 import { FramedClientOptions } from "../interfaces/FramedClientOptions";
+import { FramedLoginOptions } from "../interfaces/FramedLoginOptions";
 import FramedMessage from "./FramedMessage";
 import PluginManager from "../managers/PluginManager";
 import DatabaseManager from "../managers/DatabaseManager";
 import APIManager from "../managers/APIManager";
+import { BasePlugin } from "./BasePlugin";
+
+const DEFAULT_PREFIX = "!";
+
 
 let version: string | undefined;
 // Sets the versions
@@ -23,17 +31,30 @@ try {
 	logger.error(error.stack);
 }
 
+
 export default class FramedClient extends EventEmitter {
 	public readonly api: APIManager;
 	public readonly database: DatabaseManager;
 	public readonly plugins = new PluginManager(this);
 
-	public readonly client = new Discord.Client();
+	public discord: {
+		client?: Discord.Client;
+		defaultPrefix: string;
+	} = {
+		defaultPrefix: DEFAULT_PREFIX,
+	};
+	public twitch: {
+		auth?: TwitchAuth.RefreshableAuthProvider;
+		chatClient?: Twitch.ChatClient;
+		defaultPrefix: string;
+	} = {
+		defaultPrefix: DEFAULT_PREFIX,
+	};
 
 	/**
 	 * Framed version
 	 */
-	public readonly version: string | undefined;
+	public static readonly version = version;
 
 	/**
 	 * App version
@@ -47,59 +68,64 @@ export default class FramedClient extends EventEmitter {
 	];
 	public readonly importFilter = /^((?!\.d).)*\.(js|ts)$/;
 	// public readonly importFilter = /(?<!\.d)(\.(js|ts))$/;
-	public defaultPrefix = "!";
 
-	// https://www.stefanjudis.com/today-i-learned/measuring-execution-time-more-precisely-in-the-browser-and-node-js/
-	private startTime = process.hrtime();
+	public defaultPrefix = DEFAULT_PREFIX;
 
-	constructor(info: FramedClientOptions) {
+	private readonly clientOptions: FramedClientOptions;
+
+	constructor(options: FramedClientOptions) {
 		// I have no idea what capture rejections does, but I assume it's a good thing.
 		super({ captureRejections: true });
 
-		// Sets the versions
-		this.version = version;
-		this.appVersion = info?.appVersion;
+		this.clientOptions = options;
 
-		if (info) {
-			if (info.defaultPrefix) {
-				this.defaultPrefix = info?.defaultPrefix;
-			}
+		// Sets the app version
+		this.appVersion = options.appVersion;
+
+		if (options.defaultPrefix) {
+			this.defaultPrefix = options?.defaultPrefix;
 		}
 
 		this.api = new APIManager(this);
 
-		logger.verbose(
-			`Using database path: ${info.defaultConnection.database}`
+		logger.debug(
+			`Using database path: ${options.defaultConnection.database}`
 		);
-		logger.verbose(
+		logger.debug(
 			`Using entities path: ${DatabaseManager.defaultEntitiesPath}`
 		);
 
-		this.database = new DatabaseManager(
-			this,
-			info.defaultConnection
-		);
+		this.database = new DatabaseManager(this, options.defaultConnection);
 	}
 
 	/**
-	 * Logins through Discord
+	 * Loads some default API routes
 	 */
-	async login(token?: string): Promise<void> {
+	loadDefaultRoutes(): void {
 		// Loads the API
-		logger.verbose(`Using routes path: ${APIManager.defaultPath}`);
 		this.api.loadRoutesIn({
 			dirname: APIManager.defaultPath,
 			filter: this.importFilter,
 			excludeDirs: /^(.*)\.(git|svn)$|^(.*)subcommands(.*)\.(js|ts)$/,
 		});
+		logger.debug(`Finished loading default routes`);
+	}
 
+	/**
+	 * Loads some default plugins
+	 */
+	loadDefaultPlugins(): BasePlugin[] {
 		// Loads the default plugins, which loads commands and events
-		this.plugins.loadPluginsIn({
+		const plugins = this.plugins.loadPluginsIn({
 			dirname: path.join(__dirname, "..", "plugins"),
 			filter: /^(.+plugin)\.(js|ts)$/,
 			excludeDirs: /^(.*)\.(git|svn)$|^(.*)subcommands(.*)\.(js|ts)$/,
 		});
+		logger.debug(`Finished loading default plugins`);
+		return plugins;
+	}
 
+	async prepareHelpCommandList(): Promise<void> {
 		// Properly sets up the help command display
 		for (let i = 0; i < this.helpCommands.length; i++) {
 			this.helpCommands[i] = await FramedMessage.parseCustomFormatting(
@@ -107,57 +133,111 @@ export default class FramedClient extends EventEmitter {
 				this
 			);
 		}
+	}
 
+	/**
+	 * Login
+	 */
+	async login(options: FramedLoginOptions[]): Promise<void> {
 		// Loads the database
 		await this.database.start();
 
-		// Logs into Discord
-		await this.client.login(token);
+		// Logins for each platform and sets up some events
+		for await (const option of options) {
+			// For types of platforms, we try and
+			switch (option.type) {
+				case "discord":
+					if (!option.discord) {
+						throw new ReferenceError(
+							`Login option type is ${option.type}, but the object supposedly containing its login data is undefined.`
+						);
+					}
 
-		this.client.on("ready", async () => {
-			// Gets the difference between the start time, and now
-			const diffTime = process.hrtime(this.startTime);
+					// Sets up some Discord events and logs into Discord
+					this.discord.client = new Discord.Client();
+					await this.discord.client.login();
+					this.setupDiscordEvents(this.discord.client);
+					break;
+				case "twitch":
+					if (!option.twitch) {
+						throw new ReferenceError(
+							`Login option type is ${option.type}, but the object supposedly containing its login data is undefined.`
+						);
+					}
+					this.twitch.auth = new TwitchAuth.RefreshableAuthProvider(
+						new TwitchAuth.StaticAuthProvider(
+							option.twitch.clientId,
+							option.twitch.accessToken
+						),
+						{
+							clientSecret: option.twitch.clientSecret,
+							refreshToken: option.twitch.refreshToken,
+						}
+					);
+					this.twitch.chatClient = new Twitch.ChatClient(
+						this.twitch.auth,
+						option.twitch.clientOptions
+					);
+					this.setupTwitchEvents(this.twitch.chatClient);
+					await this.twitch.chatClient.connect();
+					break;
+				default:
+					throw new Error(`Platform "${option.type}" is invalid`);
+			}
+		}
 
-			// Fixed decimal places (ex. if set to 3, decimals will be 0.000)
-			const fixedDecimals = 3;
+		// Imports default routes
+		if (
+			this.clientOptions.loadDefaultRoutes == true ||
+			this.clientOptions.loadDefaultRoutes === undefined
+		) {
+			this.loadDefaultRoutes();
+		}
 
-			// diffTime[1] is the decimal number as a whole number, so
-			// we need to convert that. This will remove some trailing numbers.
-			const endDecimalString = String(diffTime[1]).slice(
-				0,
-				fixedDecimals + 1
+		// Imports default plugins
+		if (
+			this.clientOptions.loadDefaultPlugins == true ||
+			this.clientOptions.loadDefaultRoutes === undefined
+		) {
+			this.loadDefaultPlugins();
+		}
+
+		// Imports all events now, since the plugins are done
+		this.plugins.map.forEach(plugin => {
+			plugin.events.forEach(event => {
+				// If the event hasn't been initialized, initialize it
+				if (!event.eventInitialized) {
+					plugin.initEvent(event);
+				}
+			});
+		});
+
+		// Prepares help command list
+		await this.prepareHelpCommandList();
+	}
+
+	async processMsg(msg: FramedMessage): Promise<void> {
+		if (msg.command) {
+			logger.debug(
+				`FramedClient.ts: Attempting to run command "${msg.content}"`
 			);
+			if (msg.discord) {
+				if (msg.discord.author.bot) return;
+				this.plugins.runCommand(msg);
+			} else if (msg.twitch) {
+				if (this.twitch.chatClient?.currentNick == msg.twitch.user)
+					return;
+				this.plugins.runCommand(msg);
+			}
+		}
+	}
 
-			// Negative exponent (for example, 10 ^ -3)
-			const negativeExponent = Math.pow(10, -Number(fixedDecimals + 1));
-
-			// Larger number (that should be a decimal) * negative exponent
-			// will turn it into a decimal
-			const endDecimalNumber = Number(
-				Number(endDecimalString) * negativeExponent
-			).toFixed(fixedDecimals);
-
-			// Startup time
-			const startupTime = (
-				diffTime[0] + Number(endDecimalNumber)
-			).toFixed(fixedDecimals);
-
-			logger.info(
-				`Done (${startupTime}s)! Logged in as ${this.client.user?.tag}.`
-			);
-
-			//#region  Log test for NPM
-			// logger.silly("test");
-			// logger.debug("test");
-			// logger.verbose("test");
-			// logger.http("test");
-			// logger.info("test");
-			// logger.warn(`test`);
-			// logger.error(`owo`);
-			//#endregion
+	private setupDiscordEvents(client: Discord.Client): void {
+		client.on("ready", async () => {
+			logger.info(`Logged in as ${client.user?.tag}.`);
 
 			try {
-				this.client
+				client
 					// Permissions might not work
 					.generateInvite({
 						permissions: [
@@ -179,8 +259,7 @@ export default class FramedClient extends EventEmitter {
 			}
 		});
 
-		this.client.on("message", async discordMsg => {
-			if (discordMsg.author.bot) return;
+		client.on("message", async discordMsg => {
 			const msg = new FramedMessage({
 				framedClient: this,
 				discord: {
@@ -190,30 +269,34 @@ export default class FramedClient extends EventEmitter {
 			this.processMsg(msg);
 		});
 
-		this.client.on("warn", warning => {
+		client.on("warn", warning => {
 			logger.warn(`Discord.js: ${warning}`);
-		})
+		});
 
-		this.client.on("error", error => {
+		client.on("error", error => {
 			logger.error(`Discord.js: ${error}`);
-		})
+		});
 
-		this.client.on("rateLimit", info => {
+		client.on("rateLimit", info => {
 			// logger.warn(`We're being rate-limited! ${util.inspect(info)}`);
 			logger.warn(
 				`Rate limit: ${info.method} ${info.timeout} ${info.limit}`
 			);
 		});
 
-		this.client.on("messageUpdate", async (oldMessage, newMessage) => {
+		client.on("messageUpdate", async (oldMessage, newMessage) => {
 			try {
-				logger.debug(`Message Update`);
-				logger.debug(`oldMessage.content: "${oldMessage.content}" | ${oldMessage.channel}`);
-				logger.debug(`newMessage.content: "${newMessage.content}" | ${newMessage.channel}`);
-				
+				logger.silly(`Message Update`);
+				logger.silly(
+					`oldMessage.content: "${oldMessage.content}" | ${oldMessage.channel}`
+				);
+				logger.silly(
+					`newMessage.content: "${newMessage.content}" | ${newMessage.channel}`
+				);
+
 				// If the content is the same, ignore it.
 				/**
-				 * Assumably, this can trigger randomly before a command with an embed (ex. link) 
+				 * Assumably, this can trigger randomly before a command with an embed (ex. link)
 				 * is sent, or after it is sent. By comparing the contents, and seeing if they're the same,
 				 * we don't need to accidentally run the same command again.
 				 */
@@ -234,7 +317,7 @@ export default class FramedClient extends EventEmitter {
 			}
 		});
 
-		this.client.on("raw", async packet => {
+		client.on("raw", async packet => {
 			// We don't want this to run on unrelated packets
 			if (
 				!["MESSAGE_REACTION_ADD", "MESSAGE_REACTION_REMOVE"].includes(
@@ -244,10 +327,10 @@ export default class FramedClient extends EventEmitter {
 				return;
 
 			// Finds user
-			let user = this.client.users.cache.get(packet.d.user_id);
+			let user = client.users.cache.get(packet.d.user_id);
 			if (!user) {
 				try {
-					user = await this.client.users.fetch(packet.d.user_id);
+					user = await client.users.fetch(packet.d.user_id);
 				} catch (error) {
 					return logger.error(
 						`Wasn't able to find user from Raw event ${error.stack}`
@@ -256,7 +339,7 @@ export default class FramedClient extends EventEmitter {
 			}
 
 			// Grab the channel to check the message from
-			const channel = this.client.channels.cache.get(
+			const channel = client.channels.cache.get(
 				packet.d.channel_id
 			) as Discord.TextChannel;
 
@@ -274,10 +357,10 @@ export default class FramedClient extends EventEmitter {
 				const reaction = message.reactions.cache.get(emoji);
 
 				// Adds the currently reacting user to the reaction's users collection.
-				let user = this.client.users.cache.get(packet.d.user_id);
+				let user = client.users.cache.get(packet.d.user_id);
 				if (!user) {
 					try {
-						user = await this.client.users.fetch(packet.d.user_id);
+						user = await client.users.fetch(packet.d.user_id);
 					} catch (error) {
 						return logger.error(
 							`Wasn't able to find user from raw event\n${error.stack}`
@@ -293,13 +376,9 @@ export default class FramedClient extends EventEmitter {
 						logger.debug(
 							"FramedClient: Emitting messageReactionAdd"
 						);
-						this.client.emit("messageReactionAdd", reaction, user);
+						client.emit("messageReactionAdd", reaction, user);
 					} else if (packet.t === "MESSAGE_REACTION_REMOVE") {
-						this.client.emit(
-							"messageReactionRemove",
-							reaction,
-							user
-						);
+						client.emit("messageReactionRemove", reaction, user);
 					}
 				} else {
 					logger.error("Unable to find reaction to message!");
@@ -308,13 +387,37 @@ export default class FramedClient extends EventEmitter {
 		});
 	}
 
-	async processMsg(msg: FramedMessage): Promise<void> {
-		logger.debug(`Message: "${msg.content}" | command -> ${msg.command}`);
-		if (msg.command) {
-			logger.debug(
-				`FramedClient.ts: Found command! Contents are: "${msg.content}"`
+	private setupTwitchEvents(chatClient: Twitch.ChatClient): void {
+		chatClient.onMessage((channel, user, message) => {
+			// if (message === "!ping") {
+			// 	chatClient.say(channel, "Pong!");
+			// } else if (message === "!dice") {
+			// 	const diceRoll = Math.floor(Math.random() * 6) + 1;
+			// 	chatClient.say(channel, `@${user} rolled a ${diceRoll}`);
+			// }
+
+			const msg = new FramedMessage({
+				framedClient: this,
+				content: message,
+				twitch: {
+					chatClient: chatClient,
+					channel: channel,
+					user: user,
+				},
+			});
+			this.processMsg(msg);
+		});
+
+		chatClient.onJoin((channel, user) => {
+			logger.info(`Logged in as ${user} in ${channel}.`);
+		});
+
+		chatClient.onDisconnect((manually, reason) => {
+			logger.warn(
+				`Got disconnected ${
+					manually ? "manually" : "automatically"
+				}: ${reason}`
 			);
-			this.plugins.runCommand(msg);
-		}
+		});
 	}
 }

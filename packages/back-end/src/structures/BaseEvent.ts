@@ -3,15 +3,23 @@
 import { BaseEventOptions } from "../interfaces/BaseEventOptions";
 import { BasePlugin } from "./BasePlugin";
 import FramedClient from "./FramedClient";
-import { BaseEventDiscordOptions } from "../interfaces/BaseEventDiscordOptions";
+import Discord from "discord.js";
 
 export abstract class BaseEvent {
-	public readonly framedClient: FramedClient;
-	public readonly plugin: BasePlugin;
-	public readonly discord: BaseEventDiscordOptions | undefined;
+	readonly framedClient: FramedClient;
+	readonly plugin: BasePlugin;
+	discord?: {
+		client?: Discord.Client;
+		name: keyof Discord.ClientEvents;
+	};
 
-	public readonly id: string;
-	public readonly description?: string;
+	readonly fullId: string;
+	readonly id: string;
+	readonly description?: string;
+
+	private readonly info: BaseEventOptions;
+
+	eventInitialized = false;
 
 	/**
 	 * Create a new BaseEvent.
@@ -21,15 +29,35 @@ export abstract class BaseEvent {
 	constructor(plugin: BasePlugin, info: BaseEventOptions) {
 		this.framedClient = plugin.framedClient;
 		this.plugin = plugin;
-		this.discord = info.discord;		
-
-		this.id = `${this.plugin.id}.event.${info.id}`;
+		this.fullId = `${this.plugin.id}.event.${info.id}`;
+		this.id = info.id;
 		this.description = info.description;
+		this.info = info;
+		this.discord = info.discord;
+	}
+
+	init(): void {
+		if (this.info.discord) {
+			const client = this.plugin.framedClient.discord.client;
+			const name = this.info.discord?.name;
+
+			if (!client)
+				throw new ReferenceError("Discord client doesn't exist");
+			if (!name)
+				throw new ReferenceError(
+					"Discord event name needs to be assigned"
+				);
+
+			this.discord = {
+				client: client,
+				name: name,
+			};
+		}
 	}
 
 	/**
 	 * Run the event.
-	 * @param args 
+	 * @param args
 	 */
 	abstract run(...args: any): Promise<void>;
 }
