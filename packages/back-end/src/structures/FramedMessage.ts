@@ -30,13 +30,13 @@ export default class FramedMessage {
 	public command?: string;
 
 	/**
-	 * Create a new Framed message instance
+	 * Create a new Framed Message Instance.
 	 *
-	 * @param info Framed Message info
+	 * @param options Framed Message Options
 	 */
-	constructor(info: FramedMessageOptions) {
+	constructor(options: FramedMessageOptions) {
 		// Grabs the base
-		const base = info.base;
+		const base = options.base;
 
 		let channel:
 			| Discord.TextChannel
@@ -52,13 +52,19 @@ export default class FramedMessage {
 
 		// Gets the Discord Base for elements such as author, channel, etc.
 		// First check for any entries in info.discord.base
-		const discordBase = info.discord?.base
-			? info.discord.base
-			: base?.discord;
+		const discordBase = options.discord?.base
+			? options.discord.base
+			: base?.discord
+			? base.discord
+			: options.discord;
 
-		const twitchBase: FramedTwitchMessageOptions | undefined = info.twitch
-			? info.twitch
-			: base?.twitch;
+		const twitchBase:
+			| FramedTwitchMessageOptions
+			| undefined = options.twitch
+			? options.twitch
+			: base?.twitch
+			? base.twitch
+			: options.twitch;
 
 		if (discordBase) {
 			channel = discordBase?.channel;
@@ -123,9 +129,9 @@ export default class FramedMessage {
 				guild: guild,
 			};
 		} else if (twitchBase) {
-			let chatClient = twitchBase.chatClient;
-			let channel = twitchBase.channel;
-			let user = twitchBase.user;
+			const chatClient = twitchBase.chatClient;
+			const channel = twitchBase.channel;
+			const user = twitchBase.user;
 
 			if (!chatClient) {
 				throw new ReferenceError(`Parameter twitch.chatClient`);
@@ -148,10 +154,10 @@ export default class FramedMessage {
 			};
 		}
 
-		this.framedClient = info.framedClient;
+		this.framedClient = options.framedClient;
 
 		// Sets the content
-		let content = info.content;
+		let content = options.content;
 		if (!content && id) {
 			content = msg?.channel.messages.cache.get(id)?.content;
 		}
@@ -165,10 +171,12 @@ export default class FramedMessage {
 		this.command = this.getCommand();
 	}
 
+	//#region Basic gets for the constructor
+
 	/**
 	 * Gets the prefix of the message.
 	 */
-	getPrefix(): string | undefined {
+	private getPrefix(): string | undefined {
 		const prefixes = [...this.framedClient.plugins.allPossiblePrefixes];
 		let prefix: string | undefined;
 		for (const testPrefix of prefixes) {
@@ -218,6 +226,10 @@ export default class FramedMessage {
 			return undefined;
 		}
 	}
+
+	//#endregion
+
+	//#region Arg parsing related functions
 
 	/**
 	 * Get the command arguments from a string
@@ -478,6 +490,8 @@ export default class FramedMessage {
 
 		return newContent.trim();
 	}
+
+	//#endregion
 
 	/**
 	 * Parses the emoji and contents of a FramedMessage or string.
