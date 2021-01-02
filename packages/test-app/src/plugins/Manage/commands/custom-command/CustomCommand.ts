@@ -1,6 +1,6 @@
 /* eslint-disable no-mixed-spaces-and-tabs */
 
-import { oneLine, stripIndent } from "common-tags";
+import { oneLine, stripIndents } from "common-tags";
 import { logger } from "shared";
 import { SnowflakeUtil } from "discord.js";
 import path from "path";
@@ -26,7 +26,7 @@ export default class CustomCommand extends BaseCommand {
 			description: oneLine`
 			This command also allows you to list, add, edit, and delete custom commands.`,
 			usage: `<add|edit|delete> <command ID> <content> "[description]"`,
-			examples: stripIndent`
+			examples: stripIndents`
 			\`{{prefix}}{{id}} list\`
 			\`{{prefix}}{{id}} add newcommand This is a test message.\`
 			\`{{prefix}}{{id}} edit newcommand We've edited the message! "New description!"\`
@@ -94,7 +94,7 @@ export default class CustomCommand extends BaseCommand {
 				quoteSections: QuoteSections.Flexible,
 			});
 
-			logger.debug(stripIndent`
+			logger.debug(stripIndents`
 				Command.ts: 
 				newContent: '${newContent}'
 				newArgs: '${newArgs}'

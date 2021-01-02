@@ -9,7 +9,7 @@ export default class extends BaseCommand {
 			about: "View streak stats for users.",
 			description: oneLine`
 			View streak stats for users.`,
-			usage: `[top|all|userid]`,
+			usage: `[top|all|@user|id]`,
 			hideUsageInHelp: true,
 			examples: stripIndent`
 			\`{{prefix}}{{id}}\`
@@ -22,7 +22,7 @@ export default class extends BaseCommand {
 	async run(msg: FramedMessage): Promise<boolean> {
 		if (msg.discord) {
 			// This has been intentionally left blank, since a
-			// separate bot written in Python handles this, instead.
+			// separate bot writtern in Python handles this, instead.
 			return true;
 		}
 		return false;

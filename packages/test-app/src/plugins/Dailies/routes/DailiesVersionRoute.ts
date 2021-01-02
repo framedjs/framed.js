@@ -34,7 +34,7 @@ export default class extends BaseRouter {
 
 				ctx.status = 201;
 			} catch (error) {
-				ctx.body = error;
+				ctx.body = error.message;
 				ctx.status = 400;
 			}
 		});

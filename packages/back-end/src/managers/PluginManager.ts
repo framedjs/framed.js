@@ -14,6 +14,8 @@ import { oneLine, oneLineInlineLists } from "common-tags";
 import * as TypeORM from "typeorm";
 import { FriendlyError } from "../structures/errors/FriendlyError";
 import EmbedHelper from "../utils/discord/EmbedHelper";
+import { FramedFoundCommandData } from "../interfaces/FramedFoundCommandData";
+import { HelpData } from "../interfaces/HelpData";
 
 export interface HelpGroup {
 	group: string;
@@ -22,11 +24,6 @@ export interface HelpGroup {
 
 export interface HelpInfo {
 	command: string;
-}
-
-export interface HelpData {
-	group: string;
-	commands: string[];
 }
 
 export default class PluginManager {
@@ -333,46 +330,36 @@ export default class PluginManager {
 		}
 
 		try {
-			if (msg.command && msg.prefix) {
+			if (msg.prefix && msg.command && msg.args) {
 				logger.debug(
 					`PluginManager.ts: runCommand() - ${msg.prefix}${msg.command}`
 				);
 
-				// Runs the commands
-				const commandList = this.getCommands(msg);
-				for await (const command of commandList) {
-					// Gets the base command's prefixes or default prefixes, and see if they match.
-					// Subcommands are not allowed to declare new prefixes.
-					if (
-						command.prefixes.includes(msg.prefix) ||
-						this.defaultPrefixes.includes(msg.prefix)
-					) {
-						// Attempts to get the subcommand if it exists.
-						// If not, use the base command.
-						let tempCommand = command;
-						if (msg.args) {
-							const subcommand = command.getSubcommand(msg.args);
-							tempCommand = subcommand ? subcommand : command;
-						}
+				const data = this.getFoundCommandData(msg);
 
-						// Attempts to run the command
-						try {
-							const success = await tempCommand.run(msg);
-							map.set(tempCommand.fullId, success);
-						} catch (error) {
-							if (error instanceof FriendlyError) {
-								logger.warn(oneLine`
-								A Friendly Error occured! Likely, this warning is
-								safe to ignore, unless it's needed for debug purposes.`);
-								logger.warn(error.stack);
+				for await (const element of data) {
+					// Attempts to get the subcommand if it exists.
+					// If not, use the base command.
+					let tempCommand = element.command;
+					if (element.subcommands.length > 0) {
+						tempCommand =
+							element.subcommands[element.subcommands.length - 1];
+					}
 
-								await PluginManager.sendErrorMessage(
-									msg,
-									error
-								);
-							} else {
-								logger.error(error.stack);
-							}
+					// Attempts to run it and sets the data
+					try {
+						const success = await tempCommand.run(msg);
+						map.set(tempCommand.fullId, success);
+					} catch (error) {
+						if (error instanceof FriendlyError) {
+							logger.warn(oneLine`
+							A Friendly Error occured! Likely, this warning is
+							safe to ignore, unless it's needed for debug purposes.`);
+							logger.warn(error.stack);
+
+							await PluginManager.sendErrorMessage(msg, error);
+						} else {
+							logger.error(error.stack);
 						}
 					}
 				}
@@ -386,7 +373,7 @@ export default class PluginManager {
 				);
 
 				if (dbCommand) {
-					const success = await this.sendCommandFromDB(
+					const success = await this.sendDatabaseCommand(
 						dbCommand,
 						msg
 					);
@@ -400,13 +387,81 @@ export default class PluginManager {
 		return map;
 	}
 
+	getFoundCommandData(msg: FramedMessage): FramedFoundCommandData[];
+
+	getFoundCommandData(
+		prefix: string,
+		command: string,
+		args: string[]
+	): FramedFoundCommandData[];
+
+	getFoundCommandData(
+		msgOrPrefix: FramedMessage | string,
+		command?: string,
+		args?: string[]
+	): FramedFoundCommandData[] {
+		let prefix: string | undefined;
+
+		if (msgOrPrefix instanceof FramedMessage) {
+			if (!args) {
+				prefix = msgOrPrefix.prefix;
+				command = msgOrPrefix.command;
+				args = msgOrPrefix.args;
+			}
+		} else {
+			prefix = msgOrPrefix;
+			if (!command) {
+				throw new ReferenceError(
+					`command can't be undefined, if the first value is a string`
+				);
+			}
+			if (!args) {
+				throw new ReferenceError(
+					`Args can't be undefined, if the first value is a string`
+				);
+			}
+		}
+
+		const data: FramedFoundCommandData[] = [];
+
+		if (prefix && command && args) {
+			// Runs the commands
+			let commandList: BaseCommand[] = [];
+			if (msgOrPrefix instanceof FramedMessage) {
+				commandList = this.getCommands(msgOrPrefix);
+			} else {
+				commandList = this.getCommands(command, prefix);
+			}
+
+			for (const command of commandList) {
+				const element: FramedFoundCommandData = {
+					command: command,
+					subcommands: [],
+				};
+
+				// Gets the base command's prefixes or default prefixes, and see if they match.
+				// Subcommands are not allowed to declare new prefixes.
+				if (
+					command.prefixes.includes(prefix) ||
+					this.defaultPrefixes.includes(prefix)
+				) {
+					element.subcommands = command.getSubcommandChain(args);
+				}
+
+				data.push(element);
+			}
+		}
+
+		return data;
+	}
+
 	/**
 	 * Sends a command from the database into chat.
 	 *
 	 * @param dbCommand Command entity
 	 * @param msg Framed message object
 	 */
-	async sendCommandFromDB(
+	async sendDatabaseCommand(
 		dbCommand: Command,
 		msg: FramedMessage
 	): Promise<boolean> {
@@ -436,8 +491,7 @@ export default class PluginManager {
 	/**
 	 * Sends a message showing help for a command.
 	 *
-	 * @param msg Framed message object
-	 * @param id Command ID
+	 * @param msg Framed Message containing command that needs to be shown help for
 	 *
 	 * @returns boolean value `true` if help is shown.
 	 */
@@ -523,6 +577,7 @@ export default class PluginManager {
 	 * @param plugins A map of plugins. Usually, this should equal
 	 * `this.plugins`. If you're not calling it statically, use the non-static `createMainHelpFields()`.
 	 * @param helpList Data to choose certain commands
+	 * @param connection
 	 */
 	static async createHelpFields(
 		plugins: Map<string, BasePlugin>,

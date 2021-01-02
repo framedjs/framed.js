@@ -104,8 +104,9 @@ export default class DatabaseManager {
 
 		// Figures out if defaults are ready to be used
 		const prefixReady =
-			defaultPrefix &&
-			defaultPrefix.prefix == this.framedClient.defaultPrefix;
+			(defaultPrefix &&
+				defaultPrefix.prefix == this.framedClient.defaultPrefix) ||
+			process.env.OVERRIDE_DEFAULT_PREFIX?.toLocaleLowerCase() == "true";
 		const groupReady = defaultGroup;
 
 		// Will return true if everything is not ready
@@ -182,7 +183,7 @@ export default class DatabaseManager {
 	 * Get the default prefix
 	 */
 	async getDefaultPrefix(
-		relations: TypeORM.FindOptionsRelationKeyName<Prefix>[] = [],
+		relations: TypeORM.FindOptionsRelationKeyName<Prefix>[] = []
 	): Promise<Prefix | undefined> {
 		const connection = this.connection;
 		if (!connection) {

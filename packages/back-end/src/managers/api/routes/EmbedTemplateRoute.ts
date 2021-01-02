@@ -13,7 +13,8 @@ export default class extends BaseRouter {
 			const json = JSON.stringify(
 				EmbedHelper.getTemplateRaw(
 					framedClient.helpCommands,
-					EmbedHelper.getColorWithFallback(undefined),
+					// Work-around to get the right color, since it defaults to #fff
+					EmbedHelper.getColorWithFallback(undefined, "#e52a64"),
 					footerUrl,
 					undefined,
 					commandUsed

@@ -5,6 +5,12 @@ import { HelpData } from "back-end";
 
 const data: HelpData[] = [
 	{
+		group: "Info",
+		commands: [
+			"info"
+		]
+	},
+	{
 		group: "Manage",
 		commands: [
 			"command",

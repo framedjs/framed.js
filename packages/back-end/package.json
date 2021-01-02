@@ -2,7 +2,11 @@
   "name": "back-end",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+<<<<<<< Updated upstream
   "version": "0.2.0",
+=======
+  "version": "0.4.0",
+>>>>>>> Stashed changes
   "scripts": {
     "build": "tsc --build",
     "build:watch": "tsc --build --watch",

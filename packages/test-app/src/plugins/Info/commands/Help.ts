@@ -10,7 +10,7 @@ const data: HelpData[] = [
 		group: "Info",
 		// TODO: Sorting alphabetically should probably be done programatically
 		// commands: ["help", "usage", "info", "about", "ping"],
-		commands: [ "about", "help", "info", "ping", "usage" ]
+		commands: ["about", "help", "usage"],
 	},
 	{
 		group: "Fun",
@@ -19,7 +19,7 @@ const data: HelpData[] = [
 	{
 		group: "Dailies",
 		// commands: ["dailies", "streaks", "alert", "casual"],
-		commands: ["alert", "casual", "dailies", "streaks"],
+		commands: ["alert", "casual", "dailies", "streaks", "streaks top"],
 	},
 	{
 		group: "Manage",
