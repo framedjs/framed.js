@@ -1,6 +1,4 @@
-import { Command, FramedMessage, PluginManager } from "back-end";
-import { BaseCommand } from "back-end";
-import { BaseSubcommand } from "back-end";
+import { Command, FramedMessage, PluginManager, BaseCommand, BaseSubcommand } from "back-end";
 import { stripIndents } from "common-tags";
 import { logger } from "shared";
 import CustomCommand from "../CustomCommand";

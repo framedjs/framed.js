@@ -3,7 +3,6 @@ import "reflect-metadata";
 import Discord from "discord.js";
 import * as TwitchAuth from "twitch-auth";
 import * as Twitch from "twitch-chat-client";
-import fs from "fs";
 import path from "path";
 import { logger } from "shared";
 import { EventEmitter } from "events";
@@ -14,23 +13,9 @@ import PluginManager from "../managers/PluginManager";
 import DatabaseManager from "../managers/DatabaseManager";
 import APIManager from "../managers/APIManager";
 import { BasePlugin } from "./BasePlugin";
+import { version } from "../index";
 
 const DEFAULT_PREFIX = "!";
-
-
-let version: string | undefined;
-// Sets the versions
-try {
-	const packageFile = fs.readFileSync(
-		path.resolve(__dirname, "../../package.json"),
-		"utf8"
-	);
-	const packageJson = JSON.parse(packageFile);
-	version = packageJson.version;
-} catch (error) {
-	logger.error(error.stack);
-}
-
 
 export default class FramedClient extends EventEmitter {
 	public readonly api: APIManager;
@@ -66,6 +51,11 @@ export default class FramedClient extends EventEmitter {
 		"$(command default.bot.fun.command.poll)",
 		"$(command com.geekoverdrivestudio.dailies.command.dailies)",
 	];
+	// public readonly helpCommands = [
+	// 	"$(command default.bot.info help)",
+	// 	"$(command default.bot.fun poll)",
+	// 	"$(command com.geekoverdrivestudio.dailies dailies)",
+	// ];
 	public readonly importFilter = /^((?!\.d).)*\.(js|ts)$/;
 	// public readonly importFilter = /(?<!\.d)(\.(js|ts))$/;
 

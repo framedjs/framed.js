@@ -10,7 +10,9 @@ import { logger, Utils } from "shared";
 import Discord from "discord.js";
 
 export default class extends BaseCommand {
-	suggestionChannelId = "788616167224377344";
+	suggestionChannelId = process.env.SUGGEST_CHANNEL_ID
+		? process.env.SUGGEST_CHANNEL_ID
+		: "788616167224377344";
 
 	constructor(plugin: BasePlugin) {
 		super(plugin, {

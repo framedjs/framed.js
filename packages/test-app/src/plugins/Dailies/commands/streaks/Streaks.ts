@@ -1,5 +1,6 @@
 import { BaseCommand, BasePlugin, FramedMessage } from "back-end";
 import { oneLine, stripIndent } from "common-tags";
+import path from "path";
 
 export default class extends BaseCommand {
 	constructor(plugin: BasePlugin) {
@@ -9,13 +10,17 @@ export default class extends BaseCommand {
 			about: "View streak stats for users.",
 			description: oneLine`
 			View streak stats for users.`,
-			usage: `[top|all|@user|id]`,
+			usage: `[@user|id]`,
 			hideUsageInHelp: true,
 			examples: stripIndent`
 			\`{{prefix}}{{id}}\`
 			\`{{prefix}}{{id}} top\`
 			\`{{prefix}}{{id}} all\`
-			\`{{prefix}}{{id}} 359521958519504926\``,
+			\`{{prefix}}{{id}} @Gman1cus\`
+			\`{{prefix}}{{id}} 474802647602561056\``,
+			paths: {
+				subcommands: path.join(__dirname, "subcommands"),
+			},
 		});
 	}
 

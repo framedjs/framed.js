@@ -3,12 +3,12 @@ import {
 	BasePlugin,
 	DatabaseManager,
 	EmbedHelper,
-	FramedClient,
 	FramedMessage,
 	Plugin,
 } from "back-end";
 import { stripIndent } from "common-tags";
 import { logger, Utils } from "shared";
+import { version as backEndVersion } from "back-end"
 import os from "os";
 
 export default class extends BaseCommand {
@@ -63,8 +63,8 @@ export default class extends BaseCommand {
 		const uptimeText = this.secondsToDhms(uptime);
 		const ramUsage = process.memoryUsage().heapUsed / 1024 / 1024;
 		const ramUsageText = `${Number(ramUsage).toFixed(1)}`;
-		const backEnd = FramedClient.version
-			? `v${FramedClient.version}`
+		const backEnd = backEndVersion
+			? `v${backEndVersion}`
 			: "???";
 		const botVersion = `${
 			msg.framedClient.appVersion
