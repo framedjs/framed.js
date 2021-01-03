@@ -378,36 +378,40 @@ export default class FramedClient extends EventEmitter {
 	}
 
 	private setupTwitchEvents(chatClient: Twitch.ChatClient): void {
-		chatClient.onMessage((channel, user, message) => {
-			// if (message === "!ping") {
-			// 	chatClient.say(channel, "Pong!");
-			// } else if (message === "!dice") {
-			// 	const diceRoll = Math.floor(Math.random() * 6) + 1;
-			// 	chatClient.say(channel, `@${user} rolled a ${diceRoll}`);
-			// }
+		chatClient.onMessage(
+			(channel: string, user: string, message: string) => {
+				// if (message === "!ping") {
+				// 	chatClient.say(channel, "Pong!");
+				// } else if (message === "!dice") {
+				// 	const diceRoll = Math.floor(Math.random() * 6) + 1;
+				// 	chatClient.say(channel, `@${user} rolled a ${diceRoll}`);
+				// }
 
-			const msg = new FramedMessage({
-				framedClient: this,
-				content: message,
-				twitch: {
-					chatClient: chatClient,
-					channel: channel,
-					user: user,
-				},
-			});
-			this.processMsg(msg);
-		});
+				const msg = new FramedMessage({
+					framedClient: this,
+					content: message,
+					twitch: {
+						chatClient: chatClient,
+						channel: channel,
+						user: user,
+					},
+				});
+				this.processMsg(msg);
+			}
+		);
 
-		chatClient.onJoin((channel, user) => {
+		chatClient.onJoin((channel: string, user: string) => {
 			logger.info(`Logged in as ${user} in ${channel}.`);
 		});
 
-		chatClient.onDisconnect((manually, reason) => {
-			logger.warn(
-				`Got disconnected ${
-					manually ? "manually" : "automatically"
-				}: ${reason}`
-			);
-		});
+		chatClient.onDisconnect(
+			(manually: boolean, reason: Error | undefined) => {
+				logger.warn(
+					`Got disconnected ${
+						manually ? "manually" : "automatically"
+					}: ${reason}`
+				);
+			}
+		);
 	}
 }
