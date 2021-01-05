@@ -436,9 +436,9 @@ export default class DiscordUtils {
 	): Promise<Discord.GuildMember | undefined> {
 		const newMember = DiscordUtils.resolveMember(user, members);
 
-		// If it's still not found, fetch everything, and try again
+		// If it's still not found, fetch the user, and try again
 		if (!newMember) {
-			const longTask = members.fetch();
+			const longTask = members.fetch(user);
 			const timeout = Utils.sleep(DiscordUtils.fetchTimeout);
 
 			const results = await Promise.race([longTask, timeout]);
@@ -511,8 +511,17 @@ export default class DiscordUtils {
 
 		// If it's still not found, fetch everything, and try again
 		if (!memberId) {
-			await members.fetch();
-			return DiscordUtils.resolveMemberId(user, members);
+			const longTask = members.fetch(user);
+			const timeout = Utils.sleep(DiscordUtils.fetchTimeout);
+
+			const results = await Promise.race([longTask, timeout]);
+			if (results instanceof Discord.Collection) {
+				return DiscordUtils.resolveMemberId(user, members);
+			} else {
+				throw new Error(
+					`Members fetch timed out! This is likely an Intents issue.`
+				);
+			}
 		}
 
 		return memberId;

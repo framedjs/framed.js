@@ -24,7 +24,7 @@ export default class extends BaseCommand {
 			usage: "<suggestion>",
 			examples: oneLine`
 			\`{{prefix}}{{id}} Give the {{prefix}}{{id}} example
-			a better suggestion than this.\``,
+			a better suggestion than this one.\``,
 		});
 	}
 
@@ -100,7 +100,7 @@ export default class extends BaseCommand {
 						logger.error(error);
 					}
 
-					await Utils.sleep(3000);
+					await Utils.sleep(5000);
 					try {
 						await thankMsg.delete();
 					} catch (error) {
