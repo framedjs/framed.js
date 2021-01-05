@@ -168,7 +168,7 @@ export default class Poll extends BaseCommand {
 
 		let newContent = msg.getArgsContent();
 		const newArgs = FramedMessage.getArgs(newContent, {
-			quoteSections: QuoteSections.Flexible,
+			quoteSections: "flexible",
 		});
 
 		let singleMultipleOption = "";
@@ -205,7 +205,7 @@ export default class Poll extends BaseCommand {
 		let lastElementQuoted = false;
 		do {
 			detailedArgs = FramedMessage.getDetailedArgs(newContent, {
-				quoteSections: QuoteSections.Flexible,
+				quoteSections: "flexible",
 			});
 
 			let failed = false;

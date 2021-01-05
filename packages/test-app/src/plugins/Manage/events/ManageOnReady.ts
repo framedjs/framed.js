@@ -34,8 +34,8 @@ export default class extends BaseEvent {
 	}
 
 	async build(): Promise<void> {
-		const help = await FramedMessage.parseCustomFormatting(
-			`$(command default.bot.info.command.help) | `,
+		const help = await FramedMessage.format(
+			`$(command default.bot.info help) | `,
 			this.framedClient
 		);
 		const names = [

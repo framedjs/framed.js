@@ -43,28 +43,28 @@ export interface FramedArgumentOptions {
 	 * If set to Flexible, parsing will include quoted content into arguments.
 	 * This will also parse parts where there may not be any quotes, but
 	 * would be possible to infer what exactly would be in it.
-	 * 
+	 *
 	 * If set to Strict, parsing will include quoted content into arguments.
 	 * Unlike Flexible, parsing will return undefined if there are parts that
 	 * isn't wrapped with quotes.
 	 *
 	 * @example
 	 * FramedMessage.getArgs(`arg 0 "arg 1"`, {
-	 * 	quoteSections: QuoteSections.Flexible
+	 * 	quoteSections: "flexible"
 	 * });
 	 * // Expected Result: ["args 0", "args 1"]
 	 *
 	 * @example
 	 * FramedMessage.getArgs(`"arg 0" "arg 1"`, {
-	 * 	quoteSections: QuoteSections.Strict
+	 * 	quoteSections: "strict"
 	 * });
 	 * // Expected Result: ["args 0", "args 1"]
-	 * 
+	 *
 	 * @example
 	 * FramedMessage.getArgs(`arg 0 "arg 1" arg 2`, {
-	 * 	quoteSections: QuoteSections.Strict
+	 * 	quoteSections: "strict"
 	 * });
 	 * // Expected Result: []
 	 */
-	quoteSections?: QuoteSections;
+	quoteSections?: "strict" | "flexible";
 }

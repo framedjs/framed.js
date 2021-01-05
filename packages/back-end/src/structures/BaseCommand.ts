@@ -218,7 +218,7 @@ export abstract class BaseCommand {
 	/**
 	 * Parses custom $() formatting
 	 */
-	async parseCustomFormatting(): Promise<void> {
+	async formatBatch(): Promise<void> {
 		const keys: string[] = [];
 		const queue = new Map<string, Promise<string>>();
 
@@ -227,7 +227,7 @@ export abstract class BaseCommand {
 			keys.push(name);
 			queue.set(
 				name,
-				FramedMessage.parseCustomFormatting(text, this.framedClient)
+				FramedMessage.format(text, this.framedClient)
 			);
 		};
 
@@ -277,9 +277,78 @@ export abstract class BaseCommand {
 
 	/**
 	 * Run the command.
+	 * 
 	 * @param msg Framed Message
+	 * 
+	 * @returns true if successful
 	 */
 	abstract run(msg: FramedMessage): Promise<boolean>;
+
+	//#region Permissions
+
+	/**
+	 * Checks for if a user has a permission to do something.
+	 *
+	 * NOTE: If permissions is null, this returns true.
+	 *
+	 * @param msg
+	 * @param permissions
+	 * @param checkAdmin
+	 * @param checkOwner
+	 */
+	hasPermission(
+		msg: FramedMessage,
+		permissions = this.permissions,
+		checkAdmin = true,
+		checkOwner = true
+	): boolean {
+		if (permissions) {
+			// Discord checks
+			if (permissions.discord && msg.discord) {
+				const member = msg.discord.member;
+				if (member) {
+					// Discord permissions
+					let hasPermission = false;
+					const perms = permissions.discord.permissions
+						? permissions.discord.permissions
+						: new Discord.Permissions("ADMINISTRATOR");
+
+					hasPermission = member.hasPermission(perms, {
+						checkAdmin,
+						checkOwner,
+					});
+
+					// Goes through Discord roles, if the permission wasn't granted
+					if (!hasPermission && permissions.discord.roles) {
+						permissions.discord.roles.every(role => {
+							let roleId = "";
+							if (role instanceof Discord.Role) {
+								roleId = role.id;
+							} else {
+								roleId = role;
+							}
+
+							hasPermission = member.roles.cache.has(roleId);
+							if (hasPermission) {
+								return;
+							}
+						});
+					}
+
+					return hasPermission;
+				} else {
+					// It should've catched even with DM
+					return false;
+				}
+			}
+
+			// Return false by default
+			return false;
+		} else {
+			// If the command doesn't specify permissions, assume it's fine
+			return true;
+		}
+	}
 
 	/**
 	 * Sends an error message, with what perms the user needs to work with.
@@ -371,69 +440,9 @@ export abstract class BaseCommand {
 		return false;
 	}
 
-	/**
-	 * Checks for if a user has a permission to do something.
-	 *
-	 * NOTE: If permissions is null, this returns true.
-	 *
-	 * @param msg
-	 * @param permissions
-	 * @param checkAdmin
-	 * @param checkOwner
-	 */
-	hasPermission(
-		msg: FramedMessage,
-		permissions = this.permissions,
-		checkAdmin = true,
-		checkOwner = true
-	): boolean {
-		if (permissions) {
-			// Discord checks
-			if (permissions.discord && msg.discord) {
-				const member = msg.discord.member;
-				if (member) {
-					// Discord permissions
-					let hasPermission = false;
-					const perms = permissions.discord.permissions
-						? permissions.discord.permissions
-						: new Discord.Permissions("ADMINISTRATOR");
+	//#endregion
 
-					hasPermission = member.hasPermission(perms, {
-						checkAdmin,
-						checkOwner,
-					});
-
-					// Goes through Discord roles, if the permission wasn't granted
-					if (!hasPermission && permissions.discord.roles) {
-						permissions.discord.roles.every(role => {
-							let roleId = "";
-							if (role instanceof Discord.Role) {
-								roleId = role.id;
-							} else {
-								roleId = role;
-							}
-
-							hasPermission = member.roles.cache.has(roleId);
-							if (hasPermission) {
-								return;
-							}
-						});
-					}
-
-					return hasPermission;
-				} else {
-					// It should've catched even with DM
-					return false;
-				}
-			}
-
-			// Return false by default
-			return false;
-		} else {
-			// If the command doesn't specify permissions, assume it's fine
-			return true;
-		}
-	}
+	//#region Loading in the subcommand
 
 	/**
 	 * Loads the plugins
@@ -476,7 +485,7 @@ export abstract class BaseCommand {
 		this.subcommands.set(subcommand.id, subcommand);
 
 		// Note that this normally is async. Should that be changed?
-		subcommand.parseCustomFormatting();
+		subcommand.formatBatch();
 
 		if (subcommand.aliases) {
 			for (const alias of subcommand.aliases) {
@@ -493,25 +502,23 @@ export abstract class BaseCommand {
 		logger.debug(`Finished loading subcommand ${subcommand.id}.`);
 	}
 
+	//#endregion
+
 	/**
 	 * Gets the subcommand to run from command arguments.
 	 *
-	 * @param command Base command
-	 * @param args Arguments represetned as a string. Likely
-	 * should equal `msg.args` from FramedMessage.
+	 * @param args Message arguments. This should likely equal
+	 * `msg.args` from the FramedMessage class.
 	 *
-	 * @returns BaseSubcommand or undefined
+	 * @returns Subcommand or undefined
 	 */
-	static getSubcommand(
-		command: BaseCommand,
-		args: string[]
-	): BaseSubcommand | undefined {
+	getSubcommand(args: string[]): BaseSubcommand | undefined {
 		const maxSubcommandNesting = 3;
 		let finalSubcommand: BaseSubcommand | undefined;
 		let newSubcommand: BaseSubcommand | undefined;
 
 		for (let i = 0; i < maxSubcommandNesting + 1; i++) {
-			const commandToCompare = newSubcommand ? newSubcommand : command;
+			const commandToCompare = newSubcommand ? newSubcommand : this;
 			let subcommand = commandToCompare.subcommands.get(args[i]);
 			if (!subcommand)
 				subcommand = commandToCompare.subcommandAliases.get(args[i]);
@@ -544,26 +551,11 @@ export abstract class BaseCommand {
 	}
 
 	/**
-	 * Gets the subcommand to run from command arguments.
-	 *
-	 * @param args Message arguments
-	 *
-	 * @returns Subcommand or undefined
-	 */
-	getSubcommand(args: string[]): BaseSubcommand | undefined {
-		return BaseCommand.getSubcommand(this, args);
-	}
-
-	/**
 	 * Gets the nested subcommands.
 	 *
-	 * @param command Base command
 	 * @param args Message arguments
 	 */
-	static getSubcommandChain(
-		command: BaseCommand,
-		args: string[]
-	): BaseSubcommand[] {
+	getSubcommandChain(args: string[]): BaseSubcommand[] {
 		const maxSubcommandNesting = 3;
 		const subcommands: BaseSubcommand[] = [];
 
@@ -571,7 +563,7 @@ export abstract class BaseCommand {
 		let newSubcommand: BaseSubcommand | undefined;
 
 		for (let i = 0; i < maxSubcommandNesting + 1; i++) {
-			const commandToCompare = newSubcommand ? newSubcommand : command;
+			const commandToCompare = newSubcommand ? newSubcommand : this;
 			let subcommand = commandToCompare.subcommands.get(args[i]);
 			if (!subcommand)
 				subcommand = commandToCompare.subcommandAliases.get(args[i]);
@@ -595,9 +587,5 @@ export abstract class BaseCommand {
 		}
 
 		return subcommands;
-	}
-
-	getSubcommandChain(args: string[]): BaseSubcommand[] {
-		return BaseCommand.getSubcommandChain(this, args);
 	}
 }

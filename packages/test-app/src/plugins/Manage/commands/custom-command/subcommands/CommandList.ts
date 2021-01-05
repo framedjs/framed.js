@@ -34,10 +34,10 @@ export default class extends BaseSubcommand {
 			)
 				.setTitle("Command List")
 				.setDescription(
-					await FramedMessage.parseCustomFormatting(
+					await FramedMessage.format(
 						oneLine`
 						This is a list of custom commands.
-						To see the rest of the commands, use \`$(command default.bot.info.command.help)\`.`,
+						To see the rest of the commands, use \`$(command default.bot.info help)\`.`,
 						this.framedClient
 					)
 				);

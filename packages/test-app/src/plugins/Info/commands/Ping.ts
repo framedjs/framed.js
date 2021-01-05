@@ -5,8 +5,7 @@ export default class extends BaseCommand {
 	constructor(plugin: BasePlugin) {
 		super(plugin, {
 			id: "ping",
-			about:
-				"Get a response back to the user, replying with latency info.",
+			about: "Sends a pong back, and latency info.",
 		});
 	}
 

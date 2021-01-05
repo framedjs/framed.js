@@ -88,7 +88,7 @@ export default class CustomCommand extends BaseCommand {
 				.trim();
 
 			const newArgs = FramedMessage.getArgs(newContent, {
-				quoteSections: QuoteSections.Flexible,
+				quoteSections: "flexible",
 			});
 
 			logger.debug(stripIndents`

@@ -14,6 +14,7 @@ import DatabaseManager from "../managers/DatabaseManager";
 import APIManager from "../managers/APIManager";
 import { BasePlugin } from "./BasePlugin";
 import { version } from "../index";
+import FormattingManager from "../managers/FormattingManager";
 
 const DEFAULT_PREFIX = "!";
 
@@ -21,6 +22,7 @@ export default class FramedClient extends EventEmitter {
 	public readonly api: APIManager;
 	public readonly database: DatabaseManager;
 	public readonly plugins = new PluginManager(this);
+	public readonly formatting = new FormattingManager(this);
 
 	public discord: {
 		client?: Discord.Client;
@@ -47,15 +49,10 @@ export default class FramedClient extends EventEmitter {
 	public readonly appVersion: string | undefined;
 
 	public readonly helpCommands = [
-		"$(command default.bot.info.command.help)",
-		"$(command default.bot.fun.command.poll)",
-		"$(command com.geekoverdrivestudio.dailies.command.dailies)",
+		"$(command default.bot.info help)",
+		"$(command default.bot.fun poll)",
+		"$(command com.geekoverdrivestudio.dailies dailies)",
 	];
-	// public readonly helpCommands = [
-	// 	"$(command default.bot.info help)",
-	// 	"$(command default.bot.fun poll)",
-	// 	"$(command com.geekoverdrivestudio.dailies dailies)",
-	// ];
 	public readonly importFilter = /^((?!\.d).)*\.(js|ts)$/;
 	// public readonly importFilter = /(?<!\.d)(\.(js|ts))$/;
 
@@ -118,7 +115,7 @@ export default class FramedClient extends EventEmitter {
 	async prepareHelpCommandList(): Promise<void> {
 		// Properly sets up the help command display
 		for (let i = 0; i < this.helpCommands.length; i++) {
-			this.helpCommands[i] = await FramedMessage.parseCustomFormatting(
+			this.helpCommands[i] = await FramedMessage.format(
 				this.helpCommands[i],
 				this
 			);

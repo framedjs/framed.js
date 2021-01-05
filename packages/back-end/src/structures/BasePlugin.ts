@@ -150,7 +150,7 @@ export abstract class BasePlugin {
 		this.commands.set(command.id, command);
 
 		// Note that this normally is async. Should that be changed?
-		command.parseCustomFormatting();
+		command.formatBatch();
 
 		// Skip over subcommand scripts
 		// if (command instanceof BaseSubcommand) {

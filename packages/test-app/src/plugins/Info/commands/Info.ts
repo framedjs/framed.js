@@ -14,9 +14,9 @@ export default class extends BaseCommand {
 		super(plugin, {
 			id: "info",
 			aliases: ["i", "analyze", "inspect"],
-			about: `Similar to \`$(command default.bot.info.command.help)\`, but with more detail (ex. aliases).`,
+			about: `Similar to \`$(command default.bot.info help)\`, but with more detail (ex. aliases).`,
 			description: oneLine`
-			Analyzes commands in more detail than \`$(command default.bot.info.command.help)\`.
+			Analyzes commands in more detail than \`$(command default.bot.info help)\`.
 			This includes aliases, prefixes, and plugin IDs.
 			`,
 			usage: "[command]",
@@ -33,11 +33,11 @@ export default class extends BaseCommand {
 			if (msg.args[0]) {
 				// Send info through Embed
 				if (msg.discord) {
-					const embeds = await Help.showHelpForCommand(
+					const embeds = await Help.showHelpCommand(
 						msg.args,
 						msg,
 						this.id,
-						this.processEmbedForHelp
+						this.getHelpEmbed
 					);
 					for await (const embed of embeds) {
 						await msg.discord.channel.send(embed);
@@ -57,13 +57,13 @@ export default class extends BaseCommand {
 	 * @param newArgs Message arguments
 	 * @param command BaseCommand
 	 */
-	private async processEmbedForHelp(
+	private async getHelpEmbed(
 		msg: FramedMessage,
 		id: string,
 		newArgs: string[],
 		command: BaseCommand
 	): Promise<Discord.MessageEmbed | undefined> {
-		const embed = await Help.generateEmbedForHelp(msg, id, newArgs, command);
+		const embed = await Help.getHelpEmbed(msg, id, newArgs, command);
 
 		if (!msg.discord || !embed) return undefined;
 

@@ -7,15 +7,14 @@ export default class extends BaseCommand {
 		super(plugin, {
 			id: "streaks",
 			aliases: ["streak", "s"],
-			about: "View streak stats for users.",
+			about: "View a users' streaks.",
 			description: oneLine`
-			View streak stats for users.`,
+			View a users' streaks.
+			To view the top three users' streaks, use \`$(command ${plugin.id} {{id}} top)\`.
+			To view all the users' streaks, use \`$(command ${plugin.id} {{id}} all)\`.`,
 			usage: `[@user|id]`,
-			hideUsageInHelp: true,
 			examples: stripIndent`
 			\`{{prefix}}{{id}}\`
-			\`{{prefix}}{{id}} top\`
-			\`{{prefix}}{{id}} all\`
 			\`{{prefix}}{{id}} @Gman1cus\`
 			\`{{prefix}}{{id}} 474802647602561056\``,
 			paths: {

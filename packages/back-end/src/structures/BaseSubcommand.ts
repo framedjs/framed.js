@@ -25,7 +25,7 @@ export abstract class BaseSubcommand extends BaseCommand {
 
 		this.hideUsageInHelp = info.hideUsageInHelp;
 		this.permissions = info.permissions;
-		
+
 		this.inlineCharacterLimit = info.inlineCharacterLimit;
 		this.inline = info.inline ? info.inline : false;
 		this.inlineAliases = info.inlineAliases ? info.inlineAliases : false;

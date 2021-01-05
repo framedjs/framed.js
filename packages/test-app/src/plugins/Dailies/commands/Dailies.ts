@@ -8,7 +8,7 @@ export default class extends BaseCommand {
 			id: "dailies",
 			prefixes: ["!"],
 			aliases: ["daily", "dailychallenge", "dc"],
-			about: "View what is the daily challenge, and how to use it.",
+			about: "View what is the daily challenge is, and how to participate.",
 		});
 	}
 

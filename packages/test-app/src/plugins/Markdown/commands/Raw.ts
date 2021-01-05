@@ -220,7 +220,7 @@ export default class Raw extends BaseCommand {
 							switch (mode) {
 								case "none":
 									embed.setDescription(
-										await FramedMessage.parseCustomFormatting(
+										await FramedMessage.format(
 											oneLine`The message contains a codeblock, so it has been sent as a separate message.
 											Please note that it may not be completely accurate. If full accuracy is wanted, please
 											use \`${rawCommand}\` or \`${rawHastebin}\` instead.`,

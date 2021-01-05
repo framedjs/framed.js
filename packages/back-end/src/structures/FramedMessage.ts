@@ -6,11 +6,8 @@ import { FramedTwitchMessage } from "../interfaces/FramedTwitchMessage";
 import { FramedMessageOptions } from "../interfaces/FramedMessageOptions";
 import { FramedArgumentOptions } from "../interfaces/FramedArgumentOptions";
 import { FramedArgument } from "../interfaces/FramedArgument";
-import { QuoteSections } from "../interfaces/QuoteSections";
 import Emoji from "node-emoji";
 import FramedClient from "./FramedClient";
-import { logger } from "shared";
-import { BaseSubcommand } from "./BaseSubcommand";
 import { FramedTwitchMessageOptions } from "../interfaces/FramedTwitchMessageOptions";
 
 enum ArgumentState {
@@ -332,7 +329,7 @@ export default class FramedMessage {
 					settings?.quoteSections != undefined ||
 					hasCodeBlock
 				) {
-					if (settings?.quoteSections == QuoteSections.Strict) {
+					if (settings?.quoteSections == "strict") {
 						if (!charIsSpace && !charIsDoubleQuote) {
 							return [];
 						}
@@ -412,14 +409,14 @@ export default class FramedMessage {
 				const nonClosedQuoteSection =
 					charIsEnd &&
 					argString.length > 0 &&
-					settings?.quoteSections == QuoteSections.Strict &&
+					settings?.quoteSections == "strict" &&
 					!charIsDoubleQuote;
 
 				// Trim if unquoted
 				if (state == ArgumentState.Unquoted)
 					argString = argString.trim();
 
-				if (settings?.quoteSections == QuoteSections.Strict) {
+				if (settings?.quoteSections == "strict") {
 					if (nonClosedQuoteSection) {
 						return [];
 					}
@@ -559,88 +556,11 @@ export default class FramedMessage {
 	/**
 	 * Parses custom $() formatting
 	 */
-	static async parseCustomFormatting(
+	static async format(
 		arg: string,
 		framedClient: FramedClient
 	): Promise<string> {
-		// Matches $(test) pattern
-		const regex = /(\$\(.*?\))/g;
-		const array = [...arg.matchAll(regex)];
-
-		for await (const element of array) {
-			// Removes the $()
-			const formatArgs = element[0]
-				.slice(2, element[0].length - 1)
-				.split(" ");
-			const formatCommand = formatArgs.shift();
-
-			switch (formatCommand) {
-				case "command":
-				case "commandnoprefix":
-				case "subcommand":
-					try {
-						const command = formatArgs[0];
-						if (command) {
-							const baseCommand = framedClient.plugins.getCommand(
-								command
-							);
-
-							if (!baseCommand) {
-								throw new ReferenceError();
-							}
-
-							let toReplace = `${baseCommand.defaultPrefix}${baseCommand.id}`;
-							if (formatCommand == "commandnoprefix") {
-								toReplace = baseCommand.id;
-							}
-
-							if (formatCommand != "subcommand") {
-								arg = arg.replace(element[0], toReplace);
-							} else {
-								const clone = [...formatArgs];
-								clone.shift();
-
-								let baseSubcommands:
-									| BaseSubcommand[]
-									| undefined;
-
-								if (clone.length > 0) {
-									baseSubcommands = baseCommand.getSubcommandChain(
-										clone
-									);
-								} else {
-									// TODO
-									// baseSubcommand = framedClient.pluginManager.getSubcommand(command);
-								}
-
-								if (!baseSubcommands) {
-									throw new ReferenceError();
-								}
-
-								let list = "";
-								baseSubcommands.forEach(baseSubcommand => {
-									list += `${baseSubcommand.id} `;
-								});
-								list = list.trim();
-
-								toReplace = `${toReplace}${list}`;
-								arg = arg.replace(element[0], toReplace);
-							}
-						} else {
-							throw new ReferenceError();
-						}
-					} catch (error) {
-						logger.error(error.stack);
-					}
-
-					break;
-
-				default:
-					break;
-			}
-		}
-
-		return arg;
+		return framedClient.formatting.format(arg);
 	}
 
 	/**

@@ -10,16 +10,23 @@ const data: HelpData[] = [
 		group: "Info",
 		// TODO: Sorting alphabetically should probably be done programatically
 		// commands: ["help", "usage", "info", "about", "ping"],
-		commands: ["about", "help", "usage"],
-	},
-	{
-		group: "Fun",
-		commands: ["poll"],
+		commands: ["about", "help", "ping"],
 	},
 	{
 		group: "Dailies",
 		// commands: ["dailies", "streaks", "alert", "casual"],
-		commands: ["alert", "casual", "dailies", "streaks", "streaks top"],
+		commands: [
+			"alert",
+			"casual",
+			"dailies",
+			"streaks",
+			"streaks all",
+			"streaks top",
+		],
+	},
+	{
+		group: "Fun",
+		commands: ["poll"],
 	},
 	{
 		group: "Manage",
@@ -51,11 +58,11 @@ export default class Help extends BaseCommand {
 			if (msg.args[0]) {
 				// Sends help through Embed
 				if (msg.discord) {
-					const embeds = await Help.showHelpForCommand(
+					const embeds = await Help.showHelpCommand(
 						msg.args,
 						msg,
 						this.id,
-						Help.generateEmbedForHelp
+						Help.getHelpEmbed
 					);
 					for await (const embed of embeds) {
 						await msg.discord.channel.send(embed);
@@ -86,7 +93,7 @@ export default class Help extends BaseCommand {
 			)
 				.setTitle("Command Help")
 				.setDescription(
-					await FramedMessage.parseCustomFormatting(
+					await FramedMessage.format(
 						stripIndent`
 						For info about this bot, use the \`$(command about)\` command.
 						For info on certain commands, use \`$(command help) streaks\` (or a different command)!
@@ -128,7 +135,7 @@ export default class Help extends BaseCommand {
 	 * @param id Command ID for embed
 	 * @param processFunction The function that will parse and create all embeds.
 	 */
-	static async showHelpForCommand(
+	static async showHelpCommand(
 		args: string[],
 		msg: FramedMessage,
 		id: string,
@@ -194,12 +201,13 @@ export default class Help extends BaseCommand {
 
 	/**
 	 * Creates embeds containing help data
+	 *
 	 * @param msg Framed Message
 	 * @param id Command ID for embed
 	 * @param newArgs Message arguments
 	 * @param command BaseCommand
 	 */
-	static async generateEmbedForHelp(
+	static async getHelpEmbed(
 		msg: FramedMessage,
 		id: string,
 		newArgs: string[],
@@ -246,8 +254,8 @@ export default class Help extends BaseCommand {
 
 		// Gets the usage text
 		if (primaryCommand.usage) {
-			const guideMsg = await FramedMessage.parseCustomFormatting(
-				`Type \`$(command default.bot.info.command.usage)\` for important info.`,
+			const guideMsg = await FramedMessage.format(
+				`Type \`$(command default.bot.info usage)\` for important info.`,
 				msg.framedClient
 			);
 			const usageMsg = `\`${commandRan} ${primaryCommand.usage}\``;

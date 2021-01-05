@@ -11,7 +11,6 @@ import Command from "./database/entities/Command";
 import Discord from "discord.js";
 import DatabaseManager from "./DatabaseManager";
 import { oneLine, oneLineInlineLists } from "common-tags";
-import * as TypeORM from "typeorm";
 import { FriendlyError } from "../structures/errors/FriendlyError";
 import EmbedHelper from "../utils/discord/EmbedHelper";
 import { FramedFoundCommandData } from "../interfaces/FramedFoundCommandData";
@@ -181,19 +180,134 @@ export default class PluginManager {
 		return prefixes;
 	}
 
+	//#region Getting commands
+
+	/**
+	 *
+	 * @param msg Framed message
+	 */
+	getFoundCommandData(msg: FramedMessage): FramedFoundCommandData[];
+
+	/**
+	 *
+	 * @param prefix
+	 * @param command
+	 * @param args
+	 */
+	getFoundCommandData(
+		command: string,
+		args: string[],
+		prefix?: string
+	): FramedFoundCommandData[];
+
+	/**
+	 *
+	 * @param msgOrCommand
+	 * @param args
+	 * @param prefix
+	 */
+	getFoundCommandData(
+		msgOrCommand: FramedMessage | string,
+		args?: string[],
+		prefix?: string
+	): FramedFoundCommandData[] {
+		let command: string;
+
+		if (msgOrCommand instanceof FramedMessage) {
+			if (msgOrCommand.command) {
+				prefix = msgOrCommand.prefix;
+				command = msgOrCommand.command;
+				args = msgOrCommand.args;
+			} else {
+				throw new Error(
+					`Command parameter in FramedMessage was undefined`
+				);
+			}
+		} else {
+			command = msgOrCommand;
+			if (!args) {
+				throw new ReferenceError(
+					`Args parameter can't be undefined, if the first value is a string`
+				);
+			}
+		}
+
+		const data: FramedFoundCommandData[] = [];
+
+		if (command && args) {
+			// Runs the commands
+			let commandList: BaseCommand[] = [];
+			if (msgOrCommand instanceof FramedMessage) {
+				commandList = this.getCommands(msgOrCommand);
+			} else {
+				commandList = this.getCommands(command, prefix);
+			}
+
+			for (const command of commandList) {
+				const element: FramedFoundCommandData = {
+					command: command,
+					subcommands: [],
+				};
+
+				// Gets the base command's prefixes or default prefixes, and see if they match.
+				// Subcommands are not allowed to declare new prefixes.
+				if (
+					(prefix &&
+						(command.prefixes.includes(prefix) ||
+							this.defaultPrefixes.includes(prefix))) ||
+					!prefix
+				) {
+					element.subcommands = command.getSubcommandChain(args);
+				}
+
+				data.push(element);
+			}
+		}
+
+		return data;
+	}
+
+	/**
+	 * Gets a command
+	 *
+	 * @param command Command ID
+	 * @param prefix Prefix
+	 *
+	 * @returns BaseCommand or undefined
+	 */
 	getCommand(command: string, prefix?: string): BaseCommand | undefined;
+
+	/**
+	 * Gets a command
+	 *
+	 * @param msg Framed Message
+	 *
+	 * @returns BaseCommand or undefined
+	 */
 	getCommand(msg: FramedMessage): BaseCommand | undefined;
 
+	/**
+	 * Gets a command
+	 *
+	 * @param msgOrCommand Framed Message or command string
+	 * @param prefix Prefix
+	 *
+	 * @returns BaseCommand or undefined
+	 */
 	getCommand(
 		msgOrCommand: FramedMessage | string,
 		prefix?: string
 	): BaseCommand | undefined {
-		return this.internalGetCommands(msgOrCommand, prefix, true)[0];
+		if (msgOrCommand instanceof FramedMessage) {
+			return this.getCommands(msgOrCommand)[0];
+		} else {
+			return this.getCommands(msgOrCommand, prefix)[0];
+		}
 	}
 
 	/**
 	 * Get a list of plugin commands from a message.
-	 * This function will also get a comand's alias.
+	 * This function will also get from a command's alias.
 	 *
 	 * Optimally, there should be only one command but will allow
 	 * overlapping commands from different plugins.
@@ -207,7 +321,7 @@ export default class PluginManager {
 
 	/**
 	 * Get a list of plugin commands from a message.
-	 * This function will also get a comand's alias.
+	 * This function will also get from a command's alias.
 	 *
 	 * Optimally, there should be only one command but will allow
 	 * overlapping commands from different plugins.
@@ -218,34 +332,21 @@ export default class PluginManager {
 	 */
 	getCommands(msg: FramedMessage): BaseCommand[];
 
+	/**
+	 * Get a list of plugin commands from a message.
+	 * This function will also get from a command's alias.
+	 *
+	 * Optimally, there should be only one command but will allow
+	 * overlapping commands from different plugins.
+	 *
+	 * @param msgOrCommand Framed Message or command
+	 * @param prefix Prefix
+	 *
+	 * @returns List of commands with the same ID.
+	 */
 	getCommands(
 		msgOrCommand: FramedMessage | string,
 		prefix?: string
-	): BaseCommand[] {
-		return this.internalGetCommands(msgOrCommand, prefix);
-	}
-
-	// getSubcommand(command: string): BaseSubcommand | undefined;
-
-	// getSubcommand(
-	// 	plugin: PluginResolvable,
-	// 	command: string
-	// ): BaseSubcommand | undefined;
-
-	// getSubcommand(
-	// 	commandOrPlugin: string | PluginResolvable,
-	// 	command?: string
-	// ) {}
-
-	/**
-	 * Internal get commands function to reduce code duplication.
-	 *
-	 * Intentionally only gives commands for subcommand inputs.
-	 */
-	private internalGetCommands(
-		msgOrCommand: FramedMessage | string,
-		prefix?: string,
-		findOne?: boolean
 	): BaseCommand[] {
 		const commandList: BaseCommand[] = [];
 
@@ -259,61 +360,34 @@ export default class PluginManager {
 			return commandList;
 		}
 
-		// If the command string isn't referencing an ID
-		if (commandString.indexOf(".") == -1) {
-			// Tries to the find the command in plugins
-			for (const pluginElement of this.map) {
-				const plugin = pluginElement[1];
-				let command = plugin.commands.get(commandString);
+		// Tries to the find the command in plugins
+		for (const pluginElement of this.map) {
+			const plugin = pluginElement[1];
+			let command = plugin.commands.get(commandString);
 
-				if (!command) {
-					// Tries to find the command from an alias
-					command = plugin.aliases.get(commandString);
-				}
-
-				if (command) {
-					// If the prefix matches by default, or the command has it,
-					// OR there is no specified prefix to match against, push
-					if (
-						(prefix &&
-							(this.defaultPrefixes.includes(prefix) ||
-								command.prefixes.includes(prefix))) ||
-						!prefix
-					) {
-						if (!findOne) commandList.push(command);
-						else return [command];
-					}
-				}
-			}
-		} else {
-			// It's an ID, so we should search for it.
-			const commandStringArgs = commandString.split(".");
-			if (commandStringArgs.length < 5) {
-				return [];
-			}
-
-			const clone = [...commandStringArgs];
-			const pluginId = clone.splice(0, 3).join(".");
-
-			// Removes the command identifier from x.x.x.command.x
-			clone.shift();
-
-			const plugin = this.map.get(pluginId);
-			if (!plugin) return [];
-
-			let command = plugin.commands.get(clone[0]);
 			if (!command) {
-				command = plugin.aliases.get(clone[0]);
-				if (!command) {
-					return [];
-				}
+				// Tries to find the command from an alias
+				command = plugin.aliases.get(commandString);
 			}
 
-			return [command];
+			if (command) {
+				// If the prefix matches by default, or the command has it,
+				// OR there is no specified prefix to match against, push
+				if (
+					(prefix &&
+						(this.defaultPrefixes.includes(prefix) ||
+							command.prefixes.includes(prefix))) ||
+					!prefix
+				) {
+					commandList.push(command);
+				}
+			}
 		}
 
 		return commandList;
 	}
+
+	//#endregion
 
 	/**
 	 * Runs a command, based on the FramedMessage parameters
@@ -329,13 +403,16 @@ export default class PluginManager {
 		 * run with elevated permissions, as the bot likely has higher permissions than the user.
 		 */
 		if (msg.discord?.author.bot) {
+			logger.warn(
+				`${msg.discord.author.tag} attempted to run a command, but was a bot!`
+			);
 			return map;
 		}
 
 		try {
 			if (msg.prefix && msg.command && msg.args) {
 				logger.debug(
-					`PluginManager.ts: runCommand() - ${msg.prefix}${msg.command}`
+					`PluginManager.ts: Attempting to run ${msg.prefix}${msg.command}`
 				);
 
 				const data = this.getFoundCommandData(msg);
@@ -359,7 +436,6 @@ export default class PluginManager {
 							A Friendly Error occured! Likely, this warning is
 							safe to ignore, unless it's needed for debug purposes.`);
 							logger.warn(error.stack);
-
 							await PluginManager.sendErrorMessage(msg, error);
 						} else {
 							logger.error(error.stack);
@@ -388,74 +464,6 @@ export default class PluginManager {
 		}
 
 		return map;
-	}
-
-	getFoundCommandData(msg: FramedMessage): FramedFoundCommandData[];
-
-	getFoundCommandData(
-		prefix: string,
-		command: string,
-		args: string[]
-	): FramedFoundCommandData[];
-
-	getFoundCommandData(
-		msgOrPrefix: FramedMessage | string,
-		command?: string,
-		args?: string[]
-	): FramedFoundCommandData[] {
-		let prefix: string | undefined;
-
-		if (msgOrPrefix instanceof FramedMessage) {
-			if (!args) {
-				prefix = msgOrPrefix.prefix;
-				command = msgOrPrefix.command;
-				args = msgOrPrefix.args;
-			}
-		} else {
-			prefix = msgOrPrefix;
-			if (!command) {
-				throw new ReferenceError(
-					`command can't be undefined, if the first value is a string`
-				);
-			}
-			if (!args) {
-				throw new ReferenceError(
-					`Args can't be undefined, if the first value is a string`
-				);
-			}
-		}
-
-		const data: FramedFoundCommandData[] = [];
-
-		if (prefix && command && args) {
-			// Runs the commands
-			let commandList: BaseCommand[] = [];
-			if (msgOrPrefix instanceof FramedMessage) {
-				commandList = this.getCommands(msgOrPrefix);
-			} else {
-				commandList = this.getCommands(command, prefix);
-			}
-
-			for (const command of commandList) {
-				const element: FramedFoundCommandData = {
-					command: command,
-					subcommands: [],
-				};
-
-				// Gets the base command's prefixes or default prefixes, and see if they match.
-				// Subcommands are not allowed to declare new prefixes.
-				if (
-					command.prefixes.includes(prefix) ||
-					this.defaultPrefixes.includes(prefix)
-				) {
-					element.subcommands = command.getSubcommandChain(args);
-				}
-
-				data.push(element);
-			}
-		}
-
-		return data;
 	}
 
 	/**
@@ -592,34 +600,20 @@ export default class PluginManager {
 	 */
 	async createHelpFields(
 		helpList: HelpData[]
-	): Promise<Discord.EmbedFieldData[] | undefined> {
-		const connection = this.framedClient.database.connection;
-		if (connection) {
-			return await PluginManager.createHelpFields(
-				this.map,
-				helpList,
-				connection
-			);
-		} else {
-			return undefined;
-		}
-	}
-
-	/**
-	 * @param plugins A map of plugins. Usually, this should equal
-	 * `this.plugins`. If you're not calling it statically, use the non-static `createMainHelpFields()`.
-	 * @param helpList Data to choose certain commands
-	 * @param connection
-	 */
-	static async createHelpFields(
-		plugins: Map<string, BasePlugin>,
-		helpList: HelpData[],
-		connection: TypeORM.Connection
 	): Promise<Discord.EmbedFieldData[]> {
+		const connection = this.framedClient.database.connection;
+		if (!connection)
+			throw new ReferenceError(DatabaseManager.errorNoConnection);
+
 		const fields: Discord.EmbedFieldData[] = [];
 		const entries = new Map<
+			/** Command ID */
 			string,
-			{ description: string; group: string; small: boolean }
+			{
+				description: string;
+				group: string;
+				small: boolean;
+			}
 		>();
 		const commandRepo = connection.getRepository(Command);
 		const databaseCommands = await commandRepo.find({
@@ -629,83 +623,96 @@ export default class PluginManager {
 		const groupIconMap = new Map<string, string>();
 		const pluginCommandMap = new Map<string, BaseCommand[]>();
 
-		plugins.forEach(plugin => {
-			// Combine both commands and aliases into one variable
+		// Combine both commands and aliases into one variable
+		// Then, set them all into the map
+		this.framedClient.plugins.map.forEach(plugin => {
 			const pluginCommands = Array.from(plugin.commands.values());
-
-			// Set them all into the map
 			pluginCommandMap.set(plugin.id, pluginCommands);
 		});
 
-		// Goes through all of the help elements, and assigns something to print out
-		for (const helpElement of helpList) {
-			// Check in each command in array
-			for await (const command of helpElement.commands) {
-				// Gets all plugin command and alias references, along
-				// with exhausting all possible categories
-				for await (const element of pluginCommandMap) {
-					const baseCommands = element[1];
-					for await (const baseCommand of baseCommands) {
-						// Group
-						groupIconMap.set(
-							baseCommand.group,
-							baseCommand.groupEmote
-								? baseCommand.groupEmote
-								: "❔"
+		// Gets all plugin command and alias references, along
+		// with exhausting all possible categories
+		for (const baseCommands of pluginCommandMap.values()) {
+			// Gets all the groups and their icons
+			for (const baseCommand of baseCommands) {
+				groupIconMap.set(
+					baseCommand.group,
+					baseCommand.groupEmote ? baseCommand.groupEmote : "❔"
+				);
+			}
+
+			// Goes through all of the help elements
+			for (const helpElement of helpList) {
+				// Check in each command in array
+				for (const commandElement of helpElement.commands) {
+					const args = FramedMessage.getArgs(commandElement);
+					const command = args.shift();
+
+					if (!command) {
+						throw new Error();
+					}
+
+					const foundData = this.framedClient.plugins.getFoundCommandData(
+						command,
+						args
+					)[0];
+
+					// If there's a command found,
+					if (foundData) {
+						const commandString = this.framedClient.formatting.getCommandRan(
+							foundData
 						);
+						const lastSubcommand =
+							foundData.subcommands[
+								foundData.subcommands.length - 1
+							];
+						const baseCommand = lastSubcommand
+							? lastSubcommand
+							: foundData.command;
 
-						// If there's a matching command or alias,
-						if (
-							baseCommand.id == command ||
-							baseCommand.aliases?.includes(command)
-						) {
-							const usage =
-								baseCommand.usage &&
-								!baseCommand.hideUsageInHelp
-									? ` ${baseCommand.usage}`
-									: "";
-							const about = baseCommand.about
-								? ` - ${baseCommand.about}\n`
-								: " ";
-							entries.set(command, {
-								group: baseCommand.groupEmote
-									? baseCommand.groupEmote
-									: "Unknown",
-								description: `\`${baseCommand.defaultPrefix}${baseCommand.id}${usage}\`${about}`,
-								small: baseCommand.about != undefined,
-							});
-						}
+						const usage =
+							baseCommand.usage && !baseCommand.hideUsageInHelp
+								? ` ${baseCommand.usage}`
+								: "";
+						const about = baseCommand.about
+							? ` - ${baseCommand.about}\n`
+							: " ";
+						entries.set(commandElement, {
+							group: baseCommand.groupEmote
+								? baseCommand.groupEmote
+								: "Unknown",
+							description: `\`${commandString}${usage}\`${about}`,
+							small: baseCommand.about != undefined,
+						});
 					}
-				}
-
-				// Searches through database
-				for (const command of databaseCommands) {
-					let content = `\`${command.defaultPrefix.prefix}${command.id}\``;
-					let small = false;
-
-					const description = command.response?.description;
-
-					if (description) {
-						content = `${content} - ${description}\n`;
-					} else {
-						content += ` `;
-						small = true;
-					}
-
-					const group = command.group.name;
-					const emote = command.group.emote
-						? command.group.emote
-						: "❔";
-
-					groupIconMap.set(group, emote);
-
-					entries.set(command.id, {
-						group: group,
-						description: content,
-						small,
-					});
 				}
 			}
+		}
+
+		// Searches through database
+		for (const command of databaseCommands) {
+			let content = `\`${command.defaultPrefix.prefix}${command.id}\``;
+			let small = false;
+
+			const description = command.response?.description;
+
+			if (description) {
+				content = `${content} - ${description}\n`;
+			} else {
+				content += ` `;
+				small = true;
+			}
+
+			const group = command.group.name;
+			const emote = command.group.emote ? command.group.emote : "❔";
+
+			groupIconMap.set(group, emote);
+
+			entries.set(command.id, {
+				group: group,
+				description: content,
+				small,
+			});
 		}
 
 		// Clones arrays to get a new help list, and a list of unparsed commands.
@@ -798,66 +805,53 @@ export default class PluginManager {
 	async createInfoHelpFields(): Promise<
 		Discord.EmbedFieldData[] | undefined
 	> {
-		return PluginManager.createDBHelpFields(this.framedClient.database);
-	}
+		const connection = this.framedClient.database.connection;
+		if (!connection) return undefined;
 
-	/**
-	 * Create embed field data on all of the commands in the database.
-	 *
-	 * @param databaseManager Database Manager
-	 *
-	 * @returns Discord embed field data
-	 */
-	static async createDBHelpFields(
-		databaseManager: DatabaseManager
-	): Promise<Discord.EmbedFieldData[] | undefined> {
-		const connection = databaseManager.connection;
-		if (connection) {
-			const fields: Discord.EmbedFieldData[] = [];
-			const commandRepo = connection.getRepository(Command);
-			const commands = await commandRepo.find({
-				relations: ["defaultPrefix", "response"],
-			});
+		const fields: Discord.EmbedFieldData[] = [];
+		const commandRepo = connection.getRepository(Command);
+		const commands = await commandRepo.find({
+			relations: ["defaultPrefix", "response"],
+		});
 
-			const contentNoDescriptionList: string[] = [];
-			const contentList: string[] = [];
+		const contentNoDescriptionList: string[] = [];
+		const contentList: string[] = [];
 
-			for await (const command of commands) {
-				let content = `\`${command.defaultPrefix.prefix}${command.id}\``;
-				const description = command.response?.description;
+		for await (const command of commands) {
+			let content = `\`${command.defaultPrefix.prefix}${command.id}\``;
+			const description = command.response?.description;
 
-				if (description) {
-					content = `${content} - ${description}\n`;
-					contentList.push(content);
-				} else {
-					content += ` `;
-					contentNoDescriptionList.push(content);
-				}
-			}
-
-			let content = "";
-			contentNoDescriptionList.forEach(element => {
-				content += element;
-			});
-
-			if (content.length > 0) {
-				content += "\n";
-			}
-
-			contentList.forEach(element => {
-				content += element;
-			});
-
-			if (content.length > 0) {
-				fields.push({
-					name: "Other",
-					value: content,
-				});
-				return fields;
+			if (description) {
+				content = `${content} - ${description}\n`;
+				contentList.push(content);
 			} else {
-				return undefined;
+				content += ` `;
+				contentNoDescriptionList.push(content);
 			}
 		}
-		return undefined;
+
+		let content = "";
+		contentNoDescriptionList.forEach(element => {
+			content += element;
+		});
+
+		if (content.length > 0) {
+			content += "\n";
+		}
+
+		contentList.forEach(element => {
+			content += element;
+		});
+
+		// If there's something to push
+		if (content.length > 0) {
+			fields.push({
+				name: "Other",
+				value: content,
+			});
+			return fields;
+		} else {
+			return undefined;
+		}
 	}
 }

@@ -32,7 +32,7 @@ export default class extends BaseSubcommand {
 		if (msg.args) {
 			const argsContent = msg.getArgsContent([msg.args[0]]);
 			const parse = FramedMessage.getArgs(argsContent, {
-				quoteSections: QuoteSections.Flexible,
+				quoteSections: "flexible",
 			});
 
 			// If there's no first or second argument, show help

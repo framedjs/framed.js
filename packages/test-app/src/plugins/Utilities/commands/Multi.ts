@@ -11,8 +11,8 @@ export default class Multi extends BaseCommand {
 
 		const section2 = stripIndents`\`\`\`
 		{{prefix}}{{id}} command add test "This is a test";
-		$(command default.bot.manage.command.group) set owo "Dailies";
-		$(command default.bot.info.command.help)\`\`\``;
+		$(command default.bot.manage group) set owo "Dailies";
+		$(command default.bot.info help)\`\`\``;
 
 		super(plugin, {
 			id: "multi",
