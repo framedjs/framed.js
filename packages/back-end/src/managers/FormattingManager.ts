@@ -3,6 +3,8 @@ import { logger } from "shared";
 import { FramedFoundCommandData } from "../interfaces/FramedFoundCommandData";
 import FramedClient from "../structures/FramedClient";
 import FramedMessage from "../structures/FramedMessage";
+import Discord from "discord.js";
+import EmbedHelper from "../utils/discord/EmbedHelper";
 
 export default class FormattingManager {
 	constructor(public readonly framedClient: FramedClient) {}
@@ -22,7 +24,7 @@ export default class FormattingManager {
 			const formatCommand = formatArgs.shift();
 
 			try {
-				switch (formatCommand) {
+				switch (formatCommand?.toLocaleLowerCase()) {
 					case "command":
 					case "commandnoprefix":
 						arg = arg.replace(
@@ -34,7 +36,14 @@ export default class FormattingManager {
 							)
 						);
 						break;
-
+					case "helpcommands":
+						arg = arg.replace(
+							element[0],
+							EmbedHelper.getCheckOutText(
+								this.framedClient.helpCommands
+							)
+						);
+						break;
 					default:
 						throw new Error(`Invalid parameter ${formatCommand}`);
 				}
@@ -123,5 +132,65 @@ export default class FormattingManager {
 
 		// Returns command in the format of `!command subcommand`
 		return `${prefixString}${foundData.command.id} ${subcommandString}`.trim();
+	}
+
+	/**
+	 * Formats an entire Discord embed
+	 *
+	 * @param embed Discord Embed
+	 *
+	 * @returns Formatted Discord embed
+	 */
+	async formatEmbed(
+		embed: Discord.MessageEmbed | Discord.MessageEmbedOptions
+	): Promise<Discord.MessageEmbed> {
+		if (embed.description) {
+			try {
+				embed.description = await FramedMessage.format(
+					embed.description,
+					this.framedClient
+				);
+			} catch (error) {
+				logger.error(error.stack);
+			}
+		}
+
+		if (embed.fields) {
+			for await (const field of embed.fields) {
+				try {
+					field.name = await FramedMessage.format(
+						field.name,
+						this.framedClient
+					);
+				} catch (error) {
+					logger.error(error.stack);
+				}
+				try {
+					field.value = await FramedMessage.format(
+						field.value,
+						this.framedClient
+					);
+				} catch (error) {
+					logger.error(error.stack);
+				}
+			}
+		}
+
+		if (embed.footer?.text) {
+			try {
+				embed.footer.text = await FramedMessage.format(
+					embed.footer.text,
+					this.framedClient
+				);
+			} catch (error) {
+				logger.error(error.stack);
+			}
+		}
+
+		if (embed instanceof Discord.MessageEmbed) {
+			return embed;
+		} else {
+			return new Discord.MessageEmbed(embed);
+		}
 	}
 }

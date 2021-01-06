@@ -6,7 +6,7 @@ import DiscordUtils from "../utils/discord/DiscordUtils";
 import FramedMessage from "../structures/FramedMessage";
 import { BaseCommand } from "../structures/BaseCommand";
 import { BaseEvent } from "../structures/BaseEvent";
-import Options from "../interfaces/RequireAllOptions";
+import Options from "../interfaces/other/RequireAllOptions";
 import Command from "./database/entities/Command";
 import Discord from "discord.js";
 import DatabaseManager from "./DatabaseManager";
@@ -14,7 +14,7 @@ import { oneLine, oneLineInlineLists } from "common-tags";
 import { FriendlyError } from "../structures/errors/FriendlyError";
 import EmbedHelper from "../utils/discord/EmbedHelper";
 import { FramedFoundCommandData } from "../interfaces/FramedFoundCommandData";
-import { HelpData } from "../interfaces/HelpData";
+import { HelpData } from "../interfaces/other/HelpData";
 
 export interface HelpGroup {
 	group: string;
@@ -452,6 +452,9 @@ export default class PluginManager {
 				);
 
 				if (dbCommand) {
+					logger.debug(
+						`PluginManager.ts: Running command ${dbCommand.id}`
+					);
 					const success = await this.sendDatabaseCommand(
 						dbCommand,
 						msg
@@ -488,24 +491,72 @@ export default class PluginManager {
 				}
 			}
 
+			let sentSomething = false;
+
 			if (msg.discord) {
 				for await (const data of responseData.list) {
 					const embeds = data.discord?.embeds;
-					let embed: Discord.MessageEmbed | undefined;
-					if (embeds && embeds[0]) {
-						embed = embeds[0];
+
+					for (let i = 0; i < (embeds ? embeds.length : 1); i++) {
+						// Gets the embed if it exists
+						let embed: Discord.MessageEmbed | undefined;
+						if (embeds) {
+							const embedData = embeds[i];
+							if (embedData) {
+								embed = new Discord.MessageEmbed(embedData);
+							}
+
+							if (embed) {
+								embed = await this.framedClient.formatting.formatEmbed(
+									embed
+								);
+							}
+						}
+
+						// If it's the first embed, and data content is a thing
+						if (i == 0 && data.content && data.content.length > 0) {
+							const formattedContent = await FramedMessage.format(
+								data.content,
+								this.framedClient
+							);
+
+							// If there's an embed, send it. If not, don't
+							if (embed) {
+								await msg.discord.channel.send(
+									formattedContent,
+									embed
+								);
+								sentSomething = true;
+							} else {
+								await msg.discord.channel.send(
+									formattedContent
+								);
+								sentSomething = true;
+							}
+						} else if (embed) {
+							// If there is an embed but no content, send the embed
+							await msg.discord.channel.send(embed);
+							sentSomething = true;
+						} else {
+							// If there's no embed or content, somethign went wrong
+							logger.error(
+								`Response data doesn't contain anything to output\n${util.inspect(
+									data
+								)}`
+							);
+						}
 					}
-					if (embed) {
-						await msg.discord?.channel.send(data.content, embed);
-					} else {
-						await msg.discord?.channel.send(data.content);
-					}
-					return true;
+
+					return sentSomething;
 				}
 			} else {
 				for await (const data of responseData.list) {
-					await msg.send(data.content);
+					if (data.content) {
+						await msg.send(data.content);
+						sentSomething = true;
+					}
 				}
+				return sentSomething;
 			}
 		} else {
 			logger.error(

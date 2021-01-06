@@ -28,6 +28,7 @@ importers:
       ts-jest: ^26.4.4
   packages/back-end:
     dependencies:
+      axios: 0.21.1
       common-tags: 1.8.0
       discord.js: 12.5.1_c70f8fc5586dd378b8c866035dbe710b
       dotenv: 8.2.0
@@ -62,6 +63,7 @@ importers:
       '@types/koa-router': ^7.4.1
       '@types/node-emoji': ^1.8.1
       '@types/require-all': ^3.0.1
+      axios: ^0.21.1
       bufferutil: ^4.0.2
       common-tags: ^1.8.0
       discord.js: ^12.5.1
@@ -4389,6 +4391,12 @@ packages:
     dev: false
     resolution:
       integrity: sha512-fmkJBknJKoZwem3/IKSSLpkdNXZeBu5Q7GA/aRsr2btgrptmSCxi2oFjZHqGdK9DoTil9PIHlPIZw2EcRJXRvw==
+  /axios/0.21.1:
+    dependencies:
+      follow-redirects: 1.13.1
+    dev: false
+    resolution:
+      integrity: sha512-dKQiRHxGD9PPRIUNIWvZhPTPpl1rf/OxTYKsqKUDjBwYylTvV7SjSHJb9ratfyzM6wCdLCOYLzs73qpg5c4iGA==
   /axobject-query/2.2.0:
     dev: false
     resolution:

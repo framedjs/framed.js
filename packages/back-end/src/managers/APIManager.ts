@@ -1,5 +1,5 @@
 import { logger } from "shared";
-import Options from "../interfaces/RequireAllOptions";
+import Options from "../interfaces/other/RequireAllOptions";
 import FramedClient from "../structures/FramedClient";
 import DiscordUtils from "../utils/discord/DiscordUtils";
 import util from "util";

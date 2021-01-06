@@ -28,7 +28,8 @@ export { FramedLoginOptions } from "./interfaces/FramedLoginOptions";
 
 export { BaseCommandOptions } from "./interfaces/BaseCommandOptions";
 
-export { HelpData } from "./interfaces/HelpData";
+export { DiscohookOutputData } from "./interfaces/other/DiscohookOutputData";
+export { HelpData } from "./interfaces/other/HelpData";
 export { ResponseData } from "./managers/database/interfaces/ResponseData";
 
 // TypeORM Entities

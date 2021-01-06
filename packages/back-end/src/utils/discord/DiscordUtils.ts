@@ -1,12 +1,18 @@
+/* eslint-disable no-mixed-spaces-and-tabs */
 import Discord from "discord.js";
 import { logger, Utils } from "shared";
 import util from "util";
 import RequireAll from "require-all";
-import Options from "../../interfaces/RequireAllOptions";
+import Options from "../../interfaces/other/RequireAllOptions";
 import { existsSync } from "fs";
 import { NotFoundError } from "../../structures/errors/NotFoundError";
 import { InvalidError } from "../../structures/errors/InvalidError";
 import FramedMessage from "../../structures/FramedMessage";
+import { FriendlyError } from "../../structures/errors/FriendlyError";
+import { DiscohookOutputData } from "../../interfaces/other/DiscohookOutputData";
+import { oneLine } from "common-tags";
+import Axios from "axios";
+import FramedClient from "../../structures/FramedClient";
 
 export default class DiscordUtils {
 	/**
@@ -691,4 +697,131 @@ export default class DiscordUtils {
 	//#endregion
 
 	//#endregion
+
+	/**
+	 * Converts JSON or a URL into Discord message data.
+	 *
+	 * @param jsonOrLink Discohook JSON or a Discohook URL
+	 */
+	static async getOutputData(
+		jsonOrLink: string,
+		suppressWarnings?: boolean
+	): Promise<DiscohookOutputData> {
+		// http://urlregex.com/
+		// eslint-disable-next-line no-useless-escape
+		const regex = /((([A-Za-z]{3,9}:(?:\/\/)?)(?:[\-;:&=\+\$,\w]+@)?[A-Za-z0-9\.\-]+|(?:www\.|[\-;:&=\+\$,\w]+@)[A-Za-z0-9\.\-]+)((?:\/[\+~%\/\.\w\-_]*)?\??(?:[\-\+=&;%@\.\w_]*)#?(?:[\.\!\/\\\w]*))?)/g;
+		const matches = jsonOrLink.matchAll(regex);
+
+		// Embed data
+		let newEmbedData;
+
+		// Link and domain found
+		let link = "";
+		let domain = "";
+
+		if (matches) {
+			for (const match of matches) {
+				link = match[0];
+				domain = match[2];
+				break;
+			}
+		}
+
+		// Attempts to parse out the URL, and get base64 data from it
+		// if a link that has the data needed is used
+		if (link.length > 0 && domain.length > 0 && jsonOrLink.trim() == link) {
+			const response = await Axios.get(link);
+			try {
+				if (response.request.path) {
+					const path = response.request.path as string;
+					const base64 = Buffer.from(
+						path.replace("/?data=", ""),
+						"base64"
+					);
+					const newString = base64.toString("utf-8");
+					newEmbedData = JSON.parse(newString).messages[0]?.data;
+				} else {
+					throw new Error("No request path");
+				}
+			} catch (error) {
+				if (!suppressWarnings) logger.warn(error.stack);
+				throw new FriendlyError("The link couldn't be read!");
+			}
+		} else if (jsonOrLink) {
+			// The contents are JSON, and should attempt to be parsed
+			try {
+				newEmbedData = JSON.parse(jsonOrLink);
+			} catch (error) {
+				if (!suppressWarnings) logger.warn(error.stack);
+				throw new FriendlyError(
+					"The data couldn't be parsed into an embed!"
+				);
+			}
+		}
+
+		return newEmbedData;
+	}
+
+	/**
+	 *
+	 * @param newData Data
+	 * @param channel Discord channel
+	 */
+	static async renderOutputData(
+		newData: DiscohookOutputData,
+		channel: Discord.TextChannel | Discord.NewsChannel | Discord.DMChannel,
+		framedClient?: FramedClient
+	): Promise<void> {
+		logger.silly(
+			`newEmbedData:\n${Utils.util.inspect(newData, false, 7, true)}`
+		);
+
+		// Renders the Discohook message
+		let renderedOnce = false;
+		for (let i = 0; i < (newData.embeds ? newData.embeds.length : 1); i++) {
+			logger.silly(oneLine`i: ${i} |
+			(newEmbedData.embeds ? newEmbedData.embeds.length : 1): ${
+				newData.embeds ? newData.embeds.length : 1
+			} |
+			renderedOnce: ${renderedOnce}`);
+
+			// Embed data is generated if it exists
+			const embedData = newData.embeds ? newData.embeds[i] : undefined;
+			let embed = embedData
+				? new Discord.MessageEmbed(
+						Utils.turnUndefinedIfNull(
+							embedData
+						) as Discord.MessageEmbedOptions
+				  )
+				: undefined;
+
+			// Format embed if it can
+			if (framedClient && embed) {
+				embed = await framedClient.formatting.formatEmbed(embed);
+			}
+
+			// Content will only be used for the first embed
+			const content =
+				i == 0
+					? (Utils.turnUndefinedIfNull(newData.content) as string)
+					: undefined;
+
+			if (content) {
+				if (embed) {
+					await channel.send(content, embed);
+					renderedOnce = true;
+				} else {
+					await channel.send(content);
+					renderedOnce = true;
+				}
+			} else if (embed) {
+				await channel.send(embed);
+				renderedOnce = true;
+			}
+		}
+
+		if (!renderedOnce) {
+			throw new FriendlyError("There wasn't anything to render.");
+		}
+	}
 }

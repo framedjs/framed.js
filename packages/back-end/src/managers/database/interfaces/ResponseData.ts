@@ -1,11 +1,11 @@
 import Discord from "discord.js";
 
 export interface ResponseData {
-	content: string;
+	content?: string;
 	command?: string;
 	responseId?: string;
 	discord?: {
 		channelsToSendTo?: string[];
-		embeds?: Discord.MessageEmbed[];
+		embeds?: Discord.MessageEmbedOptions[];
 	};
 }

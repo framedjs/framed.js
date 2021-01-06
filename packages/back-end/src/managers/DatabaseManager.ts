@@ -331,9 +331,6 @@ export default class DatabaseManager {
 			foundPrefixes.forEach(prefix => {
 				foundCommand.prefixes.forEach(cmdPrefix => {
 					if (cmdPrefix.id == prefix.id) {
-						logger.debug(
-							`DatabaseManager.ts: returning command ${foundCommand.id}`
-						);
 						matchingCommand = foundCommand;
 					}
 				});

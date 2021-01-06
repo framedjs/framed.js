@@ -6,7 +6,7 @@ import Discord from "discord.js";
 import { FramedPermissions } from "./FramedPermissions";
 import EmbedHelper from "../utils/discord/EmbedHelper";
 import { logger } from "shared";
-import Options from "../interfaces/RequireAllOptions";
+import Options from "../interfaces/other/RequireAllOptions";
 import DiscordUtils from "../utils/discord/DiscordUtils";
 import { BaseSubcommand } from "./BaseSubcommand";
 import { oneLine } from "common-tags";

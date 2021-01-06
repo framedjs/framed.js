@@ -6,7 +6,7 @@ import util from "util";
 import { BasePluginOptions } from "../interfaces/BasePluginOptions";
 import { BaseEvent } from "./BaseEvent";
 import PluginManager from "../managers/PluginManager";
-import Options from "../interfaces/RequireAllOptions";
+import Options from "../interfaces/other/RequireAllOptions";
 import { BaseSubcommand } from "./BaseSubcommand";
 
 export abstract class BasePlugin {

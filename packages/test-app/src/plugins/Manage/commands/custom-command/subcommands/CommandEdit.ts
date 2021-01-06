@@ -35,10 +35,7 @@ export default class extends BaseSubcommand {
 			);
 			if (parse) {
 				const { newCommandId, newArgs } = parse;
-				return (
-					(await this.editCommand(newCommandId, newArgs, msg)) !=
-					undefined
-				);
+				return this.editCommand(newCommandId, newArgs, msg);
 			}
 		}
 
@@ -61,11 +58,11 @@ export default class extends BaseSubcommand {
 		newContents: string[],
 		msg?: FramedMessage,
 		silent?: boolean
-	): Promise<Command | undefined> {
+	): Promise<boolean> {
 		const connection = this.framedClient.database.connection;
 		if (!connection) {
 			logger.error("No connection to a database found!");
-			return undefined;
+			return false;
 		}
 
 		const parse = await CustomCommand.customParseCommand(
@@ -80,7 +77,7 @@ export default class extends BaseSubcommand {
 			if (msg && !silent) {
 				await PluginManager.sendHelpForCommand(msg);
 			}
-			return undefined;
+			return false;
 		}
 
 		const prefix = parse.prefix;
@@ -92,7 +89,7 @@ export default class extends BaseSubcommand {
 			logger.error(
 				"No response returned for CustomCommand.ts editCommand()!"
 			);
-			return undefined;
+			return false;
 		}
 
 		// Checks if the command exists
@@ -122,6 +119,9 @@ export default class extends BaseSubcommand {
 						`${msg.discord.author}, I've edited the \`${prefix.prefix}${command.id}\` command.`
 					);
 				}
+				return true;
+			} else {
+				return false;
 			}
 		} else {
 			if (msg && !silent) {
@@ -129,7 +129,7 @@ export default class extends BaseSubcommand {
 					`${msg.discord.author}, the command doesn't exists!`
 				);
 			}
-			return undefined;
+			return false;
 		}
 	}
 }

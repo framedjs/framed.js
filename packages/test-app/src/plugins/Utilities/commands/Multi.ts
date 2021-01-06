@@ -1,6 +1,10 @@
-import { FramedMessage, BasePlugin, BaseCommand } from "back-end";
+import {
+	FramedMessage,
+	BasePlugin,
+	BaseCommand,
+	FramedMessageOptions,
+} from "back-end";
 import { oneLine, stripIndents } from "common-tags";
-import { FramedMessageOptions } from "packages/back-end/dist/interfaces/FramedMessageOptions";
 import { logger } from "shared";
 
 export default class Multi extends BaseCommand {

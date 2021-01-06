@@ -14,6 +14,8 @@ import {
 	Prefix,
 	Response,
 	ResponseData,
+	DiscordUtils,
+	DiscohookOutputData
 } from "back-end";
 
 export default class CustomCommand extends BaseCommand {
@@ -89,7 +91,7 @@ export default class CustomCommand extends BaseCommand {
 				quoteSections: "flexible",
 			});
 
-			logger.debug(stripIndents`
+			logger.silly(stripIndents`
 				Command.ts: 
 				newContent: '${newContent}'
 				newArgs: '${newArgs}'
@@ -189,18 +191,51 @@ export default class CustomCommand extends BaseCommand {
 					lastContent = undefined;
 				}
 
-				const newList: ResponseData[] = [];
-
-				// Gets all possible responses, excluding the description if it exists
+				//
+				const requests: Promise<DiscohookOutputData>[] = [];
 				for (
 					let i = 0;
 					i < newContents.length - (lastContent ? 1 : 0);
 					i++
 				) {
-					const element = newContents[i];
-					newList.push({
-						content: element,
-					});
+					requests.push(DiscordUtils.getOutputData(newContents[i], true));
+				}
+
+				const inputData: Array<string | DiscohookOutputData> = [];
+				const requestResults = await Promise.allSettled(requests);
+				for (
+					let i = 0;
+					i < requestResults.length - (lastContent ? 1 : 0);
+					i++
+				) {
+					const result = requestResults[i];
+					if (result.status == "fulfilled") {
+						inputData.push(result.value);
+					} else {
+						inputData.push(newContents[i]);
+					}
+				}
+
+				// Gets all possible responses, excluding the description if it exists
+				const newList: ResponseData[] = [];
+				for (
+					let i = 0;
+					i < inputData.length - (lastContent ? 1 : 0);
+					i++
+				) {
+					const element = inputData[i];
+					if (typeof element == "string") {
+						newList.push({
+							content: element,
+						});
+					} else {
+						newList.push({
+							content: element.content ? element.content : "",
+							discord: {
+								embeds: element.embeds,
+							},
+						});
+					}
 				}
 
 				if (!command) {

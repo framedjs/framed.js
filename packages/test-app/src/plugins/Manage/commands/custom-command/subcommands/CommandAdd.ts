@@ -1,4 +1,10 @@
-import { Command, FramedMessage, PluginManager, BaseCommand, BaseSubcommand } from "back-end";
+import {
+	Command,
+	FramedMessage,
+	PluginManager,
+	BaseCommand,
+	BaseSubcommand,
+} from "back-end";
 import { stripIndents } from "common-tags";
 import { logger } from "shared";
 import CustomCommand from "../CustomCommand";
@@ -33,10 +39,7 @@ export default class extends BaseSubcommand {
 			);
 			if (parse) {
 				const { newCommandId, newArgs } = parse;
-				return (
-					(await this.addCommand(newCommandId, newArgs, msg)) !=
-					undefined
-				);
+				return this.addCommand(newCommandId, newArgs, msg);
 			}
 		}
 
@@ -58,11 +61,11 @@ export default class extends BaseSubcommand {
 		newContents: string[],
 		msg?: FramedMessage,
 		silent?: boolean
-	): Promise<Command | undefined> {
+	): Promise<boolean> {
 		const connection = this.framedClient.database.connection;
 		if (!connection) {
 			logger.error("No connection to a database found!");
-			return undefined;
+			return false;
 		}
 
 		const parse = await CustomCommand.customParseCommand(
@@ -77,7 +80,7 @@ export default class extends BaseSubcommand {
 			if (msg && !silent) {
 				await PluginManager.sendHelpForCommand(msg);
 			}
-			return undefined;
+			return false;
 		}
 
 		const prefix = parse.prefix;
@@ -89,7 +92,7 @@ export default class extends BaseSubcommand {
 			logger.error(
 				"No response returned for CustomCommand.ts addCommand()!"
 			);
-			return undefined;
+			return false;
 		}
 
 		// Checks if the command already exists
@@ -100,7 +103,7 @@ export default class extends BaseSubcommand {
 					`${msg.discord.author}, the command already exists!`
 				);
 			}
-			return undefined;
+			return false;
 		}
 
 		// Tries and writes the command. If it fails,
@@ -118,14 +121,12 @@ export default class extends BaseSubcommand {
 			command = await commandRepo.save(command);
 		} catch (error) {
 			try {
-				await this.framedClient.database.deleteResponse(
-					response.id
-				);
+				await this.framedClient.database.deleteResponse(response.id);
 			} catch (error) {
 				logger.error(`Failed to delete response\n${error.stack}`);
 			}
 			logger.error(`Failed to add command\n${error.stack}`);
-			return undefined;
+			return false;
 		}
 
 		// If the command was valid, and (probably) didn't error out
@@ -135,7 +136,9 @@ export default class extends BaseSubcommand {
 					`${msg.discord.author}, I've added the \`${prefix.prefix}${command.id}\` command.`
 				);
 			}
+			return true;
 		}
-		return command;
+		
+		return false;
 	}
 }
