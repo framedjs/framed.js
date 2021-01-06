@@ -26,7 +26,7 @@ const data: HelpData[] = [
 	},
 	{
 		group: "Fun",
-		commands: ["poll"],
+		commands: ["8ball", "poll"],
 	},
 	{
 		group: "Manage",

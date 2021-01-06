@@ -13,6 +13,7 @@ export default class extends BaseSubcommand {
 			id: "set",
 			about: "Sets a custom command to a group.",
 			usage: `<command> "<group>"`,
+			hideUsageInHelp: true,
 			examples: oneLine`
 			\`{{prefix}}group {{id}} newcommand "Food Stuff"\``,
 		});
@@ -40,7 +41,10 @@ export default class extends BaseSubcommand {
 			}
 
 			const parseFirstArgs = parse[0];
-			const parseSecondArg = FramedMessage.parseEmojiAndString(parse[1], []);
+			const parseSecondArg = FramedMessage.parseEmojiAndString(
+				parse[1],
+				[]
+			);
 
 			if (parseFirstArgs && parseSecondArg) {
 				const command = this.framedClient.database.findCommand(

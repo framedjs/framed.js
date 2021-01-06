@@ -13,7 +13,6 @@ import {
 	Command,
 	Prefix,
 	Response,
-	QuoteSections,
 	ResponseData,
 } from "back-end";
 
@@ -24,13 +23,12 @@ export default class CustomCommand extends BaseCommand {
 			aliases: ["customcommand", "cmd", "com"],
 			about: "Manages commands.",
 			description: oneLine`
-			This command also allows you to list, add, edit, and delete custom commands.`,
-			usage: `<add|edit|delete> <command ID> <content> "[description]"`,
+			This command allows you to list, add, edit, and delete custom commands.`,
 			examples: stripIndents`
-			\`{{prefix}}{{id}} list\`
 			\`{{prefix}}{{id}} add newcommand This is a test message.\`
 			\`{{prefix}}{{id}} edit newcommand We've edited the message! "New description!"\`
-			\`{{prefix}}{{id}} delete newcommand\``,
+			\`{{prefix}}{{id}} delete newcommand\`
+			\`{{prefix}}{{id}} list\``,
 			permissions: {
 				discord: {
 					permissions: ["MANAGE_MESSAGES"],

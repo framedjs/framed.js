@@ -1,6 +1,7 @@
 import { FramedMessage, BasePlugin, BaseCommand, EmbedHelper } from "back-end";
-import { oneLineCommaLists } from "common-tags";
+import { commaListsAnd, oneLineCommaLists } from "common-tags";
 import { logger } from "shared";
+import { DateTime } from "luxon";
 
 export default class extends BaseCommand {
 	constructor(plugin: BasePlugin) {
@@ -29,17 +30,21 @@ export default class extends BaseCommand {
 						dynamic: true,
 					});
 
-					let textChannelNumber = 0,
-						voiceChannelNumber = 0;
+					let categoriesNumber = 0,
+						textNumber = 0,
+						voiceNumber = 0;
 
 					guild.channels.cache.forEach(channel => {
 						switch (channel.type) {
-							case "text":
+							case "category":
+								categoriesNumber++;
+								break;
 							case "news":
-								textChannelNumber++;
+							case "text":
+								textNumber++;
 								break;
 							case "voice":
-								voiceChannelNumber++;
+								voiceNumber++;
 								break;
 						}
 					});
@@ -60,15 +65,24 @@ export default class extends BaseCommand {
 						this.id
 					)
 						.setTitle("Server Stats")
-						.addField("Members", guild.memberCount, true)
 						.addField("Owner", owner, true)
+						.addField("Members", guild.memberCount, true)
 						.addField(
 							"Channels",
-							`${textChannelNumber} text, ${voiceChannelNumber} voice`,
+							`${categoriesNumber} categories,\n${textNumber} text, ${voiceNumber} voice`,
 							true
 						)
 						.addField("Region", guild.region, true)
-						.addField("Roles", oneLineCommaLists`${guild.roles.cache.array()}`)
+						.addField("Role Count", guild.roles.cache.size, true)
+						.addField(
+							"Created",
+							`${this.getTimeAgo(guild.createdAt)}`,
+							true
+						)
+						.addField(
+							"Roles",
+							oneLineCommaLists`${guild.roles.cache.array()}`
+						);
 
 					if (iconUrl) {
 						embed.setThumbnail(iconUrl);
@@ -85,5 +99,47 @@ export default class extends BaseCommand {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Gets a time ago. An example output would be "2 months, 15 days and 8 hours ago".
+	 *
+	 * @param createdAt The guild's creation date
+	 *
+	 * @returns Time ago
+	 */
+	private getTimeAgo(createdAt: Date): string {
+		const finalList: string[] = [];
+		const list: string[] = [];
+
+		const createdDuration = DateTime.fromJSDate(createdAt)
+			.diffNow(["years", "months", "days", "hours"])
+			.negate();
+
+		const year =
+			createdDuration.years == 0 ? "" : `${createdDuration.years} years`;
+		const months =
+			createdDuration.months == 0
+				? ""
+				: `${createdDuration.months} months`;
+		const days =
+			createdDuration.days == 0 ? "" : `${createdDuration.days} days`;
+		const hours =
+			createdDuration.hours == 0
+				? ""
+				: `${Math.round(createdDuration.hours)} hours`;
+		const minutes =
+			createdDuration.minutes == 0
+				? ""
+				: `${Math.round(createdDuration.minutes)}`;
+		list.push(year, months, days, hours, minutes);
+
+		list.forEach(arg => {
+			if (arg.length != 0) {
+				finalList.push(arg);
+			}
+		});
+
+		return commaListsAnd`${finalList} ago`;
 	}
 }

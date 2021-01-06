@@ -1,5 +1,3 @@
-import { QuoteSections } from "./QuoteSections";
-
 export interface FramedArgumentOptions {
 	/**
 	 * If true, this puts the quotes (that are normally removed) inside the arguments.

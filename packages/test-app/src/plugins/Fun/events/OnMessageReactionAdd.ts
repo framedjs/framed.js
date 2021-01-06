@@ -21,7 +21,7 @@ export default class extends BaseEvent {
 		reaction: Discord.MessageReaction,
 		user: Discord.User | Discord.PartialUser
 	): Promise<void> {
-		logger.debug(`Reaction Add From: ${user.id}`);
+		logger.silly(`Reaction Add From: ${user.id}`);
 		// logger.debug(`OnMsgRA: ${util.inspect(this)}`);
 
 		if (user.bot) return;
@@ -104,12 +104,12 @@ export default class extends BaseEvent {
 			);
 
 			try {
-				logger.debug(oneLine`
+				logger.silly(oneLine`
 					Current reaction: ${reaction.emoji.name} 
 					(${Emoji.unemojify(reaction.emoji.name)} unemojified)`);
 
 				for await (const reaction of extraUserReactions.values()) {
-					logger.debug(oneLine`
+					logger.silly(oneLine`
 						Removing ${reaction.emoji.name} 
 						(${Emoji.unemojify(reaction.emoji.name)} unemojified)`);
 					await reaction.users.remove(user.id);

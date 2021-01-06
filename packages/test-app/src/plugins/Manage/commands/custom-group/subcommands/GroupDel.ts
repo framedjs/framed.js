@@ -12,6 +12,7 @@ export default class extends BaseSubcommand {
 			aliases: ["del", "remove"],
 			about: "Deletes a custom group.",
 			usage: `"<group>"`,
+			hideUsageInHelp: true,
 			examples: oneLine`
 			\`{{prefix}}group {{id}} "Food"\``,
 		});

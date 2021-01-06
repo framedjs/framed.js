@@ -3,7 +3,6 @@ import {
 	BaseCommand,
 	BaseSubcommand,
 	PluginManager,
-	QuoteSections,
 } from "back-end";
 import { logger } from "shared";
 import { oneLine } from "common-tags";
@@ -15,6 +14,7 @@ export default class extends BaseSubcommand {
 			aliases: ["change", "rename"],
 			about: "Edits a custom group.",
 			usage: `"<old group>" "<[emote] new group>"`,
+			hideUsageInHelp: true,
 			examples: oneLine`
 			\`{{prefix}}{{id}} edit "Food Stuff" "🍏 Food"\``,
 		});

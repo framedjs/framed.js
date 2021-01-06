@@ -13,6 +13,7 @@ export class Utils {
 
 	/**
 	 * Returns a list of files, found inside folder. Also searches inside folder of folders.
+	 *
 	 * @param pathString
 	 * @param filter
 	 */
@@ -45,10 +46,16 @@ export class Utils {
 
 	/**
 	 * Generates a random number, as an integer
-	 * @param min - Minimum number
-	 * @param max - Maxiumum number (inclusive)
+	 *
+	 * @param min Minimum number
+	 * @param max Maxiumum number (inclusive)
 	 */
 	static randomNumber(min: number, max: number): number {
+		if (max < min) {
+			throw new Error(
+				`Max number (${max}) cannot be smaller than min number (${min})`
+			);
+		}
 		return Math.floor(Math.random() * (max + 1 - min) + min);
 	}
 
@@ -83,9 +90,7 @@ export class Utils {
 	 * Gets the time elapsed between high-resolution times with `process.hrtime()`
 	 * @param startTime The start high-resolution time
 	 */
-	static hrTimeElapsed(
-		startTime: [number, number]
-	): string {
+	static hrTimeElapsed(startTime: [number, number]): string {
 		// Gets the difference between the start time, and now
 		const diffTime = process.hrtime(startTime);
 

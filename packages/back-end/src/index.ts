@@ -26,7 +26,6 @@ export { FramedFoundCommandData as FramedCommandData } from "./interfaces/Framed
 export { FramedMessageOptions } from "./interfaces/FramedMessageOptions";
 export { FramedLoginOptions } from "./interfaces/FramedLoginOptions";
 
-export { QuoteSections } from "./interfaces/QuoteSections";
 export { BaseCommandOptions } from "./interfaces/BaseCommandOptions";
 
 export { HelpData } from "./interfaces/HelpData";

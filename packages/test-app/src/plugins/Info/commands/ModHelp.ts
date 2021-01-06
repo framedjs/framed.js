@@ -6,22 +6,19 @@ import { HelpData } from "back-end";
 const data: HelpData[] = [
 	{
 		group: "Info",
-		commands: [
-			"info"
-		]
+		commands: ["info", "server"],
 	},
 	{
 		group: "Manage",
 		commands: [
-			"command",
-			// "addcom",
-			// "editcom",
-			// "delcom",
-			"group",
-			// "addgrp",
-			// "editgrp",
-			// "delgrp",
-			// "setgrp",
+			"command add",
+			"command edit",
+			"command delete",
+			"command list",
+			"group add",
+			"group edit",
+			"group delete",
+			"group list",
 		],
 	},
 	{
@@ -79,9 +76,8 @@ export default class extends BaseCommand {
 				.setTitle("Mod Command Help")
 				.setDescription(
 					oneLine`
-						These are commands designed for ${modRoleString} and
-						${communitySupportRole} use only.
-						`
+						These are commands designed mostly for
+						${modRoleString} and ${communitySupportRole} only.`
 				)
 				.addFields(helpFields);
 

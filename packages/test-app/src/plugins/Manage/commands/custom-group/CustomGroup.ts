@@ -15,15 +15,14 @@ export default class CustomGroup extends BaseCommand {
 			aliases: ["groups", "grp", "category", "customcategory"],
 			about: "Manages groups.",
 			description: oneLine`
-			Add, edit, delete, and list custom groups.
+			These command allows you to add, edit, delete, and list custom groups.
 			These groups are shown with commands in them, which can be set with this command.`,
-			usage: `<add|edit|delete|set|list> "<group|command>" "<group>"`,
 			examples: stripIndent`
-			\`{{prefix}}{{id}} list\`
 			\`{{prefix}}{{id}} add "🍎 Food Stuff"\`
 			\`{{prefix}}{{id}} set "Food Stuff" newcommand\`
 			\`{{prefix}}{{id}} edit "Food Stuff" "🍏 Food"\`
-			\`{{prefix}}{{id}} delete Food\``,
+			\`{{prefix}}{{id}} delete Food\`
+			\`{{prefix}}{{id}} list\``,
 			permissions: {
 				discord: {
 					permissions: ["MANAGE_MESSAGES"],

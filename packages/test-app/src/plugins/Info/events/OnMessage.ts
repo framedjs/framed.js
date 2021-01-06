@@ -15,7 +15,7 @@ export default class extends BaseEvent {
 	async run(msg: Discord.Message): Promise<void> {
 		const content = msg.content.toLocaleLowerCase();
 		if (content == `<@!${msg.client.user?.id}>`) {
-			logger.warn(`OnMsg.ts: Content: ${content}`);
+			logger.silly(`OnMsg.ts: Content: ${content}`);
 			// msg.content = `${this.framedClient.defaultPrefix}ping`;
 
 			try {

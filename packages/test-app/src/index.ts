@@ -1,8 +1,12 @@
-import { FramedClient, DatabaseManager, FramedLoginOptions } from "back-end";
+import {
+	FramedClient,
+	DatabaseManager,
+	FramedLoginOptions,
+	version as backEndVersion,
+} from "back-end";
 import { logger, Utils } from "shared";
 import fs from "fs";
 import path from "path";
-import { version as backEndVersion } from "back-end";
 
 // https://www.stefanjudis.com/today-i-learned/measuring-execution-time-more-precisely-in-the-browser-and-node-js/
 const startTime = process.hrtime();

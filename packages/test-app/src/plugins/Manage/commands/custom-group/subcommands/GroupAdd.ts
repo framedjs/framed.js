@@ -14,6 +14,7 @@ export default class extends BaseSubcommand {
 			aliases: ["a", "create", "cr"],
 			about: "Adds a custom group.",
 			usage: `"<[emote] group>"`,
+			hideUsageInHelp: true,
 			examples: oneLine`
 			\`{{prefix}}group {{id}} "🍎 Food Stuff"\``,
 		});

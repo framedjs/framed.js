@@ -61,7 +61,7 @@ export default class extends BaseCommand {
 			? `${process.env.NODE_ENV}`
 			: "";
 		const uptimeText = this.secondsToDhms(uptime);
-		const ramUsage = process.memoryUsage().heapUsed / 1024 / 1024;
+		const ramUsage = process.memoryUsage().rss / 1024 / 1024;
 		const ramUsageText = `${Number(ramUsage).toFixed(1)}`;
 		const backEnd = backEndVersion
 			? `v${backEndVersion}`
@@ -86,7 +86,7 @@ export default class extends BaseCommand {
 				${codeblock}${codeblock}yml
 				Framed Bot:
 				- Uptime:       ${uptimeText}
-				- RAM Usage:    ${ramUsageText} MB
+				- RAM Usage:    ${ramUsageText} MiB
 				- Back-End:     ${backEnd}
 				- Bot Version:  ${botVersion}
 				${codeblock}${codeblock}yml

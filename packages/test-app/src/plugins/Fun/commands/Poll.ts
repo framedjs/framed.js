@@ -6,7 +6,6 @@ import {
 	EmbedHelper,
 	PluginManager,
 	FramedArgument,
-	QuoteSections,
 } from "back-end";
 import Discord from "discord.js";
 import { emotes, oneOptionMsg, optionEmotes } from "../Fun.plugin";
@@ -17,10 +16,7 @@ export default class Poll extends BaseCommand {
 	constructor(plugin: BasePlugin) {
 		super(plugin, {
 			id: "poll",
-			about: "Create a simple, reaction-based poll through Discord.",
-			description: stripIndent`
-				Create a simple, reaction-based poll through Discord.
-			`,
+			about: "Create a poll through Discord.",
 			usage: '[single] <question> [..."options"]',
 			hideUsageInHelp: true,
 			examples: stripIndent`
@@ -254,10 +250,10 @@ export default class Poll extends BaseCommand {
 
 		const pollOptionArgs = FramedMessage.simplifyArgs(detailedArgs);
 
-		logger.debug(`singleMultipleOption ${isSingleOrMultiple}`);
-		logger.debug(`newArgs: "${newArgs}"`);
+		logger.silly(`singleMultipleOption ${isSingleOrMultiple}`);
+		logger.silly(`newArgs: "${newArgs}"`);
 
-		logger.debug(stripIndent`
+		logger.silly(stripIndent`
 			new Poll.ts: 
 			newContent: '${newContent}'
 			questionContent: '${questionContent}'

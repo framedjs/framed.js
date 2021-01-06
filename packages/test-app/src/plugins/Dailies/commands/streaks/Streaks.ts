@@ -7,9 +7,9 @@ export default class extends BaseCommand {
 		super(plugin, {
 			id: "streaks",
 			aliases: ["streak", "s"],
-			about: "View your or a users' streaks.",
+			about: "View your streak, or a users' streak.",
 			description: oneLine`
-			View your or a users' streaks.
+			View your streak, or a users' streak.
 			To view the top three users' streaks, use \`$(command ${plugin.id} {{id}} top)\`.
 			To view all the users' streaks, use \`$(command ${plugin.id} {{id}} all)\`.`,
 			usage: `[@user|id]`,
@@ -20,6 +20,7 @@ export default class extends BaseCommand {
 			paths: {
 				subcommands: path.join(__dirname, "subcommands"),
 			},
+			inline: true,
 		});
 	}
 
