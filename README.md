@@ -1,4 +1,4 @@
-# Framed
+# Framed.js
 
 ## Table of Contents
 
@@ -7,13 +7,11 @@
 
 ## About
 
-Framed is a [discord.js](https://discord.js.org/#/) framework, built with TypeScript.
-
-The name comes from "pain" but with a "b" for bot. It also is a homophone for "bane".
+Framed.js is a bot framework, built with TypeScript.
 
 ## Installation
 
-To install: `npm install framed`
+To install: `npm install framed.js`
 
 ## Example
 
