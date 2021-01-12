@@ -58,5 +58,3 @@ export { version };
 
 // Logger
 export { Logger, defaultLevels, defaultFormat } from "@framedjs/logger";
-
-export default this;
