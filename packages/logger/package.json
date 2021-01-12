@@ -1,11 +1,16 @@
 {
-  "name": "@framedjs/shared",
+  "name": "@framedjs/logger",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "version": "0.1.0",
   "scripts": {
     "build": "tsc --build",
     "build:watch": "tsc --build --watch"
+  },
+  "dependencies": {
+    "captains-log": "^2.0.3",
+    "colors": "^1.4.0",
+    "winston": "^3.3.3"
   },
   "files": [
     "dist/**/*.js",

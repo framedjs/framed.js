@@ -24,7 +24,7 @@
     // "inlineSourceMap": true,
 
     /* Advanced Options (that i don't understand) */
-    "forceConsistentCasingInFileNames": true,
+    "forceConsistentCasingInFileNames": false,
     "skipLibCheck": true,
   },
   "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]
