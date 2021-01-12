@@ -19,28 +19,29 @@ To install: `npm install framed.js`
 import { Client } from "framed.js";
 
 const client = new Client({
-	defaultConnection: {
-		type: "sqlite",
-		database: "./data/FramedDB.sqlite",
-		synchronize: true,
-		entities: [DatabaseManager.defaultEntitiesPath],
-	},
-	defaultPrefix: "!",
-	appVersion: "0.1.0",
+  defaultConnection: {
+    type: "sqlite",
+    database: "./data/FramedDB.sqlite",
+    synchronize: true,
+    entities: [DatabaseManager.defaultEntitiesPath],
+  },
+  defaultPrefix: "!",
+  appVersion: "0.1.0",
 });
 
 client.plugins.loadPluginsIn({
-	dirname: path.join(__dirname, "plugins"),
-	filter: /^(.+plugin)\.(js|ts)$/,
-	excludeDirs: /^(.*)\.(git|svn)$|^(.*)subcommands(.*)$/,
+  dirname: path.join(__dirname, "plugins"),
+  filter: /^(.+plugin)\.(js|ts)$/,
+  excludeDirs: /^(.*)\.(git|svn)$|^(.*)subcommands(.*)$/,
 });
 
 client.login([
-	{
-		type: "discord",
-		discord: {
-			token: "token",
-		},
-	},
+  {
+    type: "discord",
+    discord: {
+      token: "token",
+    },
+  },
 ]);
+
 ```
