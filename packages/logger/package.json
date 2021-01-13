@@ -13,9 +13,10 @@
     "build:watch": "tsc --build --watch"
   },
   "dependencies": {
-    "captains-log": "^2.0.3",
-    "colors": "^1.4.0",
-    "winston": "^3.3.3"
+    "colors": "^1.4.0"
+  },
+  "peerDependencies": {
+    "winston": "^3.0.0"
   },
   "files": [
     "dist/**/*.js",
