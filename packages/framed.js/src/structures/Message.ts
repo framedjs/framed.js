@@ -135,6 +135,12 @@ export class Message {
 		let content = options.content;
 		if (!content && id) {
 			content = msg?.channel.messages.cache.get(id)?.content;
+
+			// If for some reason the cache doesn't contain anything,
+			// Fallback to msg.content
+			if (!content) {
+				content = msg?.content;
+			}
 		}
 		if (!content) {
 			content = "";
