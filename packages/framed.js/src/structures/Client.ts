@@ -360,9 +360,7 @@ export class Client extends EventEmitter {
 
 					// Check which type of event it is before emitting
 					if (packet.t === "MESSAGE_REACTION_ADD") {
-						Logger.debug(
-							"Client: Emitting messageReactionAdd"
-						);
+						Logger.debug("Client: Emitting messageReactionAdd");
 						client.emit("messageReactionAdd", reaction, user);
 					} else if (packet.t === "MESSAGE_REACTION_REMOVE") {
 						client.emit("messageReactionRemove", reaction, user);
