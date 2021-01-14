@@ -1,1 +1,1 @@
-# Framed.js back-end
+# @framedjs/core
