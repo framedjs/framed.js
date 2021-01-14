@@ -5,7 +5,7 @@
   "private": true,
   "repository": {
     "type": "git",
-    "url": "https://github.com/som1chan/framed.js.git",
+    "url": "https://github.com/some1chan/framed.js.git",
     "directory": "packages/gui"
   },
   "dependencies": {

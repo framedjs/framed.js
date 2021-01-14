@@ -5,7 +5,7 @@
   "version": "0.1.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/som1chan/framed.js.git",
+    "url": "https://github.com/some1chan/framed.js.git",
     "directory": "packages/framed.js"
   },
   "scripts": {
