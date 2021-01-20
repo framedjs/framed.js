@@ -48,11 +48,7 @@ export class Client extends EventEmitter {
 	 */
 	readonly appVersion: string | undefined;
 
-	readonly helpCommands = [
-		"$(command default.bot.info help)",
-		"$(command default.bot.fun poll)",
-		"$(command com.geekoverdrivestudio.dailies dailies)",
-	];
+	readonly helpCommands: string[] = [];
 	readonly importFilter = /^((?!\.d).)*\.(js|ts)$/;
 	// readonly importFilter = /(?<!\.d)(\.(js|ts))$/;
 
@@ -65,6 +61,10 @@ export class Client extends EventEmitter {
 		super({ captureRejections: true });
 
 		this.clientOptions = options;
+
+		this.helpCommands = options.defaultHelpCommands
+			? options.defaultHelpCommands
+			: [];
 
 		// Sets the app version
 		this.appVersion = options.appVersion;

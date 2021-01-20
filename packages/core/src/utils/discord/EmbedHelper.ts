@@ -121,7 +121,7 @@ export class EmbedHelper {
 	 */
 	static getTemplate(
 		msg: Discord.Message | DiscordMessage,
-		commands: string[],
+		commands: string[] = [],
 		commandUsed?: string,
 		baseEmbed?: Discord.MessageEmbed
 	): Discord.MessageEmbed {
@@ -187,6 +187,12 @@ export class EmbedHelper {
 		commands?: Array<string>,
 		commandUsed?: string
 	): string {
+		// If there are no commands to show in help, don't have the
+		// footer have the "Check out: " text
+		if (commands?.length == 0) {
+			return "";
+		}
+
 		// This might be completely unnessesary, but just in case
 		// https://stackoverflow.com/questions/44808882/cloning-an-array-in-javascript-typescript
 		const clonedArray: string[] = Object.assign([], commands);
