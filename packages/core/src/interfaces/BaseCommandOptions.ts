@@ -70,6 +70,11 @@ export interface BaseCommandOptions {
 	examples?: string;
 
 	/**
+	 * Extra notes about the command, that isn't in the description.
+	 */
+	notes?: string;
+
+	/**
 	 * Primary permissions for running the command.
 	 *
 	 * This doesn't act as a complete override for commands, so be careful!

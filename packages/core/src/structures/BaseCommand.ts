@@ -105,6 +105,11 @@ export abstract class BaseCommand {
 	examples?: string;
 
 	/**
+	 * Extra notes about the command, that isn't in the description.
+	 */
+	notes?: string;
+
+	/**
 	 * Permissions to compare to.
 	 *
 	 * **WARNING: YOU NEED TO CHECK FOR THESE MANUALLY.** See `hasPermission()` on how to do this.
@@ -191,6 +196,7 @@ export abstract class BaseCommand {
 		this.description = this.parseBasicFormatting(info.description);
 		this.usage = this.parseBasicFormatting(info.usage);
 		this.examples = this.parseBasicFormatting(info.examples);
+		this.notes = this.parseBasicFormatting(info.notes);
 		this.permissions = info.permissions;
 		this.hideUsageInHelp = info.hideUsageInHelp;
 		this.inlineCharacterLimit = info.inlineCharacterLimit;
@@ -499,7 +505,7 @@ export abstract class BaseCommand {
 			}
 		}
 
-		Logger.debug(`Finished loading subcommand ${subcommand.id}.`);
+		Logger.debug(`Loaded subcommand ${subcommand.id}`);
 	}
 
 	//#endregion
