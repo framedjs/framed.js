@@ -807,18 +807,16 @@ export class DatabaseManager {
 		const pluginsFound = await pluginRepo.find();
 
 		// Adds an entry for all new plugins
-		const plugins: Plugin[] = [];
+		const plugins: TypeORM.DeepPartial<Plugin>[] = [];
 		const installs: Promise<void>[] = [];
 		const postInstalls: Promise<void>[] = [];
 		for (const plugin of this.client.plugins.pluginsArray) {
 			if (!pluginsFound.find(dbPlugin => dbPlugin.id == plugin.id)) {
 				// Pushes into an array to create the plugin
-				plugins.push(
-					pluginRepo.create({
-						id: plugin.id,
-						data: {},
-					})
-				);
+				plugins.push({
+					id: plugin.id,
+					data: {},
+				});
 			}
 		}
 		await pluginRepo.save(plugins);
