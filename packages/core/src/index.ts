@@ -58,3 +58,16 @@ export { version };
 
 // Logger
 export { Logger, defaultLevels, defaultFormat } from "@framedjs/logger";
+
+// Discord export to avoid MessageEmbed empty message bugs, since
+// checking instanceof classes doesn't work without the internal Discord module
+import * as Discord from "discord.js";
+export { Discord };
+
+// Twitch exports because things will probably go wrong without it, like with Discord.js
+import * as Twitch from "twitch";
+import * as TwitchAuth from "twitch-auth";
+import * as TwitchChatClient from "twitch-chat-client";
+export { Twitch };
+export { TwitchAuth };
+export { TwitchChatClient };
