@@ -90,7 +90,7 @@ export default class FormattingManager {
 			if (foundData) {
 				return this.getCommandRan(foundData, noPrefix);
 			} else {
-				throw new ReferenceError(`Command found data is undefined`);
+				throw new ReferenceError(`Command found data is undefined: $(${formatContent})`);
 			}
 		} else {
 			// Assume it's just the command with some subcommands attached

@@ -1,20 +1,24 @@
-import util from "util";
-import { BasePlugin } from "../structures/BasePlugin";
 import { Logger } from "@framedjs/logger";
-import { Client } from "../structures/Client";
-import { DiscordUtils } from "../utils/discord/DiscordUtils";
-import { Message } from "../structures/Message";
+import { oneLine, oneLineInlineLists } from "common-tags";
+import Discord from "discord.js";
+import util from "util";
+
 import { BaseCommand } from "../structures/BaseCommand";
 import { BaseEvent } from "../structures/BaseEvent";
-import Options from "../interfaces/other/RequireAllOptions";
-import Command from "./database/entities/Command";
-import Discord from "discord.js";
-import { DatabaseManager } from  "./DatabaseManager";
-import { oneLine, oneLineInlineLists } from "common-tags";
+import { BasePlugin } from "../structures/BasePlugin";
+import { Client } from "../structures/Client";
+import { DiscordUtils } from "../utils/discord/DiscordUtils";
 import { FriendlyError } from "../structures/errors/FriendlyError";
-import { EmbedHelper } from "../utils/discord/EmbedHelper";
-import { FoundCommandData } from "../interfaces/FoundCommandData";
 import { HelpData } from "../interfaces/other/HelpData";
+import { Message } from "../structures/Message";
+
+import { FoundCommandData } from "../interfaces/FoundCommandData";
+import Options from "../interfaces/other/RequireAllOptions";
+
+import { DatabaseManager } from  "./DatabaseManager";
+import Command from "./database/entities/Command";
+
+import { EmbedHelper } from "../utils/discord/EmbedHelper";
 
 export interface HelpGroup {
 	group: string;
@@ -111,7 +115,7 @@ export class PluginManager {
 		}
 
 		Logger.verbose(
-			`Finished loading plugin ${plugin.name} v${plugin.version}.`
+			`Loaded plugin ${plugin.name} v${plugin.version}`
 		);
 		return plugin;
 	}

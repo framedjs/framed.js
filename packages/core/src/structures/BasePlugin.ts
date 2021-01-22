@@ -182,7 +182,7 @@ export abstract class BasePlugin {
 			});
 		}
 
-		Logger.debug(`Finished loading command "${command.id}".`);
+		Logger.debug(`Loaded command "${command.id}"`);
 	}
 
 	//#endregion
@@ -253,7 +253,7 @@ export abstract class BasePlugin {
 				event.discord.name,
 				event.run.bind(event)
 			);
-			Logger.debug(`Finished loading event with ID "${event.id}" (${event.plugin.id})`);
+			Logger.debug(`Loaded event with ID "${event.id}" (${event.plugin.id})`);
 		} else {
 			Logger.warn(
 				`There was an imported event with no Discord event! Only Discord is supported currently.`

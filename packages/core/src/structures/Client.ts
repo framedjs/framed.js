@@ -95,7 +95,7 @@ export class Client extends EventEmitter {
 			filter: this.importFilter,
 			excludeDirs: /^(.*)\.(git|svn)$|^(.*)subcommands(.*)\.(js|ts)$/,
 		});
-		Logger.debug(`Finished loading default routes`);
+		Logger.debug(`Loaded default routes`);
 	}
 
 	/**
@@ -108,7 +108,7 @@ export class Client extends EventEmitter {
 			filter: /^(.+plugin)\.(js|ts)$/,
 			excludeDirs: /^(.*)\.(git|svn)$|^(.*)subcommands(.*)\.(js|ts)$/,
 		});
-		Logger.debug(`Finished loading default plugins`);
+		Logger.debug(`Loaded default plugins`);
 		return plugins;
 	}
 
@@ -205,9 +205,6 @@ export class Client extends EventEmitter {
 
 	async processMsg(msg: Message): Promise<void> {
 		if (msg.command) {
-			Logger.debug(
-				`Client.ts: Attempting to run command "${msg.content}"`
-			);
 			if (msg.discord) {
 				if (msg.discord.author.bot) return;
 				this.plugins.runCommand(msg);
