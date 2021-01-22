@@ -72,13 +72,17 @@ export interface ObjectTemplateSettings {
  * Discord Embed helper function class
  */
 export class EmbedHelper {
+	static defaultColor = process.env.DEFAULT_EMBED_COLOR
+		? process.env.DEFAULT_EMBED_COLOR
+		: "#ffffff";
+
 	/**
 	 * Gets a color for generating embeds
 	 * @param guild - Discord message object
 	 */
 	static getColorWithFallback(
 		guild: Discord.Guild | null | undefined,
-		defaultColor = "#ffffff"
+		defaultColor = this.defaultColor
 	): string {
 		// If guild doesn't exist, just return any value
 		if (!guild) {
@@ -89,7 +93,10 @@ export class EmbedHelper {
 		let botColor = "";
 
 		if (client.user) {
-			if (guild?.available) {
+			if (
+				guild?.available &&
+				Boolean(process.env.USE_DEFAULT_EMBED_COLOR_ALWAYS) == false
+			) {
 				// Grabs the primary role's color the bot has
 				const member = guild.members.cache.get(client.user.id);
 				if (member) {
