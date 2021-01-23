@@ -216,8 +216,7 @@ export class EmbedHelper {
 
 		for (let i = 0; i < clonedArray.length; i++) {
 			const element = clonedArray[i];
-			if (!process.env.PREFIX) process.env.PREFIX = "";
-			output += `${process.env.PREFIX}${element}`;
+			output += element;
 
 			// If it's not the last one, put a
 			if (i != clonedArray.length - 1) {
