@@ -1,5 +1,11 @@
 # @framedjs/core
 
+## 0.2.1
+
+### Patch Changes
+
+-   a7e3bfa: Changed behavior of EmbedHelper to not use process.env.PREFIX, as it was a remnant of old code.
+
 ## 0.2.0
 
 ### Minor Changes
