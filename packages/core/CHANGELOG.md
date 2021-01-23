@@ -1,5 +1,11 @@
 # @framedjs/core
 
+## 0.2.2
+
+### Patch Changes
+
+-   807dfd4: Forgot to build. v0.2.0 and v0.2.1 are the same code-wise.
+
 ## 0.2.1
 
 ### Patch Changes
