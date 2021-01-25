@@ -7,17 +7,17 @@ import { BaseCommand } from "../structures/BaseCommand";
 import { BaseEvent } from "../structures/BaseEvent";
 import { BasePlugin } from "../structures/BasePlugin";
 import { Client } from "../structures/Client";
-import { DiscordUtils } from "../utils/discord/DiscordUtils";
 import { FriendlyError } from "../structures/errors/FriendlyError";
-import { HelpData } from "../interfaces/other/HelpData";
 import { Message } from "../structures/Message";
 
 import { FoundCommandData } from "../interfaces/FoundCommandData";
+import { HelpData } from "../interfaces/other/HelpData";
 import Options from "../interfaces/other/RequireAllOptions";
 
 import { DatabaseManager } from  "./DatabaseManager";
 import Command from "./database/entities/Command";
 
+import { DiscordUtils } from "../utils/discord/DiscordUtils";
 import { EmbedHelper } from "../utils/discord/EmbedHelper";
 
 export interface HelpGroup {
