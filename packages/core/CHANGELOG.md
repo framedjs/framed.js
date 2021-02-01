@@ -1,5 +1,25 @@
 # @framedjs/core
 
+## 0.3.0-next.1
+
+### Minor Changes
+
+-   ed46475: 0.3.0 prerelease
+
+    -   Guild or Twitch channel specific prefixes
+    -   Twitch message now carries ApiClient
+    -   "chatClient" renamed to just "chat"
+    -   Some command getters and parsers are now async
+    -   new Message calls need message.getMessageElements() to get prefix,
+        command, and args variables set on the Message instance.
+    -   Removed unused Help interfaces from PluginManager
+    -   Formatting must be done per each ran command
+        (use msg.client.formatting)
+
+### Patch Changes
+
+-   2223feb: I think I forgot to build, unpublished instead of deprecated. Thought Verdaccio was being used, but forgot to save the .npmrc file.
+
 ## 0.3.0-next.0
 
 ### Minor Changes
