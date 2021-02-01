@@ -11,17 +11,17 @@ Framed.js is a bot framework, built with TypeScript.
 
 ## Installation
 
-To install: `npm install framed.js`
+To install: `npm install @framedjs/core`
 
 ## Example
 
 ```ts
-import { Client } from "framed.js";
+import { Client, DatabaseManager } from "@framedjs/core";
 
 const client = new Client({
   defaultConnection: {
     type: "sqlite",
-    database: "./data/FramedDB.sqlite",
+    database: "../data/FramedDB.sqlite",
     synchronize: true,
     entities: [DatabaseManager.defaultEntitiesPath],
   },
