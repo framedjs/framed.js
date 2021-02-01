@@ -85,6 +85,32 @@ export class DatabaseManager {
 			}
 		}
 		await this.install();
+
+		// Gets all the prefixes from the database, and puts a queue to execute adding them
+		const allPrefixes = await this.prefixRepo.find();
+		const promises: Promise<void>[] = [];
+
+		for (const prefix of allPrefixes) {
+			promises.push(
+				this.client.setGuildOrTwitchIdPrefix(
+					prefix.id,
+					prefix.guildOrTwitchId,
+					prefix.prefix
+				)
+			);
+		}
+
+		// Applies all guild and twitch channel prefixes into the client
+		const settled = await Promise.allSettled(promises);
+
+		// Logs any rejected promises
+		for (const settle of settled) {
+			switch (settle.status) {
+				case "rejected":
+					Logger.error(`${settle.reason}`);
+					break;
+			}
+		}
 	}
 
 	//#region Install
@@ -100,26 +126,47 @@ export class DatabaseManager {
 			throw new ReferenceError(DatabaseManager.errorNoConnection);
 
 		// Gets defaults
-		const defaultPrefix = await this.getDefaultPrefix();
 		const defaultGroup = await this.getDefaultGroup();
 
-		// Figures out if defaults are ready to be used
-		const prefixReady =
-			(defaultPrefix &&
-				defaultPrefix.prefix == this.client.defaultPrefix) ||
-			process.env.OVERRIDE_DEFAULT_PREFIX?.toLocaleLowerCase() == "true";
 		const groupReady = defaultGroup;
 
 		// Will return true if everything is not ready
-		return !(prefixReady && groupReady);
+		return !groupReady;
 	}
 
 	/**
 	 * Starts installing default entries in the database.
 	 */
 	async installDefaults(): Promise<void> {
-		await this.addGroup("Other", "❔", "default", true);
-		await this.addPrefix(this.client.defaultPrefix, "default", true);
+		const settled = await Promise.allSettled([
+			this.addGroup("Other", "❔", "default", true),
+			this.client.setGuildOrTwitchIdPrefix(
+				"default",
+				"default",
+				this.client.defaultPrefix
+			),
+			this.client.setGuildOrTwitchIdPrefix(
+				"default",
+				"discord_default",
+				this.client.discord.defaultPrefix
+			),
+			this.client.setGuildOrTwitchIdPrefix(
+				"default",
+				"twitch_default",
+				this.client.twitch.defaultPrefix
+			),
+		]);
+
+		for (const settle of settled) {
+			switch (settle.status) {
+				case "rejected":
+					Logger.error(settle.reason);
+					break;
+
+				default:
+					break;
+			}
+		}
 	}
 
 	/**
@@ -149,6 +196,7 @@ export class DatabaseManager {
 	async addPrefix(
 		prefix: string,
 		id = SnowflakeUtil.generate(),
+		guildOrTwitchId: string,
 		bypassAlreadyExists = false
 	): Promise<Prefix> {
 		const connection = this.connection;
@@ -161,12 +209,19 @@ export class DatabaseManager {
 		// Checks if the group already exists, and will throw an error if so
 		// and the setting to bypass this is set to false
 		if (!bypassAlreadyExists) {
-			if (await prefixRepo.findOne({ where: { id: id } })) {
+			if (
+				await prefixRepo.findOne({
+					where: {
+						id: id,
+						guildOrTwitchId: guildOrTwitchId,
+					},
+				})
+			) {
 				throw new ReferenceError(
 					Utils.util.format(
 						DatabaseManager.errorAlreadyExists,
 						"prefix",
-						id
+						`${id}" with guildOrTwitchId "${guildOrTwitchId}`
 					)
 				);
 			}
@@ -176,6 +231,7 @@ export class DatabaseManager {
 			prefixRepo.create({
 				id: id,
 				prefix: prefix,
+				guildOrTwitchId: guildOrTwitchId,
 			})
 		);
 	}
@@ -184,19 +240,31 @@ export class DatabaseManager {
 	 * Get the default prefix
 	 */
 	async getDefaultPrefix(
+		guildOrTwitchId = "default",
 		relations: TypeORM.FindOptionsRelationKeyName<Prefix>[] = []
-	): Promise<Prefix | undefined> {
+	): Promise<Prefix> {
 		const connection = this.connection;
 		if (!connection) {
 			throw new Error(DatabaseManager.errorNoConnection);
 		}
 		const prefixRepo = connection.getRepository(Prefix);
-		return await prefixRepo.findOne({
+
+		let prefix = await prefixRepo.findOne({
 			where: {
 				id: "default",
+				guildOrTwitchId: guildOrTwitchId,
 			},
 			relations: relations,
+			// cache: true,
 		});
+		if (!prefix) {
+			prefix = await this.addPrefix(
+				this.client.defaultPrefix,
+				"default",
+				guildOrTwitchId
+			);
+		}
+		return prefix;
 	}
 
 	/**
@@ -210,6 +278,7 @@ export class DatabaseManager {
 	 */
 	async findPrefixPossibilities(
 		prefixResolvable: PrefixResolvable,
+		guildOrTwitchId?: string,
 		prefixRelations: TypeORM.FindOptionsRelationKeyName<Prefix>[] = []
 	): Promise<Prefix[]> {
 		if (prefixResolvable instanceof Prefix) return [prefixResolvable];
@@ -225,6 +294,7 @@ export class DatabaseManager {
 			where: [
 				{
 					id: prefixResolvable,
+					guildOrTwitchId: guildOrTwitchId,
 				},
 				{
 					prefix: prefixResolvable,
@@ -245,10 +315,12 @@ export class DatabaseManager {
 	 */
 	async findPrefix(
 		prefixResolvable: PrefixResolvable,
+		guildOrTwitchId = "default",
 		prefixRelations: TypeORM.FindOptionsRelationKeyName<Prefix>[] = []
 	): Promise<Prefix | undefined> {
 		const prefixes = await this.findPrefixPossibilities(
 			prefixResolvable,
+			guildOrTwitchId,
 			prefixRelations
 		);
 
@@ -275,6 +347,33 @@ export class DatabaseManager {
 		return undefined;
 	}
 
+	/**
+	 * Deletes a prefix from the database
+	 *
+	 * @param id Prefix ID
+	 * @param guildOrTwitchId Guild or Twitch channel ID
+	 */
+	async deletePrefix(id: string, guildOrTwitchId: string): Promise<void> {
+		if (this.connection) {
+			// Deletes command
+			await this.connection
+				.createQueryBuilder()
+				.delete()
+				.from(Prefix)
+				.where("id = :id", {
+					id: id,
+				})
+				.andWhere("guildOrTwitchId = :guildOrTwitchId", {
+					guildOrTwitchId: guildOrTwitchId,
+				})
+				.execute();
+		} else {
+			throw new Error(
+				"No connection to database while trying to delete Prefix!"
+			);
+		}
+	}
+
 	//#endregion
 
 	//#region Commands
@@ -289,6 +388,7 @@ export class DatabaseManager {
 	async findCommand(
 		commandId: string,
 		prefix: string,
+		guildOrTwitchId: string,
 		prefixRelations: TypeORM.FindOptionsRelationKeyName<Prefix>[] = [
 			"commands",
 		],
@@ -309,6 +409,7 @@ export class DatabaseManager {
 		const findingPrefixes = prefixRepo.find({
 			where: {
 				prefix: prefix,
+				guildOrTwitchId: guildOrTwitchId,
 			},
 			relations: prefixRelations,
 		});
@@ -745,19 +846,26 @@ export class DatabaseManager {
 	async setGroup(
 		commandName: string,
 		nameOrId: string,
-		commandPrefix?: string
+		commandPrefix?: string,
+		guildOrTwitchId = "default"
 	): Promise<Group> {
 		const connection = this.connection;
 		if (connection) {
 			const groupRepo = connection.getRepository(Group);
 			const commandRepo = connection.getRepository(Command);
-			const group = await this.findGroup(nameOrId);
-			const prefix = await this.getDefaultPrefix();
+			const [group, prefix] = await Promise.all([
+				this.findGroup(nameOrId),
+				this.client.getGuildOrTwitchIdPrefix(
+					"default",
+					guildOrTwitchId
+				),
+			]);
 
 			if (group && prefix) {
 				const command = await this.findCommand(
 					commandName,
-					commandPrefix ? commandPrefix : prefix.prefix
+					commandPrefix ? commandPrefix : prefix,
+					guildOrTwitchId
 				);
 				if (command) {
 					const commands: Command[] = [];
@@ -777,7 +885,9 @@ export class DatabaseManager {
 				}
 			} else {
 				if (!prefix) {
-					throw new ReferenceError(`Couldn't find default prefix!`);
+					throw new ReferenceError(
+						`Couldn't find prefix "${prefix}" with guildOrTwitchId "${guildOrTwitchId}"!`
+					);
 				} else if (!group) {
 					throw new ReferenceError(
 						`Couldn't find group with name "${nameOrId}"`

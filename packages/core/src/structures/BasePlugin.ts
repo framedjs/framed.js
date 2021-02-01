@@ -8,6 +8,7 @@ import { PluginManager } from "../managers/PluginManager";
 import { DiscordUtils } from "../utils/discord/DiscordUtils";
 import Options from "../interfaces/other/RequireAllOptions";
 import util from "util";
+import { Prefixes } from "../interfaces/Prefixes";
 
 export abstract class BasePlugin {
 	readonly client: Client;
@@ -20,7 +21,7 @@ export abstract class BasePlugin {
 	groupId: string;
 	fullGroupId: string;
 
-	defaultPrefix: string;
+	defaultPrefix: Prefixes;
 	name: string;
 	description: string;
 	version: string;
@@ -61,10 +62,23 @@ export abstract class BasePlugin {
 		this.plugins = client.plugins;
 
 		this.id = info.id;
-		this.defaultPrefix =
-			info.defaultPrefix != undefined
-				? info.defaultPrefix
-				: client.defaultPrefix;
+
+		if (typeof info.defaultPrefix == "string") {
+			this.defaultPrefix = {
+				discord: info.defaultPrefix,
+				twitch: info.defaultPrefix,
+				default: info.defaultPrefix,
+			};
+		} else if (info.defaultPrefix != undefined) {
+			this.defaultPrefix = info.defaultPrefix;
+		} else {
+			this.defaultPrefix = {
+				discord: client.discord.defaultPrefix,
+				twitch: client.twitch.defaultPrefix,
+				default: client.defaultPrefix,
+			};
+		}
+
 		this.name = info.name;
 		this.description = info.description;
 		this.version = info.version;
@@ -79,6 +93,20 @@ export abstract class BasePlugin {
 		this.groupEmote = info.groupEmote ? info.groupEmote : "❔";
 		this.groupId = info.groupId ? info.groupId : "default";
 		this.fullGroupId = `${this.id}.group.${this.groupId}`;
+	}
+
+	getDefaultPrefix(guildOrTwitchId = "default"): string {
+		const prefix = this.client.getGuildOrTwitchIdPrefix(
+			"default",
+			guildOrTwitchId,
+		);
+		if (!prefix) {
+			Logger.warn(
+				"Couldn't find default prefix from client; falling back to defaultPrefix.default"
+			);
+			return this.defaultPrefix.default;
+		}
+		return prefix;
 	}
 
 	/**
@@ -148,14 +176,6 @@ export abstract class BasePlugin {
 			return;
 		}
 		this.commands.set(command.id, command);
-
-		// Note that this normally is async. Should that be changed?
-		command.formatBatch();
-
-		// Skip over subcommand scripts
-		// if (command instanceof BaseSubcommand) {
-		// 	return;
-		// }
 
 		// Sets up some aliases
 		if (command.aliases) {
@@ -253,7 +273,9 @@ export abstract class BasePlugin {
 				event.discord.name,
 				event.run.bind(event)
 			);
-			Logger.debug(`Loaded event with ID "${event.id}" (${event.plugin.id})`);
+			Logger.debug(
+				`Loaded event with ID "${event.id}" (${event.plugin.id})`
+			);
 		} else {
 			Logger.warn(
 				`There was an imported event with no Discord event! Only Discord is supported currently.`

@@ -9,6 +9,8 @@ import { Argument } from "../interfaces/Argument";
 import Emoji from "node-emoji";
 import { Client } from "./Client";
 import { TwitchMessageOptions } from "../interfaces/TwitchMessageOptions";
+import { Platform } from "../types/Platform";
+import { Logger } from "@framedjs/logger";
 
 enum ArgumentState {
 	Quoted,
@@ -17,6 +19,9 @@ enum ArgumentState {
 
 export class Message {
 	readonly client: Client;
+
+	/** What platform the message came from */
+	platform: Platform;
 
 	discord?: DiscordMessage;
 	twitch?: TwitchMessage;
@@ -34,8 +39,13 @@ export class Message {
 	constructor(options: MessageOptions) {
 		// Grabs the base
 		const base = options.base;
+		this.client = options.client;
 
-		let channel: Discord.TextChannel | Discord.DMChannel | Discord.NewsChannel | undefined;
+		let channel:
+			| Discord.TextChannel
+			| Discord.DMChannel
+			| Discord.NewsChannel
+			| undefined;
 		let id: string | undefined;
 		let msg: Discord.Message | undefined;
 		let author: Discord.User | undefined;
@@ -58,6 +68,7 @@ export class Message {
 			: options.twitch;
 
 		if (discordBase) {
+			this.platform = "discord";
 			channel = discordBase?.channel;
 			id = discordBase?.id;
 			msg =
@@ -70,9 +81,21 @@ export class Message {
 			id = id ? id : msg?.id;
 
 			client = discordBase?.client ? discordBase.client : msg?.client;
-			guild = discordBase?.guild ? discordBase?.guild : msg?.guild ? msg.guild : null;
-			member = discordBase?.member ? discordBase.member : msg?.member ? msg.member : undefined;
-			author = discordBase?.author ? discordBase.author : msg?.author ? member?.user : undefined;
+			guild = discordBase?.guild
+				? discordBase?.guild
+				: msg?.guild
+				? msg.guild
+				: null;
+			member = discordBase?.member
+				? discordBase.member
+				: msg?.member
+				? msg.member
+				: undefined;
+			author = discordBase?.author
+				? discordBase.author
+				: msg?.author
+				? member?.user
+				: undefined;
 
 			// Gets client or throws error
 			if (!client) {
@@ -92,7 +115,9 @@ export class Message {
 
 			// Gets author or throws error
 			if (!author) {
-				throw new ReferenceError(oneLine`Parameter discord.author is undefined.`);
+				throw new ReferenceError(
+					oneLine`Parameter discord.author is undefined.`
+				);
 			}
 
 			// If there's an msg object, we set all the relevant values here
@@ -106,16 +131,26 @@ export class Message {
 				guild: guild,
 			};
 		} else if (twitchBase) {
-			const chatClient = twitchBase.chatClient;
+			this.platform = "twitch";
+			const api = this.client.twitch.api;
+			const chat = twitchBase.chat;
 			const channel = twitchBase.channel;
 			const user = twitchBase.user;
 
-			if (!chatClient) {
-				throw new ReferenceError(`Parameter twitch.chatClient`);
+			if (!api) {
+				throw new ReferenceError(`Parameter twitch.api is undefined.`);
+			}
+
+			if (!chat) {
+				throw new ReferenceError(
+					`Parameter twitch.chatClient is undefined.`
+				);
 			}
 
 			if (!channel) {
-				throw new ReferenceError(`Parameter twitch.channel is undefined.`);
+				throw new ReferenceError(
+					`Parameter twitch.channel is undefined.`
+				);
 			}
 
 			if (!user) {
@@ -123,13 +158,14 @@ export class Message {
 			}
 
 			this.twitch = {
-				chatClient: chatClient,
+				api: api,
+				chat: chat,
 				channel: channel,
 				user: user,
 			};
+		} else {
+			this.platform = "none";
 		}
-
-		this.client = options.client;
 
 		// Sets the content
 		let content = options.content;
@@ -146,19 +182,38 @@ export class Message {
 			content = "";
 		}
 		this.content = content;
-
-		this.prefix = this.getPrefix();
-		this.args = this.getArgs();
-		this.command = this.getCommand();
 	}
 
 	//#region Basic gets for the constructor
 
 	/**
+	 * Elements includes prefix, args, and command
+	 */
+	async getMessageElements(
+		guildOrTwitchId?: string
+	): Promise<{
+		prefix: string | undefined;
+		args: string[] | undefined;
+		command: string | undefined;
+	}> {
+		guildOrTwitchId = guildOrTwitchId
+			? guildOrTwitchId
+			: await this.getGuildOrTwitchId();
+
+		this.prefix = this.getPrefix(guildOrTwitchId);
+		this.args = this.getArgs();
+		this.command = this.getCommand();
+
+		return { prefix: this.prefix, args: this.args, command: this.command };
+	}
+
+	/**
 	 * Gets the prefix of the message.
 	 */
-	private getPrefix(): string | undefined {
-		const prefixes = [...this.client.plugins.allPossiblePrefixes];
+	private getPrefix(guildOrTwitchId = "default"): string | undefined {
+		const prefixes = [
+			...this.client.plugins.getPossiblePrefixes(guildOrTwitchId),
+		];
 		let prefix: string | undefined;
 		for (const testPrefix of prefixes) {
 			if (this.content.startsWith(testPrefix)) {
@@ -221,7 +276,9 @@ export class Message {
 	 * @returns Command arguments
 	 */
 	static getArgs(content: string, settings?: ArgumentOptions): string[] {
-		const args = Message.simplifyArgs(Message.getDetailedArgs(content, settings));
+		const args = Message.simplifyArgs(
+			Message.getDetailedArgs(content, settings)
+		);
 		return args;
 	}
 
@@ -247,7 +304,10 @@ export class Message {
 	 *
 	 * @returns Command arguments
 	 */
-	static getDetailedArgs(content: string, settings?: ArgumentOptions): Argument[] {
+	static getDetailedArgs(
+		content: string,
+		settings?: ArgumentOptions
+	): Argument[] {
 		const args: Argument[] = [];
 
 		// Parse states; for if in a quoted/unquoted section, or is in a codeblock
@@ -300,7 +360,11 @@ export class Message {
 			if (state == ArgumentState.Unquoted) {
 				// If we're unquoted, split with spaces if settings allow it
 				// We'll process excess spaces later
-				if (!charIsSpace || settings?.quoteSections != undefined || hasCodeBlock) {
+				if (
+					!charIsSpace ||
+					settings?.quoteSections != undefined ||
+					hasCodeBlock
+				) {
 					if (settings?.quoteSections == "strict") {
 						if (!charIsSpace && !charIsDoubleQuote) {
 							return [];
@@ -352,7 +416,12 @@ export class Message {
 						argString = "";
 						untrimmedArgString = "";
 					}
-				} else if (settings?.showQuoteCharacters || !charIsDoubleQuote || charIsEscaped || hasCodeBlock) {
+				} else if (
+					settings?.showQuoteCharacters ||
+					!charIsDoubleQuote ||
+					charIsEscaped ||
+					hasCodeBlock
+				) {
 					// If we should be showing quoted characters because of settings,
 					// or we're unquoted, or there's an escape if not
 					argString += char;
@@ -364,17 +433,24 @@ export class Message {
 			// If state change, and the first character isn't a " and just that,
 			// or this is the end of the string,
 			// push the new argument
-			if ((stateChanged && !justStartedQuote) || (charIsEnd && argString.length > 0)) {
+			if (
+				(stateChanged && !justStartedQuote) ||
+				(charIsEnd && argString.length > 0)
+			) {
 				// Is ending off with a quote
 				// Logger.debug(
 				// 	`'${char}' <${content}> ${i} State change - CStU: ${changeStateToUnquotedLater} justStartedQuote ${justStartedQuote} - (${ArgumentState[state]}) - "${argString}"`
 				// ); // LARGE DEBUG OUTPUT
 
 				const nonClosedQuoteSection =
-					charIsEnd && argString.length > 0 && settings?.quoteSections == "strict" && !charIsDoubleQuote;
+					charIsEnd &&
+					argString.length > 0 &&
+					settings?.quoteSections == "strict" &&
+					!charIsDoubleQuote;
 
 				// Trim if unquoted
-				if (state == ArgumentState.Unquoted) argString = argString.trim();
+				if (state == ArgumentState.Unquoted)
+					argString = argString.trim();
 
 				if (settings?.quoteSections == "strict") {
 					if (nonClosedQuoteSection) {
@@ -412,7 +488,12 @@ export class Message {
 	 * @returns Contents after the `!command`
 	 */
 	getArgsContent(argsToTrim?: string[]): string {
-		return Message.getArgsContent(this.content, argsToTrim, this.prefix, this.command);
+		return Message.getArgsContent(
+			this.content,
+			argsToTrim,
+			this.prefix,
+			this.command
+		);
 	}
 
 	/**
@@ -426,7 +507,12 @@ export class Message {
 	 *
 	 * @returns Contents after the `!command`
 	 */
-	static getArgsContent(content: string, argsToTrim?: string[], prefix?: string, command?: string): string {
+	static getArgsContent(
+		content: string,
+		argsToTrim?: string[],
+		prefix?: string,
+		command?: string
+	): string {
 		let newContent = content;
 		if (prefix) newContent = newContent.replace(prefix, "");
 		if (command) newContent = newContent.replace(command, "");
@@ -441,6 +527,107 @@ export class Message {
 	//#endregion
 
 	/**
+	 * Gets the guildOrTwitchId value, but solely for use with Discord.
+	 * Note that it can either return the guild ID, or "discord_default".
+	 *
+	 * @param client Framed client
+	 * @param guild Discord Guild
+	 */
+	static discordGetGuildOrTwitchId(
+		client: Client,
+		guild: Discord.Guild | null | undefined
+	): string {
+		// Hacky re-implementation of msg.getGuildOrTwitchId
+		let guildOrTwitchId = guild ? guild.id : "discord_default";
+		const validPrefixes = client.guildOrTwitchIdPrefixesArray.filter(
+			value =>
+				// Gets the key, splits it with the split string, and
+				// gets the guildOrTwitchId (which is index 1)
+				value[0].split(client.guildOrTwitchIdSplitString)[1] ===
+				guildOrTwitchId
+		);
+
+		// If no valid prefixes were found, use discord_default
+		guildOrTwitchId =
+			validPrefixes.length == 0 ? "discord_default" : guildOrTwitchId;
+
+		return guildOrTwitchId;
+	}
+
+	/**
+	 * Gets the guild or Twitch ID. If it can't be found, this function will fallback to returning "twitch_default" or "discord_default".
+	 * If things go wrong, this function might also return "default".
+	 */
+	async getGuildOrTwitchId(): Promise<string> {
+		let guildOrTwitchId: string | undefined;
+
+		switch (this.platform) {
+			case "discord":
+				if (this.discord) {
+					return Message.discordGetGuildOrTwitchId(
+						this.client,
+						this.discord.guild
+					);
+				}
+				break;
+			case "twitch":
+				if (this.twitch) {
+					const channel = await this.twitch.api.helix.channels.getChannelInfo(
+						this.twitch.channel
+					);
+					if (channel) {
+						guildOrTwitchId = channel.id;
+					} else {
+						guildOrTwitchId = "twitch_default";
+					}
+				}
+				break;
+		}
+
+		if (!guildOrTwitchId) {
+			// This should NEVER happen, but just in case, use "default" as the ID
+			try {
+				throw new Error(
+					`Platform "${this.platform}" doesn't have any corresponding data to use.`
+				);
+			} catch (error) {
+				Logger.error(error.stack);
+			}
+
+			Logger.warn('Attempting to use the fallback "default" instead');
+			guildOrTwitchId = "default";
+		}
+
+		// Attempts to find any entries with guildOrTwitchId
+		// If none is found, fallback to defaults
+
+		const validPrefixes = this.client.guildOrTwitchIdPrefixesArray.filter(
+			value =>
+				// Gets the key, splits it with the split string, and
+				// gets the guildOrTwitchId (which is index 1)
+				value[0].split(this.client.guildOrTwitchIdSplitString)[1] ===
+				guildOrTwitchId
+		);
+
+		// No valid prefixes were found, use default
+		if (validPrefixes.length == 0) {
+			switch (this.platform) {
+				case "discord":
+					guildOrTwitchId = "discord_default";
+					break;
+				case "twitch":
+					guildOrTwitchId = "twitch_default";
+					break;
+				default:
+					guildOrTwitchId = "default";
+					break;
+			}
+		}
+
+		return guildOrTwitchId;
+	}
+
+	/**
 	 * Parses the emoji and contents of a Message or string.
 	 *
 	 * @param msgOrString Framed Message object or string to parse from
@@ -450,26 +637,25 @@ export class Message {
 	static parseEmojiAndString(
 		msgOrString: Message | string,
 		parseOut: string[] = []
-	):
-		| {
-				newContent: string;
-				newEmote?: string;
-		  }
-		| undefined {
-		let argsContent: string;
+	): {
+		newContent: string;
+		newEmote?: string;
+	} {
+		let argsContent = "";
 		if (msgOrString instanceof Message) {
 			argsContent = msgOrString.getArgsContent([...parseOut]);
 			if (argsContent[0] == `"`) {
 				argsContent = argsContent.substring(1, argsContent.length);
 			}
-			if (argsContent[argsContent.length - 1] == `"` && argsContent[argsContent.length - 2] != "\\") {
+			if (
+				argsContent[argsContent.length - 1] == `"` &&
+				argsContent[argsContent.length - 2] != "\\"
+			) {
 				argsContent = argsContent.substring(0, argsContent.length - 1);
 			}
 		} else {
 			argsContent = msgOrString;
 		}
-
-		if (!argsContent) return;
 
 		const newArgs = Message.getArgs(argsContent);
 
@@ -479,26 +665,33 @@ export class Message {
 		const genericEmoji = Emoji.unemojify(newArgs[0]).match(regex);
 
 		let newContent = argsContent;
-		let newEmote = markdownEmote ? markdownEmote[0] : genericEmoji ? genericEmoji[0] : undefined;
+		let newEmote = markdownEmote
+			? markdownEmote[0]
+			: genericEmoji
+			? genericEmoji[0]
+			: undefined;
 		if (newEmote) {
 			newEmote = Emoji.emojify(newEmote);
-			newContent = newEmote ? argsContent.replace(newEmote, "").trimLeft() : argsContent;
+			newContent = newEmote
+				? argsContent.replace(newEmote, "").trimLeft()
+				: argsContent;
 		}
 
-		// If there is going to be content, return what we got
-		if (newContent.length != 0) {
-			return {
-				newContent,
-				newEmote,
-			};
-		}
+		return {
+			newContent,
+			newEmote,
+		};
 	}
 
 	/**
 	 * Parses custom $() formatting
 	 */
-	static async format(arg: string, client: Client): Promise<string> {
-		return client.formatting.format(arg);
+	static async format(
+		arg: string,
+		client: Client,
+		guildOrTwitchId = "default"
+	): Promise<string> {
+		return client.formatting.format(arg, guildOrTwitchId);
 	}
 
 	/**
@@ -510,7 +703,7 @@ export class Message {
 		if (this.discord) {
 			await this.discord.channel.send(content);
 		} else if (this.twitch) {
-			this.twitch.chatClient.say(this.twitch.channel, content);
+			this.twitch.chat.say(this.twitch.channel, content);
 		} else {
 			throw new Error("There was no valid platform!");
 		}

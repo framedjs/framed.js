@@ -1,4 +1,5 @@
 import { Permissions } from "../structures/Permissions";
+import { Prefixes } from "./Prefixes";
 
 /**
  * To be used with BaseCommand and BaseSubcommand
@@ -32,7 +33,7 @@ export interface BaseCommandOptions {
 	/**
 	 * Optional prefix override from the client.
 	 */
-	defaultPrefix?: string;
+	defaultPrefix?: Prefixes | string;
 
 	/**
 	 * A list of all possible prefixes.

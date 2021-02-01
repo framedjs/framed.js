@@ -5,6 +5,7 @@ import { Client } from "../structures/Client";
 import { Message } from "../structures/Message";
 import Discord from "discord.js";
 import { EmbedHelper } from "../utils/discord/EmbedHelper";
+import { BaseCommand } from "../structures/BaseCommand";
 
 export default class FormattingManager {
 	constructor(readonly client: Client) {}
@@ -12,7 +13,7 @@ export default class FormattingManager {
 	/**
 	 * Format custom $() formatting
 	 */
-	async format(arg: string): Promise<string> {
+	async format(arg: string, guildOrTwitchId = "default"): Promise<string> {
 		// Matches $(test) pattern
 		const regex = /(\$\(.*?\))/g;
 		const array = [...arg.matchAll(regex)];
@@ -29,9 +30,10 @@ export default class FormattingManager {
 					case "commandnoprefix":
 						arg = arg.replace(
 							element[0],
-							this.parseCommand(
+							await this.parseCommand(
 								formatArgs,
 								formatContent,
+								guildOrTwitchId,
 								formatCommand == "commandnoprefix"
 							)
 						);
@@ -62,11 +64,12 @@ export default class FormattingManager {
 	 * @param formatContent
 	 * @param noPrefix
 	 */
-	parseCommand(
+	async parseCommand(
 		formatArgs: string[],
 		formatContent: string,
+		guildOrTwitchId = "default",
 		noPrefix?: boolean
-	): string {
+	): Promise<string> {
 		// If this is true, the first parameter is a plugin ID
 		if (formatArgs[0]?.includes(".")) {
 			// Gets the correct data for the getter function
@@ -83,14 +86,15 @@ export default class FormattingManager {
 				);
 			}
 
-			const foundData = this.client.plugins.getFoundCommandData(
-				commandId,
-				args
+			const foundData = (
+				await this.client.plugins.getFoundCommandData(commandId, args)
 			)[0];
 			if (foundData) {
-				return this.getCommandRan(foundData, noPrefix);
+				return this.getCommandRan(foundData, guildOrTwitchId, noPrefix);
 			} else {
-				throw new ReferenceError(`Command found data is undefined: $(${formatContent})`);
+				throw new ReferenceError(
+					`Command found data is undefined: $(${formatContent})`
+				);
 			}
 		} else {
 			// Assume it's just the command with some subcommands attached
@@ -98,12 +102,11 @@ export default class FormattingManager {
 			const argsContent = formatContent.replace(commandId, "");
 			const args = Message.getArgs(argsContent);
 
-			const foundData = this.client.plugins.getFoundCommandData(
-				commandId,
-				args
+			const foundData = (
+				await this.client.plugins.getFoundCommandData(commandId, args)
 			)[0];
 			if (foundData) {
-				return this.getCommandRan(foundData, noPrefix);
+				return this.getCommandRan(foundData, guildOrTwitchId, noPrefix);
 			} else {
 				throw new ReferenceError(`Command found data is undefined`);
 			}
@@ -118,10 +121,13 @@ export default class FormattingManager {
 	 */
 	getCommandRan(
 		foundData: FoundCommandData,
+		guildOrTwitchId = "default",
 		noPrefix?: boolean
 	): string {
 		// Sets the prefix string to nothing, if the setting says to not use a prefix
-		const prefixString = noPrefix ? "" : foundData.command.defaultPrefix;
+		const prefixString = noPrefix
+			? ""
+			: foundData.command.getDefaultPrefix(guildOrTwitchId);
 
 		// Get the IDs fo all the subcommands, and puts them into a list separated by spaces
 		const subcommandIds: string[] = [];
@@ -142,13 +148,15 @@ export default class FormattingManager {
 	 * @returns Formatted Discord embed
 	 */
 	async formatEmbed(
-		embed: Discord.MessageEmbed | Discord.MessageEmbedOptions
+		embed: Discord.MessageEmbed | Discord.MessageEmbedOptions,
+		guildOrTwitchId = "default"
 	): Promise<Discord.MessageEmbed> {
 		if (embed.description) {
 			try {
 				embed.description = await Message.format(
 					embed.description,
-					this.client
+					this.client,
+					guildOrTwitchId
 				);
 			} catch (error) {
 				Logger.error(error.stack);
@@ -160,7 +168,8 @@ export default class FormattingManager {
 				try {
 					field.name = await Message.format(
 						field.name,
-						this.client
+						this.client,
+						guildOrTwitchId
 					);
 				} catch (error) {
 					Logger.error(error.stack);
@@ -168,7 +177,8 @@ export default class FormattingManager {
 				try {
 					field.value = await Message.format(
 						field.value,
-						this.client
+						this.client,
+						guildOrTwitchId
 					);
 				} catch (error) {
 					Logger.error(error.stack);
@@ -180,7 +190,8 @@ export default class FormattingManager {
 			try {
 				embed.footer.text = await Message.format(
 					embed.footer.text,
-					this.client
+					this.client,
+					guildOrTwitchId
 				);
 			} catch (error) {
 				Logger.error(error.stack);
@@ -191,6 +202,37 @@ export default class FormattingManager {
 			return embed;
 		} else {
 			return new Discord.MessageEmbed(embed);
+		}
+	}
+
+	/**
+	 * Parses custom {{}} formatting
+	 *
+	 * @param arg String to parse
+	 * @param command Command to get the variables from
+	 * @param guildOrTwitchId
+	 */
+	formatCommandNotation(
+		command: BaseCommand,
+		arg?: string,
+		guildOrTwitchId = "default"
+	): string | undefined {
+		if (arg) {
+			let prefix = command.getDefaultPrefix(guildOrTwitchId);
+
+			// Fallback
+			if (!prefix) {
+				try {
+					throw new Error("Default prefix wasn't found");
+				} catch (error) {
+					Logger.error(error.stack);
+				}
+				prefix = command.defaultPrefix.default;
+			}
+
+			return arg
+				.replace(/{{prefix}}/gi, prefix)
+				.replace(/{{id}}/gi, command.id);
 		}
 	}
 }

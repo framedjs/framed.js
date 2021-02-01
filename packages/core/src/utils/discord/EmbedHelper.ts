@@ -95,7 +95,8 @@ export class EmbedHelper {
 		if (client.user) {
 			if (
 				guild?.available &&
-				Boolean(process.env.USE_DEFAULT_EMBED_COLOR_ALWAYS) == false
+				process.env.USE_DEFAULT_EMBED_COLOR_ALWAYS?.toLocaleLowerCase() !=
+					"true"
 			) {
 				// Grabs the primary role's color the bot has
 				const member = guild.members.cache.get(client.user.id);

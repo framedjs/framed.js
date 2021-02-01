@@ -10,6 +10,7 @@ import Options from "../interfaces/other/RequireAllOptions";
 import { DiscordUtils } from "../utils/discord/DiscordUtils";
 import { BaseSubcommand } from "./BaseSubcommand";
 import { oneLine } from "common-tags";
+import { Prefixes } from "../interfaces/Prefixes";
 
 export abstract class BaseCommand {
 	// static readonly type: string = "BaseCommand";
@@ -62,12 +63,12 @@ export abstract class BaseCommand {
 	/**
 	 * The default prefix of the command. This will be seen on the help embed.
 	 */
-	defaultPrefix: string;
+	defaultPrefix: Prefixes;
 
 	/**
 	 * A list of all possible prefixes.
 	 */
-	prefixes: string[];
+	// prefixes: string[];
 
 	/**
 	 * Group name
@@ -174,29 +175,41 @@ export abstract class BaseCommand {
 			: "Other";
 		this.groupEmote = plugin.groupEmote;
 		this.aliases = info.aliases;
-		this.defaultPrefix =
-			info.defaultPrefix != undefined
-				? info.defaultPrefix
-				: plugin.defaultPrefix;
+
+		if (typeof info.defaultPrefix == "string") {
+			this.defaultPrefix = {
+				discord: info.defaultPrefix,
+				twitch: info.defaultPrefix,
+				default: info.defaultPrefix,
+			};
+		} else if (info.defaultPrefix != undefined) {
+			this.defaultPrefix = info.defaultPrefix;
+		} else {
+			this.defaultPrefix = {
+				discord: this.client.discord.defaultPrefix,
+				twitch: this.client.twitch.defaultPrefix,
+				default: this.client.defaultPrefix,
+			};
+		}
 
 		// Prefixes array logic
-		if (!info.prefixes) {
-			// Info.prefixes will have a value, and cannot be undefined
-			info.prefixes = [];
-		}
+		// if (!info.prefixes) {
+		// 	// Info.prefixes will have a value, and cannot be undefined
+		// 	info.prefixes = [];
+		// }
 
-		this.prefixes = info.prefixes;
+		// this.prefixes = info.prefixes;
 
-		// If this list doesn't include the default prefix, add it
-		if (!this.prefixes.includes(this.defaultPrefix)) {
-			this.prefixes.push(this.defaultPrefix);
-		}
+		// // If this list doesn't include the default prefix, add it
+		// if (!this.prefixes.includes(this.defaultPrefix)) {
+		// 	this.prefixes.push(this.defaultPrefix);
+		// }
 
-		this.about = this.parseBasicFormatting(info.about);
-		this.description = this.parseBasicFormatting(info.description);
-		this.usage = this.parseBasicFormatting(info.usage);
-		this.examples = this.parseBasicFormatting(info.examples);
-		this.notes = this.parseBasicFormatting(info.notes);
+		this.about = info.about;
+		this.description = info.description;
+		this.usage = info.usage;
+		this.examples = info.examples;
+		this.notes = info.notes;
 		this.permissions = info.permissions;
 		this.hideUsageInHelp = info.hideUsageInHelp;
 		this.inlineCharacterLimit = info.inlineCharacterLimit;
@@ -209,83 +222,154 @@ export abstract class BaseCommand {
 		this.subcommandAliases = new Map();
 	}
 
-	/**
-	 * Parses custom {{}} formatting
-	 * @param arg
-	 */
-	parseBasicFormatting(arg?: string): string | undefined {
-		if (arg) {
-			return arg
-				.replace(/{{prefix}}/gi, this.defaultPrefix)
-				.replace(/{{id}}/gi, this.id);
+	getDefaultPrefix(guildOrTwitchId = "default"): string {
+		const prefix = this.client.getGuildOrTwitchIdPrefix(
+			"default",
+			guildOrTwitchId
+		);
+		if (!prefix) {
+			Logger.warn(
+				"Couldn't find default prefix from client; falling back to defaultPrefix.default"
+			);
+			return this.defaultPrefix.default;
 		}
+		return prefix;
+	}
+
+	/**
+	 * Returns a list of prefixes that the command can use.
+	 *
+	 * @param guildOrTwitchId
+	 */
+	getPrefixes(guildOrTwitchId = "default"): string[] {
+		const prefixes: string[] = [];
+
+		// Puts all the command prefixes in an array
+		if (this.rawInfo.prefixes) {
+			prefixes.push(...this.rawInfo.prefixes);
+		}
+
+		// Filters matching guildOrTwitchIds, then
+		// Puts all those matching prefixes into an array
+		this.client.guildOrTwitchIdPrefixesArray
+			.filter(
+				thisGuildOrTwitchId =>
+					thisGuildOrTwitchId[0][1] == guildOrTwitchId
+			)
+			.forEach(newPrefix => {
+				const value = newPrefix[1];
+				prefixes.push(value);
+			});
+
+		// Gets the default prefix from the guild or Twitch channel
+		const prefix = this.client.getGuildOrTwitchIdPrefix(
+			"default",
+			guildOrTwitchId
+		);
+
+		// If this list doesn't include the default prefix from there, add it to the array
+		if (prefix && !prefixes.includes(prefix)) {
+			prefixes.push(prefix);
+		}
+
+		return prefixes;
+	}
+
+	getCommandNotationFormatting(
+		guildOrTwitchId = "default"
+	): {
+		about: string | undefined;
+		description: string | undefined;
+		examples: string | undefined;
+		notes: string | undefined;
+		usage: string | undefined;
+	} {
+		return {
+			about: this.client.formatting.formatCommandNotation(
+				this,
+				this.about,
+				guildOrTwitchId
+			),
+			description: this.client.formatting.formatCommandNotation(
+				this,
+				this.description,
+				guildOrTwitchId
+			),
+			examples: this.client.formatting.formatCommandNotation(
+				this,
+				this.examples,
+				guildOrTwitchId
+			),
+			notes: this.client.formatting.formatCommandNotation(
+				this,
+				this.notes,
+				guildOrTwitchId
+			),
+			usage: this.client.formatting.formatCommandNotation(
+				this,
+				this.usage,
+				guildOrTwitchId
+			),
+		};
 	}
 
 	/**
 	 * Parses custom $() formatting
 	 */
 	async formatBatch(): Promise<void> {
-		const keys: string[] = [];
-		const queue = new Map<string, Promise<string>>();
-
-		const addToQueue = (name: string, text?: string): void => {
-			if (!text) return;
-			keys.push(name);
-			queue.set(
-				name,
-				Message.format(text, this.client)
-			);
-		};
-
-		addToQueue("examples", this.examples);
-		addToQueue("usage", this.usage);
-		addToQueue("about", this.about);
-		addToQueue("description", this.description);
-
-		const settledQueue = await Promise.allSettled(queue.values());
-		const finalKeys = [...queue.keys()];
-		const finalSettledQueue = [...settledQueue];
-
-		for (let i = 0; i < finalKeys.length; i++) {
-			const finalKey = finalKeys[i];
-			const finalQueue = finalSettledQueue[i];
-
-			if (finalQueue.status == "fulfilled") {
-				const matchingKey = keys.find(k => k == finalKey);
-				if (matchingKey) {
-					switch (matchingKey) {
-						case "examples":
-							this.examples = finalQueue.value;
-							break;
-						case "usage":
-							this.usage = finalQueue.value;
-							break;
-						case "about":
-							this.about = finalQueue.value;
-							break;
-						case "description":
-							this.description = finalQueue.value;
-							break;
-						default:
-							Logger.error(
-								`BaseCommand.ts: Key "${finalKey}" is unknown`
-							);
-							break;
-					}
-				}
-			} else {
-				Logger.error(
-					`BaseCommand.ts: ${finalQueue.status} - ${finalQueue.reason}`
-				);
-			}
-		}
+		// const keys: string[] = [];
+		// const queue = new Map<string, Promise<string>>();
+		// const addToQueue = (name: string, text?: string): void => {
+		// 	if (!text) return;
+		// 	keys.push(name);
+		// 	queue.set(name, Message.format(text, this.client));
+		// };
+		// addToQueue("examples", this.examples);
+		// addToQueue("usage", this.usage);
+		// addToQueue("about", this.about);
+		// addToQueue("description", this.description);
+		// const settledQueue = await Promise.allSettled(queue.values());
+		// const finalKeys = [...queue.keys()];
+		// const finalSettledQueue = [...settledQueue];
+		// for (let i = 0; i < finalKeys.length; i++) {
+		// 	const finalKey = finalKeys[i];
+		// 	const finalQueue = finalSettledQueue[i];
+		// 	if (finalQueue.status == "fulfilled") {
+		// 		const matchingKey = keys.find(k => k == finalKey);
+		// 		if (matchingKey) {
+		// 			switch (matchingKey) {
+		// 				case "examples":
+		// 					this.examples = finalQueue.value;
+		// 					break;
+		// 				case "usage":
+		// 					this.usage = finalQueue.value;
+		// 					break;
+		// 				case "about":
+		// 					this.about = finalQueue.value;
+		// 					break;
+		// 				case "description":
+		// 					this.description = finalQueue.value;
+		// 					break;
+		// 				default:
+		// 					Logger.error(
+		// 						`BaseCommand.ts: Key "${finalKey}" is unknown`
+		// 					);
+		// 					break;
+		// 			}
+		// 		}
+		// 	} else {
+		// 		Logger.error(
+		// 			`BaseCommand.ts: ${finalQueue.status} - ${finalQueue.reason}`
+		// 		);
+		// 	}
+		// }
 	}
 
 	/**
 	 * Run the command.
-	 * 
+	 *
 	 * @param msg Framed Message
-	 * 
+	 *
 	 * @returns true if successful
 	 */
 	abstract run(msg: Message): Promise<boolean>;
@@ -489,9 +573,6 @@ export abstract class BaseCommand {
 			return;
 		}
 		this.subcommands.set(subcommand.id, subcommand);
-
-		// Note that this normally is async. Should that be changed?
-		subcommand.formatBatch();
 
 		if (subcommand.aliases) {
 			for (const alias of subcommand.aliases) {

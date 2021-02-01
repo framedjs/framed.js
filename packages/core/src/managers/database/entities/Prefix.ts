@@ -6,6 +6,9 @@ export default class Prefix {
 	@PrimaryColumn()
 	id!: string;
 
+	@PrimaryColumn()
+	guildOrTwitchId!: string;
+
 	@Column()
 	prefix!: string;
 

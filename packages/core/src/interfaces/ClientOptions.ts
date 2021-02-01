@@ -11,7 +11,7 @@ export interface ClientOptions {
 	defaultConnection: TypeORM.ConnectionOptions;
 
 	/**
-	 * The prefix used for all commands, except when a plugin or commands explicitly uses something else
+	 * The prefix used for all commands, except when a plugin or commands explicitly uses something else.
 	 */
 	defaultPrefix?: string;
 
@@ -25,7 +25,7 @@ export interface ClientOptions {
 	 */
 	appVersion?: string;
 
-	/** 
+	/**
 	 * Import default API routes
 	 */
 	loadDefaultRoutes?: boolean;
@@ -34,4 +34,32 @@ export interface ClientOptions {
 	 * Import default plugins
 	 */
 	loadDefaultPlugins?: boolean;
+
+	/**
+	 * Discord options
+	 */
+	discord?: DiscordClientOptions;
+
+	/**
+	 * Twitch options
+	 */
+	twitch?: TwitchClientOptions;
+}
+
+export interface DiscordClientOptions {
+	/**
+	 * The prefix used for all commands, except when a plugin or commands explicitly uses something else.
+	 * 
+ 	 * This prefix is by default applied to when the platform is Discord.
+	 */
+	defaultPrefix?: string;
+}
+
+export interface TwitchClientOptions { 
+	/**
+	 * The prefix used for all commands, except when a plugin or commands explicitly uses something else.
+	 * 
+	 * This prefix is by default applied to when the platform is Twitch.
+	 */
+	defaultPrefix?: string;
 }

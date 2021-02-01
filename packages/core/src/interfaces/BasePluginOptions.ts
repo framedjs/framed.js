@@ -1,3 +1,5 @@
+import { Prefixes } from "./Prefixes";
+
 /**
  * To be used with BasePlugin.
  */
@@ -29,7 +31,7 @@ export interface BasePluginOptions {
 	/**
 	 * Optional prefix override from the client.
 	 */
-	defaultPrefix?: string;
+	defaultPrefix?: Prefixes | string;
 
 	/**
 	 * The name of the plugin.
