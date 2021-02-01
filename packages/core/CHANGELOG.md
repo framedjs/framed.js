@@ -2,20 +2,6 @@
 
 ## 0.3.0-next.1
 
-### Minor Changes
-
--   ed46475: 0.3.0 prerelease
-
-    -   Guild or Twitch channel specific prefixes
-    -   Twitch message now carries ApiClient
-    -   "chatClient" renamed to just "chat"
-    -   Some command getters and parsers are now async
-    -   new Message calls need message.getMessageElements() to get prefix,
-        command, and args variables set on the Message instance.
-    -   Removed unused Help interfaces from PluginManager
-    -   Formatting must be done per each ran command
-        (use msg.client.formatting)
-
 ### Patch Changes
 
 -   2223feb: I think I forgot to build, unpublished instead of deprecated. Thought Verdaccio was being used, but forgot to save the .npmrc file.
@@ -48,26 +34,6 @@
 
 -   a7e3bfa: Changed behavior of EmbedHelper to not use process.env.PREFIX, as it was a remnant of old code.
 
-## 0.2.0
-
-### Minor Changes
-
--   c1b7959: Release v0.2.0
-
-    Features:
-
-    -   Notes entry
-    -   Better "Check out:" embed text
-        -   Can be set to your own commands, or left blank
-
-    Bug fixes:
-
-    -   Added Discord.js (also Twitch) re-export from Framed. This is to have `new Discord.MessageEmbed()`
-        work properly for code outside the framework.
-
-    BREAKING:
-
-    -   Changed TypeORM peer version from 0.2.0 to 0.3.0
 
 ## 0.2.0
 
