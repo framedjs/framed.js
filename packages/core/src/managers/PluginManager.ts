@@ -73,18 +73,17 @@ export class PluginManager {
 
 		this.map.set(plugin.id, plugin);
 
+		const importFilter = this.client.importFilter;
+	
 		// Load commands
 		// TODO: excluding subcommands doesn't work
 		if (plugin.paths.commands) {
-			const importFilter = this.client.importFilter;
 			plugin.loadCommandsIn({
 				dirname: plugin.paths.commands,
-				// filter: importFilter,
 				filter: fileName => {
 					const success = importFilter.test(fileName);
 					return success ? fileName : false;
 				},
-				excludeDirs: /^(.*)\.(git|svn)$|^(.*)subcommands(.*)$/,
 			});
 		}
 
@@ -92,16 +91,20 @@ export class PluginManager {
 		if (plugin.paths.events) {
 			plugin.loadEventsIn({
 				dirname: plugin.paths.events,
-				filter: this.client.importFilter,
-				excludeDirs: /^(.*)\.(git|svn)$|^(.*)subcommands(.*)$/,
+				filter: fileName => {
+					const success = importFilter.test(fileName);
+					return success ? fileName : false;
+				},
 			});
 		}
 
 		if (plugin.paths.routes) {
 			this.client.api.loadRoutesIn({
 				dirname: plugin.paths.routes,
-				filter: this.client.importFilter,
-				// excludeDirs: /^(.*)\.(git|svn)$|^(.*)subcommands(.*)$/,
+				filter: fileName => {
+					const success = importFilter.test(fileName);
+					return success ? fileName : false;
+				},
 			});
 		}
 

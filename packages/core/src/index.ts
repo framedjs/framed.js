@@ -22,7 +22,7 @@ export { Argument } from "./interfaces/Argument";
 export { FoundCommandData } from "./interfaces/FoundCommandData";
 export { MessageOptions } from "./interfaces/MessageOptions";
 export { LoginOptions } from "./interfaces/LoginOptions";
-
+export { InlineOptions } from "./interfaces/InlineOptions";
 export { BaseCommandOptions } from "./interfaces/BaseCommandOptions";
 
 export { DiscohookOutputData } from "./interfaces/other/DiscohookOutputData";
@@ -50,6 +50,7 @@ export { FriendlyError } from "./structures/errors/FriendlyError";
 export { InvalidError } from "./structures/errors/InvalidError";
 export { NotFoundError } from "./structures/errors/NotFoundError";
 export { PermissionDeniedError } from "./structures/errors/PermissionDeniedError";
+export { DiscordBotMissingPermissionsError } from "./structures/errors/DiscordBotMissingPermissionsError";
 
 // Version
 // eslint-disable-next-line @typescript-eslint/no-var-requires

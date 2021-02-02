@@ -532,10 +532,14 @@ export class Message {
 	 *
 	 * @param client Framed client
 	 * @param guild Discord Guild
+	 * @param tryNonDefaultId Tries to get a non-default ID.
+	 * There is still a chance however for it to be a
+	 * default value, if the DM isn't from a guild.
 	 */
 	static discordGetGuildOrTwitchId(
 		client: Client,
-		guild: Discord.Guild | null | undefined
+		guild: Discord.Guild | null | undefined,
+		tryNonDefaultId = false
 	): string {
 		// Hacky re-implementation of msg.getGuildOrTwitchId
 		let guildOrTwitchId = guild ? guild.id : "discord_default";
@@ -547,9 +551,11 @@ export class Message {
 				guildOrTwitchId
 		);
 
-		// If no valid prefixes were found, use discord_default
-		guildOrTwitchId =
-			validPrefixes.length == 0 ? "discord_default" : guildOrTwitchId;
+		if (!tryNonDefaultId) {
+			// If no valid prefixes were found, use discord_default
+			guildOrTwitchId =
+				validPrefixes.length == 0 ? "discord_default" : guildOrTwitchId;
+		}
 
 		return guildOrTwitchId;
 	}
@@ -557,8 +563,11 @@ export class Message {
 	/**
 	 * Gets the guild or Twitch ID. If it can't be found, this function will fallback to returning "twitch_default" or "discord_default".
 	 * If things go wrong, this function might also return "default".
+	 * 
+	 * @param tryNonDefaultId Tries to get a non-default ID.
+	 * There is still a chance however for it to be a default value.
 	 */
-	async getGuildOrTwitchId(): Promise<string> {
+	async getGuildOrTwitchId(tryNonDefaultId = false): Promise<string> {
 		let guildOrTwitchId: string | undefined;
 
 		switch (this.platform) {
@@ -566,7 +575,8 @@ export class Message {
 				if (this.discord) {
 					return Message.discordGetGuildOrTwitchId(
 						this.client,
-						this.discord.guild
+						this.discord.guild,
+						tryNonDefaultId
 					);
 				}
 				break;

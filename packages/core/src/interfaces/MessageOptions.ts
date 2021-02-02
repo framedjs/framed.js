@@ -25,6 +25,8 @@ export interface MessageOptions {
 
 	/**
 	 * Discord data.
+	 * 
+	 * If no base is specified, client, channel and author is required.
 	 */
 	discord?: DiscordMessageOptions;
 

@@ -1,5 +1,6 @@
 import { Permissions } from "../structures/Permissions";
 import { Prefixes } from "./Prefixes";
+import { InlineOptions } from "./InlineOptions";
 
 /**
  * To be used with BaseCommand and BaseSubcommand
@@ -13,7 +14,7 @@ export interface BaseCommandOptions {
 	 *
 	 * For example, if the ID was "test", then one way to be able to trigger it would
 	 * be !test if the default prefix was "!".
-	 * 
+	 *
 	 * If the command info is part of a subcommand, the subcommand is the ID.
 	 */
 	id: string;
@@ -90,7 +91,7 @@ export interface BaseCommandOptions {
 	/**
 	 * Use inline for embed field?
 	 */
-	inline?: boolean;
+	inline?: boolean | InlineOptions;
 
 	/**
 	 * Use inline for embed for aliases field?

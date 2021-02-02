@@ -11,6 +11,7 @@ import { DiscordUtils } from "../utils/discord/DiscordUtils";
 import { BaseSubcommand } from "./BaseSubcommand";
 import { oneLine } from "common-tags";
 import { Prefixes } from "../interfaces/Prefixes";
+import { InlineOptions } from "../interfaces/InlineOptions";
 
 export abstract class BaseCommand {
 	// static readonly type: string = "BaseCommand";
@@ -130,19 +131,9 @@ export abstract class BaseCommand {
 	permissions?: Permissions;
 
 	/**
-	 * The embed inline character limit, before it becomes not inline in the help embed.
-	 */
-	inlineCharacterLimit?: number;
-
-	/**
 	 * Use inline in help?
 	 */
-	inline: boolean;
-
-	/**
-	 * Use inline in help?
-	 */
-	inlineAliases: boolean;
+	inline?: boolean | InlineOptions;
 
 	/**
 	 * This variable contains the raw info of what a plugin has returned as data. This data may be incomplete,
@@ -212,10 +203,8 @@ export abstract class BaseCommand {
 		this.notes = info.notes;
 		this.permissions = info.permissions;
 		this.hideUsageInHelp = info.hideUsageInHelp;
-		this.inlineCharacterLimit = info.inlineCharacterLimit;
 
 		this.inline = info.inline ? info.inline : false;
-		this.inlineAliases = info.inlineAliases ? info.inlineAliases : false;
 
 		this.rawInfo = info;
 		this.subcommands = new Map();
