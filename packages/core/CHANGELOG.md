@@ -1,5 +1,15 @@
 # @framedjs/core
 
+## 0.3.0-next.2
+
+### Patch Changes
+
+-   da34f6b: Better inline options and import fixes
+
+    -   Features: - Inline for help can be more controlled - (Unfinsihed) Discord Bot Missing Perms friendly error
+
+    -   Bugfixes - All plugins, routes, commands, and events should get imported
+
 ## 0.3.0-next.1
 
 ### Patch Changes
@@ -33,7 +43,6 @@
 ### Patch Changes
 
 -   a7e3bfa: Changed behavior of EmbedHelper to not use process.env.PREFIX, as it was a remnant of old code.
-
 
 ## 0.2.0
 
