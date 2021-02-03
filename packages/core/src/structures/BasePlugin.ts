@@ -9,6 +9,7 @@ import { DiscordUtils } from "../utils/discord/DiscordUtils";
 import Options from "../interfaces/other/RequireAllOptions";
 import util from "util";
 import { Prefixes } from "../interfaces/Prefixes";
+import { ImportError } from "./errors/non-friendly/ImportError";
 
 export abstract class BasePlugin {
 	readonly client: Client;
@@ -98,7 +99,7 @@ export abstract class BasePlugin {
 	getDefaultPrefix(guildOrTwitchId = "default"): string {
 		const prefix = this.client.getGuildOrTwitchIdPrefix(
 			"default",
-			guildOrTwitchId,
+			guildOrTwitchId
 		);
 		if (!prefix) {
 			Logger.warn(
@@ -160,7 +161,13 @@ export abstract class BasePlugin {
 					this.loadCommand(initCommand);
 				}
 			} catch (error) {
-				Logger.error(error.stack);
+				if (error instanceof ImportError) {
+					// Wrong import type was used
+					Logger.silly(`~99% safe to ignore: ${error.stack}`);
+				} else {
+					// If it's something else, a normal error will appear
+					Logger.error(error.stack);
+				}
 			}
 		}
 	}

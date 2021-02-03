@@ -15,20 +15,28 @@ import { oneLine } from "common-tags";
 import Axios from "axios";
 import { Client } from "../../structures/Client";
 
+interface RequireAllScriptData {
+	[key: string]: ScriptElement;
+}
+
+interface ScriptElement {
+	[key2: number]: {
+		default: unknown;
+	};
+}
+
 export class DiscordUtils {
 	/**
 	 * Imports scripts from a path, gets all the default exports, then puts it into an array
 	 * @param options RequireAll Options
 	 */
 	static importScripts(options: Options): unknown[] {
-		const scripts: unknown[] = [];
+		const scriptsList: unknown[] = [];
 
 		// Sanity check
-		if (!existsSync(options.dirname)) return scripts;
+		if (!existsSync(options.dirname)) return scriptsList;
 
-		const requiredScripts: {
-			[key: number]: { key: number; value: { default: unknown } };
-		} = RequireAll(options);
+		const requiredScripts: RequireAllScriptData = RequireAll(options);
 		Logger.silly(`requiredScripts: ${util.inspect(requiredScripts)}`);
 
 		const requiredScriptsValues = Object.values(requiredScripts);
@@ -37,32 +45,48 @@ export class DiscordUtils {
 		);
 
 		for (const key in requiredScriptsValues) {
-			const pluginScript = requiredScriptsValues[key];
-			Logger.silly(`Key: ${key} | ${util.inspect(pluginScript)}`);
+			const script = requiredScriptsValues[key];
+			Logger.silly(`Key1: ${key} | ${util.inspect(script)}`);
 
-			const values = Object.values(pluginScript);
-			for (const key in values) {
-				Logger.silly(`Key: ${key}`);
-
-				let exports = values[key];
-
-				// For some reason, TypeScript thinks this value can be a number
-				if (typeof exports == "object") {
-					if (typeof exports.default === "function") {
-						Logger.silly("Exported default is a function");
-						exports = exports.default;
-					}
-				}
-
-				scripts.push(exports);
-			}
+			// Recursively gets scripts from the object, for nested folders
+			const values = Object.values(script);
+			scriptsList.push(...this.recursiveGetScript(values));
 		}
 
-		Logger.silly(`Scripts: ${util.inspect(scripts)}`);
+		Logger.silly(`Scripts: ${util.inspect(scriptsList)}`);
+
+		return scriptsList;
+	}
+
+	/**
+	 * Recursively returns an array of imported scripts
+	 *
+	 * @param values
+	 */
+	private static recursiveGetScript(values: ScriptElement): unknown[] {
+		const scripts: unknown[] = [];
+
+		for (const key in values) {
+			Logger.silly(`Key2: ${key} | ${util.inspect(values)}`);
+
+			let exports = values[key];
+
+			// For some reason, TypeScript thinks this value can be a number
+			if (typeof exports == "object") {
+				if (typeof exports.default === "function") {
+					Logger.silly("Exported default is a function");
+					exports = exports.default;
+				} else {
+					scripts.push(...this.recursiveGetScript(exports));
+					continue;
+				}
+			}
+
+			scripts.push(exports);
+		}
 
 		return scripts;
 	}
-	/* eslint-enable @typescript-eslint/no-explicit-any */
 
 	/**
 	 * Gets the user's display name on a guild. Contains a fallback to the user's username.
@@ -213,9 +237,7 @@ export class DiscordUtils {
 				if (cachedChannels.isText()) {
 					const textChannel = cachedChannels as Discord.TextChannel;
 
-					const parse = Message.parseEmojiAndString(
-						textChannel.name
-					);
+					const parse = Message.parseEmojiAndString(textChannel.name);
 
 					// Finds the name of the channel, also with
 					// excluding the emotes at the beginning
@@ -269,9 +291,7 @@ export class DiscordUtils {
 				if (cachedChannels.isText()) {
 					const textChannel = cachedChannels as Discord.TextChannel;
 
-					const parse = Message.parseEmojiAndString(
-						textChannel.name
-					);
+					const parse = Message.parseEmojiAndString(textChannel.name);
 
 					// Finds the name of the channel, also with
 					// excluding the emotes at the beginning

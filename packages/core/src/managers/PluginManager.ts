@@ -159,42 +159,6 @@ export class PluginManager {
 	}
 
 	/**
-	 * List of all possible prefixes
-	 * @returns String array of all possible prefixes
-	 */
-	// get allPossiblePrefixes(): string[] {
-	// 	const prefixes = this.defaultPrefixes;
-
-	// 	// // Adds default discord and twitch prefixes
-	// 	// if (
-	// 	// 	!prefixes.find(
-	// 	// 		prefix => prefix === this.client.discord.defaultPrefix
-	// 	// 	)
-	// 	// ) {
-	// 	// 	prefixes.push(this.client.discord.defaultPrefix);
-	// 	// }
-
-	// 	// if (
-	// 	// 	!prefixes.find(
-	// 	// 		prefix => prefix === this.client.twitch.defaultPrefix
-	// 	// 	)
-	// 	// ) {
-	// 	// 	prefixes.push(this.client.twitch.defaultPrefix);
-	// 	// }
-
-	// 	// Adds to the list of potential prefixes
-	// 	this.commandsArray.forEach(command => {
-	// 		command.prefixes.forEach(element => {
-	// 			if (!prefixes.includes(element)) {
-	// 				prefixes.push(element);
-	// 			}
-	// 		});
-	// 	});
-	// 	// Logger.debug(`Prefixes: ${prefixes}`);
-	// 	return prefixes;
-	// }
-
-	/**
 	 * List of all possible prefixes for the specific guild or Twitch channel.
 	 *
 	 * @param guildOrTwitchId Guild ID or Twitch channel ID
@@ -214,17 +178,18 @@ export class PluginManager {
 		}
 
 		// From commands: adds to the list of potential prefixes (also removes duplicates)
-		this.commandsArray.forEach(command => {
+		for (const command of this.commandsArray) {
 			const prefixesWithGuildOrTwitchId = command.getPrefixes(
 				guildOrTwitchId
 			);
 			const commandPrefixes = prefixesWithGuildOrTwitchId;
-			commandPrefixes.forEach(element => {
-				if (!prefixes.includes(element)) {
-					prefixes.push(element);
+			for (const prefix of commandPrefixes) {
+				if (!prefixes.includes(prefix)) {
+					prefixes.push(prefix);
 				}
-			});
-		});
+			}			
+		}
+
 		Logger.silly(`Prefixes: ${prefixes}`);
 		return prefixes;
 	}
@@ -762,7 +727,8 @@ export class PluginManager {
 	 * @returns Discord embed field data, containing brief info on commands
 	 */
 	async createHelpFields(
-		helpList: HelpData[]
+		helpList: HelpData[],
+		guildOrTwitchId = "default",
 	): Promise<Discord.EmbedFieldData[]> {
 		const connection = this.client.database.connection;
 		if (!connection)
@@ -812,20 +778,22 @@ export class PluginManager {
 					const command = args.shift();
 
 					if (!command) {
-						throw new Error();
+						throw new Error("command is null or undefined");
 					}
 
 					const foundData = (
 						await this.client.plugins.getFoundCommandData(
 							command,
-							args
+							args,
+							guildOrTwitchId
 						)
 					)[0];
 
 					// If there's a command found,
 					if (foundData) {
 						const commandString = this.client.formatting.getCommandRan(
-							foundData
+							foundData,
+							guildOrTwitchId
 						);
 						const lastSubcommand =
 							foundData.subcommands[

@@ -45,7 +45,7 @@ export { EmbedHelper } from "./utils/discord/EmbedHelper";
 export { PluginResolvable } from "./managers/database/types/PluginResolvable";
 export { PrefixResolvable } from "./managers/database/types/PrefixResolvable";
 
-// Errors
+// Friendly Errors
 export { FriendlyError } from "./structures/errors/FriendlyError";
 export { InvalidError } from "./structures/errors/InvalidError";
 export { NotFoundError } from "./structures/errors/NotFoundError";

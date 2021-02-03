@@ -67,6 +67,11 @@ export abstract class BaseCommand {
 	defaultPrefix: Prefixes;
 
 	/**
+	 * Has defaultPrefix been explicitly set by the script, or were the values gained implicitly?
+	 */
+	defaultPrefixExplicitSet = false;
+
+	/**
 	 * A list of all possible prefixes.
 	 */
 	// prefixes: string[];
@@ -149,6 +154,7 @@ export abstract class BaseCommand {
 
 	/**
 	 * Create a new BaseCommand.
+	 *
 	 * @param plugin Plugin that this command will be attached to
 	 * @param info Command information
 	 */
@@ -173,8 +179,10 @@ export abstract class BaseCommand {
 				twitch: info.defaultPrefix,
 				default: info.defaultPrefix,
 			};
+			this.defaultPrefixExplicitSet = true;
 		} else if (info.defaultPrefix != undefined) {
 			this.defaultPrefix = info.defaultPrefix;
+			this.defaultPrefixExplicitSet = true;
 		} else {
 			this.defaultPrefix = {
 				discord: this.client.discord.defaultPrefix,
