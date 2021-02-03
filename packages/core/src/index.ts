@@ -72,3 +72,7 @@ import * as TwitchChatClient from "twitch-chat-client";
 export { Twitch };
 export { TwitchAuth };
 export { TwitchChatClient };
+
+// TypeORM export
+import * as TypeORM from "typeorm";
+export { TypeORM };
