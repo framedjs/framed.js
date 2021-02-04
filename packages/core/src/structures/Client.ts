@@ -21,12 +21,14 @@ import { Logger } from "@framedjs/logger";
 import { version } from "../index";
 
 import path from "path";
+import { PlaceManager } from "../managers/PlaceManager";
 
 const DEFAULT_PREFIX = "!";
 
 export class Client extends EventEmitter {
 	readonly api: APIManager;
 	readonly database: DatabaseManager;
+	readonly place = new PlaceManager(this);
 	readonly plugins = new PluginManager(this);
 	readonly formatting = new FormattingManager(this);
 
@@ -60,8 +62,6 @@ export class Client extends EventEmitter {
 	// readonly importFilter = /(?<!\.d)(\.(js|ts))$/;
 
 	defaultPrefix = DEFAULT_PREFIX;
-	private guildOrTwitchIdPrefixes = new Map<string, string>();
-	readonly guildOrTwitchIdSplitString = ",";
 
 	private readonly clientOptions: ClientOptions;
 
@@ -91,14 +91,6 @@ export class Client extends EventEmitter {
 			: this.defaultPrefix;
 
 		this.api = new APIManager(this);
-
-		Logger.debug(
-			`Using database path: ${options.defaultConnection.database}`
-		);
-		Logger.debug(
-			`Using entities path: ${DatabaseManager.defaultEntitiesPath}`
-		);
-
 		this.database = new DatabaseManager(this, options.defaultConnection);
 	}
 
@@ -127,16 +119,6 @@ export class Client extends EventEmitter {
 		});
 		Logger.debug(`Loaded default plugins`);
 		return plugins;
-	}
-
-	async prepareHelpCommandList(): Promise<void> {
-		// Properly sets up the help command display
-		for (let i = 0; i < this.helpCommands.length; i++) {
-			this.helpCommands[i] = await Message.format(
-				this.helpCommands[i],
-				this
-			);
-		}
 	}
 
 	/**
@@ -225,9 +207,6 @@ export class Client extends EventEmitter {
 				}
 			});
 		});
-
-		// Prepares help command list
-		await this.prepareHelpCommandList();
 	}
 
 	async processMsg(msg: Message): Promise<void> {
@@ -342,66 +321,5 @@ export class Client extends EventEmitter {
 				}: ${reason}`
 			);
 		});
-	}
-
-	/**
-	 * Sets the guild or Twitch channel ID's default prefix.
-	 *
-	 * @param id Prefix ID
-	 * @param guildOrTwitchId guild or twitch ID
-	 * @param prefix Prefix string
-	 */
-	async setGuildOrTwitchIdPrefix(
-		id: string,
-		guildOrTwitchId: string,
-		prefix: string
-	): Promise<void> {
-		await this.database.addPrefix(prefix, id, guildOrTwitchId, true);
-		this.guildOrTwitchIdPrefixes.set(
-			`${id}${this.guildOrTwitchIdSplitString}${guildOrTwitchId}`,
-			prefix
-		);
-	}
-
-	/**
-	 * Deletes the guild or Twitch channel ID's default prefix.
-	 *
-	 * @param id Prefix ID
-	 * @param guildOrTwitchId guild or twitch ID
-	 */
-	async deleteGuildOrTwitchIdPrefix(
-		id: string,
-		guildOrTwitchId: string
-	): Promise<void> {
-		if (
-			this.guildOrTwitchIdPrefixes.get(
-				`${id}${this.guildOrTwitchIdSplitString}${guildOrTwitchId}`
-			)
-		) {
-			await this.database.deletePrefix(id, guildOrTwitchId);
-		}
-
-		this.guildOrTwitchIdPrefixes.delete(
-			`${id}${this.guildOrTwitchIdSplitString}${guildOrTwitchId}`
-		);
-	}
-
-	/**
-	 * Gets the guild or Twitch channel ID's default prefix.
-	 *
-	 * @param id Prefix ID
-	 * @param guildOrTwitchId guild or twitch ID
-	 */
-	getGuildOrTwitchIdPrefix(
-		id: string,
-		guildOrTwitchId: string
-	): string | undefined {
-		return this.guildOrTwitchIdPrefixes.get(
-			`${id}${this.guildOrTwitchIdSplitString}${guildOrTwitchId}`
-		);
-	}
-
-	get guildOrTwitchIdPrefixesArray(): [string, string][] {
-		return Array.from(this.guildOrTwitchIdPrefixes);
 	}
 }

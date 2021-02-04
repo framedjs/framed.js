@@ -1,4 +1,11 @@
-import { Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, PrimaryColumn } from "typeorm";
+import {
+	Entity,
+	JoinColumn,
+	JoinTable,
+	ManyToMany,
+	ManyToOne,
+	PrimaryColumn,
+} from "typeorm";
 import Group from "./Group";
 import Prefix from "./Prefix";
 import Response from "./Response";
@@ -7,9 +14,12 @@ import Response from "./Response";
 export default class Command {
 	@PrimaryColumn()
 	id!: string;
-	
-	// @Column()
-	// name!: string;
+
+	@PrimaryColumn()
+	placeId!: string;
+
+	@PrimaryColumn()
+	platform!: string;
 
 	@ManyToOne(() => Group, group => group.commands)
 	group!: Group;

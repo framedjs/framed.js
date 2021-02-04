@@ -11,6 +11,7 @@ import { Client } from "../structures/Client";
 import Plugin from "./database/entities/Plugin";
 import { ResponseData } from "./database/interfaces/ResponseData";
 import { PrefixResolvable } from "./database/types/PrefixResolvable";
+import { Place } from "../interfaces/Place";
 
 export class DatabaseManager {
 	public static readonly defaultEntitiesPath = path.join(
@@ -42,7 +43,7 @@ export class DatabaseManager {
 	public static readonly errorAlreadyExistsName = `%s with ID "%s" (with name "%s") already exists!`;
 
 	public connection!: TypeORM.Connection;
-	public options: TypeORM.ConnectionOptions;
+	private options: TypeORM.ConnectionOptions;
 
 	public prefixRepo!: TypeORM.Repository<Prefix>;
 	public commandRepo!: TypeORM.Repository<Command>;
@@ -92,9 +93,12 @@ export class DatabaseManager {
 
 		for (const prefix of allPrefixes) {
 			promises.push(
-				this.client.setGuildOrTwitchIdPrefix(
+				this.client.place.setPlace(
 					prefix.id,
-					prefix.guildOrTwitchId,
+					{
+						id: prefix.placeId,
+						platform: prefix.platform,
+					},
 					prefix.prefix
 				)
 			);
@@ -140,19 +144,28 @@ export class DatabaseManager {
 	async installDefaults(): Promise<void> {
 		const settled = await Promise.allSettled([
 			this.addGroup("Other", "❔", "default", true),
-			this.client.setGuildOrTwitchIdPrefix(
+			this.client.place.setPlace(
 				"default",
-				"default",
+				{
+					id: "default",
+					platform: "none",
+				},
 				this.client.defaultPrefix
 			),
-			this.client.setGuildOrTwitchIdPrefix(
+			this.client.place.setPlace(
 				"default",
-				"discord_default",
+				{
+					id: "default",
+					platform: "discord",
+				},
 				this.client.discord.defaultPrefix
 			),
-			this.client.setGuildOrTwitchIdPrefix(
+			this.client.place.setPlace(
 				"default",
-				"twitch_default",
+				{
+					id: "default",
+					platform: "twitch",
+				},
 				this.client.twitch.defaultPrefix
 			),
 		]);
@@ -196,7 +209,7 @@ export class DatabaseManager {
 	async addPrefix(
 		prefix: string,
 		id = SnowflakeUtil.generate(),
-		guildOrTwitchId: string,
+		place: Place,
 		bypassAlreadyExists = false
 	): Promise<Prefix> {
 		const connection = this.connection;
@@ -213,7 +226,8 @@ export class DatabaseManager {
 				await prefixRepo.findOne({
 					where: {
 						id: id,
-						guildOrTwitchId: guildOrTwitchId,
+						placeId: place.id,
+						platform: place.platform,
 					},
 				})
 			) {
@@ -221,17 +235,18 @@ export class DatabaseManager {
 					Utils.util.format(
 						DatabaseManager.errorAlreadyExists,
 						"prefix",
-						`${id}" with guildOrTwitchId "${guildOrTwitchId}`
+						`${id}" with place ${Utils.util.inspect(place)}`
 					)
 				);
 			}
 		}
 
-		return await prefixRepo.save(
+		return prefixRepo.save(
 			prefixRepo.create({
 				id: id,
+				placeId: place.id,
+				platform: place.platform,
 				prefix: prefix,
-				guildOrTwitchId: guildOrTwitchId,
 			})
 		);
 	}
@@ -240,7 +255,7 @@ export class DatabaseManager {
 	 * Get the default prefix
 	 */
 	async getDefaultPrefix(
-		guildOrTwitchId = "default",
+		place: Place,
 		relations: TypeORM.FindOptionsRelationKeyName<Prefix>[] = []
 	): Promise<Prefix> {
 		const connection = this.connection;
@@ -252,16 +267,16 @@ export class DatabaseManager {
 		let prefix = await prefixRepo.findOne({
 			where: {
 				id: "default",
-				guildOrTwitchId: guildOrTwitchId,
+				placeId: place.id,
+				platform: place.platform,
 			},
 			relations: relations,
-			// cache: true,
 		});
 		if (!prefix) {
 			prefix = await this.addPrefix(
 				this.client.defaultPrefix,
 				"default",
-				guildOrTwitchId
+				place
 			);
 		}
 		return prefix;
@@ -278,7 +293,7 @@ export class DatabaseManager {
 	 */
 	async findPrefixPossibilities(
 		prefixResolvable: PrefixResolvable,
-		guildOrTwitchId?: string,
+		place: Place,
 		prefixRelations: TypeORM.FindOptionsRelationKeyName<Prefix>[] = []
 	): Promise<Prefix[]> {
 		if (prefixResolvable instanceof Prefix) return [prefixResolvable];
@@ -294,10 +309,13 @@ export class DatabaseManager {
 			where: [
 				{
 					id: prefixResolvable,
-					guildOrTwitchId: guildOrTwitchId,
+					placeId: place.id,
+					platform: place.platform,
 				},
 				{
 					prefix: prefixResolvable,
+					placeId: place.id,
+					platform: place.platform,
 				},
 			],
 			relations: prefixRelations,
@@ -315,12 +333,12 @@ export class DatabaseManager {
 	 */
 	async findPrefix(
 		prefixResolvable: PrefixResolvable,
-		guildOrTwitchId = "default",
+		place: Place,
 		prefixRelations: TypeORM.FindOptionsRelationKeyName<Prefix>[] = []
 	): Promise<Prefix | undefined> {
 		const prefixes = await this.findPrefixPossibilities(
 			prefixResolvable,
-			guildOrTwitchId,
+			place,
 			prefixRelations
 		);
 
@@ -351,9 +369,9 @@ export class DatabaseManager {
 	 * Deletes a prefix from the database
 	 *
 	 * @param id Prefix ID
-	 * @param guildOrTwitchId Guild or Twitch channel ID
+	 * @param place Place data
 	 */
-	async deletePrefix(id: string, guildOrTwitchId: string): Promise<void> {
+	async deletePrefix(id: string, place: Place): Promise<void> {
 		if (this.connection) {
 			// Deletes command
 			await this.connection
@@ -363,8 +381,11 @@ export class DatabaseManager {
 				.where("id = :id", {
 					id: id,
 				})
-				.andWhere("guildOrTwitchId = :guildOrTwitchId", {
-					guildOrTwitchId: guildOrTwitchId,
+				.andWhere("placeId = :placeId", {
+					placeId: place.id,
+				})
+				.andWhere("platform = :platform", {
+					platform: place.platform,
 				})
 				.execute();
 		} else {
@@ -382,13 +403,16 @@ export class DatabaseManager {
 	 *
 	 * @param commandId Command ID
 	 * @param prefix Prefix string
+	 * @param place Place data
+	 * @param prefixRelations
+	 * @param commandRelations
 	 *
 	 * @returns Command object from database, or undefined
 	 */
 	async findCommand(
 		commandId: string,
 		prefix: string,
-		guildOrTwitchId: string,
+		place: Place,
 		prefixRelations: TypeORM.FindOptionsRelationKeyName<Prefix>[] = [
 			"commands",
 		],
@@ -409,7 +433,8 @@ export class DatabaseManager {
 		const findingPrefixes = prefixRepo.find({
 			where: {
 				prefix: prefix,
-				guildOrTwitchId: guildOrTwitchId,
+				placeId: place.id,
+				platform: place.platform,
 			},
 			relations: prefixRelations,
 		});
@@ -417,6 +442,8 @@ export class DatabaseManager {
 		const findingCommand = commandRepo.findOne({
 			where: {
 				id: commandId,
+				placeId: place.id,
+				platform: place.platform,
 			},
 			relations: commandRelations,
 		});
@@ -449,6 +476,8 @@ export class DatabaseManager {
 	 *
 	 * @param id Command ID string
 	 * @param response Response entity
+	 * @param defaultPrefix
+	 * @param place Place data
 	 * @param bypassAlreadyExists Bypasses the check for if the element
 	 * already exists. Default is set to false.
 	 *
@@ -458,6 +487,7 @@ export class DatabaseManager {
 		id: string,
 		response: Response,
 		defaultPrefix: PrefixResolvable,
+		place: Place,
 		bypassAlreadyExists = false
 	): Promise<Command> {
 		const connection = this.client.database.connection;
@@ -483,7 +513,7 @@ export class DatabaseManager {
 		// Tries and writes the command. If it fails,
 		// send an error message to console and delete the new response data.
 		try {
-			const prefix = await this.findPrefix(defaultPrefix);
+			const prefix = await this.findPrefix(defaultPrefix, place);
 
 			if (!prefix) {
 				throw new ReferenceError(
@@ -497,7 +527,7 @@ export class DatabaseManager {
 			const command = commandRepo.create({
 				id: id.toLocaleLowerCase(),
 				response: response,
-				defaultPrefix: await this.findPrefix(defaultPrefix),
+				defaultPrefix: place,
 				prefixes: [prefix],
 			});
 
@@ -842,12 +872,14 @@ export class DatabaseManager {
 	 *
 	 * @param commandName Command name
 	 * @param nameOrId Name or ID of the group
+	 * @param place
+	 * @param commandPrefix
 	 */
 	async setGroup(
 		commandName: string,
 		nameOrId: string,
+		place: Place,
 		commandPrefix?: string,
-		guildOrTwitchId = "default"
 	): Promise<Group> {
 		const connection = this.connection;
 		if (connection) {
@@ -855,17 +887,14 @@ export class DatabaseManager {
 			const commandRepo = connection.getRepository(Command);
 			const [group, prefix] = await Promise.all([
 				this.findGroup(nameOrId),
-				this.client.getGuildOrTwitchIdPrefix(
-					"default",
-					guildOrTwitchId
-				),
+				this.client.place.getPlace("default", place),
 			]);
 
 			if (group && prefix) {
 				const command = await this.findCommand(
 					commandName,
 					commandPrefix ? commandPrefix : prefix,
-					guildOrTwitchId
+					place
 				);
 				if (command) {
 					const commands: Command[] = [];
@@ -886,7 +915,7 @@ export class DatabaseManager {
 			} else {
 				if (!prefix) {
 					throw new ReferenceError(
-						`Couldn't find prefix "${prefix}" with guildOrTwitchId "${guildOrTwitchId}"!`
+						`Couldn't find prefix "${prefix}" with place ID "${place.id}"!`
 					);
 				} else if (!group) {
 					throw new ReferenceError(

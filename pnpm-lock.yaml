@@ -28,8 +28,6 @@ importers:
       prettier: ^2.2.1
       rimraf: ^3.0.2
       ts-jest: ^26.4.4
-  C:/Users/Jonathan/AppData/Roaming/npm/pnpm-global:
-    specifiers: {}
   packages/core:
     dependencies:
       '@framedjs/logger': link:../logger

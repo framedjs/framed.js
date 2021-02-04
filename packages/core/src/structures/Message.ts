@@ -11,6 +11,7 @@ import { Client } from "./Client";
 import { TwitchMessageOptions } from "../interfaces/TwitchMessageOptions";
 import { Platform } from "../types/Platform";
 import { Logger } from "@framedjs/logger";
+import { Place } from "../interfaces/Place";
 
 enum ArgumentState {
 	Quoted,
@@ -30,6 +31,9 @@ export class Message {
 	prefix?: string;
 	args?: Array<string>;
 	command?: string;
+
+	private place?: Place;
+	private placeTryNonDefaultId?: Place;
 
 	/**
 	 * Create a new Framed Message Instance.
@@ -187,20 +191,18 @@ export class Message {
 	//#region Basic gets for the constructor
 
 	/**
-	 * Elements includes prefix, args, and command
+	 * Elements includes prefix, args, and command.
 	 */
 	async getMessageElements(
-		guildOrTwitchId?: string
+		place?: Place
 	): Promise<{
 		prefix: string | undefined;
 		args: string[] | undefined;
 		command: string | undefined;
 	}> {
-		guildOrTwitchId = guildOrTwitchId
-			? guildOrTwitchId
-			: await this.getGuildOrTwitchId();
+		place = place ? place : await this.getPlace();
 
-		this.prefix = this.getPrefix(guildOrTwitchId);
+		this.prefix = this.getPrefix(place);
 		this.args = this.getArgs();
 		this.command = this.getCommand();
 
@@ -209,11 +211,13 @@ export class Message {
 
 	/**
 	 * Gets the prefix of the message.
+	 *
+	 * @param place Place data
+	 *
+	 * @returns prefix
 	 */
-	private getPrefix(guildOrTwitchId = "default"): string | undefined {
-		const prefixes = [
-			...this.client.plugins.getPossiblePrefixes(guildOrTwitchId),
-		];
+	private getPrefix(place: Place): string | undefined {
+		const prefixes = [...this.client.plugins.getPossiblePrefixes(place)];
 		let prefix: string | undefined;
 		for (const testPrefix of prefixes) {
 			if (this.content.startsWith(testPrefix)) {
@@ -527,7 +531,7 @@ export class Message {
 	//#endregion
 
 	/**
-	 * Gets the guildOrTwitchId value, but solely for use with Discord.
+	 * Gets the place value, but solely for use with Discord.
 	 * Note that it can either return the guild ID, or "discord_default".
 	 *
 	 * @param client Framed client
@@ -536,48 +540,71 @@ export class Message {
 	 * There is still a chance however for it to be a
 	 * default value, if the DM isn't from a guild.
 	 */
-	static discordGetGuildOrTwitchId(
+	static discordGetPlace(
 		client: Client,
 		guild: Discord.Guild | null | undefined,
 		tryNonDefaultId = false
-	): string {
-		// Hacky re-implementation of msg.getGuildOrTwitchId
-		let guildOrTwitchId = guild ? guild.id : "discord_default";
-		const validPrefixes = client.guildOrTwitchIdPrefixesArray.filter(
+	): Place {
+		// Hacky re-implementation of msg.getPlace
+		let placeId = guild ? guild.id : "default";
+
+		// Attempts to find any entries with place
+		// If none is found, fallback to defaults
+		const validPrefixes = client.place.placePrefixesArray.filter(
 			value =>
 				// Gets the key, splits it with the split string, and
-				// gets the guildOrTwitchId (which is index 1)
-				value[0].split(client.guildOrTwitchIdSplitString)[1] ===
-				guildOrTwitchId
+				// gets the place (which is index 1)
+				value[0].split(client.place.sep)[1] === placeId
 		);
 
 		if (!tryNonDefaultId) {
-			// If no valid prefixes were found, use discord_default
-			guildOrTwitchId =
-				validPrefixes.length == 0 ? "discord_default" : guildOrTwitchId;
+			// If no valid prefixes were found, use default
+			placeId = validPrefixes.length == 0 ? "default" : placeId;
 		}
 
-		return guildOrTwitchId;
+		return {
+			id: placeId,
+			platform: "discord",
+		};
 	}
 
 	/**
 	 * Gets the guild or Twitch ID. If it can't be found, this function will fallback to returning "twitch_default" or "discord_default".
 	 * If things go wrong, this function might also return "default".
-	 * 
+	 *
 	 * @param tryNonDefaultId Tries to get a non-default ID.
 	 * There is still a chance however for it to be a default value.
 	 */
-	async getGuildOrTwitchId(tryNonDefaultId = false): Promise<string> {
-		let guildOrTwitchId: string | undefined;
+	async getPlace(
+		tryNonDefaultId = false,
+		forceNoCache = false
+	): Promise<Place> {
+		// If the result is cached, and we're not forced to not use the cache, use that instead.
+
+		if (!forceNoCache) {
+			if (this.place && !tryNonDefaultId) {
+				return this.place;
+			} else if (this.placeTryNonDefaultId && tryNonDefaultId) {
+				return this.placeTryNonDefaultId;
+			}
+		}
+
+		let placeId: string | undefined;
 
 		switch (this.platform) {
 			case "discord":
 				if (this.discord) {
-					return Message.discordGetGuildOrTwitchId(
+					const place = Message.discordGetPlace(
 						this.client,
 						this.discord.guild,
 						tryNonDefaultId
 					);
+
+					// Caching
+					if (!tryNonDefaultId) this.place = place;
+					else this.placeTryNonDefaultId = place;
+
+					return place;
 				}
 				break;
 			case "twitch":
@@ -586,16 +613,17 @@ export class Message {
 						this.twitch.channel
 					);
 					if (channel) {
-						guildOrTwitchId = channel.id;
+						placeId = channel.id;
 					} else {
-						guildOrTwitchId = "twitch_default";
+						placeId = "default";
 					}
 				}
 				break;
 		}
 
-		if (!guildOrTwitchId) {
-			// This should NEVER happen, but just in case, use "default" as the ID
+		// For no place ID;
+		// This should NEVER happen, but just in case, use "default" as the ID
+		if (!placeId) {
 			try {
 				throw new Error(
 					`Platform "${this.platform}" doesn't have any corresponding data to use.`
@@ -605,36 +633,37 @@ export class Message {
 			}
 
 			Logger.warn('Attempting to use the fallback "default" instead');
-			guildOrTwitchId = "default";
+			placeId = "default";
 		}
 
-		// Attempts to find any entries with guildOrTwitchId
+		// Attempts to find any entries with place
 		// If none is found, fallback to defaults
-
-		const validPrefixes = this.client.guildOrTwitchIdPrefixesArray.filter(
+		const validPrefixes = this.client.place.placePrefixesArray.filter(
 			value =>
 				// Gets the key, splits it with the split string, and
-				// gets the guildOrTwitchId (which is index 1)
-				value[0].split(this.client.guildOrTwitchIdSplitString)[1] ===
-				guildOrTwitchId
+				// gets the placeId (which is index 1)
+				value[0].split(this.client.place.sep)[1] === placeId
 		);
 
 		// No valid prefixes were found, use default
 		if (validPrefixes.length == 0) {
-			switch (this.platform) {
-				case "discord":
-					guildOrTwitchId = "discord_default";
-					break;
-				case "twitch":
-					guildOrTwitchId = "twitch_default";
-					break;
-				default:
-					guildOrTwitchId = "default";
-					break;
-			}
+			placeId = "default";
 		}
 
-		return guildOrTwitchId;
+		const place: Place = {
+			id: placeId,
+			platform: this.platform,
+		};
+
+		// Caching
+		if (!tryNonDefaultId) this.place = place;
+		else this.placeTryNonDefaultId = place;
+
+		// Returns the result
+		return {
+			id: placeId,
+			platform: this.platform,
+		};
 	}
 
 	/**
@@ -699,9 +728,9 @@ export class Message {
 	static async format(
 		arg: string,
 		client: Client,
-		guildOrTwitchId = "default"
+		place: Place
 	): Promise<string> {
-		return client.formatting.format(arg, guildOrTwitchId);
+		return client.formatting.format(arg, place);
 	}
 
 	/**

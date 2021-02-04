@@ -16,17 +16,17 @@ export { BaseRouter } from "./structures/BaseRouter";
 // Interfaces
 export { Argument } from "./interfaces/Argument";
 // export { ArgumentOptions } from "./interfaces/ArgumentOptions"
+export { BaseCommandOptions } from "./interfaces/BaseCommandOptions";
 // export { ClientOptions } from "./interfaces/ClientOptions";
 // export { DiscordMessage } from "./interfaces/DiscordMessage";
 // export { DiscordMessageOptions } from "./interfaces/DiscordMessageOptions";
-export { FoundCommandData } from "./interfaces/FoundCommandData";
-export { MessageOptions } from "./interfaces/MessageOptions";
-export { LoginOptions } from "./interfaces/LoginOptions";
-export { InlineOptions } from "./interfaces/InlineOptions";
-export { BaseCommandOptions } from "./interfaces/BaseCommandOptions";
-
 export { DiscohookOutputData } from "./interfaces/other/DiscohookOutputData";
+export { FoundCommandData } from "./interfaces/FoundCommandData";
 export { HelpData } from "./interfaces/other/HelpData";
+export { LoginOptions } from "./interfaces/LoginOptions";
+export { MessageOptions } from "./interfaces/MessageOptions";
+export { Place } from "./interfaces/Place";
+export { InlineOptions } from "./interfaces/InlineOptions";
 export { ResponseData } from "./managers/database/interfaces/ResponseData";
 
 // TypeORM

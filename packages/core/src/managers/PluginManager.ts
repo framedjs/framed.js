@@ -19,6 +19,7 @@ import Command from "./database/entities/Command";
 
 import { DiscordUtils } from "../utils/discord/DiscordUtils";
 import { EmbedHelper } from "../utils/discord/EmbedHelper";
+import { Place } from "../interfaces/Place";
 
 export class PluginManager {
 	/**
@@ -74,7 +75,7 @@ export class PluginManager {
 		this.map.set(plugin.id, plugin);
 
 		const importFilter = this.client.importFilter;
-	
+
 		// Load commands
 		// TODO: excluding subcommands doesn't work
 		if (plugin.paths.commands) {
@@ -161,33 +162,30 @@ export class PluginManager {
 	/**
 	 * List of all possible prefixes for the specific guild or Twitch channel.
 	 *
-	 * @param guildOrTwitchId Guild ID or Twitch channel ID
+	 * @param place Place data
 	 *
 	 * @returns String array of all possible prefixes
 	 */
-	getPossiblePrefixes(guildOrTwitchId = "default"): string[] {
+	getPossiblePrefixes(place: Place): string[] {
 		const prefixes = this.defaultPrefixes;
 
-		// From client: adds defaults to the list of potential prefixes
-		if (guildOrTwitchId == "default") {
-			prefixes.push(this.client.defaultPrefix);
-		} else if (guildOrTwitchId == "discord_default") {
-			prefixes.push(this.client.discord.defaultPrefix);
-		} else if (guildOrTwitchId == "twitch_default") {
-			prefixes.push(this.client.twitch.defaultPrefix);
-		}
+		// // From client: adds defaults to the list of potential prefixes
+		// if (place == "default") {
+		// 	prefixes.push(this.client.defaultPrefix);
+		// } else if (place == "discord_default") {
+		// 	prefixes.push(this.client.discord.defaultPrefix);
+		// } else if (place == "twitch_default") {
+		// 	prefixes.push(this.client.twitch.defaultPrefix);
+		// }
 
 		// From commands: adds to the list of potential prefixes (also removes duplicates)
 		for (const command of this.commandsArray) {
-			const prefixesWithGuildOrTwitchId = command.getPrefixes(
-				guildOrTwitchId
-			);
-			const commandPrefixes = prefixesWithGuildOrTwitchId;
+			const commandPrefixes = command.getPrefixes(place);
 			for (const prefix of commandPrefixes) {
 				if (!prefixes.includes(prefix)) {
 					prefixes.push(prefix);
 				}
-			}			
+			}
 		}
 
 		Logger.silly(`Prefixes: ${prefixes}`);
@@ -202,7 +200,7 @@ export class PluginManager {
 	 */
 	async getFoundCommandData(
 		msg: Message,
-		guildOrTwitchId?: string
+		place: Place
 	): Promise<FoundCommandData[]>;
 
 	/**
@@ -214,7 +212,7 @@ export class PluginManager {
 	async getFoundCommandData(
 		command: string,
 		args: string[],
-		guildOrTwitchId?: string,
+		place: Place,
 		prefix?: string
 	): Promise<FoundCommandData[]>;
 
@@ -226,41 +224,35 @@ export class PluginManager {
 	 */
 	async getFoundCommandData(
 		msgOrCommand: Message | string,
-		argsOrGuildOrTwitchId?: string[] | string | undefined,
-		guildOrTwitchId = "default",
+		argsOrPlace?: string[] | Place,
+		place?: Place,
 		prefix?: string
 	): Promise<FoundCommandData[]> {
 		let command: string;
 		let args: string[];
 
 		if (msgOrCommand instanceof Message) {
-			if (typeof argsOrGuildOrTwitchId != "string") {
-				throw new Error(
-					`argsOrGuildOrTwitchId should be a string, not an ${typeof argsOrGuildOrTwitchId} if msgOrCommand is a Message`
-				);
-			}
-
 			if (msgOrCommand.command) {
 				prefix = msgOrCommand.prefix;
 				command = msgOrCommand.command;
 				args = msgOrCommand.args ? msgOrCommand.args : [];
-				guildOrTwitchId = argsOrGuildOrTwitchId
-					? argsOrGuildOrTwitchId
-					: await msgOrCommand.getGuildOrTwitchId();
+				place = place ? place : await msgOrCommand.getPlace();
 			} else {
 				throw new Error(`Command parameter in Message was undefined`);
 			}
 		} else {
-			if (typeof argsOrGuildOrTwitchId == "string") {
+			if (!(argsOrPlace instanceof Array)) {
 				throw new Error(
-					`argsOrGuildOrTwitchId can't be a string, if msgOrComamnd is a string`
+					`argsOrPlace must be an Array, if msgOrComamnd is a string`
 				);
-			} else if (argsOrGuildOrTwitchId === undefined) {
-				throw new Error(`argsOrGuildOrTwitchId cannot be undefined!`);
 			}
 
 			command = msgOrCommand;
-			args = argsOrGuildOrTwitchId;
+			args = argsOrPlace;
+
+			if (!place) {
+				throw new ReferenceError("Variable place is undefined");
+			}
 		}
 
 		const data: FoundCommandData[] = [];
@@ -268,9 +260,9 @@ export class PluginManager {
 		// Runs the commands
 		let commandList: BaseCommand[] = [];
 		if (msgOrCommand instanceof Message) {
-			commandList = this.getCommands(msgOrCommand, guildOrTwitchId);
+			commandList = this.getCommands(msgOrCommand, place);
 		} else {
-			commandList = this.getCommands(command, guildOrTwitchId, prefix);
+			commandList = this.getCommands(command, place, prefix);
 		}
 
 		for (const command of commandList) {
@@ -290,14 +282,14 @@ export class PluginManager {
 	 * Gets a command
 	 *
 	 * @param command Command ID
-	 * @param guildOrTwitchId Discord guild or Twitch channel ID
+	 * @param place Place data
 	 * @param prefix Prefix
 	 *
 	 * @returns BaseCommand or undefined
 	 */
 	getCommand(
 		command: string,
-		guildOrTwitchId?: string,
+		place: Place,
 		prefix?: string
 	): BaseCommand | undefined;
 
@@ -305,29 +297,30 @@ export class PluginManager {
 	 * Gets a command
 	 *
 	 * @param msg Framed Message
-	 * @param guildOrTwitchId Discord guild or Twitch channel ID
+	 * @param place Place data
 	 *
 	 * @returns BaseCommand or undefined
 	 */
-	getCommand(msg: Message, guildOrTwitchId?: string): BaseCommand | undefined;
+	getCommand(msg: Message, place: Place): BaseCommand | undefined;
 
 	/**
 	 * Gets a command
 	 *
 	 * @param msgOrCommand Framed Message or command string
+	 * @param place Place data
 	 * @param prefix Prefix
 	 *
 	 * @returns BaseCommand or undefined
 	 */
 	getCommand(
 		msgOrCommand: Message | string,
-		guildOrTwitchId = "default",
+		place: Place,
 		prefix?: string
 	): BaseCommand | undefined {
 		if (msgOrCommand instanceof Message) {
-			return this.getCommands(msgOrCommand, guildOrTwitchId)[0];
+			return this.getCommands(msgOrCommand, place)[0];
 		} else {
-			return this.getCommands(msgOrCommand, guildOrTwitchId, prefix)[0];
+			return this.getCommands(msgOrCommand, place, prefix)[0];
 		}
 	}
 
@@ -339,16 +332,12 @@ export class PluginManager {
 	 * overlapping commands from different plugins.
 	 *
 	 * @param command Command ID
-	 * @param guildOrTwitchId Discord guild or Twitch channel ID
+	 * @param place Place data
 	 * @param prefix Prefix
 	 *
 	 * @returns List of commands with the same ID.
 	 */
-	getCommands(
-		command: string,
-		guildOrTwitchId?: string,
-		prefix?: string
-	): BaseCommand[];
+	getCommands(command: string, place: Place, prefix?: string): BaseCommand[];
 
 	/**
 	 * Get a list of plugin commands from a message.
@@ -358,10 +347,11 @@ export class PluginManager {
 	 * overlapping commands from different plugins.
 	 *
 	 * @param msg Framed message
+	 * @param place Place data
 	 *
 	 * @returns List of commands with the same ID.
 	 */
-	getCommands(msg: Message, guildOrTwitchId?: string): BaseCommand[];
+	getCommands(msg: Message, place: Place): BaseCommand[];
 
 	/**
 	 * Get a list of plugin commands from a message.
@@ -371,14 +361,14 @@ export class PluginManager {
 	 * overlapping commands from different plugins.
 	 *
 	 * @param msgOrCommand Framed Message or command
-	 * @param guildOrTwitchId Discord guild or Twitch channel ID
-	 * @param prefix Prefix
+	 * @param place Place data
+	 * @param prefix Prefix string
 	 *
 	 * @returns List of commands with the same ID.
 	 */
 	getCommands(
 		msgOrCommand: Message | string,
-		guildOrTwitchId = "default",
+		place: Place,
 		prefix?: string
 	): BaseCommand[] {
 		const commandList: BaseCommand[] = [];
@@ -411,7 +401,7 @@ export class PluginManager {
 			if (command) {
 				const commandUsesPrefix =
 					prefix != undefined &&
-					command.getPrefixes(guildOrTwitchId).includes(prefix);
+					command.getPrefixes(place).includes(prefix);
 
 				const commandUsesDefaultPrefix =
 					prefix != undefined &&
@@ -436,8 +426,7 @@ export class PluginManager {
 	 * @param msg Message object
 	 */
 	async runCommand(msg: Message): Promise<Map<string, boolean>> {
-		const guildOrTwitchId = await msg.getGuildOrTwitchId();
-
+		const place = await msg.getPlace();
 		const map = new Map<string, boolean>();
 
 		// If the author is a bot, we ignore their command.
@@ -454,16 +443,13 @@ export class PluginManager {
 		}
 
 		try {
-			if (msg.prefix && msg.command && msg.args) {
+			if (msg.prefix && msg.command) {
 				Logger.debug(
 					`Checking for commands for "${msg.prefix}${msg.command}"`
 				);
 
 				// Attempts to get the command data from a message, including comparing prefixes
-				const data = await this.getFoundCommandData(
-					msg,
-					guildOrTwitchId
-				);
+				const data = await this.getFoundCommandData(msg, place);
 
 				for await (const element of data) {
 					// Attempts to get the subcommand if it exists.
@@ -492,14 +478,14 @@ export class PluginManager {
 					}
 				}
 
-				if (guildOrTwitchId) {
+				if (place) {
 					// Attempts to runs commands through database
 					const dbCommand:
 						| Command
 						| undefined = await this.client.database.findCommand(
 						msg.command,
 						msg.prefix,
-						guildOrTwitchId
+						place
 					);
 
 					if (dbCommand) {
@@ -524,6 +510,8 @@ export class PluginManager {
 	 *
 	 * @param dbCommand Command entity
 	 * @param msg Framed message object
+	 *
+	 * @returns true, if there was a database command to send.
 	 */
 	async sendDatabaseCommand(
 		dbCommand: Command,
@@ -545,6 +533,7 @@ export class PluginManager {
 
 			if (msg.discord) {
 				for await (const data of responseData.list) {
+					const place = await msg.getPlace();
 					const embeds = data.discord?.embeds;
 
 					for (let i = 0; i < (embeds ? embeds.length : 1); i++) {
@@ -558,18 +547,18 @@ export class PluginManager {
 
 							if (embed) {
 								embed = await this.client.formatting.formatEmbed(
-									embed
+									embed,
+									place
 								);
 							}
 						}
 
 						// If it's the first embed, and data content is a thing
 						if (i == 0 && data.content && data.content.length > 0) {
-							const guildOrTwitchId = await msg.getGuildOrTwitchId();
 							const formattedContent = await Message.format(
 								data.content,
 								this.client,
-								guildOrTwitchId
+								place
 							);
 
 							// If there's an embed, send it. If not, don't
@@ -627,14 +616,14 @@ export class PluginManager {
 	 */
 	static async sendHelpForCommand(
 		msg: Message,
-		guildOrTwitchId = "default"
+		place: Place
 	): Promise<boolean> {
 		const pluginManager = msg.client.plugins;
 
 		const helpPrefix = pluginManager.map
 			.get("default.bot.info")
 			?.commands.get("help")
-			?.getDefaultPrefix(guildOrTwitchId);
+			?.getDefaultPrefix(place);
 
 		const content = oneLineInlineLists`${
 			helpPrefix ? helpPrefix : msg.prefix
@@ -723,12 +712,13 @@ export class PluginManager {
 	 * Creates Discord embed field data from plugin commands, showing commands.
 	 *
 	 * @param helpList Data to choose certain commands
+	 * @param place Place data
 	 *
 	 * @returns Discord embed field data, containing brief info on commands
 	 */
 	async createHelpFields(
 		helpList: HelpData[],
-		guildOrTwitchId = "default",
+		place: Place
 	): Promise<Discord.EmbedFieldData[]> {
 		const connection = this.client.database.connection;
 		if (!connection)
@@ -785,7 +775,7 @@ export class PluginManager {
 						await this.client.plugins.getFoundCommandData(
 							command,
 							args,
-							guildOrTwitchId
+							place
 						)
 					)[0];
 
@@ -793,7 +783,7 @@ export class PluginManager {
 					if (foundData) {
 						const commandString = this.client.formatting.getCommandRan(
 							foundData,
-							guildOrTwitchId
+							place
 						);
 						const lastSubcommand =
 							foundData.subcommands[

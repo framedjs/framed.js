@@ -14,6 +14,7 @@ import { DiscohookOutputData } from "../../interfaces/other/DiscohookOutputData"
 import { oneLine } from "common-tags";
 import Axios from "axios";
 import { Client } from "../../structures/Client";
+import { Place } from "../../interfaces/Place";
 
 interface RequireAllScriptData {
 	[key: string]: ScriptElement;
@@ -784,14 +785,20 @@ export class DiscordUtils {
 	}
 
 	/**
+	 * Renders out Discohook Output data.
+	 *
+	 * If client and place are specified, formatting will be done
 	 *
 	 * @param newData Data
 	 * @param channel Discord channel
+	 * @param client
+	 * @param place
 	 */
 	static async renderOutputData(
 		newData: DiscohookOutputData,
 		channel: Discord.TextChannel | Discord.NewsChannel | Discord.DMChannel,
-		client?: Client
+		client?: Client,
+		place?: Place
 	): Promise<void> {
 		Logger.silly(
 			`newEmbedData:\n${Utils.util.inspect(newData, false, 7, true)}`
@@ -817,15 +824,18 @@ export class DiscordUtils {
 				: undefined;
 
 			// Format embed if it can
-			if (client && embed) {
-				embed = await client.formatting.formatEmbed(embed);
+			if (embed && client && place) {
+				embed = await client.formatting.formatEmbed(embed, place);
 			}
 
 			// Content will only be used for the first embed
-			const content =
+			let content =
 				i == 0
 					? (Utils.turnUndefinedIfNull(newData.content) as string)
 					: undefined;
+			if (content && client && place) {
+				content = await client.formatting.format(content, place);
+			}
 
 			if (content) {
 				if (embed) {

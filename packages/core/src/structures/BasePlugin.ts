@@ -10,6 +10,7 @@ import Options from "../interfaces/other/RequireAllOptions";
 import util from "util";
 import { Prefixes } from "../interfaces/Prefixes";
 import { ImportError } from "./errors/non-friendly/ImportError";
+import { Place } from "../interfaces/Place";
 
 export abstract class BasePlugin {
 	readonly client: Client;
@@ -96,10 +97,14 @@ export abstract class BasePlugin {
 		this.fullGroupId = `${this.id}.group.${this.groupId}`;
 	}
 
-	getDefaultPrefix(guildOrTwitchId = "default"): string {
-		const prefix = this.client.getGuildOrTwitchIdPrefix(
+	/**
+	 * 
+	 * @param place 
+	 */
+	getDefaultPrefix(place: Place): string {
+		const prefix = this.client.place.getPlace(
 			"default",
-			guildOrTwitchId
+			place
 		);
 		if (!prefix) {
 			Logger.warn(

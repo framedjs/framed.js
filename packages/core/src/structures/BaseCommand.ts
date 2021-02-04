@@ -12,6 +12,7 @@ import { BaseSubcommand } from "./BaseSubcommand";
 import { oneLine } from "common-tags";
 import { Prefixes } from "../interfaces/Prefixes";
 import { InlineOptions } from "../interfaces/InlineOptions";
+import { Place } from "../interfaces/Place";
 
 export abstract class BaseCommand {
 	// static readonly type: string = "BaseCommand";
@@ -69,7 +70,7 @@ export abstract class BaseCommand {
 	/**
 	 * Has defaultPrefix been explicitly set by the script, or were the values gained implicitly?
 	 */
-	defaultPrefixExplicitSet = false;
+	defaultPrefixExplicitlySet = false;
 
 	/**
 	 * A list of all possible prefixes.
@@ -179,10 +180,10 @@ export abstract class BaseCommand {
 				twitch: info.defaultPrefix,
 				default: info.defaultPrefix,
 			};
-			this.defaultPrefixExplicitSet = true;
+			this.defaultPrefixExplicitlySet = true;
 		} else if (info.defaultPrefix != undefined) {
 			this.defaultPrefix = info.defaultPrefix;
-			this.defaultPrefixExplicitSet = true;
+			this.defaultPrefixExplicitlySet = true;
 		} else {
 			this.defaultPrefix = {
 				discord: this.client.discord.defaultPrefix,
@@ -219,14 +220,35 @@ export abstract class BaseCommand {
 		this.subcommandAliases = new Map();
 	}
 
-	getDefaultPrefix(guildOrTwitchId = "default"): string {
-		const prefix = this.client.getGuildOrTwitchIdPrefix(
-			"default",
-			guildOrTwitchId
-		);
+	/**
+	 * Gets the default prefix for the command.
+	 *
+	 * @param place Place data
+	 */
+	getDefaultPrefix(place: Place): string {
+		// If the prefix is set explicitly in the script, use that instead
+		if (this.defaultPrefixExplicitlySet) {
+			switch (place.platform) {
+				case "discord":
+					return this.defaultPrefix.discord;
+				case "twitch":
+					return this.defaultPrefix.twitch;
+				case "none":
+					Logger.warn(
+						oneLine`defaultPrefixExplicitSet:
+						Couldn't find default prefix from client;
+						falling back to defaultPrefix.default`
+					);
+					return this.defaultPrefix.default;
+			}
+		}
+
+		const prefix = this.client.place.getPlace("default", place);
 		if (!prefix) {
 			Logger.warn(
-				"Couldn't find default prefix from client; falling back to defaultPrefix.default"
+				oneLine`
+				Couldn't find default prefix from client;
+				falling back to defaultPrefix.default`
 			);
 			return this.defaultPrefix.default;
 		}
@@ -236,9 +258,9 @@ export abstract class BaseCommand {
 	/**
 	 * Returns a list of prefixes that the command can use.
 	 *
-	 * @param guildOrTwitchId
+	 * @param place Place data
 	 */
-	getPrefixes(guildOrTwitchId = "default"): string[] {
+	getPrefixes(place: Place): string[] {
 		const prefixes: string[] = [];
 
 		// Puts all the command prefixes in an array
@@ -246,23 +268,20 @@ export abstract class BaseCommand {
 			prefixes.push(...this.rawInfo.prefixes);
 		}
 
-		// Filters matching guildOrTwitchIds, then
+		// Filters matching placePrefixes IDs, then
 		// Puts all those matching prefixes into an array
-		this.client.guildOrTwitchIdPrefixesArray
-			.filter(
-				thisGuildOrTwitchId =>
-					thisGuildOrTwitchId[0][1] == guildOrTwitchId
-			)
-			.forEach(newPrefix => {
-				const value = newPrefix[1];
+		this.client.place.placePrefixesArray
+			.filter(prefix => {
+				const placeId = prefix[0][1];
+				return placeId == place.id;
+			})
+			.forEach(prefixValue => {
+				const value = prefixValue[1];
 				prefixes.push(value);
 			});
 
 		// Gets the default prefix from the guild or Twitch channel
-		const prefix = this.client.getGuildOrTwitchIdPrefix(
-			"default",
-			guildOrTwitchId
-		);
+		const prefix = this.client.place.getPlace("default", place);
 
 		// If this list doesn't include the default prefix from there, add it to the array
 		if (prefix && !prefixes.includes(prefix)) {
@@ -272,8 +291,12 @@ export abstract class BaseCommand {
 		return prefixes;
 	}
 
+	/**
+	 *
+	 * @param place Place data
+	 */
 	getCommandNotationFormatting(
-		guildOrTwitchId = "default"
+		place: Place
 	): {
 		about: string | undefined;
 		description: string | undefined;
@@ -283,83 +306,31 @@ export abstract class BaseCommand {
 	} {
 		return {
 			about: this.client.formatting.formatCommandNotation(
-				this,
 				this.about,
-				guildOrTwitchId
+				this,
+				place
 			),
 			description: this.client.formatting.formatCommandNotation(
-				this,
 				this.description,
-				guildOrTwitchId
+				this,
+				place
 			),
 			examples: this.client.formatting.formatCommandNotation(
-				this,
 				this.examples,
-				guildOrTwitchId
+				this,
+				place
 			),
 			notes: this.client.formatting.formatCommandNotation(
-				this,
 				this.notes,
-				guildOrTwitchId
+				this,
+				place
 			),
 			usage: this.client.formatting.formatCommandNotation(
-				this,
 				this.usage,
-				guildOrTwitchId
+				this,
+				place
 			),
 		};
-	}
-
-	/**
-	 * Parses custom $() formatting
-	 */
-	async formatBatch(): Promise<void> {
-		// const keys: string[] = [];
-		// const queue = new Map<string, Promise<string>>();
-		// const addToQueue = (name: string, text?: string): void => {
-		// 	if (!text) return;
-		// 	keys.push(name);
-		// 	queue.set(name, Message.format(text, this.client));
-		// };
-		// addToQueue("examples", this.examples);
-		// addToQueue("usage", this.usage);
-		// addToQueue("about", this.about);
-		// addToQueue("description", this.description);
-		// const settledQueue = await Promise.allSettled(queue.values());
-		// const finalKeys = [...queue.keys()];
-		// const finalSettledQueue = [...settledQueue];
-		// for (let i = 0; i < finalKeys.length; i++) {
-		// 	const finalKey = finalKeys[i];
-		// 	const finalQueue = finalSettledQueue[i];
-		// 	if (finalQueue.status == "fulfilled") {
-		// 		const matchingKey = keys.find(k => k == finalKey);
-		// 		if (matchingKey) {
-		// 			switch (matchingKey) {
-		// 				case "examples":
-		// 					this.examples = finalQueue.value;
-		// 					break;
-		// 				case "usage":
-		// 					this.usage = finalQueue.value;
-		// 					break;
-		// 				case "about":
-		// 					this.about = finalQueue.value;
-		// 					break;
-		// 				case "description":
-		// 					this.description = finalQueue.value;
-		// 					break;
-		// 				default:
-		// 					Logger.error(
-		// 						`BaseCommand.ts: Key "${finalKey}" is unknown`
-		// 					);
-		// 					break;
-		// 			}
-		// 		}
-		// 	} else {
-		// 		Logger.error(
-		// 			`BaseCommand.ts: ${finalQueue.status} - ${finalQueue.reason}`
-		// 		);
-		// 	}
-		// }
 	}
 
 	/**
