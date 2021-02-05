@@ -33,7 +33,7 @@ export class PlaceManager extends Base {
 	 * @param id Prefix ID
 	 * @param place Place data
 	 */
-	getPlace(id: string, place: Place): string | undefined {
+	getPlacePrefix(id: string, place: Place): string | undefined {
 		return this.placePrefixes.get(this.generatePlaceKey(id, place));
 	}
 
@@ -44,7 +44,7 @@ export class PlaceManager extends Base {
 	 * @param place Place data
 	 * @param prefix Prefix string
 	 */
-	async setPlace(id: string, place: Place, prefix: string): Promise<void> {
+	async setPlacePrefix(id: string, place: Place, prefix: string): Promise<void> {
 		await this.client.database.addPrefix(prefix, id, place, true);
 		this.placePrefixes.set(this.generatePlaceKey(id, place), prefix);
 	}
@@ -55,7 +55,7 @@ export class PlaceManager extends Base {
 	 * @param id Prefix ID
 	 * @param place Place data
 	 */
-	async deletePlace(id: string, place: Place): Promise<void> {
+	async deletePlacePrefix(id: string, place: Place): Promise<void> {
 		if (this.placePrefixes.get(this.generatePlaceKey(id, place))) {
 			await this.client.database.deletePrefix(id, place);
 		}

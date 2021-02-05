@@ -243,7 +243,7 @@ export abstract class BaseCommand {
 			}
 		}
 
-		const prefix = this.client.place.getPlace("default", place);
+		const prefix = this.client.place.getPlacePrefix("default", place);
 		if (!prefix) {
 			Logger.warn(
 				oneLine`
@@ -281,7 +281,7 @@ export abstract class BaseCommand {
 			});
 
 		// Gets the default prefix from the guild or Twitch channel
-		const prefix = this.client.place.getPlace("default", place);
+		const prefix = this.client.place.getPlacePrefix("default", place);
 
 		// If this list doesn't include the default prefix from there, add it to the array
 		if (prefix && !prefixes.includes(prefix)) {

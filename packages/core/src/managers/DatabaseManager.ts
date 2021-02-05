@@ -1,3 +1,4 @@
+/* eslint-disable no-mixed-spaces-and-tabs */
 import * as TypeORM from "typeorm";
 import path from "path";
 import { Utils } from "@framedjs/shared";
@@ -93,7 +94,7 @@ export class DatabaseManager {
 
 		for (const prefix of allPrefixes) {
 			promises.push(
-				this.client.place.setPlace(
+				this.client.place.setPlacePrefix(
 					prefix.id,
 					{
 						id: prefix.placeId,
@@ -144,7 +145,7 @@ export class DatabaseManager {
 	async installDefaults(): Promise<void> {
 		const settled = await Promise.allSettled([
 			this.addGroup("Other", "❔", "default", true),
-			this.client.place.setPlace(
+			this.client.place.setPlacePrefix(
 				"default",
 				{
 					id: "default",
@@ -152,7 +153,7 @@ export class DatabaseManager {
 				},
 				this.client.defaultPrefix
 			),
-			this.client.place.setPlace(
+			this.client.place.setPlacePrefix(
 				"default",
 				{
 					id: "default",
@@ -160,7 +161,7 @@ export class DatabaseManager {
 				},
 				this.client.discord.defaultPrefix
 			),
-			this.client.place.setPlace(
+			this.client.place.setPlacePrefix(
 				"default",
 				{
 					id: "default",
@@ -884,8 +885,8 @@ export class DatabaseManager {
 			const groupRepo = connection.getRepository(Group);
 			const commandRepo = connection.getRepository(Command);
 			const [group, prefix] = await Promise.all([
-				this.findGroup(nameOrId),
-				this.client.place.getPlace("default", place),
+				this.findGroup(nameOrId, ["commands"]),
+				this.client.place.getPlacePrefix("default", place),
 			]);
 
 			if (group && prefix) {
@@ -895,16 +896,15 @@ export class DatabaseManager {
 					place
 				);
 				if (command) {
-					const commands: Command[] = [];
-					if (group.commands) {
-						commands.push(...group.commands);
-					}
+					const commands: Command[] = group.commands
+						? group.commands.filter(value => value.id != group.id)
+						: [];
 					group.commands = [...commands, command];
 					command.group = group;
 
 					// There probably is something more faster and effiecient
 					await commandRepo.save(command);
-					return await groupRepo.save(group);
+					return groupRepo.save(group);
 				} else {
 					throw new ReferenceError(
 						`Couldn't find command with name "${commandName}"`

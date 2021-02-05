@@ -102,7 +102,7 @@ export abstract class BasePlugin {
 	 * @param place 
 	 */
 	getDefaultPrefix(place: Place): string {
-		const prefix = this.client.place.getPlace(
+		const prefix = this.client.place.getPlacePrefix(
 			"default",
 			place
 		);
