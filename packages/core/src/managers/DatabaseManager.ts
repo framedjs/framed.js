@@ -256,7 +256,7 @@ export class DatabaseManager {
 	 */
 	async getDefaultPrefix(
 		place: Place,
-		relations: TypeORM.FindOptionsRelationKeyName<Prefix>[] = []
+		relations: string[] = []
 	): Promise<Prefix> {
 		const connection = this.connection;
 		if (!connection) {
@@ -294,7 +294,7 @@ export class DatabaseManager {
 	async findPrefixPossibilities(
 		prefixResolvable: PrefixResolvable,
 		place: Place,
-		prefixRelations: TypeORM.FindOptionsRelationKeyName<Prefix>[] = []
+		prefixRelations: string[] = []
 	): Promise<Prefix[]> {
 		if (prefixResolvable instanceof Prefix) return [prefixResolvable];
 
@@ -334,7 +334,7 @@ export class DatabaseManager {
 	async findPrefix(
 		prefixResolvable: PrefixResolvable,
 		place: Place,
-		prefixRelations: TypeORM.FindOptionsRelationKeyName<Prefix>[] = []
+		prefixRelations: string[] = []
 	): Promise<Prefix | undefined> {
 		const prefixes = await this.findPrefixPossibilities(
 			prefixResolvable,
@@ -413,10 +413,8 @@ export class DatabaseManager {
 		commandId: string,
 		prefix: string,
 		place: Place,
-		prefixRelations: TypeORM.FindOptionsRelationKeyName<Prefix>[] = [
-			"commands",
-		],
-		commandRelations: TypeORM.FindOptionsRelationKeyName<Command>[] = [
+		prefixRelations: string[] = ["commands"],
+		commandRelations: string[] = [
 			"defaultPrefix",
 			"prefixes",
 			"response",
@@ -695,7 +693,7 @@ export class DatabaseManager {
 	 * Get the default prefix
 	 */
 	async getDefaultGroup(
-		relations: TypeORM.FindOptionsRelationKeyName<Group>[] = []
+		relations: string[] = []
 	): Promise<Group | undefined> {
 		const connection = this.connection;
 		if (!connection) {
@@ -847,7 +845,7 @@ export class DatabaseManager {
 	 */
 	async findGroup(
 		nameOrId: string,
-		relations: TypeORM.FindOptionsRelationKeyName<Group>[] = []
+		relations: string[] = []
 	): Promise<Group | undefined> {
 		const connection = this.connection;
 		if (connection) {
@@ -879,7 +877,7 @@ export class DatabaseManager {
 		commandName: string,
 		nameOrId: string,
 		place: Place,
-		commandPrefix?: string,
+		commandPrefix?: string
 	): Promise<Group> {
 		const connection = this.connection;
 		if (connection) {

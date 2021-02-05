@@ -736,8 +736,6 @@ export class PluginManager {
 		>();
 		const commandRepo = connection.getRepository(Command);
 
-		// Does the wrong query with the OR AND AND
-		// (oh god)
 		const databaseCommands = await commandRepo.find({
 			relations: ["response", "group", "defaultPrefix"],
 		});
