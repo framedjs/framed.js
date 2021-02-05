@@ -4,7 +4,6 @@ import { FoundCommandData } from "../interfaces/FoundCommandData";
 import { Client } from "../structures/Client";
 import { Message } from "../structures/Message";
 import Discord from "discord.js";
-import { EmbedHelper } from "../utils/discord/EmbedHelper";
 import { BaseCommand } from "../structures/BaseCommand";
 import { Place } from "../interfaces/Place";
 
@@ -39,14 +38,6 @@ export default class FormattingManager {
 								formatContent,
 								place,
 								formatCommand == "commandnoprefix"
-							)
-						);
-						break;
-					case "helpcommands":
-						arg = arg.replace(
-							element[0],
-							EmbedHelper.getCheckOutText(
-								this.client.helpCommands
 							)
 						);
 						break;

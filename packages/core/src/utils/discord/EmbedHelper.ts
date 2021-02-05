@@ -1,8 +1,10 @@
 import Discord from "discord.js";
-import { Utils } from "@framedjs/shared";
 import { Logger } from "@framedjs/logger";
 import { DiscordMessage } from "../../interfaces/DiscordMessage";
 import { Client } from "../../structures/Client";
+import FormattingManager from "../../managers/FormattingManager";
+import { Place } from "../../interfaces/Place";
+import { Message } from "../../structures/Message";
 
 export interface RawTemplateSettings {
 	/**
@@ -82,15 +84,15 @@ export class EmbedHelper {
 	 */
 	static getColorWithFallback(
 		guild: Discord.Guild | null | undefined,
-		defaultColor = this.defaultColor
-	): string {
+		defaultColor: Discord.ColorResolvable = this.defaultColor
+	): Discord.ColorResolvable {
 		// If guild doesn't exist, just return any value
 		if (!guild) {
 			return defaultColor;
 		}
 
 		const client = guild.client;
-		let botColor = "";
+		let botColor: Discord.ColorResolvable = "";
 
 		if (client.user) {
 			if (
@@ -121,32 +123,18 @@ export class EmbedHelper {
 	 * (hopefully) be a consistent design language.
 	 *
 	 * @param msg Message object or Discord message
-	 * @param commands Commands listed under check out footer message. In most cases, use `client.helpCommands`.
-	 * @param commandUsed Command used (as a non-alias) to be potentially removed from a list.
+	 * @param footer Discord footer
 	 * @param baseEmbed Base Discord embed to apply the template to
 	 *
 	 * @returns Discord embed
 	 */
 	static getTemplate(
 		msg: Discord.Message | DiscordMessage,
-		commands: string[] = [],
-		commandUsed?: string,
+		footer?: Discord.MessageEmbedFooter,
 		baseEmbed?: Discord.MessageEmbed
 	): Discord.MessageEmbed {
-		let tempUrl: string | null | undefined;
-
-		tempUrl = msg.author.displayAvatarURL({ dynamic: true })
-			? msg.author.displayAvatarURL({ dynamic: true })
-			: msg.client.user?.defaultAvatarURL;
-		const authorAvatarUrl = Utils.turnUndefinedIfNull(tempUrl) as string;
-
-		tempUrl = msg.client.user?.avatarURL({ dynamic: true });
-
 		const newEmbed = new Discord.MessageEmbed(baseEmbed)
-			.setFooter(
-				EmbedHelper.getCheckOutText(commands, commandUsed),
-				authorAvatarUrl
-			)
+			.setFooter(footer?.text, footer?.iconURL)
 			.setColor(EmbedHelper.getColorWithFallback(msg.guild));
 
 		return newEmbed;
@@ -159,31 +147,20 @@ export class EmbedHelper {
 	 * Use EmbedHelper.getTemplate() if you have access to those parameters,
 	 * as that would be more simpler.
 	 *
-	 * @param commands Commands listed under check out footer message
 	 * @param color Discord color resolvable
-	 * @param footerUrl Footer avatar URL
+	 * @param footer Discord Footer data
 	 * @param baseEmbed Base Discord embed to apply the template to
-	 * @param commandUsed Command used (as a non-alias) to potentially be removed from a list
 	 *
 	 * @returns Discord embed
 	 */
 	static getTemplateRaw(
-		commands: string[],
 		color: Discord.ColorResolvable,
-		footerUrl?: string,
-		baseEmbed?: Discord.MessageEmbed,
-		commandUsed?: string
+		footer?: Discord.MessageEmbedFooter,
+		baseEmbed?: Discord.MessageEmbed
 	): Discord.MessageEmbed {
-		footerUrl = Utils.turnUndefinedIfNull(footerUrl) as string;
-
-		const newEmbed = new Discord.MessageEmbed(baseEmbed)
-			.setFooter(
-				EmbedHelper.getCheckOutText(commands, commandUsed),
-				footerUrl
-			)
-			.setColor(color);
-
-		return newEmbed;
+		return new Discord.MessageEmbed(baseEmbed)
+			.setFooter(footer?.text, footer?.iconURL)
+			.setColor(EmbedHelper.getColorWithFallback(null, color));
 	}
 
 	/**
@@ -191,13 +168,14 @@ export class EmbedHelper {
 	 * @param commandUsed - Command used
 	 * @param commands - Command list
 	 */
-	static getCheckOutText(
+	static async getCommandsSeparated(
+		formatter: FormattingManager,
+		place: Place,
 		commands?: Array<string>,
 		commandUsed?: string
-	): string {
-		// If there are no commands to show in help, don't have the
-		// footer have the "Check out: " text
-		if (commands?.length == 0) {
+	): Promise<string> {
+		// If there's no commands, its safe to return nothing
+		if (!commands || commands?.length == 0) {
 			return "";
 		}
 
@@ -205,6 +183,7 @@ export class EmbedHelper {
 		// https://stackoverflow.com/questions/44808882/cloning-an-array-in-javascript-typescript
 		const clonedArray: string[] = Object.assign([], commands);
 
+		// Removes the command used, if the environment variables say so
 		if (
 			commandUsed &&
 			process.env.PRUNE_COMMAND_LIST?.toLocaleLowerCase() == "true"
@@ -213,36 +192,73 @@ export class EmbedHelper {
 			clonedArray.splice(clonedArray.indexOf(commandUsed), 1);
 		}
 
-		let output = `Check out: `;
-
+		// Gets all the unformatted commands, and separates them out in the string
+		let output = ``;
 		for (let i = 0; i < clonedArray.length; i++) {
-			const element = clonedArray[i];
-			output += element;
+			output += clonedArray[i];
 
-			// If it's not the last one, put a
+			// If the element isn't the last element, add the " | "
 			if (i != clonedArray.length - 1) {
 				output += " | ";
-				// output += "  ";
 			}
 		}
 
-		return `${output}`;
+		// Formats the command output, and returns the value
+		return formatter.format(output, place);
 	}
 
-	/**
-	 * Adds the version number of the bot to an embed
-	 * @param embed Discord embed
-	 */
-	static applyVersionInFooter(
-		embed: Discord.MessageEmbed,
-		name: string,
-		version: string
-	): Discord.MessageEmbed {
-		const environment = process.env.NODE_ENV ? process.env.NODE_ENV : "";
-		return new Discord.MessageEmbed(embed).setFooter(
-			embed.footer?.text + `\nUsing ${name} v${version} ${environment}`,
-			// embed.footer?.text + `\n${name} ${version} ${environment}`,
-			embed.footer?.iconURL
-		);
+	static async getCheckOutFooter(
+		msg: Message,
+		commandId?: string
+	): Promise<Discord.MessageEmbedFooter>;
+
+	static async getCheckOutFooter(
+		formatter: FormattingManager,
+		place: Place,
+		helpCommands: string[],
+		commandId?: string
+	): Promise<Discord.MessageEmbedFooter>;
+
+	static async getCheckOutFooter(
+		msgOrFormatter: Message | FormattingManager,
+		commandIdOrPlace?: string | Place,
+		helpCommands?: string[],
+		commandId?: string
+	): Promise<Discord.MessageEmbedFooter> {
+		let text = "";
+		if (msgOrFormatter instanceof Message) {
+			text = await this.getCommandsSeparated(
+				msgOrFormatter.client.formatting,
+				Message.discordGetPlace(
+					msgOrFormatter.client,
+					msgOrFormatter.discord?.guild
+				),
+				msgOrFormatter.client.helpCommands,
+				commandId
+			);
+		} else {
+			if (typeof commandIdOrPlace == "string") {
+				throw new Error(
+					"formatterOrCommandId is a string, not an instance of FormattingManager"
+				);
+			} else if (!commandIdOrPlace) {
+				throw new ReferenceError("formatterOrCommandId is undefined");
+			}
+
+			text = await this.getCommandsSeparated(
+				msgOrFormatter,
+				commandIdOrPlace,
+				helpCommands,
+				commandId
+			);
+		}
+
+		if (text.length > 0) {
+			return {
+				text: `Check out: ${text}`,
+			};
+		} else {
+			return { text: "" };
+		}
 	}
 }

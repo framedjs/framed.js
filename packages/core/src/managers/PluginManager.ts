@@ -20,6 +20,7 @@ import Command from "./database/entities/Command";
 import { DiscordUtils } from "../utils/discord/DiscordUtils";
 import { EmbedHelper } from "../utils/discord/EmbedHelper";
 import { Place } from "../interfaces/Place";
+import Prefix from "./database/entities/Prefix";
 
 export class PluginManager {
 	/**
@@ -473,7 +474,7 @@ export class PluginManager {
 							);
 							await PluginManager.sendErrorMessage(msg, error);
 						} else {
-							Logger.error(error);
+							Logger.error(error.stack);
 						}
 					}
 				}
@@ -694,8 +695,7 @@ export class PluginManager {
 		if (msg.discord) {
 			const embed = EmbedHelper.getTemplate(
 				msg.discord,
-				msg.client.helpCommands,
-				commandId
+				await EmbedHelper.getCheckOutFooter(msg, commandId)
 			)
 				.setTitle(friendlyError.friendlyName)
 				.setDescription(friendlyError.message);
@@ -735,8 +735,11 @@ export class PluginManager {
 			}
 		>();
 		const commandRepo = connection.getRepository(Command);
+
+		// Does the wrong query with the OR AND AND
+		// (oh god)
 		const databaseCommands = await commandRepo.find({
-			relations: ["defaultPrefix", "response", "group"],
+			relations: ["response", "group", "defaultPrefix"],
 		});
 
 		const groupIconMap = new Map<string, string>();
@@ -813,7 +816,7 @@ export class PluginManager {
 		}
 
 		// Searches through database
-		for (const command of databaseCommands) {
+		for await (const command of databaseCommands) {
 			let content = `\`${command.defaultPrefix.prefix}${command.id}\``;
 			let small = false;
 

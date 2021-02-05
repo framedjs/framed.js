@@ -423,8 +423,7 @@ export abstract class BaseCommand {
 			const embedFields: Discord.EmbedFieldData[] = [];
 			const embed = EmbedHelper.getTemplate(
 				msg.discord,
-				this.client.helpCommands,
-				this.id
+				await EmbedHelper.getCheckOutFooter(msg, this.id)
 			)
 				.setTitle("Permission Denied")
 				.setDescription(
