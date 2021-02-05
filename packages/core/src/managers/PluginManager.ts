@@ -20,7 +20,6 @@ import Command from "./database/entities/Command";
 import { DiscordUtils } from "../utils/discord/DiscordUtils";
 import { EmbedHelper } from "../utils/discord/EmbedHelper";
 import { Place } from "../interfaces/Place";
-import Prefix from "./database/entities/Prefix";
 
 export class PluginManager {
 	/**
