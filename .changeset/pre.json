@@ -8,6 +8,7 @@
     "@framedjs/shared": "0.1.0"
   },
   "changesets": [
+    "five-eggs-trade",
     "mean-bikes-live"
   ]
 }

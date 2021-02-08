@@ -20,8 +20,8 @@ import { EventEmitter } from "events";
 import { Logger } from "@framedjs/logger";
 import { version } from "../index";
 
-import path from "path";
 import { PlaceManager } from "../managers/PlaceManager";
+import path from "path";
 
 const DEFAULT_PREFIX = "!";
 
@@ -203,9 +203,19 @@ export class Client extends EventEmitter {
 			plugin.events.forEach(event => {
 				// If the event hasn't been initialized, initialize it
 				if (!event.eventInitialized) {
-					plugin.initEvent(event);
+					try {
+						plugin.initEvent(event);
+					} catch (error) {
+						Logger.error(error.stack);
+					}
 				}
 			});
+
+			try {
+				plugin.setupEvents();
+			} catch (error) {
+				Logger.error(error.stack);
+			}
 		});
 	}
 

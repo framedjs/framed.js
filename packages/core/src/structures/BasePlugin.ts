@@ -295,5 +295,9 @@ export abstract class BasePlugin {
 		}
 	}
 
+	setupEvents(): void {
+		return;
+	}
+
 	//#endregion
 }

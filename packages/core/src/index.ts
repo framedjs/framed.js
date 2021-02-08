@@ -1,5 +1,6 @@
 // Managers
 export { APIManager } from "./managers/APIManager";
+// export { ArgumentManger } from "./managers/ArgumentManager";
 export { PluginManager } from "./managers/PluginManager";
 export { DatabaseManager } from "./managers/DatabaseManager";
 
@@ -41,7 +42,8 @@ export { Utils } from "@framedjs/shared";
 export { DiscordUtils } from "./utils/discord/DiscordUtils";
 export { EmbedHelper } from "./utils/discord/EmbedHelper";
 
-// Resolvable types
+// Types
+export { Platform } from "./types/Platform";
 export { PluginResolvable } from "./managers/database/types/PluginResolvable";
 export { PrefixResolvable } from "./managers/database/types/PrefixResolvable";
 
