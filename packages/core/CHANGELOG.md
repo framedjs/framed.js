@@ -1,5 +1,11 @@
 # @framedjs/core
 
+## 0.3.0-next.4
+
+### Patch Changes
+
+-   9ab8eaa: Simpler event setup and minor tweaks
+
 ## 0.3.0-next.3
 
 ### Patch Changes
