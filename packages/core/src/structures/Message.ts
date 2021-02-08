@@ -699,7 +699,7 @@ export class Message {
 		const newArgs = Message.getArgs(argsContent);
 
 		// https://stackoverflow.com/questions/62955907/discordjs-nodejs-how-can-i-check-if-a-message-only-contains-custom-emotes#62960102
-		const regex = /(:[^:\s]+:|<:[^:\s]+:[0-9]+>|<a:[^:\s]+:[0-9]+>)/g;
+		const regex = /(:[^:\s]+:|<:[^:\s]+:[\d]+>)/g;
 		const markdownEmote = newArgs[0].match(regex);
 		const genericEmoji = Emoji.unemojify(newArgs[0]).match(regex);
 
