@@ -1,6 +1,6 @@
 import Discord from "discord.js";
 
-export interface DiscordMessage {
+export interface DiscordMessageData {
 	/**
 	 * The Discord message object.
 	 */

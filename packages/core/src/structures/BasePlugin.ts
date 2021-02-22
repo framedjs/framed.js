@@ -4,17 +4,14 @@ import { BaseEvent } from "./BaseEvent";
 import { BasePluginOptions } from "../interfaces/BasePluginOptions";
 import { Logger } from "@framedjs/logger";
 import { Client } from "./Client";
-import { PluginManager } from "../managers/PluginManager";
 import { DiscordUtils } from "../utils/discord/DiscordUtils";
 import Options from "../interfaces/other/RequireAllOptions";
 import util from "util";
 import { Prefixes } from "../interfaces/Prefixes";
 import { ImportError } from "./errors/non-friendly/ImportError";
-import { Place } from "../interfaces/Place";
 
 export abstract class BasePlugin {
 	readonly client: Client;
-	readonly plugins: PluginManager;
 
 	id: string;
 
@@ -61,7 +58,6 @@ export abstract class BasePlugin {
 
 	constructor(client: Client, info: BasePluginOptions) {
 		this.client = client;
-		this.plugins = client.plugins;
 
 		this.id = info.id;
 
@@ -95,24 +91,6 @@ export abstract class BasePlugin {
 		this.groupEmote = info.groupEmote ? info.groupEmote : "❔";
 		this.groupId = info.groupId ? info.groupId : "default";
 		this.fullGroupId = `${this.id}.group.${this.groupId}`;
-	}
-
-	/**
-	 * 
-	 * @param place 
-	 */
-	getDefaultPrefix(place: Place): string {
-		const prefix = this.client.place.getPlacePrefix(
-			"default",
-			place
-		);
-		if (!prefix) {
-			Logger.warn(
-				"Couldn't find default prefix from client; falling back to defaultPrefix.default"
-			);
-			return this.defaultPrefix.default;
-		}
-		return prefix;
 	}
 
 	/**

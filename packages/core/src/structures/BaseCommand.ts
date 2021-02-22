@@ -1,18 +1,20 @@
-import { Message } from "./Message";
+import { BaseMessage } from "./BaseMessage";
 import { BasePlugin } from "./BasePlugin";
 import { Client } from "./Client";
 import { BaseCommandOptions } from "../interfaces/BaseCommandOptions";
 import Discord from "discord.js";
-import { Permissions } from "./Permissions";
 import { EmbedHelper } from "../utils/discord/EmbedHelper";
 import { Logger } from "@framedjs/logger";
 import Options from "../interfaces/other/RequireAllOptions";
 import { DiscordUtils } from "../utils/discord/DiscordUtils";
 import { BaseSubcommand } from "./BaseSubcommand";
-import { oneLine } from "common-tags";
+import { oneLine, oneLineCommaListsOr } from "common-tags";
 import { Prefixes } from "../interfaces/Prefixes";
 import { InlineOptions } from "../interfaces/InlineOptions";
 import { Place } from "../interfaces/Place";
+import { UserPermissions } from "../interfaces/UserPermissions";
+import { DiscordMessage } from "./DiscordMessage";
+import { TwitchMessage } from "./TwitchMessage";
 
 export abstract class BaseCommand {
 	// static readonly type: string = "BaseCommand";
@@ -118,23 +120,9 @@ export abstract class BaseCommand {
 	notes?: string;
 
 	/**
-	 * Permissions to compare to.
-	 *
-	 * **WARNING: YOU NEED TO CHECK FOR THESE MANUALLY.** See `hasPermission()` on how to do this.
-	 * It is also recommended you send a permission denied message too with `sendPermissionErrorMessage()`.
-	 *
-	 * Example:
-	 *
-	 * ```ts
-	 * const hasPermission = this.hasPermission(msg);
-	 * if (!hasPermission) {
-	 * 	await this.sendPermissionErrorMessage(msg);
-	 * 	return false;
-	 * }
-	 * // Continues on, if it passes the permission check...
-	 * ```
+	 * User permissions to compare to.
 	 */
-	permissions?: Permissions;
+	userPermissions?: UserPermissions;
 
 	/**
 	 * Use inline in help?
@@ -192,28 +180,15 @@ export abstract class BaseCommand {
 			};
 		}
 
-		// Prefixes array logic
-		// if (!info.prefixes) {
-		// 	// Info.prefixes will have a value, and cannot be undefined
-		// 	info.prefixes = [];
-		// }
-
-		// this.prefixes = info.prefixes;
-
-		// // If this list doesn't include the default prefix, add it
-		// if (!this.prefixes.includes(this.defaultPrefix)) {
-		// 	this.prefixes.push(this.defaultPrefix);
-		// }
-
 		this.about = info.about;
 		this.description = info.description;
 		this.usage = info.usage;
 		this.examples = info.examples;
 		this.notes = info.notes;
-		this.permissions = info.permissions;
+		this.userPermissions = info.userPermissions;
 		this.hideUsageInHelp = info.hideUsageInHelp;
 
-		this.inline = info.inline ? info.inline : false;
+		this.inline = info.inline ?? false;
 
 		this.rawInfo = info;
 		this.subcommands = new Map();
@@ -243,24 +218,45 @@ export abstract class BaseCommand {
 			}
 		}
 
-		const prefix = this.client.place.getPlacePrefix("default", place);
+		const prefix = this.client.provider.prefixes.get(place.id);
 		if (!prefix) {
 			Logger.warn(
-				oneLine`
-				Couldn't find default prefix from client;
-				falling back to defaultPrefix.default`
+				oneLine`Couldn't find default prefix from
+				place ID ${place.id}; falling back to defaultPrefix.default`
 			);
 			return this.defaultPrefix.default;
 		}
+
 		return prefix;
+	}
+
+	getDefaultPrefixFallback(place?: Place): string {
+		switch (place?.platform) {
+			case "discord":
+				return this.defaultPrefix.discord;
+			case "twitch":
+				return this.defaultPrefix.twitch;
+		}
+		return this.defaultPrefix.default;
+	}
+
+	get defaultPlaceFallback(): Place {
+		return {
+			id: "default",
+			platform: "none",
+		};
 	}
 
 	/**
 	 * Returns a list of prefixes that the command can use.
 	 *
-	 * @param place Place data
+	 * @param placeOrPlatformId Place data, or a platform ID (ex. Discord guild ID, Twitch channel ID)
+	 * @param checkDefault Checks if the default prefix is duplicated in the array
 	 */
-	getPrefixes(place: Place): string[] {
+	getPrefixes(
+		placeOrPlatformId: Place | string,
+		checkDefault = true
+	): string[] {
 		const prefixes: string[] = [];
 
 		// Puts all the command prefixes in an array
@@ -268,30 +264,35 @@ export abstract class BaseCommand {
 			prefixes.push(...this.rawInfo.prefixes);
 		}
 
-		// Filters matching placePrefixes IDs, then
-		// Puts all those matching prefixes into an array
-		this.client.place.placePrefixesArray
-			.filter(prefix => {
-				const placeId = prefix[0][1];
-				return placeId == place.id;
-			})
-			.forEach(prefixValue => {
-				const value = prefixValue[1];
-				prefixes.push(value);
-			});
+		// Get's this place's prefixes, and puts them into the array
+		// for comparing if it contains the default prefix
+		let place =
+			typeof placeOrPlatformId == "string"
+				? this.client.provider.place.get(placeOrPlatformId)
+				: placeOrPlatformId;
 
-		// Gets the default prefix
-		const prefix = this.getDefaultPrefix(place);
+		if (!place) {
+			Logger.warn(
+				oneLine`place for place ID ${placeOrPlatformId} wasn't found!`
+			);
+			place = this.defaultPlaceFallback;
+		}
 
-		// If this list doesn't include the default prefix from there, add it to the array
-		if (prefix && !prefixes.includes(prefix)) {
-			prefixes.push(prefix);
+		if (checkDefault) {
+			// Gets the default prefix
+			const prefix = this.getDefaultPrefix(place);
+
+			// If this list doesn't include the default prefix from there, add it to the array
+			if (prefix && !prefixes.includes(prefix)) {
+				prefixes.push(prefix);
+			}
 		}
 
 		return prefixes;
 	}
 
 	/**
+	 * Puts all text entry fields into formatting
 	 *
 	 * @param place Place data
 	 */
@@ -340,7 +341,7 @@ export abstract class BaseCommand {
 	 *
 	 * @returns true if successful
 	 */
-	abstract run(msg: Message): Promise<boolean>;
+	abstract run(msg: BaseMessage): Promise<boolean>;
 
 	//#region Permissions
 
@@ -355,18 +356,45 @@ export abstract class BaseCommand {
 	 * @param checkOwner
 	 */
 	hasPermission(
-		msg: Message,
-		permissions = this.permissions,
+		msg: BaseMessage,
+		permissions = this.userPermissions,
 		checkAdmin = true,
 		checkOwner = true
 	): boolean {
-		if (permissions) {
+		if (!permissions) {
+			// If the command doesn't specify permissions, assume it's fine
+			return true;
+		}
+
+		if (msg instanceof DiscordMessage) {
+			if (checkOwner) {
+				if (
+					msg.client.discord.owners?.includes(msg.discord.author.id)
+				) {
+					return true;
+				}
+			}
+
+			if (checkAdmin) {
+				if (
+					msg.client.discord.admins?.includes(msg.discord.author.id)
+				) {
+					return true;
+				}
+			}
+
+			// If there's a discord entry, safely assume to block it
+			if (!permissions.discord) {
+				return false;
+			}
+
 			// Discord checks
-			if (permissions.discord && msg.discord) {
+			if (permissions.discord) {
 				const member = msg.discord.member;
 				if (member) {
 					// Discord permissions
 					let hasPermission = false;
+
 					const perms = permissions.discord.permissions
 						? permissions.discord.permissions
 						: new Discord.Permissions("ADMINISTRATOR");
@@ -399,13 +427,14 @@ export abstract class BaseCommand {
 					return false;
 				}
 			}
-
-			// Return false by default
-			return false;
-		} else {
-			// If the command doesn't specify permissions, assume it's fine
+		} else if (msg instanceof TwitchMessage) {
+			// TODO: Twitch Message permissions
+			Logger.warn("Twitch permissions haven't been implemented");
 			return true;
 		}
+
+		// Return false by default, just in case
+		return false;
 	}
 
 	/**
@@ -415,8 +444,8 @@ export abstract class BaseCommand {
 	 * @param permissions
 	 */
 	async sendPermissionErrorMessage(
-		msg: Message,
-		permissions = this.permissions
+		msg: BaseMessage,
+		permissions = this.userPermissions
 	): Promise<boolean> {
 		if (msg.discord && permissions?.discord) {
 			const discord = msg.discord;
@@ -483,10 +512,23 @@ export abstract class BaseCommand {
 				}
 			}
 
+			if (permissions.discord.users) {
+				const listOfUsers: string[] = [];
+
+				for (const user of permissions.discord.users) {
+					listOfUsers.push(`<@${user}>`);
+				}
+
+				embedFields.push({
+					name: "User(s)",
+					value: oneLineCommaListsOr`${listOfUsers}`,
+				});
+			}
+
 			if (embedFields.length > 0) {
 				embed
 					.setDescription(
-						`${embed.description}\nYou need the following permissions or roles:`
+						`${embed.description}\nYou need the following permissions, roles, or be certain user(s):`
 					)
 					.addFields(embedFields);
 			}

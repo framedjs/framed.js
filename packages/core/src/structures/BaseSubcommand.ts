@@ -4,8 +4,6 @@ import { BasePlugin } from "./BasePlugin";
 import { ImportError } from "./errors/non-friendly/ImportError";
 
 export abstract class BaseSubcommand extends BaseCommand {
-	// static readonly type: string = "BaseSubcommand";
-
 	/**
 	 * Base command
 	 */
@@ -31,10 +29,12 @@ export abstract class BaseSubcommand extends BaseCommand {
 		this.description = info.description;
 		this.usage = info.usage;
 		this.examples = info.examples;
-
+		this.notes = info.notes;
 		this.hideUsageInHelp = info.hideUsageInHelp;
-		this.permissions = info.permissions;
+		this.userPermissions = info.userPermissions;
 
 		this.inline = info.inline ? info.inline : false;
+
+		this.rawInfo = info;
 	}
 }

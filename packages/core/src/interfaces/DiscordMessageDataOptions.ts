@@ -1,6 +1,6 @@
 import Discord from "discord.js";
 
-export interface DiscordMessageOptions {
+export interface DiscordMessageDataOptions {
 	/**
 	 * The object the message data will be based off of.
 	 *

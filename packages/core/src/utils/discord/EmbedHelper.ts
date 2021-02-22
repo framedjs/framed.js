@@ -1,10 +1,10 @@
 import Discord from "discord.js";
 import { Logger } from "@framedjs/logger";
-import { DiscordMessage } from "../../interfaces/DiscordMessage";
+import { DiscordMessageData } from "../../interfaces/DiscordMessageData";
 import { Client } from "../../structures/Client";
-import FormattingManager from "../../managers/FormattingManager";
+import { FormattingManager } from "../../managers/FormattingManager";
 import { Place } from "../../interfaces/Place";
-import { Message } from "../../structures/Message";
+import { BaseMessage } from "../../structures/BaseMessage";
 
 export interface RawTemplateSettings {
 	/**
@@ -47,7 +47,7 @@ export interface ObjectTemplateSettings {
 	/**
 	 * Message object or Discord message
 	 */
-	msg: Discord.Message | DiscordMessage;
+	msg: Discord.Message | DiscordMessageData;
 
 	/**
 	 * Framed client
@@ -129,7 +129,7 @@ export class EmbedHelper {
 	 * @returns Discord embed
 	 */
 	static getTemplate(
-		msg: Discord.Message | DiscordMessage,
+		msg: Discord.Message | DiscordMessageData,
 		footer?: Discord.MessageEmbedFooter,
 		baseEmbed?: Discord.MessageEmbed
 	): Discord.MessageEmbed {
@@ -208,34 +208,34 @@ export class EmbedHelper {
 	}
 
 	static async getCheckOutFooter(
-		msg: Message,
+		msg: BaseMessage,
 		commandId?: string
 	): Promise<Discord.MessageEmbedFooter>;
 
 	static async getCheckOutFooter(
 		formatter: FormattingManager,
 		place: Place,
-		helpCommands: string[],
+		helpCommands: string | string[],
 		commandId?: string
 	): Promise<Discord.MessageEmbedFooter>;
 
 	static async getCheckOutFooter(
-		msgOrFormatter: Message | FormattingManager,
+		msgOrFormatter: BaseMessage | FormattingManager,
 		commandIdOrPlace?: string | Place,
-		helpCommands?: string[],
+		footer: string | string[] = "",
 		commandId?: string
 	): Promise<Discord.MessageEmbedFooter> {
-		let text = "";
-		if (msgOrFormatter instanceof Message) {
-			text = await this.getCommandsSeparated(
-				msgOrFormatter.client.formatting,
-				Message.discordGetPlace(
-					msgOrFormatter.client,
-					msgOrFormatter.discord?.guild
-				),
-				msgOrFormatter.client.helpCommands,
-				commandId
+		let formatter: FormattingManager;
+		let place: Place;
+
+		// Attempts to get variables
+		if (msgOrFormatter instanceof BaseMessage) {
+			formatter = msgOrFormatter.client.formatting;
+			place = await BaseMessage.discordGetPlace(
+				msgOrFormatter.client,
+				msgOrFormatter.discord?.guild
 			);
+			footer = msgOrFormatter.client.footer;
 		} else {
 			if (typeof commandIdOrPlace == "string") {
 				throw new Error(
@@ -245,20 +245,25 @@ export class EmbedHelper {
 				throw new ReferenceError("formatterOrCommandId is undefined");
 			}
 
-			text = await this.getCommandsSeparated(
-				msgOrFormatter,
-				commandIdOrPlace,
-				helpCommands,
-				commandId
-			);
+			formatter = msgOrFormatter;
+			place = commandIdOrPlace;
+			footer = footer ? footer : "";
 		}
 
-		if (text.length > 0) {
+		// Returns a "check out" formatting, or just some text
+		if (typeof footer == "string") {
 			return {
-				text: `Check out: ${text}`,
+				text: footer,
 			};
 		} else {
-			return { text: "" };
+			return {
+				text: `Check out: ${await this.getCommandsSeparated(
+					formatter,
+					place,
+					footer,
+					commandId
+				)}`,
+			};
 		}
 	}
 }

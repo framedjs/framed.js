@@ -90,19 +90,24 @@ export interface BasePluginOptions {
 	 * Framed will try and import scripts from paths found in this object.
 	 */
 	paths: {
-		/**
-		 * Command path.
-		 */
+		/** Commands path  */
 		commands?: string;
 
-		/**
-		 * Events path
-		 */
+		/** Events path */
 		events?: string;
 
-		/**
-		 * Routes path
-		 */
+		/** Routes path */
 		routes?: string;
+
+		// TypeORM-specific data
+
+		/** Entities path (TypeORM) */
+		entities?: string;
+
+		/** Migrations path (TypeORM) */
+		migrations?: string;
+
+		/** Subscribers path (TypeORM) */
+		subscribers?: string;
 	};
 }

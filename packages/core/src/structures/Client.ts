@@ -8,11 +8,12 @@ import * as TwitchChatClient from "twitch-chat-client";
 
 import { ClientOptions } from "../interfaces/ClientOptions";
 import { LoginOptions } from "../interfaces/LoginOptions";
-import { Message } from "./Message";
+import { BaseMessage } from "./BaseMessage";
+import { DiscordMessage } from "./DiscordMessage";
+import { TwitchMessage } from "./TwitchMessage";
 
 import { APIManager } from "../managers/APIManager";
-import { DatabaseManager } from "../managers/DatabaseManager";
-import FormattingManager from "../managers/FormattingManager";
+import { FormattingManager } from "../managers/FormattingManager";
 import { PluginManager } from "../managers/PluginManager";
 
 import { BasePlugin } from "./BasePlugin";
@@ -20,21 +21,34 @@ import { EventEmitter } from "events";
 import { Logger } from "@framedjs/logger";
 import { version } from "../index";
 
-import { PlaceManager } from "../managers/PlaceManager";
+import { CommandManager } from "../managers/CommandManager";
+import { BaseProvider } from "../providers/BaseProvider";
+import { DefaultProvider } from "../providers/DefaultProvider";
+
 import path from "path";
 
 const DEFAULT_PREFIX = "!";
 
 export class Client extends EventEmitter {
-	readonly api: APIManager;
-	readonly database: DatabaseManager;
-	readonly place = new PlaceManager(this);
-	readonly plugins = new PluginManager(this);
-	readonly formatting = new FormattingManager(this);
+	api: APIManager;
+	commands: CommandManager;
+	provider: BaseProvider;
+	plugins: PluginManager;
+	formatting: FormattingManager;
 
 	discord: {
 		client?: Discord.Client;
 		defaultPrefix: string;
+
+		/**
+		 * The owners, represented as user IDs.
+		 */
+		owners?: Discord.UserResolvable[];
+
+		/**
+		 * The admins, represented as user IDs.
+		 */
+		admins?: Discord.UserResolvable[];
 	} = {
 		defaultPrefix: DEFAULT_PREFIX,
 	};
@@ -43,6 +57,16 @@ export class Client extends EventEmitter {
 		auth?: TwitchAuth.RefreshableAuthProvider;
 		chat?: TwitchChatClient.ChatClient;
 		defaultPrefix: string;
+
+		/**
+		 * The owners, represented as user IDs.
+		 */
+		owners?: Discord.UserResolvable[];
+
+		/**
+		 * The admins, represented as user IDs.
+		 */
+		admins?: Discord.UserResolvable[];
 	} = {
 		defaultPrefix: DEFAULT_PREFIX,
 	};
@@ -57,23 +81,17 @@ export class Client extends EventEmitter {
 	 */
 	readonly appVersion: string | undefined;
 
-	readonly helpCommands: string[] = [];
+	footer: string | string[] = "";
 	readonly importFilter = /^((?!\.d).)*\.(js|ts)$/;
 	// readonly importFilter = /(?<!\.d)(\.(js|ts))$/;
 
 	defaultPrefix = DEFAULT_PREFIX;
 
-	private readonly clientOptions: ClientOptions;
-
 	constructor(options: ClientOptions) {
 		// I have no idea what capture rejections does, but I assume it's a good thing.
 		super({ captureRejections: true });
 
-		this.clientOptions = options;
-
-		this.helpCommands = options.defaultHelpCommands
-			? options.defaultHelpCommands
-			: [];
+		this.footer = options.footer ? options.footer : [];
 
 		// Sets the app version
 		this.appVersion = options.appVersion;
@@ -82,16 +100,23 @@ export class Client extends EventEmitter {
 			this.defaultPrefix = options?.defaultPrefix;
 		}
 
-		this.discord.defaultPrefix = options.discord?.defaultPrefix
-			? options.discord.defaultPrefix
-			: this.defaultPrefix;
+		this.discord.defaultPrefix =
+			options.discord?.defaultPrefix ?? this.defaultPrefix;
 
-		this.twitch.defaultPrefix = options.twitch?.defaultPrefix
-			? options.twitch.defaultPrefix
-			: this.defaultPrefix;
+		this.twitch.defaultPrefix =
+			options.twitch?.defaultPrefix ?? this.defaultPrefix;
 
-		this.api = new APIManager(this);
-		this.database = new DatabaseManager(this, options.defaultConnection);
+		this.discord.admins = options.discord?.admins;
+		this.discord.owners = options.discord?.owners;
+		this.twitch.admins = options.twitch?.admins;
+		this.twitch.owners = options.twitch?.owners;
+
+		this.api = options.apiManager ?? new APIManager(this);
+		this.commands = options.commandManager ?? new CommandManager(this);
+		this.formatting =
+			options.formattingManager ?? new FormattingManager(this);
+		this.plugins = options.pluginManager ?? new PluginManager(this);
+		this.provider = options.provider ?? new DefaultProvider(this);
 	}
 
 	/**
@@ -126,7 +151,7 @@ export class Client extends EventEmitter {
 	 */
 	async login(options: LoginOptions[]): Promise<void> {
 		// Loads the database
-		await this.database.start();
+		// await this.database.start();
 
 		// Logins for each platform and sets up some events
 		for await (const option of options) {
@@ -182,21 +207,21 @@ export class Client extends EventEmitter {
 			}
 		}
 
-		// Imports default routes
-		if (
-			this.clientOptions.loadDefaultRoutes == true ||
-			this.clientOptions.loadDefaultRoutes === undefined
-		) {
-			this.loadDefaultRoutes();
-		}
+		// // Imports default routes
+		// if (
+		// 	this.clientOptions.api?.loadDefaults == true ||
+		// 	this.clientOptions.api?.loadDefaults === undefined
+		// ) {
+		// 	this.loadDefaultRoutes();
+		// }
 
-		// Imports default plugins
-		if (
-			this.clientOptions.loadDefaultPlugins == true ||
-			this.clientOptions.loadDefaultRoutes === undefined
-		) {
-			this.loadDefaultPlugins();
-		}
+		// // Imports default plugins
+		// if (
+		// 	this.clientOptions.plugins?.loadDefaults == true ||
+		// 	this.clientOptions.plugins?.loadDefaults === undefined
+		// ) {
+		// 	this.loadDefaultPlugins();
+		// }
 
 		// Imports all events now, since the plugins are done
 		this.plugins.map.forEach(plugin => {
@@ -219,14 +244,14 @@ export class Client extends EventEmitter {
 		});
 	}
 
-	async processMsg(msg: Message): Promise<void> {
+	async processMsg(msg: BaseMessage): Promise<void> {
 		if (msg.command) {
 			if (msg.discord) {
 				if (msg.discord.author.bot) return;
-				this.plugins.runCommand(msg);
+				this.commands.run(msg);
 			} else if (msg.twitch) {
 				if (this.twitch.chat?.currentNick == msg.twitch.user) return;
-				this.plugins.runCommand(msg);
+				this.commands.run(msg);
 			}
 		}
 	}
@@ -243,7 +268,7 @@ export class Client extends EventEmitter {
 		});
 
 		client.on("message", async discordMsg => {
-			const msg = new Message({
+			const msg = new DiscordMessage({
 				client: this,
 				discord: {
 					base: discordMsg,
@@ -268,28 +293,37 @@ export class Client extends EventEmitter {
 			);
 		});
 
-		client.on("messageUpdate", async (oldMessage, newMessage) => {
+		client.on("messageUpdate", async (partialOld, partialNew) => {
 			try {
 				Logger.silly(`Message Update`);
-				Logger.silly(
-					`oldMessage.content: "${oldMessage.content}" | ${oldMessage.channel}`
-				);
-				Logger.silly(
-					`newMessage.content: "${newMessage.content}" | ${newMessage.channel}`
-				);
 
-				// If the content is the same, ignore it.
-				/**
-				 * Assumably, this can trigger randomly before a command with an embed (ex. link)
-				 * is sent, or after it is sent. By comparing the contents, and seeing if they're the same,
-				 * we don't need to accidentally run the same command again.
-				 */
-				if (oldMessage.content == newMessage.content) return;
+				let newMessage: Discord.Message;
+				if (partialNew.partial) {
+					try {
+						newMessage = await partialNew.channel.messages.fetch(
+							partialNew.id
+						);
+					} catch (error) {
+						Logger.error(error);
+						return;
+					}
+				} else {
+					newMessage = partialNew;
+				}
 
-				newMessage = await newMessage.channel.messages.fetch(
-					newMessage.id
-				);
-				const msg = new Message({
+				// If the content is the same, but something changed (ex. pinned, embed) ignore it
+				// to avoid running a command multiple times
+				if (partialOld.content == newMessage.content) {
+					return;
+				}
+
+				// Edge case: pinned uncached messages could still go through.
+				// Pins shouldn't be treated as retriggering of commands
+				if (!partialOld.pinned && newMessage.pinned) {
+					return;
+				}
+
+				const msg = new DiscordMessage({
 					client: this,
 					discord: {
 						base: newMessage,
@@ -306,7 +340,7 @@ export class Client extends EventEmitter {
 	private setupTwitchEvents(chat: TwitchChatClient.ChatClient): void {
 		chat.onMessage(
 			async (channel: string, user: string, message: string) => {
-				const msg = new Message({
+				const msg = new TwitchMessage({
 					client: this,
 					content: message,
 					twitch: {

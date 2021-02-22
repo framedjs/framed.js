@@ -8,7 +8,7 @@ import Options from "../../interfaces/other/RequireAllOptions";
 import { existsSync } from "fs";
 import { NotFoundError } from "../../structures/errors/NotFoundError";
 import { InvalidError } from "../../structures/errors/InvalidError";
-import { Message } from "../../structures/Message";
+import { BaseMessage } from "../../structures/BaseMessage";
 import { FriendlyError } from "../../structures/errors/FriendlyError";
 import { DiscohookOutputData } from "../../interfaces/other/DiscohookOutputData";
 import { oneLine } from "common-tags";
@@ -238,7 +238,9 @@ export class DiscordUtils {
 				if (cachedChannels.isText()) {
 					const textChannel = cachedChannels as Discord.TextChannel;
 
-					const parse = Message.parseEmojiAndString(textChannel.name);
+					const parse = BaseMessage.parseEmojiAndString(
+						textChannel.name
+					);
 
 					// Finds the name of the channel, also with
 					// excluding the emotes at the beginning
@@ -292,7 +294,9 @@ export class DiscordUtils {
 				if (cachedChannels.isText()) {
 					const textChannel = cachedChannels as Discord.TextChannel;
 
-					const parse = Message.parseEmojiAndString(textChannel.name);
+					const parse = BaseMessage.parseEmojiAndString(
+						textChannel.name
+					);
 
 					// Finds the name of the channel, also with
 					// excluding the emotes at the beginning
@@ -761,7 +765,7 @@ export class DiscordUtils {
 						"base64"
 					);
 					const newString = base64.toString("utf-8");
-					newEmbedData = JSON.parse(newString).messages[0]?.data;
+					newEmbedData = JSON.parse(newString);
 				} else {
 					throw new Error("No request path");
 				}
@@ -806,48 +810,53 @@ export class DiscordUtils {
 
 		// Renders the Discohook message
 		let renderedOnce = false;
-		for (let i = 0; i < (newData.embeds ? newData.embeds.length : 1); i++) {
-			Logger.silly(oneLine`i: ${i} |
-			(newEmbedData.embeds ? newEmbedData.embeds.length : 1): ${
-				newData.embeds ? newData.embeds.length : 1
-			} |
-			renderedOnce: ${renderedOnce}`);
 
-			// Embed data is generated if it exists
-			const embedData = newData.embeds ? newData.embeds[i] : undefined;
-			let embed = embedData
-				? new Discord.MessageEmbed(
-						Utils.turnUndefinedIfNull(
-							embedData
-						) as Discord.MessageEmbedOptions
-				  )
-				: undefined;
-
-			// Format embed if it can
-			if (embed && client && place) {
-				embed = await client.formatting.formatEmbed(embed, place);
-			}
-
-			// Content will only be used for the first embed
-			let content =
-				i == 0
-					? (Utils.turnUndefinedIfNull(newData.content) as string)
+		for (const message of newData.messages) {
+			for (
+				let i = 0;
+				i < (message.data.embeds ? message.data.embeds.length : 1);
+				i++
+			) {
+				// Embed data is generated if it exists
+				const embedData = message.data.embeds
+					? message.data.embeds[i]
 					: undefined;
-			if (content && client && place) {
-				content = await client.formatting.format(content, place);
-			}
+				let embed = embedData
+					? new Discord.MessageEmbed(
+							Utils.turnUndefinedIfNull(
+								embedData
+							) as Discord.MessageEmbedOptions
+					  )
+					: undefined;
 
-			if (content) {
-				if (embed) {
-					await channel.send(content, embed);
-					renderedOnce = true;
-				} else {
-					await channel.send(content);
+				// Format embed if it can
+				if (embed && client && place) {
+					embed = await client.formatting.formatEmbed(embed, place);
+				}
+
+				// Content will only be used for the first embed
+				let content =
+					i == 0
+						? (Utils.turnUndefinedIfNull(
+								message.data.content
+						  ) as string)
+						: undefined;
+				if (content && client && place) {
+					content = await client.formatting.format(content, place);
+				}
+
+				if (content) {
+					if (embed) {
+						await channel.send(content, embed);
+						renderedOnce = true;
+					} else {
+						await channel.send(content);
+						renderedOnce = true;
+					}
+				} else if (embed) {
+					await channel.send(embed);
 					renderedOnce = true;
 				}
-			} else if (embed) {
-				await channel.send(embed);
-				renderedOnce = true;
 			}
 		}
 

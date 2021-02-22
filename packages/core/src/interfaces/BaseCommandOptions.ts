@@ -1,4 +1,4 @@
-import { Permissions } from "../structures/Permissions";
+import { UserPermissions } from "../interfaces/UserPermissions";
 import { Prefixes } from "./Prefixes";
 import { InlineOptions } from "./InlineOptions";
 
@@ -81,7 +81,7 @@ export interface BaseCommandOptions {
 	 *
 	 * This doesn't act as a complete override for commands, so be careful!
 	 */
-	permissions?: Permissions;
+	userPermissions?: UserPermissions;
 
 	/**
 	 * The embed inline character limit, before it becomes not inline in the help embed.

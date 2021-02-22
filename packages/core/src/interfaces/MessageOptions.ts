@@ -1,6 +1,6 @@
 import { Client } from "../structures/Client";
-import { Message } from "../structures/Message";
-import { DiscordMessageOptions } from "./DiscordMessageOptions";
+import { BaseMessage } from "../structures/BaseMessage";
+import { DiscordMessageDataOptions } from "./DiscordMessageDataOptions";
 import { TwitchMessageOptions } from "./TwitchMessageOptions";
 
 export interface MessageOptions {
@@ -15,7 +15,7 @@ export interface MessageOptions {
 	 * The base itself shouldnt be modified, but the rest of the Discord data
 	 * should be changed to fake a command, and override the base.
 	 */
-	base?: MessageOptions | Message;
+	base?: MessageOptions | BaseMessage;
 
 	/**
 	 * The content of the message. If a specific platform's content parameter
@@ -28,7 +28,7 @@ export interface MessageOptions {
 	 * 
 	 * If no base is specified, client, channel and author is required.
 	 */
-	discord?: DiscordMessageOptions;
+	discord?: DiscordMessageDataOptions;
 
 	/**
 	 * Twitch data.

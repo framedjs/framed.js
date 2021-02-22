@@ -1,31 +1,35 @@
 /* eslint-disable no-mixed-spaces-and-tabs */
-import { oneLine } from "common-tags";
-import Discord from "discord.js";
-import { DiscordMessage } from "../interfaces/DiscordMessage";
-import { TwitchMessage } from "../interfaces/TwitchMessage";
-import { MessageOptions } from "../interfaces/MessageOptions";
-import { ArgumentOptions } from "../interfaces/ArgumentOptions";
+import { oneLine, oneLineInlineLists } from "common-tags";
+
 import { Argument } from "../interfaces/Argument";
-import Emoji from "node-emoji";
+import { ArgumentOptions } from "../interfaces/ArgumentOptions";
+import { DiscordMessageData } from "../interfaces/DiscordMessageData";
+import { TwitchMessageData } from "../interfaces/TwitchMessageData";
+import { MessageOptions } from "../interfaces/MessageOptions";
+import { Place } from "../interfaces/Place";
+
+import { Base } from "./Base";
 import { Client } from "./Client";
-import { TwitchMessageOptions } from "../interfaces/TwitchMessageOptions";
 import { Platform } from "../types/Platform";
 import { Logger } from "@framedjs/logger";
-import { Place } from "../interfaces/Place";
+
+import { FriendlyError } from "./errors/FriendlyError";
+import { EmbedHelper } from "../utils/discord/EmbedHelper";
+
+import Discord from "discord.js";
+import Emoji from "node-emoji";
 
 enum ArgumentState {
 	Quoted,
 	Unquoted,
 }
 
-export class Message {
-	readonly client: Client;
-
+export class BaseMessage extends Base {
 	/** What platform the message came from */
 	platform: Platform;
 
-	discord?: DiscordMessage;
-	twitch?: TwitchMessage;
+	discord?: DiscordMessageData;
+	twitch?: TwitchMessageData;
 
 	content = "";
 	prefix?: string;
@@ -41,9 +45,10 @@ export class Message {
 	 * @param options Framed Message Options
 	 */
 	constructor(options: MessageOptions) {
-		// Grabs the base
+		super(options.client);
+
+		// Grabs the base of a possible message
 		const base = options.base;
-		this.client = options.client;
 
 		let channel:
 			| Discord.TextChannel
@@ -65,7 +70,7 @@ export class Message {
 			? base.discord
 			: options.discord;
 
-		const twitchBase: TwitchMessageOptions | undefined = options.twitch
+		const twitchBase = options.twitch
 			? options.twitch
 			: base?.twitch
 			? base.twitch
@@ -81,10 +86,10 @@ export class Message {
 					: id && channel
 					? channel.messages.cache.get(id)
 					: undefined;
-			channel = channel ? channel : msg?.channel;
-			id = id ? id : msg?.id;
+			channel = channel ?? msg?.channel;
+			id = id ?? msg?.id;
 
-			client = discordBase?.client ? discordBase.client : msg?.client;
+			client = discordBase?.client ?? msg?.client;
 			guild = discordBase?.guild
 				? discordBase?.guild
 				: msg?.guild
@@ -200,7 +205,7 @@ export class Message {
 		args: string[] | undefined;
 		command: string | undefined;
 	}> {
-		place = place ? place : await this.getPlace();
+		place = place ?? (await this.getPlace());
 
 		this.prefix = this.getPrefix(place);
 		this.args = this.getArgs();
@@ -217,7 +222,7 @@ export class Message {
 	 * @returns prefix
 	 */
 	private getPrefix(place: Place): string | undefined {
-		const prefixes = [...this.client.plugins.getPossiblePrefixes(place)];
+		const prefixes = this.client.commands.getPossiblePrefixes(place);
 		let prefix: string | undefined;
 		for (const testPrefix of prefixes) {
 			if (this.content.startsWith(testPrefix)) {
@@ -259,7 +264,7 @@ export class Message {
 			// Note that this content will still include the command inside
 			// the arguments, and will be removed when getCommand() is called
 			const content = this.content.slice(this.prefix.length).trim();
-			const args = Message.getArgs(content);
+			const args = BaseMessage.getArgs(content);
 			// Logger.debug(`Args -> ${args}`);
 			return args;
 		} else {
@@ -280,8 +285,8 @@ export class Message {
 	 * @returns Command arguments
 	 */
 	static getArgs(content: string, settings?: ArgumentOptions): string[] {
-		const args = Message.simplifyArgs(
-			Message.getDetailedArgs(content, settings)
+		const args = BaseMessage.simplifyArgs(
+			BaseMessage.getDetailedArgs(content, settings)
 		);
 		return args;
 	}
@@ -492,7 +497,7 @@ export class Message {
 	 * @returns Contents after the `!command`
 	 */
 	getArgsContent(argsToTrim?: string[]): string {
-		return Message.getArgsContent(
+		return BaseMessage.getArgsContent(
 			this.content,
 			argsToTrim,
 			this.prefix,
@@ -531,139 +536,177 @@ export class Message {
 	//#endregion
 
 	/**
-	 * Gets the place value, but solely for use with Discord.
-	 * Note that it can either return the guild ID, or "discord_default".
+	 * Gets the place data, using Discord data.
 	 *
 	 * @param client Framed client
 	 * @param guild Discord Guild
-	 * @param tryNonDefaultId Tries to get a non-default ID.
-	 * There is still a chance however for it to be a
-	 * default value, if the DM isn't from a guild.
 	 */
-	static discordGetPlace(
+	static async discordGetPlace(
 		client: Client,
 		guild: Discord.Guild | null | undefined,
-		tryNonDefaultId = false
-	): Place {
-		// Hacky re-implementation of msg.getPlace
-		let placeId = guild ? guild.id : "default";
-
-		// Attempts to find any entries with place
-		// If none is found, fallback to defaults
-		const validPrefixes = client.place.placePrefixesArray.filter(
-			value =>
-				// Gets the key, splits it with the split string, and
-				// gets the place (which is index 1)
-				value[0].split(client.place.sep)[1] === placeId
-		);
-
-		if (!tryNonDefaultId) {
-			// If no valid prefixes were found, use default
-			placeId = validPrefixes.length == 0 ? "default" : placeId;
+		createNewPlace = false
+	): Promise<Place> {
+		const platformDefault = "discord_default";
+		const platformId = guild?.id ?? platformDefault;
+		const place = client.provider.place.get(platformId);
+		if (!place) {
+			if (!createNewPlace) {
+				return {
+					id: platformDefault,
+					platform: "discord",
+				};
+			} else {
+				if (platformId == platformDefault) {
+					throw new ReferenceError(
+						`place with ID ${platformId} should have already existed!`
+					);
+				}
+				return BaseMessage.createPlace(client, platformId, "discord");
+			}
 		}
-
-		return {
-			id: placeId,
-			platform: "discord",
-		};
+		return place;
 	}
 
 	/**
-	 * Gets the guild or Twitch ID. If it can't be found, this function will fallback to returning "twitch_default" or "discord_default".
-	 * If things go wrong, this function might also return "default".
 	 *
-	 * @param tryNonDefaultId Tries to get a non-default ID.
-	 * There is still a chance however for it to be a default value.
+	 * @param client
+	 */
+	static async twitchGetPlace(
+		client: Client,
+		channel: string,
+		createNewPlace = false
+	): Promise<Place> {
+		if (!client.twitch) {
+			throw new ReferenceError("client.twitch is undefined");
+		}
+		if (!client.twitch.api) {
+			throw new ReferenceError("client.twitch.api is undefined");
+		}
+
+		const channelData = await client.twitch.api.helix.channels.getChannelInfo(
+			channel
+		);
+
+		const platformDefault = "twitch_default";
+		const platformId = channelData?.id ?? platformDefault;
+		const place = client.provider.place.get(platformId);
+		if (!place) {
+			if (!createNewPlace) {
+				return {
+					id: platformDefault,
+					platform: "twitch",
+				};
+			} else {
+				if (platformId == platformDefault) {
+					throw new ReferenceError(
+						`place with ID ${platformId} should have already existed!`
+					);
+				}
+				return BaseMessage.createPlace(client, platformId, "twitch");
+			}
+		}
+		return place;
+	}
+
+	/**
+	 *
+	 * @param client
+	 * @param platformId
+	 * @param platform
+	 * @param newId
+	 */
+	static async createPlace(
+		client: Client,
+		platformId: string,
+		platform: Platform,
+		newId?: string
+	): Promise<Place> {
+		await client.provider.place.set(
+			platformId,
+			platform,
+			newId ?? (await client.provider.place.generateIdAsync())
+		);
+		const place = client.provider.place.get(platformId);
+		if (!place) {
+			throw new Error(`Failed to create new place and retrieve it`);
+		}
+		return place;
+	}
+
+	/**
+	 * Gets the guild or Twitch ID. If it can't be found, this function will fallback to returning
+	 * "twitch_default" or "discord_default". If things go very wrong, this function might also return "default".
+	 *
+	 * @param createNewPlaceIfNone Creates a new place, if there's no specific place entry.
+	 * @param forceNoCache Forces to not use the Message's cache for the place data.
 	 */
 	async getPlace(
-		tryNonDefaultId = false,
+		createNewPlaceIfNone = false,
 		forceNoCache = false
 	): Promise<Place> {
 		// If the result is cached, and we're not forced to not use the cache, use that instead.
 
 		if (!forceNoCache) {
-			if (this.place && !tryNonDefaultId) {
+			if (this.place && !createNewPlaceIfNone) {
 				return this.place;
-			} else if (this.placeTryNonDefaultId && tryNonDefaultId) {
+			} else if (this.placeTryNonDefaultId && createNewPlaceIfNone) {
 				return this.placeTryNonDefaultId;
 			}
 		}
 
-		let placeId: string | undefined;
-
+		// Attempts to retrieve the place data per platform
+		let place: Place;
 		switch (this.platform) {
 			case "discord":
 				if (this.discord) {
-					const place = Message.discordGetPlace(
+					place = await BaseMessage.discordGetPlace(
 						this.client,
 						this.discord.guild,
-						tryNonDefaultId
+						createNewPlaceIfNone
 					);
-
-					// Caching
-					if (!tryNonDefaultId) this.place = place;
-					else this.placeTryNonDefaultId = place;
-
-					return place;
+				} else {
+					throw new Error(
+						`Platform is ${this.platform}, but there's no existing data for it`
+					);
 				}
 				break;
 			case "twitch":
 				if (this.twitch) {
-					const channel = await this.twitch.api.helix.channels.getChannelInfo(
-						this.twitch.channel
+					place = await BaseMessage.twitchGetPlace(
+						this.client,
+						this.twitch.channel,
+						createNewPlaceIfNone
 					);
-					if (channel) {
-						placeId = channel.id;
-					} else {
-						placeId = "default";
-					}
+				} else {
+					throw new Error(
+						`Platform is ${this.platform}, but there's no existing data for it`
+					);
 				}
+				break;
+			default:
+				// For an unknown platform: this should NEVER happen,
+				// but just in case, use "default" as the ID, and platform being "none"
+				try {
+					throw new Error(
+						`Platform is ${this.platform}, but there's no existing data for it`
+					);
+				} catch (error) {
+					Logger.error(error.stack);
+				}
+
+				Logger.warn('Attempting to use the fallback "default" instead');
+				place = {
+					id: "default",
+					platform: "none",
+				};
 				break;
 		}
 
-		// For no place ID;
-		// This should NEVER happen, but just in case, use "default" as the ID
-		if (!placeId) {
-			try {
-				throw new Error(
-					`Platform "${this.platform}" doesn't have any corresponding data to use.`
-				);
-			} catch (error) {
-				Logger.error(error.stack);
-			}
-
-			Logger.warn('Attempting to use the fallback "default" instead');
-			placeId = "default";
-		}
-
-		// Attempts to find any entries with place
-		// If none is found, fallback to defaults
-		const validPrefixes = this.client.place.placePrefixesArray.filter(
-			value =>
-				// Gets the key, splits it with the split string, and
-				// gets the placeId (which is index 1)
-				value[0].split(this.client.place.sep)[1] === placeId
-		);
-
-		// No valid prefixes were found, use default
-		if (validPrefixes.length == 0) {
-			placeId = "default";
-		}
-
-		const place: Place = {
-			id: placeId,
-			platform: this.platform,
-		};
-
 		// Caching
-		if (!tryNonDefaultId) this.place = place;
-		else this.placeTryNonDefaultId = place;
+		this.place = place;
 
 		// Returns the result
-		return {
-			id: placeId,
-			platform: this.platform,
-		};
+		return place;
 	}
 
 	/**
@@ -674,14 +717,14 @@ export class Message {
 	 * and command are still inside the msg string.
 	 */
 	static parseEmojiAndString(
-		msgOrString: Message | string,
+		msgOrString: BaseMessage | string,
 		parseOut: string[] = []
 	): {
 		newContent: string;
 		newEmote?: string;
 	} {
 		let argsContent = "";
-		if (msgOrString instanceof Message) {
+		if (msgOrString instanceof BaseMessage) {
 			argsContent = msgOrString.getArgsContent([...parseOut]);
 			if (argsContent[0] == `"`) {
 				argsContent = argsContent.substring(1, argsContent.length);
@@ -696,10 +739,10 @@ export class Message {
 			argsContent = msgOrString;
 		}
 
-		const newArgs = Message.getArgs(argsContent);
+		const newArgs = BaseMessage.getArgs(argsContent);
 
 		// https://stackoverflow.com/questions/62955907/discordjs-nodejs-how-can-i-check-if-a-message-only-contains-custom-emotes#62960102
-		const regex = /(:[^:\s]+:|<:[^:\s]+:[\d]+>)/g;
+		const regex = /(:[^:\s]+:|<:[^:\s]+:[\d]+>|<a:[^:\s]+:[0-9]+>)+$/g;
 		const markdownEmote = newArgs[0].match(regex);
 		const genericEmoji = Emoji.unemojify(newArgs[0]).match(regex);
 
@@ -745,6 +788,103 @@ export class Message {
 			this.twitch.chat.say(this.twitch.channel, content);
 		} else {
 			throw new Error("There was no valid platform!");
+		}
+	}
+
+	/**
+	 * Sends a message showing help for a command.
+	 *
+	 * @param msg Framed Message containing command that needs to be shown help for
+	 *
+	 * @returns boolean value `true` if help is shown.
+	 */
+	async sendHelpForCommand(place?: Place): Promise<boolean> {
+		const pluginManager = this.client.plugins;
+
+		const helpPrefix = pluginManager.map
+			.get("default.bot.info")
+			?.commands.get("help")
+			?.getDefaultPrefix(place ?? (await this.getPlace()));
+
+		const content = oneLineInlineLists`${helpPrefix ?? this.prefix}help ${
+			this.command
+		} ${this.args ?? ""}`;
+
+		if (this.discord) {
+			const newMsg = new BaseMessage({
+				client: this.client,
+				content: content,
+				discord: {
+					client: this.discord.client,
+					channel: this.discord.channel,
+					author: this.discord.author,
+					guild: this.discord.guild,
+				},
+			});
+			await newMsg.getMessageElements();
+			try {
+				const success = await this.client.commands.run(newMsg);
+				if (success) {
+					return true;
+				} else {
+					throw new Error("Help command execution didn't succeed");
+				}
+			} catch (error) {
+				Logger.error(error.stack);
+			}
+
+			return false;
+		} else if (this.twitch) {
+			const newMsg = new BaseMessage({
+				client: this.client,
+				content: content,
+				twitch: {
+					chat: this.twitch.chat,
+					channel: this.twitch.channel,
+					user: this.twitch.user,
+				},
+			});
+			await newMsg.getMessageElements();
+			try {
+				const success = await this.client.commands.run(newMsg);
+				if (success) {
+					return true;
+				} else {
+					throw new Error("Help command execution didn't succeed");
+				}
+			} catch (error) {
+				Logger.error(error.stack);
+			}
+
+			return false;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Sends error message
+	 *
+	 * @param friendlyError
+	 * @param commandId Command ID for EmbedHelper.getTemplate
+	 */
+	async sendErrorMessage(
+		friendlyError: FriendlyError,
+		commandId?: string
+	): Promise<void> {
+		if (this.discord) {
+			const embed = EmbedHelper.getTemplate(
+				this.discord,
+				await EmbedHelper.getCheckOutFooter(this, commandId)
+			)
+				.setTitle(friendlyError.friendlyName)
+				.setDescription(friendlyError.message);
+
+			await this.discord.channel.send(embed);
+		} else {
+			await this.send(
+				`${friendlyError.friendlyName}: ${friendlyError.message}`
+			);
 		}
 	}
 }

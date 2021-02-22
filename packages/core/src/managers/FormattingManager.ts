@@ -1,15 +1,13 @@
+import { FoundCommandData } from "../interfaces/FoundCommandData";
+import { Place } from "../interfaces/Place";
+import { Base } from "../structures/Base";
+import { BaseCommand } from "../structures/BaseCommand";
+import { BaseMessage } from "../structures/BaseMessage";
 import { oneLineInlineLists } from "common-tags";
 import { Logger } from "@framedjs/logger";
-import { FoundCommandData } from "../interfaces/FoundCommandData";
-import { Client } from "../structures/Client";
-import { Message } from "../structures/Message";
 import Discord from "discord.js";
-import { BaseCommand } from "../structures/BaseCommand";
-import { Place } from "../interfaces/Place";
 
-export default class FormattingManager {
-	constructor(readonly client: Client) {}
-
+export class FormattingManager extends Base {
 	/**
 	 * Format custom $() formatting
 	 *
@@ -74,7 +72,7 @@ export default class FormattingManager {
 			const argsContent = formatContent
 				.replace(pluginId, "")
 				.replace(commandId, "");
-			const args = Message.getArgs(argsContent);
+			const args = BaseMessage.getArgs(argsContent);
 
 			if (!commandId) {
 				throw new Error(
@@ -83,7 +81,7 @@ export default class FormattingManager {
 			}
 
 			const foundData = (
-				await this.client.plugins.getFoundCommandData(
+				await this.client.commands.getFoundCommandData(
 					commandId,
 					args,
 					place
@@ -100,10 +98,10 @@ export default class FormattingManager {
 			// Assume it's just the command with some subcommands attached
 			const commandId: string | undefined = formatArgs[0];
 			const argsContent = formatContent.replace(commandId, "");
-			const args = Message.getArgs(argsContent);
+			const args = BaseMessage.getArgs(argsContent);
 
 			const foundData = (
-				await this.client.plugins.getFoundCommandData(
+				await this.client.commands.getFoundCommandData(
 					commandId,
 					args,
 					place
@@ -158,7 +156,7 @@ export default class FormattingManager {
 	): Promise<Discord.MessageEmbed> {
 		if (embed.description) {
 			try {
-				embed.description = await Message.format(
+				embed.description = await BaseMessage.format(
 					embed.description,
 					this.client,
 					place
@@ -171,7 +169,7 @@ export default class FormattingManager {
 		if (embed.fields) {
 			for await (const field of embed.fields) {
 				try {
-					field.name = await Message.format(
+					field.name = await BaseMessage.format(
 						field.name,
 						this.client,
 						place
@@ -180,7 +178,7 @@ export default class FormattingManager {
 					Logger.error(error.stack);
 				}
 				try {
-					field.value = await Message.format(
+					field.value = await BaseMessage.format(
 						field.value,
 						this.client,
 						place
@@ -193,7 +191,7 @@ export default class FormattingManager {
 
 		if (embed.footer?.text) {
 			try {
-				embed.footer.text = await Message.format(
+				embed.footer.text = await BaseMessage.format(
 					embed.footer.text,
 					this.client,
 					place
