@@ -273,7 +273,7 @@ export abstract class BasePlugin {
 		}
 	}
 
-	setupEvents(): void {
+	async setupEvents(): Promise<void> {
 		return;
 	}
 

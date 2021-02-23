@@ -1,6 +1,3 @@
-/* eslint-disable no-mixed-spaces-and-tabs */
-import "reflect-metadata";
-
 import * as Discord from "discord.js";
 import * as Twitch from "twitch";
 import * as TwitchAuth from "twitch-auth";
@@ -16,7 +13,6 @@ import { APIManager } from "../managers/APIManager";
 import { FormattingManager } from "../managers/FormattingManager";
 import { PluginManager } from "../managers/PluginManager";
 
-import { BasePlugin } from "./BasePlugin";
 import { EventEmitter } from "events";
 import { Logger } from "@framedjs/logger";
 import { version } from "../index";
@@ -24,8 +20,6 @@ import { version } from "../index";
 import { CommandManager } from "../managers/CommandManager";
 import { BaseProvider } from "../providers/BaseProvider";
 import { DefaultProvider } from "../providers/DefaultProvider";
-
-import path from "path";
 
 const DEFAULT_PREFIX = "!";
 
@@ -120,33 +114,6 @@ export class Client extends EventEmitter {
 	}
 
 	/**
-	 * Loads some default API routes
-	 */
-	loadDefaultRoutes(): void {
-		// Loads the API
-		this.api.loadRoutesIn({
-			dirname: APIManager.defaultPath,
-			filter: this.importFilter,
-			excludeDirs: /^(.*)\.(git|svn)$|^(.*)subcommands(.*)\.(js|ts)$/,
-		});
-		Logger.debug(`Loaded default routes`);
-	}
-
-	/**
-	 * Loads some default plugins
-	 */
-	loadDefaultPlugins(): BasePlugin[] {
-		// Loads the default plugins, which loads commands and events
-		const plugins = this.plugins.loadPluginsIn({
-			dirname: path.join(__dirname, "..", "plugins"),
-			filter: /^(.+plugin)\.(js|ts)$/,
-			excludeDirs: /^(.*)\.(git|svn)$|^(.*)subcommands(.*)\.(js|ts)$/,
-		});
-		Logger.debug(`Loaded default plugins`);
-		return plugins;
-	}
-
-	/**
 	 * Login
 	 */
 	async login(options: LoginOptions[]): Promise<void> {
@@ -207,25 +174,9 @@ export class Client extends EventEmitter {
 			}
 		}
 
-		// // Imports default routes
-		// if (
-		// 	this.clientOptions.api?.loadDefaults == true ||
-		// 	this.clientOptions.api?.loadDefaults === undefined
-		// ) {
-		// 	this.loadDefaultRoutes();
-		// }
-
-		// // Imports default plugins
-		// if (
-		// 	this.clientOptions.plugins?.loadDefaults == true ||
-		// 	this.clientOptions.plugins?.loadDefaults === undefined
-		// ) {
-		// 	this.loadDefaultPlugins();
-		// }
-
 		// Imports all events now, since the plugins are done
-		this.plugins.map.forEach(plugin => {
-			plugin.events.forEach(event => {
+		for await (const plugin of this.plugins.map.values()) {
+			for (const event of plugin.events.values()) {
 				// If the event hasn't been initialized, initialize it
 				if (!event.eventInitialized) {
 					try {
@@ -234,14 +185,14 @@ export class Client extends EventEmitter {
 						Logger.error(error.stack);
 					}
 				}
-			});
+			}
 
 			try {
-				plugin.setupEvents();
+				await plugin.setupEvents();
 			} catch (error) {
 				Logger.error(error.stack);
 			}
-		});
+		}
 	}
 
 	async processMsg(msg: BaseMessage): Promise<void> {
