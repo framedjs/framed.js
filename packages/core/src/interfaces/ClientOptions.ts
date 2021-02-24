@@ -79,14 +79,9 @@ export interface DiscordClientOptions {
 	defaultPrefix?: string;
 
 	/**
-	 * The owners, represented as user IDs.
+	 * The bot owners, represented as user IDs.
 	 */
-	owners?: Discord.UserResolvable[];
-
-	/**
-	 * The admins, represented as user IDs.
-	 */
-	admins?: Discord.UserResolvable[];
+	botOwners?: string[] | string;
 }
 
 export interface TwitchClientOptions {
@@ -98,14 +93,8 @@ export interface TwitchClientOptions {
 	defaultPrefix?: string;
 
 	/**
-	 * The owners, represented as a username or user IDs. 
+	 * The owner(s), represented as a username or user IDs.
 	 * @todo Currently placeholder, variable doesn't do anything currently
 	 */
-	owners?: string[];
-
-	/**
-	 * The admins, represented as a username or user IDs.
-	 * @todo Currently placeholder, variable doesn't do anything currently
-	 */
-	admins?: string[];
+	botOwners?: string[] | string;
 }

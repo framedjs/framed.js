@@ -1,0 +1,21 @@
+export interface UserPermissionData {
+	success: boolean;
+}
+
+export interface UserPermissionAllowedData {
+	success: true;
+}
+
+export interface UserPermissionDeniedData extends UserPermissionData {
+	success: false;
+	reasons: UserPermissionDeniedReasons[];
+}
+
+export type UserPermissionDeniedReasons =
+	| "botOwnersOnly"
+	| "discordDMs"
+	| "discordMissingPermissions"
+	| "discordMissingRole"
+	| "discordNoData"
+	| "discordUser"
+	| "unknown";

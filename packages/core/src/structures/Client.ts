@@ -34,16 +34,9 @@ export class Client extends EventEmitter {
 		client?: Discord.Client;
 		defaultPrefix: string;
 
-		/**
-		 * The owners, represented as user IDs.
-		 */
-		owners?: Discord.UserResolvable[];
-
-		/**
-		 * The admins, represented as user IDs.
-		 */
-		admins?: Discord.UserResolvable[];
+		botOwners: Discord.UserResolvable[];
 	} = {
+		botOwners: [],
 		defaultPrefix: DEFAULT_PREFIX,
 	};
 	twitch: {
@@ -52,16 +45,9 @@ export class Client extends EventEmitter {
 		chat?: TwitchChatClient.ChatClient;
 		defaultPrefix: string;
 
-		/**
-		 * The owners, represented as user IDs.
-		 */
-		owners?: Discord.UserResolvable[];
-
-		/**
-		 * The admins, represented as user IDs.
-		 */
-		admins?: Discord.UserResolvable[];
+		botOwners: string[];
 	} = {
+		botOwners: [],
 		defaultPrefix: DEFAULT_PREFIX,
 	};
 
@@ -100,11 +86,22 @@ export class Client extends EventEmitter {
 		this.twitch.defaultPrefix =
 			options.twitch?.defaultPrefix ?? this.defaultPrefix;
 
-		this.discord.admins = options.discord?.admins;
-		this.discord.owners = options.discord?.owners;
-		this.twitch.admins = options.twitch?.admins;
-		this.twitch.owners = options.twitch?.owners;
+		// Sets the owners from Discord and Twitch
+		if (options.discord?.botOwners) {
+			this.discord.botOwners =
+				typeof options.discord.botOwners == "string"
+					? [options.discord.botOwners]
+					: options.discord.botOwners;
+		}
 
+		if (options.twitch?.botOwners) {
+			this.twitch.botOwners =
+				typeof options.twitch.botOwners == "string"
+					? [options.twitch.botOwners]
+					: options.twitch.botOwners;
+		}
+
+		// Initializes managers and providers
 		this.api = options.apiManager ?? new APIManager(this);
 		this.commands = options.commandManager ?? new CommandManager(this);
 		this.formatting =

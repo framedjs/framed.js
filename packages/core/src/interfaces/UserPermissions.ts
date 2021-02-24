@@ -6,8 +6,13 @@ export interface UserPermissions {
 	 * This is set to true by default. If you'd like handle this yourself, set this
 	 * variable to false.
 	 *
-	 * If you simply want to not immediately check for permissions, check the example!
+	 * If you want to check for permissions in certain parts of the code later in execution,
+	 * check the example!
 	 *
+	 * **WARNING**: handle with care when set to false! If this variable is set to false,
+	 * all options will be ignored automatically, including bot owners only. This could lead
+	 * to nasty situations. 
+	 * 
 	 * @example
 	 * ```ts
 	 * // Put this inside your run() function in the command:
@@ -18,6 +23,11 @@ export interface UserPermissions {
 	 * ```
 	 */
 	checkAutomatically?: boolean;
+
+	/**
+	 * Should this be bot owners only? If set to true, then all other permissions will be ignored.
+	 */
+	botOwnersOnly?: boolean;
 
 	/**
 	 * Discord permission options. These will be checked in the following order:

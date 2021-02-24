@@ -359,14 +359,16 @@ export class CommandManager extends Base {
 							tempCommand.userPermissions?.checkAutomatically ==
 								true
 						) {
-							if (!tempCommand.hasPermission(msg)) {
-								const success = await tempCommand.sendPermissionErrorMessage(
-									msg
+							const data = tempCommand.checkForPermissions(msg);
+							if (!data.success) {
+								const sent = await tempCommand.sendPermissionErrorMessage(
+									msg,
+									tempCommand.userPermissions,
+									data
 								);
-								if (!success) {
-									Logger.error(
-										`"${tempCommand.id}" tried to send a permission error message, but couldn't send anything!`
-									);
+								if (!sent) {
+									Logger.error(oneLine`"${tempCommand.id}" tried to send
+									a permission error message, but couldn't send anything!`);
 								}
 								map.set(tempCommand.fullId, false);
 								continue;
