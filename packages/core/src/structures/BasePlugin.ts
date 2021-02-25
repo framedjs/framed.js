@@ -107,6 +107,11 @@ export abstract class BasePlugin {
 	 */
 	postInstall?(): Promise<void>;
 
+	/**
+	 * This function will be called after the providers have loaded all data from cache.
+	 */
+	loadedProviders?(): Promise<void>;
+
 	//#region Command loading
 
 	/**

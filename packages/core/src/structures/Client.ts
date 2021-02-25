@@ -19,7 +19,6 @@ import { version } from "../index";
 
 import { CommandManager } from "../managers/CommandManager";
 import { BaseProvider } from "../providers/BaseProvider";
-import { DefaultProvider } from "../providers/DefaultProvider";
 
 const DEFAULT_PREFIX = "!";
 
@@ -107,7 +106,7 @@ export class Client extends EventEmitter {
 		this.formatting =
 			options.formattingManager ?? new FormattingManager(this);
 		this.plugins = options.pluginManager ?? new PluginManager(this);
-		this.provider = options.provider ?? new DefaultProvider(this);
+		this.provider = options.provider ?? new BaseProvider(this);
 	}
 
 	/**

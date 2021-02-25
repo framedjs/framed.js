@@ -230,7 +230,7 @@ export abstract class BaseCommand {
 		// for comparing if it contains the default prefix
 		let place =
 			typeof placeOrPlatformId == "string"
-				? this.client.provider.place.get(placeOrPlatformId)
+				? this.client.provider.places.get(placeOrPlatformId)
 				: placeOrPlatformId;
 
 		if (!place) {
@@ -408,7 +408,7 @@ export abstract class BaseCommand {
 					}
 				} else {
 					// Allow it to pass, if no roles specified
-					hasPermission = true;
+					hasRole = true;
 				}
 
 				if (hasRole && hasPermission) {

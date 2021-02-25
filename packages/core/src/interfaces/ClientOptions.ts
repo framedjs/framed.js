@@ -3,7 +3,6 @@ import { CommandManager } from "../managers/CommandManager";
 import { FormattingManager } from "../managers/FormattingManager";
 import { PluginManager } from "../managers/PluginManager";
 import { BaseProvider } from "../providers/BaseProvider";
-import Discord from "discord.js";
 
 /**
  * Used with initializing Framed client.

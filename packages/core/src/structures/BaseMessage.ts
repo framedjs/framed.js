@@ -548,7 +548,7 @@ export class BaseMessage extends Base {
 	): Promise<Place> {
 		const platformDefault = "discord_default";
 		const platformId = guild?.id ?? platformDefault;
-		const place = client.provider.place.get(platformId);
+		const place = client.provider.places.get(platformId);
 		if (!place) {
 			if (!createNewPlace) {
 				return {
@@ -589,7 +589,7 @@ export class BaseMessage extends Base {
 
 		const platformDefault = "twitch_default";
 		const platformId = channelData?.id ?? platformDefault;
-		const place = client.provider.place.get(platformId);
+		const place = client.provider.places.get(platformId);
 		if (!place) {
 			if (!createNewPlace) {
 				return {
@@ -621,12 +621,12 @@ export class BaseMessage extends Base {
 		platform: Platform,
 		newId?: string
 	): Promise<Place> {
-		await client.provider.place.set(
+		await client.provider.places.set(
 			platformId,
 			platform,
-			newId ?? (await client.provider.place.generateIdAsync())
+			newId ?? (await client.provider.places.generateIdAsync())
 		);
-		const place = client.provider.place.get(platformId);
+		const place = client.provider.places.get(platformId);
 		if (!place) {
 			throw new Error(`Failed to create new place and retrieve it`);
 		}

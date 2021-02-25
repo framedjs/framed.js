@@ -3,7 +3,6 @@ export { APIManager } from "./managers/APIManager";
 // export { ArgumentManger } from "./managers/ArgumentManager";
 export { CommandManager } from "./managers/CommandManager";
 export { PluginManager } from "./managers/PluginManager";
-// export { DatabaseManager } from "./managers/DatabaseManager";
 
 // Structures
 export { Client } from "./structures/Client";
@@ -39,6 +38,7 @@ export { Settings } from "./providers/interfaces/Settings";
 export { BaseProvider } from "./providers/BaseProvider";
 export { Provider } from "./providers/subproviders/Provider";
 export { PrefixProvider } from "./providers/subproviders/PrefixProvider";
+export { PluginProvider } from "./providers/subproviders/PluginProvider";
 export { SettingsProvider } from "./providers/subproviders/SettingsProvider";
 export { PlaceProvider } from "./providers/subproviders/PlaceProvider";
 
@@ -49,8 +49,6 @@ export { EmbedHelper } from "./utils/discord/EmbedHelper";
 
 // Types
 export { Platform } from "./types/Platform";
-// export { PluginResolvable } from "./managers/database/types/PluginResolvable";
-// export { PrefixResolvable } from "./managers/database/types/PrefixResolvable";
 
 // Friendly Errors
 export { FriendlyError } from "./structures/errors/FriendlyError";
@@ -79,7 +77,3 @@ import * as TwitchChatClient from "twitch-chat-client";
 export { Twitch };
 export { TwitchAuth };
 export { TwitchChatClient };
-
-// TypeORM export
-// import * as TypeORM from "typeorm";
-// export { TypeORM };
