@@ -556,8 +556,10 @@ export abstract class BaseCommand {
 									if (!newRole) {
 										Logger.error(oneLine`BaseCommand.ts:
 										Couldn't find role with role ID "${role}".`);
+										roles.push(`<@&${role}>`);
+									} else {
+										roles.push(`${newRole}`);
 									}
-									roles.push(`${newRole}` ?? `<@&${role}>`);
 								} else {
 									roles.push(`${role}`);
 								}
