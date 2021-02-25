@@ -10,8 +10,11 @@ import { NotFoundError } from "../../structures/errors/NotFoundError";
 import { InvalidError } from "../../structures/errors/InvalidError";
 import { BaseMessage } from "../../structures/BaseMessage";
 import { FriendlyError } from "../../structures/errors/FriendlyError";
-import { DiscohookOutputData } from "../../interfaces/other/DiscohookOutputData";
-import { oneLine } from "common-tags";
+import {
+	DiscohookMessageData,
+	DiscohookOutputData,
+} from "../../interfaces/other/DiscohookOutputData";
+import { stripIndents } from "common-tags";
 import Axios from "axios";
 import { Client } from "../../structures/Client";
 import { Place } from "../../interfaces/Place";
@@ -799,69 +802,115 @@ export class DiscordUtils {
 	 * @param place
 	 */
 	static async renderOutputData(
-		newData: DiscohookOutputData,
+		newData: DiscohookOutputData | DiscohookMessageData,
 		channel: Discord.TextChannel | Discord.NewsChannel | Discord.DMChannel,
 		client?: Client,
 		place?: Place
 	): Promise<void> {
-		Logger.silly(
-			`newEmbedData:\n${Utils.util.inspect(newData, false, 7, true)}`
-		);
+		Logger.silly(stripIndents`newEmbedData:
+		${Utils.util.inspect(newData, false, 7, true)}`);
 
-		// Renders the Discohook message
-		let renderedOnce = false;
-
-		for (const message of newData.messages) {
-			for (
-				let i = 0;
-				i < (message.data.embeds ? message.data.embeds.length : 1);
-				i++
-			) {
-				// Embed data is generated if it exists
-				const embedData = message.data.embeds
-					? message.data.embeds[i]
-					: undefined;
-				let embed = embedData
-					? new Discord.MessageEmbed(
-							Utils.turnUndefinedIfNull(
-								embedData
-							) as Discord.MessageEmbedOptions
-					  )
-					: undefined;
-
-				// Format embed if it can
-				if (embed && client && place) {
-					embed = await client.formatting.formatEmbed(embed, place);
-				}
-
-				// Content will only be used for the first embed
-				let content =
-					i == 0
-						? (Utils.turnUndefinedIfNull(
-								message.data.content
-						  ) as string)
-						: undefined;
-				if (content && client && place) {
-					content = await client.formatting.format(content, place);
-				}
-
-				if (content) {
-					if (embed) {
-						await channel.send(content, embed);
-						renderedOnce = true;
-					} else {
-						await channel.send(content);
-						renderedOnce = true;
+		try {
+			if ("messages" in newData) {
+				for (const message of (newData as DiscohookOutputData)
+					.messages) {
+					if (
+						!(await this.renderSingleMessage(
+							message.data,
+							channel,
+							client,
+							place
+						))
+					) {
+						throw new FriendlyError(
+							"There wasn't anything to render."
+						);
 					}
-				} else if (embed) {
-					await channel.send(embed);
+				}
+			} else {
+				if (
+					!(await this.renderSingleMessage(
+						newData,
+						channel,
+						client,
+						place
+					))
+				) {
+					throw new FriendlyError("There wasn't anything to render.");
+				}
+			}
+		} catch (error) {
+			if (error instanceof FriendlyError) {
+				throw error;
+			} else {
+				Logger.error(error.stack);
+				throw new FriendlyError(
+					"An unknown error happened while rendering"
+				);
+			}
+		}
+	}
+
+	/**
+	 * Renders message data.
+	 *
+	 * @param messageData
+	 * @param channel
+	 * @param client
+	 * @param place
+	 */
+	static async renderSingleMessage(
+		messageData: DiscohookMessageData,
+		channel: Discord.TextChannel | Discord.NewsChannel | Discord.DMChannel,
+		client?: Client,
+		place?: Place
+	): Promise<boolean> {
+		let renderedOnce = false;
+		for (
+			let i = 0;
+			i < (messageData.embeds ? messageData.embeds.length : 1);
+			i++
+		) {
+			// Embed data is generated if it exists
+			const embedData = messageData.embeds
+				? messageData.embeds[i]
+				: undefined;
+			let embed = embedData
+				? new Discord.MessageEmbed(
+						Utils.turnUndefinedIfNull(
+							embedData
+						) as Discord.MessageEmbedOptions
+				  )
+				: undefined;
+
+			// Format embed if it can
+			if (embed && client && place) {
+				embed = await client.formatting.formatEmbed(embed, place);
+			}
+
+			// Content will only be used for the first embed
+			let content =
+				i == 0
+					? (Utils.turnUndefinedIfNull(messageData.content) as string)
+					: undefined;
+			if (content && client && place) {
+				content = await client.formatting.format(content, place);
+			}
+
+			if (content) {
+				if (embed) {
+					await channel.send(content, embed);
+					renderedOnce = true;
+				} else {
+					await channel.send(content);
 					renderedOnce = true;
 				}
+			} else if (embed) {
+				await channel.send(embed);
+				renderedOnce = true;
 			}
 		}
 
-		if (!renderedOnce) {
-			throw new FriendlyError("There wasn't anything to render.");
-		}
+		return renderedOnce;
 	}
 }
