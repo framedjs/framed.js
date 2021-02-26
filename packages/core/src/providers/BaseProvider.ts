@@ -50,7 +50,7 @@ export class BaseProvider extends Base {
 		const settled = await Promise.allSettled(loadedProvidersList);
 		for (const settle of settled) {
 			if (settle.status == "rejected") {
-				Logger.error(settle.status);
+				Logger.error(settle.reason);
 			}
 		}
 
