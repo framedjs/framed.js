@@ -142,7 +142,6 @@ export class DiscordUtils {
 	static async getMessageFromLink(
 		link: string,
 		client: Discord.Client,
-		author: Discord.User,
 		guild: Discord.Guild
 	): Promise<Discord.Message | undefined> {
 		// If it's not an actual link, return undefined
@@ -803,7 +802,11 @@ export class DiscordUtils {
 	 */
 	static async renderOutputData(
 		newData: DiscohookOutputData | DiscohookMessageData,
-		channel: Discord.TextChannel | Discord.NewsChannel | Discord.DMChannel,
+		channelOrMessage:
+			| Discord.TextChannel
+			| Discord.NewsChannel
+			| Discord.DMChannel
+			| Discord.Message,
 		client?: Client,
 		place?: Place
 	): Promise<void> {
@@ -817,7 +820,7 @@ export class DiscordUtils {
 					if (
 						!(await this.renderSingleMessage(
 							message.data,
-							channel,
+							channelOrMessage,
 							client,
 							place
 						))
@@ -831,7 +834,7 @@ export class DiscordUtils {
 				if (
 					!(await this.renderSingleMessage(
 						newData,
-						channel,
+						channelOrMessage,
 						client,
 						place
 					))
@@ -855,15 +858,20 @@ export class DiscordUtils {
 	 * Renders message data.
 	 *
 	 * @param messageData
-	 * @param channel
+	 * @param channelOrMessage
 	 * @param client
 	 * @param place
 	 */
 	static async renderSingleMessage(
 		messageData: DiscohookMessageData,
-		channel: Discord.TextChannel | Discord.NewsChannel | Discord.DMChannel,
+		channelOrMessage:
+			| Discord.Message
+			| Discord.TextChannel
+			| Discord.NewsChannel
+			| Discord.DMChannel,
 		client?: Client,
-		place?: Place
+		place?: Place,
+		edit = false
 	): Promise<boolean> {
 		let renderedOnce = false;
 		for (
@@ -897,17 +905,44 @@ export class DiscordUtils {
 				content = await client.formatting.format(content, place);
 			}
 
+			let channel: Discord.TextChannel | undefined;
+			let msgToEdit: Discord.Message | undefined;
+			if (channelOrMessage instanceof Discord.Message) {
+				if (!edit) {
+					msgToEdit = channelOrMessage;
+				} else {
+					channel = channelOrMessage.channel as Discord.TextChannel;
+				}
+			} else {
+				channel = channelOrMessage as Discord.TextChannel;
+			}
+
+			// Renders all the content with the retrieved data
 			if (content) {
 				if (embed) {
-					await channel.send(content, embed);
-					renderedOnce = true;
+					if (channel) {
+						await channel.send(content, embed);
+						renderedOnce = true;
+					} else if (msgToEdit) {
+						await msgToEdit.edit(content, embed);
+						renderedOnce = true;
+					}
 				} else {
-					await channel.send(content);
-					renderedOnce = true;
+					if (channel) {
+						await channel.send(content);
+						renderedOnce = true;
+					} else if (msgToEdit) {
+						await msgToEdit.edit(content);
+					}
 				}
 			} else if (embed) {
-				await channel.send(embed);
-				renderedOnce = true;
+				if (channel) {
+					await channel.send(embed);
+					renderedOnce = true;
+				} else if (msgToEdit) {
+					await msgToEdit.edit(edit);
+					renderedOnce = true;
+				}
 			}
 		}
 
