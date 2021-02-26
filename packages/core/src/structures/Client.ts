@@ -133,7 +133,6 @@ export class Client extends EventEmitter {
 						partials: ["MESSAGE", "CHANNEL", "REACTION", "USER"],
 					});
 					this.setupDiscordEvents(this.discord.client);
-					await this.discord.client.login();
 					break;
 				case "twitch":
 					if (!option.twitch) {
@@ -163,7 +162,6 @@ export class Client extends EventEmitter {
 						option.twitch.clientOptions
 					);
 					this.setupTwitchEvents(this.twitch.chat);
-					await this.twitch.chat.connect();
 					break;
 				default:
 					throw new Error(`Platform "${option.type}" is invalid`);
@@ -188,6 +186,15 @@ export class Client extends EventEmitter {
 			} catch (error) {
 				Logger.error(error.stack);
 			}
+		}
+
+		// Logs into all platforms
+		if (this.discord.client) {
+			await this.discord.client.login();
+		}
+
+		if (this.twitch.chat) {
+			await this.twitch.chat.connect();
 		}
 	}
 
