@@ -18,6 +18,8 @@ import { EmbedHelper } from "../utils/discord/EmbedHelper";
 
 import Discord from "discord.js";
 import Emoji from "node-emoji";
+import { DiscordMessage } from "./DiscordMessage";
+import { TwitchMessage } from "./TwitchMessage";
 
 enum ArgumentState {
 	Quoted,
@@ -811,7 +813,7 @@ export class BaseMessage extends Base {
 		} ${this.args ?? ""}`;
 
 		if (this.discord) {
-			const newMsg = new BaseMessage({
+			const newMsg = new DiscordMessage({
 				client: this.client,
 				content: content,
 				discord: {
@@ -835,7 +837,7 @@ export class BaseMessage extends Base {
 
 			return false;
 		} else if (this.twitch) {
-			const newMsg = new BaseMessage({
+			const newMsg = new TwitchMessage({
 				client: this.client,
 				content: content,
 				twitch: {
