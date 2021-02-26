@@ -809,40 +809,43 @@ export class DiscordUtils {
 			| Discord.Message,
 		client?: Client,
 		place?: Place
-	): Promise<void> {
+	): Promise<Discord.Message[]> {
 		Logger.silly(stripIndents`newEmbedData:
 		${Utils.util.inspect(newData, false, 7, true)}`);
+
+		const newMsgs: Discord.Message[] = [];
 
 		try {
 			if ("messages" in newData) {
 				for (let i = 0; i < newData.messages.length; i++) {
 					const message = newData.messages[i];
-					if (
-						!(await this.renderSingleMessage(
-							message.data,
-							channelOrMessage,
-							client,
-							place,
-							i == 0
-						))
-					) {
+
+					const newMsg = await this.renderSingleMessage(
+						message.data,
+						channelOrMessage,
+						client,
+						place,
+						i == 0
+					);
+					if (!newMsg) {
 						throw new FriendlyError(
 							"There wasn't anything to render."
 						);
 					}
+					newMsgs.push(newMsg);
 				}
 			} else {
-				if (
-					!(await this.renderSingleMessage(
-						newData,
-						channelOrMessage,
-						client,
-						place,
-						true
-					))
-				) {
+				const newMsg = await this.renderSingleMessage(
+					newData,
+					channelOrMessage,
+					client,
+					place,
+					true
+				);
+				if (!newMsg) {
 					throw new FriendlyError("There wasn't anything to render.");
 				}
+				newMsgs.push(newMsg);
 			}
 		} catch (error) {
 			if (error instanceof FriendlyError) {
@@ -854,6 +857,8 @@ export class DiscordUtils {
 				);
 			}
 		}
+
+		return newMsgs;
 	}
 
 	/**
@@ -874,8 +879,9 @@ export class DiscordUtils {
 		client?: Client,
 		place?: Place,
 		shouldEdit = false
-	): Promise<boolean> {
-		let rendered = false;
+	): Promise<Discord.Message | undefined> {
+		let msgToReturn: Discord.Message | undefined;
+
 		for (
 			let i = 0;
 			i < (messageData.embeds ? messageData.embeds.length : 1);
@@ -923,28 +929,22 @@ export class DiscordUtils {
 			if (content) {
 				if (embed) {
 					if (channel) {
-						await channel.send(content, embed);
-						rendered = true;
+						msgToReturn = await channel.send(content, embed);
 					} else if (msgToEdit) {
-						await msgToEdit.edit(content, embed);
-						rendered = true;
+						msgToReturn = await msgToEdit.edit(content, embed);
 					}
 				} else {
 					if (channel) {
-						await channel.send(content);
-						rendered = true;
+						msgToReturn = await channel.send(content);
 					} else if (msgToEdit) {
-						await msgToEdit.edit(content);
-						rendered = true;
+						msgToReturn = await msgToEdit.edit(content);
 					}
 				}
 			} else if (embed) {
 				if (channel) {
-					await channel.send("", embed);
-					rendered = true;
+					msgToReturn = await channel.send("", embed);
 				} else if (msgToEdit) {
-					await msgToEdit.edit("", embed);
-					rendered = true;
+					msgToReturn = await msgToEdit.edit("", embed);
 				}
 			}
 
@@ -952,6 +952,6 @@ export class DiscordUtils {
 			shouldEdit = false;
 		}
 
-		return rendered;
+		return msgToReturn;
 	}
 }
