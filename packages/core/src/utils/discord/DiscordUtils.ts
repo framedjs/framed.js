@@ -796,7 +796,7 @@ export class DiscordUtils {
 	 * If client and place are specified, formatting will be done
 	 *
 	 * @param newData Data
-	 * @param channel Discord channel
+	 * @param channelOrMessage Discord channel
 	 * @param client
 	 * @param place
 	 */
@@ -815,14 +815,15 @@ export class DiscordUtils {
 
 		try {
 			if ("messages" in newData) {
-				for (const message of (newData as DiscohookOutputData)
-					.messages) {
+				for (let i = 0; i < newData.messages.length; i++) {
+					const message = newData.messages[i];
 					if (
 						!(await this.renderSingleMessage(
 							message.data,
 							channelOrMessage,
 							client,
-							place
+							place,
+							i == 0
 						))
 					) {
 						throw new FriendlyError(
@@ -871,9 +872,9 @@ export class DiscordUtils {
 			| Discord.DMChannel,
 		client?: Client,
 		place?: Place,
-		edit = false
+		shouldEdit = false
 	): Promise<boolean> {
-		let renderedOnce = false;
+		let rendered = false;
 		for (
 			let i = 0;
 			i < (messageData.embeds ? messageData.embeds.length : 1);
@@ -908,7 +909,7 @@ export class DiscordUtils {
 			let channel: Discord.TextChannel | undefined;
 			let msgToEdit: Discord.Message | undefined;
 			if (channelOrMessage instanceof Discord.Message) {
-				if (!edit) {
+				if (shouldEdit) {
 					msgToEdit = channelOrMessage;
 				} else {
 					channel = channelOrMessage.channel as Discord.TextChannel;
@@ -922,30 +923,34 @@ export class DiscordUtils {
 				if (embed) {
 					if (channel) {
 						await channel.send(content, embed);
-						renderedOnce = true;
+						rendered = true;
 					} else if (msgToEdit) {
 						await msgToEdit.edit(content, embed);
-						renderedOnce = true;
+						rendered = true;
 					}
 				} else {
 					if (channel) {
 						await channel.send(content);
-						renderedOnce = true;
+						rendered = true;
 					} else if (msgToEdit) {
 						await msgToEdit.edit(content);
+						rendered = true;
 					}
 				}
 			} else if (embed) {
 				if (channel) {
 					await channel.send(embed);
-					renderedOnce = true;
+					rendered = true;
 				} else if (msgToEdit) {
-					await msgToEdit.edit(edit);
-					renderedOnce = true;
+					await msgToEdit.edit(embed);
+					rendered = true;
 				}
 			}
+
+			// Makes sure the message never gets edited again
+			shouldEdit = false;
 		}
 
-		return renderedOnce;
+		return rendered;
 	}
 }
