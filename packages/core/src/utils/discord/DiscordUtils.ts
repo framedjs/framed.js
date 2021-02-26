@@ -939,10 +939,10 @@ export class DiscordUtils {
 				}
 			} else if (embed) {
 				if (channel) {
-					await channel.send(embed);
+					await channel.send("", embed);
 					rendered = true;
 				} else if (msgToEdit) {
-					await msgToEdit.edit(embed);
+					await msgToEdit.edit("", embed);
 					rendered = true;
 				}
 			}
