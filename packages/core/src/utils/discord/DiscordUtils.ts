@@ -837,7 +837,8 @@ export class DiscordUtils {
 						newData,
 						channelOrMessage,
 						client,
-						place
+						place,
+						true
 					))
 				) {
 					throw new FriendlyError("There wasn't anything to render.");
