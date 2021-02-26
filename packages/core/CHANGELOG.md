@@ -1,5 +1,77 @@
 # @framedjs/core
 
+## 0.3.0
+
+### Patch Changes
+
+-   5cf56b1: implement most of place system
+-   55c2227: - Features:
+
+    -   setupEvents is now async
+    -   botOwners option can also use string
+    -   better userPermissions
+    -   Set providers through an object
+
+    -   Bugfixes:
+    -   DefaultProvider initalizes providers by itself now
+    -   Discord ready events call consistency
+    -   role check passes for specified Discord permission
+
+    -   Breaking Changes:
+    -   client.provider.place is now client.provider.places
+    -   removed DefaultProvider, BaseProvider replaces it
+    -   old provider setting no longer works; you'll need an object now
+    -   function calls to DiscordUtils.getMessageFromLink need to remove the author parameter
+
+-   da34f6b: Better inline options and import fixes
+
+    -   Features: - Inline for help can be more controlled - (Unfinsihed) Discord Bot Missing Perms friendly error
+
+    -   Bugfixes - All plugins, routes, commands, and events should get imported
+
+-   9ab8eaa: Simpler event setup and minor tweaks
+-   24d14d9: Many changes, preparing for release
+
+    -   Features
+    -   Providers for settings, prefix, and place
+    -   Get certain variables from cache
+    -   Footer can now use a string instead of an array of commands
+    -   User and bot permissions for commands
+    -   Classes for DiscordMessage and TwitchMessage (extends Message)
+    -   Once you check via instanceof, their respective platform data,
+        and platform string will be set appropriately
+    -   Added nanoid as a dependency for place IDs
+    -   Expanded permission system for Discord
+    -   isAdmin and isOwner checks now exist; add admins and owners in
+        ClientOptions, through each platform's respective object
+    -   DiscordUtils Discohook parsers now support multiple messages
+
+    -   Chores
+    -   Updated dependencies
+
+    -   Bug-fixes
+    -   Pinning messages shouldn't re-trigger the command again
+    -   Partials should be handled correctly in Client
+
+    -   Refactors
+    -   Used `x ?? y` syntax, replacing the `x ? x : y` syntax
+    -   BREAKING: Forcing Node v14+
+    -   BREAKING: Rename Message class to BaseMessage
+    -   BREAKING: Moved lots of functionality from PluginManager into a new
+        manager called CommandManager
+    -   BREAKING: permissions in BaseCommand has been renamed to userPermissions
+    -   BREAKING: renamed defaultHelpCommands to footer
+    -   BREAKING: removed default import variables from the
+        root of ClientOptions
+    -   BREAKING: All TypeORM uses have been removed (such as DatabaseManager
+        and entities). ClientOptions no longer requires a TypeORM connection to
+        the database.
+    -   BREAKING: PlaceManager has been removed; use the place and prefix
+        provider instead
+    -   BREAKING: moved sendHelpForCommand from PluginManager to BaseMessage
+    -   BREAKING: sendHelpForCommand is no longer static
+    -   BREAKING: DiscohookOutputData interface changes
+
 ## 0.3.0-next.6
 
 ### Patch Changes
