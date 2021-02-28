@@ -202,10 +202,10 @@ export class Client extends EventEmitter {
 		if (msg.command) {
 			if (msg.discord) {
 				if (msg.discord.author.bot) return;
-				this.commands.run(msg);
+				await this.commands.run(msg);
 			} else if (msg.twitch) {
 				if (this.twitch.chat?.currentNick == msg.twitch.user) return;
-				this.commands.run(msg);
+				await this.commands.run(msg);
 			}
 		}
 	}
