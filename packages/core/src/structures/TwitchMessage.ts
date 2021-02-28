@@ -3,8 +3,8 @@ import { MessageOptions } from "../interfaces/MessageOptions";
 import { BaseMessage } from "./BaseMessage";
 
 export class TwitchMessage extends BaseMessage {
-	twitch: TwitchMessageData;
-	platform: "twitch";
+	twitch!: TwitchMessageData;
+	platform: "twitch" = "twitch";
 
 	/**
 	 * Create a new Framed Message Instance.
@@ -14,15 +14,57 @@ export class TwitchMessage extends BaseMessage {
 	constructor(options: MessageOptions) {
 		super(options);
 
-		// Forces platform to be "twitch"
-		this.platform = "twitch";
+		this.init(options);
 
-		if (!super.twitch) {
+		if (!this.twitch) {
 			throw new ReferenceError(
 				`this.twitch is undefined, you likely only gave non-Twitch data.`
 			);
-		} else {
-			this.twitch = super.twitch;
 		}
+	}
+
+	init(options: MessageOptions): TwitchMessageData | undefined {
+		// Grabs the base of a possible message
+		const base = options.base;
+
+		// Gets the Twitch base
+		const twitchBase = options.twitch
+			? options.twitch
+			: base?.twitch
+			? base.twitch
+			: options.twitch;
+
+		if (!twitchBase) return;
+
+		this.platform = "twitch";
+		const api = this.client.twitch.api;
+		const chat = twitchBase.chat;
+		const channel = twitchBase.channel;
+		const user = twitchBase.user;
+
+		if (!api) {
+			throw new ReferenceError(`Parameter twitch.api is undefined.`);
+		}
+
+		if (!chat) {
+			throw new ReferenceError(
+				`Parameter twitch.chatClient is undefined.`
+			);
+		}
+
+		if (!channel) {
+			throw new ReferenceError(`Parameter twitch.channel is undefined.`);
+		}
+
+		if (!user) {
+			throw new ReferenceError(`Parameter twitch.user is undefined.`);
+		}
+
+		this.twitch = {
+			api: api,
+			chat: chat,
+			channel: channel,
+			user: user,
+		};
 	}
 }

@@ -1,6 +1,4 @@
 /* eslint-disable no-mixed-spaces-and-tabs */
-import { oneLine, oneLineInlineLists } from "common-tags";
-
 import { Argument } from "../interfaces/Argument";
 import { ArgumentOptions } from "../interfaces/ArgumentOptions";
 import { DiscordMessageData } from "../interfaces/DiscordMessageData";
@@ -14,12 +12,9 @@ import { Platform } from "../types/Platform";
 import { Logger } from "@framedjs/logger";
 
 import { FriendlyError } from "./errors/FriendlyError";
-import { EmbedHelper } from "../utils/discord/EmbedHelper";
 
 import Discord from "discord.js";
 import Emoji from "node-emoji";
-import { DiscordMessage } from "./DiscordMessage";
-import { TwitchMessage } from "./TwitchMessage";
 
 enum ArgumentState {
 	Quoted,
@@ -49,150 +44,11 @@ export class BaseMessage extends Base {
 	constructor(options: MessageOptions) {
 		super(options.client);
 
-		// Grabs the base of a possible message
-		const base = options.base;
-
-		let channel:
-			| Discord.TextChannel
-			| Discord.DMChannel
-			| Discord.NewsChannel
-			| undefined;
-		let id: string | undefined;
-		let msg: Discord.Message | undefined;
-		let author: Discord.User | undefined;
-		let client: Discord.Client | undefined;
-		let guild: Discord.Guild | null = null;
-		let member: Discord.GuildMember | undefined;
-
-		// Gets the Discord Base for elements such as author, channel, etc.
-		// First check for any entries in info.discord.base
-		const discordBase = options.discord?.base
-			? options.discord.base
-			: base?.discord
-			? base.discord
-			: options.discord;
-
-		const twitchBase = options.twitch
-			? options.twitch
-			: base?.twitch
-			? base.twitch
-			: options.twitch;
-
-		if (discordBase) {
-			this.platform = "discord";
-			channel = discordBase?.channel;
-			id = discordBase?.id;
-			msg =
-				discordBase instanceof Discord.Message
-					? discordBase
-					: id && channel
-					? channel.messages.cache.get(id)
-					: undefined;
-			channel = channel ?? msg?.channel;
-			id = id ?? msg?.id;
-
-			client = discordBase?.client ?? msg?.client;
-			guild = discordBase?.guild
-				? discordBase?.guild
-				: msg?.guild
-				? msg.guild
-				: null;
-			member = discordBase?.member
-				? discordBase.member
-				: msg?.member
-				? msg.member
-				: undefined;
-			author = discordBase?.author
-				? discordBase.author
-				: msg?.author
-				? member?.user
-				: undefined;
-
-			// Gets client or throws error
-			if (!client) {
-				throw new ReferenceError(
-					oneLine`Parameter discord.client wasn't set when creating Message!
-					This value should be set if the discord.msg parameter hasn't been set.`
-				);
-			}
-
-			// Gets channel or throws error
-			if (!channel) {
-				throw new ReferenceError(
-					oneLine`Parameter discord.channel wasn't set when creating Message!
-					This value should be set if the discord.msg parameter hasn't been set.`
-				);
-			}
-
-			// Gets author or throws error
-			if (!author) {
-				throw new ReferenceError(
-					oneLine`Parameter discord.author is undefined.`
-				);
-			}
-
-			// If there's an msg object, we set all the relevant values here
-			this.discord = {
-				msg: msg,
-				client: client,
-				id: id,
-				channel: channel,
-				author: author,
-				member: member,
-				guild: guild,
-			};
-		} else if (twitchBase) {
-			this.platform = "twitch";
-			const api = this.client.twitch.api;
-			const chat = twitchBase.chat;
-			const channel = twitchBase.channel;
-			const user = twitchBase.user;
-
-			if (!api) {
-				throw new ReferenceError(`Parameter twitch.api is undefined.`);
-			}
-
-			if (!chat) {
-				throw new ReferenceError(
-					`Parameter twitch.chatClient is undefined.`
-				);
-			}
-
-			if (!channel) {
-				throw new ReferenceError(
-					`Parameter twitch.channel is undefined.`
-				);
-			}
-
-			if (!user) {
-				throw new ReferenceError(`Parameter twitch.user is undefined.`);
-			}
-
-			this.twitch = {
-				api: api,
-				chat: chat,
-				channel: channel,
-				user: user,
-			};
-		} else {
-			this.platform = "none";
-		}
+		// Sets the platform to a default (none)
+		this.platform = "none";
 
 		// Sets the content
-		let content = options.content;
-		if (!content && id) {
-			content = msg?.channel.messages.cache.get(id)?.content;
-
-			// If for some reason the cache doesn't contain anything,
-			// Fallback to msg.content
-			if (!content) {
-				content = msg?.content;
-			}
-		}
-		if (!content) {
-			content = "";
-		}
-		this.content = content;
+		this.content = options.content ?? "";
 	}
 
 	//#region Basic gets for the constructor
@@ -796,72 +652,14 @@ export class BaseMessage extends Base {
 	/**
 	 * Sends a message showing help for a command.
 	 *
-	 * @param msg Framed Message containing command that needs to be shown help for
+	 * @param place Place
 	 *
 	 * @returns boolean value `true` if help is shown.
+	 *
+	 * @deprecated Please use {@link CommandManager}.sendHelpForCommand() instead
 	 */
 	async sendHelpForCommand(place?: Place): Promise<boolean> {
-		const pluginManager = this.client.plugins;
-
-		const helpPrefix = pluginManager.map
-			.get("default.bot.info")
-			?.commands.get("help")
-			?.getDefaultPrefix(place ?? (await this.getPlace()));
-
-		const content = oneLineInlineLists`${helpPrefix ?? this.prefix}help ${
-			this.command
-		} ${this.args ?? ""}`;
-
-		if (this.discord) {
-			const newMsg = new DiscordMessage({
-				client: this.client,
-				content: content,
-				discord: {
-					client: this.discord.client,
-					channel: this.discord.channel,
-					author: this.discord.author,
-					guild: this.discord.guild,
-				},
-			});
-			await newMsg.getMessageElements();
-			try {
-				const success = await this.client.commands.run(newMsg);
-				if (success) {
-					return true;
-				} else {
-					throw new Error("Help command execution didn't succeed");
-				}
-			} catch (error) {
-				Logger.error(error.stack);
-			}
-
-			return false;
-		} else if (this.twitch) {
-			const newMsg = new TwitchMessage({
-				client: this.client,
-				content: content,
-				twitch: {
-					chat: this.twitch.chat,
-					channel: this.twitch.channel,
-					user: this.twitch.user,
-				},
-			});
-			await newMsg.getMessageElements();
-			try {
-				const success = await this.client.commands.run(newMsg);
-				if (success) {
-					return true;
-				} else {
-					throw new Error("Help command execution didn't succeed");
-				}
-			} catch (error) {
-				Logger.error(error.stack);
-			}
-
-			return false;
-		}
-
-		return false;
+		return this.client.commands.sendHelpForCommand(this);
 	}
 
 	/**
@@ -869,24 +667,17 @@ export class BaseMessage extends Base {
 	 *
 	 * @param friendlyError
 	 * @param commandId Command ID for EmbedHelper.getTemplate
+	 *
+	 * @deprecated Please use {@link CommandManager}.sendErrorMessage() instead
 	 */
 	async sendErrorMessage(
 		friendlyError: FriendlyError,
 		commandId?: string
 	): Promise<void> {
-		if (this.discord) {
-			const embed = EmbedHelper.getTemplate(
-				this.discord,
-				await EmbedHelper.getCheckOutFooter(this, commandId)
-			)
-				.setTitle(friendlyError.friendlyName)
-				.setDescription(friendlyError.message);
-
-			await this.discord.channel.send(embed);
-		} else {
-			await this.send(
-				`${friendlyError.friendlyName}: ${friendlyError.message}`
-			);
-		}
+		return this.client.commands.sendErrorMessage(
+			this,
+			friendlyError,
+			commandId
+		);
 	}
 }

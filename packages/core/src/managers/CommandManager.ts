@@ -1,5 +1,5 @@
 import { Logger } from "@framedjs/logger";
-import { oneLine } from "common-tags";
+import { oneLine, oneLineInlineLists } from "common-tags";
 
 import { Base } from "../structures/Base";
 import { BaseCommand } from "../structures/BaseCommand";
@@ -10,6 +10,9 @@ import { BaseMessage } from "../structures/BaseMessage";
 import { FoundCommandData } from "../interfaces/FoundCommandData";
 import { Place } from "../interfaces/Place";
 import { Utils } from "@framedjs/shared";
+import { DiscordMessage } from "../structures/DiscordMessage";
+import { TwitchMessage } from "../structures/TwitchMessage";
+import { EmbedHelper } from "../utils/discord/EmbedHelper";
 
 export class CommandManager extends Base {
 	constructor(client: Client) {
@@ -178,7 +181,7 @@ export class CommandManager extends Base {
 	 */
 	getCommand(
 		command: string,
-		place: Place,
+		place?: Place,
 		prefix?: string
 	): BaseCommand | undefined;
 
@@ -190,7 +193,7 @@ export class CommandManager extends Base {
 	 *
 	 * @returns BaseCommand or undefined
 	 */
-	getCommand(msg: BaseMessage, place: Place): BaseCommand | undefined;
+	getCommand(msg: BaseMessage, place?: Place): BaseCommand | undefined;
 
 	/**
 	 * Gets a command
@@ -203,7 +206,7 @@ export class CommandManager extends Base {
 	 */
 	getCommand(
 		msgOrCommand: BaseMessage | string,
-		place: Place,
+		place?: Place,
 		prefix?: string
 	): BaseCommand | undefined {
 		if (msgOrCommand instanceof BaseMessage) {
@@ -226,7 +229,7 @@ export class CommandManager extends Base {
 	 *
 	 * @returns List of commands with the same ID.
 	 */
-	getCommands(command: string, place: Place, prefix?: string): BaseCommand[];
+	getCommands(command: string, place?: Place, prefix?: string): BaseCommand[];
 
 	/**
 	 * Get a list of plugin commands from a message.
@@ -240,7 +243,7 @@ export class CommandManager extends Base {
 	 *
 	 * @returns List of commands with the same ID.
 	 */
-	getCommands(msg: BaseMessage, place: Place): BaseCommand[];
+	getCommands(msg: BaseMessage, place?: Place): BaseCommand[];
 
 	/**
 	 * Get a list of plugin commands from a message.
@@ -257,7 +260,7 @@ export class CommandManager extends Base {
 	 */
 	getCommands(
 		msgOrCommand: BaseMessage | string,
-		place: Place,
+		place?: Place,
 		prefix?: string
 	): BaseCommand[] {
 		const commandList: BaseCommand[] = [];
@@ -290,15 +293,17 @@ export class CommandManager extends Base {
 			}
 
 			if (command) {
-				// Gets all valid prefixes for the place, and command
-				const commandPrefixes = command.getPrefixes(place);
-				commandPrefixes.push(...this.defaultPrefixes);
+				let commandUsesPrefix = true;
 
-				// Gets the base command's prefixes or default prefixes, and see if they match.
-				// If there was no prefix defined, ignore prefix checks.
-				const commandUsesPrefix = prefix
-					? commandPrefixes.includes(prefix)
-					: true;
+				if (prefix && place) {
+					// Gets all valid prefixes for the place, and command
+					const commandPrefixes = command.getPrefixes(place);
+					commandPrefixes.push(...this.defaultPrefixes);
+
+					// Gets the base command's prefixes or default prefixes, and see if they match.
+					// If there was no prefix defined, ignore prefix checks.
+					commandUsesPrefix = commandPrefixes.includes(prefix);
+				}
 
 				if (commandUsesPrefix) {
 					commandList.push(command);
@@ -396,5 +401,98 @@ export class CommandManager extends Base {
 
 		Logger.debug(`${Utils.hrTimeElapsed(startTime)}s - Finished execution`);
 		return map;
+	}
+
+	/**
+	 * Sends a message showing help for a command.
+	 *
+	 * @param msg Framed Message containing command that needs to be shown help for
+	 *
+	 * @returns boolean value `true` if help is shown.
+	 */
+	async sendHelpForCommand(msg: BaseMessage): Promise<boolean> {
+		try {
+			const helpCommand = msg.client.commands.getCommand("help");
+
+			if (!helpCommand) {
+				Logger.warn("No help command found");
+				return false;
+			}
+
+			const helpPrefix = helpCommand.getDefaultPrefix(
+				await msg.getPlace()
+			);
+
+			const content = oneLineInlineLists`${
+				helpPrefix ??
+				msg.client.commands.defaultPrefixes[0] ??
+				msg.client.defaultPrefix
+			}help ${msg.command} ${msg.args ?? ""}`.trim();
+
+			let newMsg: DiscordMessage | TwitchMessage;
+
+			if (msg instanceof DiscordMessage) {
+				newMsg = new DiscordMessage({
+					client: msg.client,
+					content: content,
+					discord: {
+						client: msg.discord.client,
+						channel: msg.discord.channel,
+						author: msg.discord.author,
+						guild: msg.discord.guild,
+					},
+				});
+			} else if (msg instanceof TwitchMessage) {
+				newMsg = new TwitchMessage({
+					client: msg.client,
+					content: content,
+					twitch: {
+						chat: msg.twitch.chat,
+						channel: msg.twitch.channel,
+						user: msg.twitch.user,
+					},
+				});
+			} else {
+				throw new Error("Unknown message class");
+			}
+
+			await newMsg.getMessageElements();
+			const success = await msg.client.commands.run(newMsg);
+			if (success) {
+				return true;
+			} else {
+				throw new Error("Help command execution didn't succeed");
+			}
+		} catch (error) {
+			Logger.error(error.stack);
+			return false;
+		}
+	}
+
+	/**
+	 * Sends error message
+	 *
+	 * @param friendlyError
+	 * @param commandId Command ID for EmbedHelper.getTemplate
+	 */
+	async sendErrorMessage(
+		msg: BaseMessage,
+		friendlyError: FriendlyError,
+		commandId?: string
+	): Promise<void> {
+		if (msg.discord) {
+			const embed = EmbedHelper.getTemplate(
+				msg.discord,
+				await EmbedHelper.getCheckOutFooter(msg, commandId)
+			)
+				.setTitle(friendlyError.friendlyName)
+				.setDescription(friendlyError.message);
+
+			await msg.discord.channel.send(embed);
+		} else {
+			await msg.send(
+				`${friendlyError.friendlyName}: ${friendlyError.message}`
+			);
+		}
 	}
 }

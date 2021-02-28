@@ -1,6 +1,5 @@
 import { BaseCommandOptions } from "../interfaces/BaseCommandOptions";
 import { BaseCommand } from "./BaseCommand";
-import { BasePlugin } from "./BasePlugin";
 import { ImportError } from "./errors/non-friendly/ImportError";
 
 export abstract class BaseSubcommand extends BaseCommand {
@@ -11,9 +10,9 @@ export abstract class BaseSubcommand extends BaseCommand {
 
 	constructor(command: BaseCommand, info: BaseCommandOptions) {
 		// Require-All was used;
-		if (command instanceof BasePlugin) {
+		if (!(command instanceof BaseCommand)) {
 			throw new ImportError(
-				"command was an instance of BasePlugin, likely due to the command importing a subcommand."
+				"command wasn't an instanceof BaseCommand, likely due to the command importing a subcommand."
 			);
 		}
 
