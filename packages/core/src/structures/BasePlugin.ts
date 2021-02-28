@@ -9,10 +9,9 @@ import Options from "../interfaces/other/RequireAllOptions";
 import util from "util";
 import { Prefixes } from "../interfaces/Prefixes";
 import { ImportError } from "./errors/non-friendly/ImportError";
+import { Base } from "./Base";
 
-export abstract class BasePlugin {
-	readonly client: Client;
-
+export abstract class BasePlugin extends Base {
 	id: string;
 
 	group: string;
@@ -57,7 +56,7 @@ export abstract class BasePlugin {
 	events = new Map<string, BaseEvent>();
 
 	constructor(client: Client, info: BasePluginOptions) {
-		this.client = client;
+		super(client);
 
 		this.id = info.id;
 
