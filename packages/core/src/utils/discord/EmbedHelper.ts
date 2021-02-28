@@ -256,14 +256,19 @@ export class EmbedHelper {
 				text: footer,
 			};
 		} else {
-			return {
-				text: `Check out: ${await this.getCommandsSeparated(
-					formatter,
-					place,
-					footer,
-					commandId
-				)}`,
-			};
+			const commandString = await this.getCommandsSeparated(
+				formatter,
+				place,
+				footer,
+				commandId
+			);
+			if (commandString.trim()) {
+				return {
+					text: `Check out: ${commandString}`,
+				};
+			} else {
+				return { text: "" };
+			}
 		}
 	}
 }
