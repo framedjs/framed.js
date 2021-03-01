@@ -10,7 +10,9 @@
   },
   "scripts": {
     "build": "tsc --build",
-    "build:watch": "tsc --build --watch"
+    "build:watch": "tsc --build --watch",
+    "test": "jest",
+    "test:watch": "jest --watchAll"
   },
   "files": [
     "dist/**/*.js",
