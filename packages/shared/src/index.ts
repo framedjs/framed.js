@@ -87,30 +87,27 @@ export class Utils {
 	 * Gets the time elapsed between high-resolution times with `process.hrtime()`
 	 * @param startTime The start high-resolution time
 	 */
-	static hrTimeElapsed(startTime: [number, number]): string {
+	static hrTimeElapsed(
+		startTime: [number, number],
+		sendSeconds = false
+	): string {
 		// Gets the difference between the start time, and now
 		const diffTime = process.hrtime(startTime);
+		return this.formatHrTime(diffTime, sendSeconds);
+	}
 
-		// Fixed decimal places (ex. if set to 3, decimals will be 0.000)
-		const fixedDecimals = 3;
+	/**
+	 * The diffTime
+	 */
+	static formatHrTime(
+		diffTime: [number, number],
+		sendSeconds = false
+	): string {
+		const secondStr = sendSeconds ? "s" : "";
 
-		// diffTime[1] is the decimal number as a whole number, so
-		// we need to convert that. This will remove some trailing numbers.
-		const endDecimalString = String(diffTime[1]).slice(
-			0,
-			fixedDecimals + 1
-		);
+		const s = diffTime[0];
+		const ms = (diffTime[1] / 1e6).toFixed(0).padEnd(3, "0");
 
-		// Negative exponent (for example, 10 ^ -3)
-		const negativeExponent = Math.pow(10, -Number(fixedDecimals + 1));
-
-		// Larger number (that should be a decimal) * negative exponent
-		// will turn it into a decimal
-		const endDecimalNumber = Number(
-			Number(endDecimalString) * negativeExponent
-		).toFixed(fixedDecimals);
-
-		// Startup time
-		return (diffTime[0] + Number(endDecimalNumber)).toFixed(fixedDecimals);
+		return `${s}.${ms}${secondStr}`;
 	}
 }
