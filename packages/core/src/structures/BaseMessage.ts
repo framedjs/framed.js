@@ -55,19 +55,23 @@ export class BaseMessage extends Base {
 
 	/**
 	 * Elements includes prefix, args, and command.
+	 *
+	 * @param place Place data
+	 * @param guild Discord Guild, for the role prefix
 	 */
 	async getMessageElements(
-		place?: Place
+		place?: Place,
+		guild?: Discord.Guild
 	): Promise<{
 		prefix: string | undefined;
 		args: string[] | undefined;
-		command: string | undefined;
+		command: string;
 	}> {
 		place = place ?? (await this.getPlace());
 
-		this.prefix = this.getPrefix(place);
+		this.prefix = this.getPrefix(place, guild);
 		this.args = this.getArgs();
-		this.command = this.getCommand();
+		this.command = this.getCommand() ?? "";
 
 		return { prefix: this.prefix, args: this.args, command: this.command };
 	}
@@ -76,11 +80,12 @@ export class BaseMessage extends Base {
 	 * Gets the prefix of the message.
 	 *
 	 * @param place Place data
+	 * @param guild Discord Guild, for the role prefix
 	 *
 	 * @returns prefix
 	 */
-	private getPrefix(place: Place): string | undefined {
-		const prefixes = this.client.commands.getPossiblePrefixes(place);
+	private getPrefix(place: Place, guild?: Discord.Guild): string | undefined {
+		const prefixes = this.client.commands.getPossiblePrefixes(place, guild);
 		let prefix: string | undefined;
 		for (const testPrefix of prefixes) {
 			if (this.content.startsWith(testPrefix)) {
@@ -99,12 +104,12 @@ export class BaseMessage extends Base {
 		let command = this.args?.shift()?.toLocaleLowerCase();
 
 		// Normally, args don't split on \n so we do that here
-		if (command) {
+		if (command != undefined) {
 			command = command.split("\n")[0];
 		}
 
 		// If there was a prefix, and there was args, we can
-		return this.prefix && this.args ? command : undefined;
+		return this.prefix != undefined && this.args ? command : undefined;
 	}
 
 	/**
@@ -118,7 +123,7 @@ export class BaseMessage extends Base {
 	 * ```
 	 */
 	private getArgs(): string[] | undefined {
-		if (this.prefix) {
+		if (this.prefix != undefined) {
 			// Note that this content will still include the command inside
 			// the arguments, and will be removed when getCommand() is called
 			const content = this.content.slice(this.prefix.length).trim();
@@ -650,25 +655,21 @@ export class BaseMessage extends Base {
 	}
 
 	/**
-	 * Sends a message showing help for a command.
+	 * Sends a message showing help for a command. This is a function shortcut to {@link CommandManger}.
 	 *
 	 * @param place Place
 	 *
 	 * @returns boolean value `true` if help is shown.
-	 *
-	 * @deprecated Please use {@link CommandManager}.sendHelpForCommand() instead
 	 */
-	async sendHelpForCommand(place?: Place): Promise<boolean> {
+	async sendHelpForCommand(): Promise<boolean> {
 		return this.client.commands.sendHelpForCommand(this);
 	}
 
 	/**
-	 * Sends error message
+	 * Sends error message. This is a function shortcut to {@link CommandManger}.
 	 *
 	 * @param friendlyError
 	 * @param commandId Command ID for EmbedHelper.getTemplate
-	 *
-	 * @deprecated Please use {@link CommandManager}.sendErrorMessage() instead
 	 */
 	async sendErrorMessage(
 		friendlyError: FriendlyError,

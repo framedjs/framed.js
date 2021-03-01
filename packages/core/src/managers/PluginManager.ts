@@ -192,7 +192,7 @@ export class PluginManager extends Base {
 					const args = BaseMessage.getArgs(commandElement);
 					const command = args.shift();
 
-					if (!command) {
+					if (command == undefined) {
 						throw new Error("command is null or undefined");
 					}
 

@@ -199,7 +199,7 @@ export class Client extends EventEmitter {
 	}
 
 	async processMsg(msg: BaseMessage): Promise<void> {
-		if (msg.command) {
+		if (msg.command != undefined) {
 			if (msg.discord) {
 				if (msg.discord.author.bot) return;
 				await this.commands.run(msg);
@@ -210,7 +210,7 @@ export class Client extends EventEmitter {
 		}
 	}
 
-	private setupDiscordEvents(client: Discord.Client): void {
+	protected setupDiscordEvents(client: Discord.Client): void {
 		client.on("ready", async () => {
 			Logger.info(`Logged in as ${client.user?.tag}.`);
 		});
@@ -228,7 +228,10 @@ export class Client extends EventEmitter {
 					base: discordMsg,
 				},
 			});
-			await msg.getMessageElements();
+			await msg.getMessageElements(
+				undefined,
+				discordMsg.guild ?? undefined
+			);
 			this.processMsg(msg);
 		});
 
@@ -283,7 +286,10 @@ export class Client extends EventEmitter {
 						base: newMessage,
 					},
 				});
-				await msg.getMessageElements();
+				await msg.getMessageElements(
+					undefined,
+					msg.discord.guild ?? undefined
+				);
 				this.processMsg(msg);
 			} catch (error) {
 				Logger.error(error.stack);
@@ -291,7 +297,7 @@ export class Client extends EventEmitter {
 		});
 	}
 
-	private setupTwitchEvents(chat: TwitchChatClient.ChatClient): void {
+	protected setupTwitchEvents(chat: TwitchChatClient.ChatClient): void {
 		chat.onMessage(
 			async (channel: string, user: string, message: string) => {
 				const msg = new TwitchMessage({

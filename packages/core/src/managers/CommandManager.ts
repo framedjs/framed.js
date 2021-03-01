@@ -14,6 +14,8 @@ import { DiscordMessage } from "../structures/DiscordMessage";
 import { TwitchMessage } from "../structures/TwitchMessage";
 import { EmbedHelper } from "../utils/discord/EmbedHelper";
 
+import Discord from "discord.js";
+
 export class CommandManager extends Base {
 	constructor(client: Client) {
 		super(client);
@@ -51,10 +53,11 @@ export class CommandManager extends Base {
 	 * List of all possible prefixes for the specific guild or Twitch channel.
 	 *
 	 * @param place Place data
+	 * @param guild Discord Guild, for the role prefix
 	 *
 	 * @returns String array of all possible prefixes
 	 */
-	getPossiblePrefixes(place: Place): string[] {
+	getPossiblePrefixes(place: Place, guild?: Discord.Guild): string[] {
 		const startTime = process.hrtime();
 		const prefixes = this.defaultPrefixes;
 
@@ -69,6 +72,13 @@ export class CommandManager extends Base {
 			}
 		}
 
+		if (guild) {
+			const rolePrefix = this.getBotRolePrefix(guild);
+			if (rolePrefix) {
+				prefixes.push(rolePrefix);
+			}
+		}
+
 		Logger.silly(
 			`${Utils.hrTimeElapsed(
 				startTime
@@ -77,6 +87,21 @@ export class CommandManager extends Base {
 		Logger.silly(process.hrtime(startTime));
 		Logger.silly(`Prefixes: ${prefixes}`);
 		return prefixes;
+	}
+
+	/**
+	 * Retrieves the bot's automatic role for a prefix
+	 * @param guild Discord Guild
+	 */
+	getBotRolePrefix(guild: Discord.Guild): string | undefined {
+		const roles = guild.roles;
+		const botRole = roles.cache.find(
+			a => a.name === guild.me?.user.username
+		);
+
+		if (botRole) {
+			return botRole.toString();
+		}
 	}
 
 	//#region Getting commands
@@ -119,7 +144,7 @@ export class CommandManager extends Base {
 		let args: string[];
 
 		if (msgOrCommand instanceof BaseMessage) {
-			if (msgOrCommand.command) {
+			if (msgOrCommand.command != undefined) {
 				prefix = msgOrCommand.prefix;
 				command = msgOrCommand.command;
 				args = msgOrCommand.args ? msgOrCommand.args : [];
@@ -140,11 +165,6 @@ export class CommandManager extends Base {
 			if (!place) {
 				throw new ReferenceError("Variable place is undefined");
 			}
-
-			// // If there's no prefix, find the default one from the provider
-			// if (!prefix) {
-			// 	prefix = this.client.provider.prefixes.get(place.id);
-			// }
 		}
 
 		const data: FoundCommandData[] = [];
@@ -152,6 +172,20 @@ export class CommandManager extends Base {
 		// Runs the commands
 		let commandList: BaseCommand[] = [];
 		if (msgOrCommand instanceof BaseMessage) {
+			// Grabs all the guild's roles here, so this.getCommands and
+			// this.getBotRolePrefix doesn't have to be async to retrieve
+			// possibly missing roles from cache
+			if (
+				msgOrCommand instanceof DiscordMessage &&
+				msgOrCommand.content.includes("<@&")
+			) {
+				try {
+					await msgOrCommand.discord.guild?.roles.fetch();
+				} catch (error) {
+					Logger.error(error.stack);
+				}
+			}
+
 			commandList = this.getCommands(msgOrCommand, place);
 		} else {
 			commandList = this.getCommands(command, place, prefix);
@@ -268,7 +302,7 @@ export class CommandManager extends Base {
 		let commandString: string;
 
 		if (msgOrCommand instanceof BaseMessage) {
-			if (msgOrCommand.command) {
+			if (msgOrCommand.command != undefined) {
 				prefix = msgOrCommand.prefix;
 				commandString = msgOrCommand.command;
 			} else {
@@ -287,18 +321,28 @@ export class CommandManager extends Base {
 			let command = plugin.commands.get(commandString);
 
 			// If not found, check the aliases
-			if (!command) {
+			if (command == undefined) {
 				// Tries to find the command from an alias
 				command = plugin.aliases.get(commandString);
 			}
 
-			if (command) {
+			if (command != undefined) {
 				let commandUsesPrefix = true;
 
 				if (prefix && place) {
 					// Gets all valid prefixes for the place, and command
 					const commandPrefixes = command.getPrefixes(place);
 					commandPrefixes.push(...this.defaultPrefixes);
+
+					if (
+						msgOrCommand instanceof DiscordMessage &&
+						msgOrCommand.discord.guild
+					) {
+						const rolePrefix = this.getBotRolePrefix(
+							msgOrCommand.discord.guild
+						);
+						if (rolePrefix) commandPrefixes.push(rolePrefix);
+					}
 
 					// Gets the base command's prefixes or default prefixes, and see if they match.
 					// If there was no prefix defined, ignore prefix checks.
@@ -340,7 +384,7 @@ export class CommandManager extends Base {
 		}
 
 		try {
-			if (msg.prefix && msg.command) {
+			if (msg.prefix != undefined && msg.command != undefined) {
 				Logger.debug(`Checking for commands for "${msg.content}"`);
 
 				// Attempts to get the command data from a message, including comparing prefixes
@@ -357,6 +401,12 @@ export class CommandManager extends Base {
 
 					// Attempts to run it and sets the data
 					try {
+						Logger.debug(
+							`${Utils.hrTimeElapsed(
+								startTime
+							)}s - Found a command (${tempCommand.fullId})`
+						);
+
 						// Checks automatically the permissions
 						if (
 							tempCommand.userPermissions?.checkAutomatically ==
@@ -388,7 +438,7 @@ export class CommandManager extends Base {
 								this warning is safe to ignore, unless
 								it's needed for debug purposes.)`}`
 							);
-							await msg.sendErrorMessage(error);
+							await this.sendErrorMessage(msg, error);
 						} else {
 							Logger.error(error.stack);
 						}
@@ -419,9 +469,8 @@ export class CommandManager extends Base {
 				return false;
 			}
 
-			const helpPrefix = helpCommand.getDefaultPrefix(
-				await msg.getPlace()
-			);
+			const place = await msg.getPlace();
+			const helpPrefix = helpCommand.getDefaultPrefix(place);
 
 			const content = oneLineInlineLists`${
 				helpPrefix ??
@@ -430,7 +479,7 @@ export class CommandManager extends Base {
 			}help ${msg.command} ${msg.args ?? ""}`.trim();
 
 			let newMsg: DiscordMessage | TwitchMessage;
-
+			let guild: Discord.Guild | undefined;
 			if (msg instanceof DiscordMessage) {
 				newMsg = new DiscordMessage({
 					client: msg.client,
@@ -442,6 +491,8 @@ export class CommandManager extends Base {
 						guild: msg.discord.guild,
 					},
 				});
+
+				guild = msg.discord.guild ?? undefined;
 			} else if (msg instanceof TwitchMessage) {
 				newMsg = new TwitchMessage({
 					client: msg.client,
@@ -456,8 +507,8 @@ export class CommandManager extends Base {
 				throw new Error("Unknown message class");
 			}
 
-			await newMsg.getMessageElements();
-			const success = await msg.client.commands.run(newMsg);
+			await newMsg.getMessageElements(place, guild);
+			const success = await helpCommand.run(newMsg);
 			if (success) {
 				return true;
 			} else {

@@ -245,7 +245,7 @@ export abstract class BaseCommand {
 			const prefix = this.getDefaultPrefix(place);
 
 			// If this list doesn't include the default prefix from there, add it to the array
-			if (prefix && !prefixes.includes(prefix)) {
+			if (prefix != undefined && !prefixes.includes(prefix)) {
 				prefixes.push(prefix);
 			}
 		}
