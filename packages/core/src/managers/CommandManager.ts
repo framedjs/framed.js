@@ -449,7 +449,11 @@ export class CommandManager extends Base {
 			Logger.error(error.stack);
 		}
 
-		Logger.debug(`${Utils.hrTimeElapsed(startTime)}s - Finished execution`);
+		Logger.debug(
+			`${Utils.hrTimeElapsed(
+				startTime
+			)}s - Finished finding and sending commands`
+		);
 		return map;
 	}
 
