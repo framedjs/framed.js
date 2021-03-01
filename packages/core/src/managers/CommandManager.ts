@@ -429,6 +429,7 @@ export class CommandManager extends Base {
 								continue;
 							}
 						}
+						Logger.verbose(`Running command "${msg.content}"`);
 						const success = await tempCommand.run(msg);
 						map.set(tempCommand.fullId, success);
 					} catch (error) {

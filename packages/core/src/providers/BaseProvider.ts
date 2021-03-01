@@ -54,6 +54,6 @@ export class BaseProvider extends Base {
 			}
 		}
 
-		Logger.info("Initalized provider and subproviders");
+		Logger.verbose("Initalized provider and subproviders");
 	}
 }
