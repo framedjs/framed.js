@@ -106,7 +106,7 @@ export class Utils {
 		const secondStr = sendSeconds ? "s" : "";
 
 		const s = diffTime[0];
-		const ms = (diffTime[1] / 1e6).toFixed(0).padEnd(3, "0");
+		const ms = (diffTime[1] / 1e6).toFixed(0).padStart(3, "0");
 
 		return `${s}.${ms}${secondStr}`;
 	}
