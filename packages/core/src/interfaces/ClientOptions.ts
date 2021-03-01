@@ -1,9 +1,3 @@
-import { APIManager } from "../managers/APIManager";
-import { CommandManager } from "../managers/CommandManager";
-import { FormattingManager } from "../managers/FormattingManager";
-import { PluginManager } from "../managers/PluginManager";
-import { BaseProvider } from "../providers/BaseProvider";
-
 /**
  * Used with initializing Framed client.
  */
@@ -14,56 +8,32 @@ export interface ClientOptions {
 	appVersion?: string;
 
 	/**
-	 * The prefix used for all commands, except when a plugin or commands explicitly uses something else.
+	 * The prefix used for all commands, except when a plugin or
+	 * commands explicitly uses something else.
 	 */
 	defaultPrefix?: string;
 
 	/**
-	 * API Manager
+	 * Should the Client initialize certain things?
 	 */
-	apiManager?: APIManager;
-
-	/**
-	 * Command Manager
-	 */
-	commandManager?: CommandManager;
-
-	/**
-	 * Formatting Manager
-	 */
-	formattingManager?: FormattingManager;
-
-	/**
-	 * Place Manager
-	 */
-	// placeManager?: PlaceManager;
-
-	/**
-	 * Plugin Manager
-	 */
-	pluginManager?: PluginManager;
-
-	/**
-	 * Provider
-	 */
-	provider?: BaseProvider;
+	autoInitialize: {
+		api?: boolean;
+		commands?: boolean;
+		provider?: boolean;
+		plugins?: boolean;
+		formatting?: boolean;
+	};
 
 	//#region Platform-specific data
 
-	/**
-	 * Discord options
-	 */
+	/** Discord options */
 	discord?: DiscordClientOptions;
 
-	/**
-	 * Twitch options
-	 */
+	/** Twitch options */
 	twitch?: TwitchClientOptions;
 
 	// Technically a Discord-specific thing, but didn't bother to move it in fear of things going wrong
-	/**
-	 * Help command list
-	 */
+	/** Help command list */
 	footer?: string | string[];
 
 	//#endregion

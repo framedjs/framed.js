@@ -23,17 +23,16 @@ import { BaseProvider } from "../providers/BaseProvider";
 const DEFAULT_PREFIX = "!";
 
 export class Client extends EventEmitter {
-	api: APIManager;
-	commands: CommandManager;
-	provider: BaseProvider;
-	plugins: PluginManager;
-	formatting: FormattingManager;
+	api?: APIManager;
+	commands!: CommandManager;
+	provider!: BaseProvider;
+	plugins!: PluginManager;
+	formatting!: FormattingManager;
 
 	discord: {
+		botOwners: Discord.UserResolvable[];
 		client?: Discord.Client;
 		defaultPrefix: string;
-
-		botOwners: Discord.UserResolvable[];
 	} = {
 		botOwners: [],
 		defaultPrefix: DEFAULT_PREFIX,
@@ -42,9 +41,8 @@ export class Client extends EventEmitter {
 		api?: Twitch.ApiClient;
 		auth?: TwitchAuth.RefreshableAuthProvider;
 		chat?: TwitchChatClient.ChatClient;
-		defaultPrefix: string;
-
 		botOwners: string[];
+		defaultPrefix: string;
 	} = {
 		botOwners: [],
 		defaultPrefix: DEFAULT_PREFIX,
@@ -101,12 +99,16 @@ export class Client extends EventEmitter {
 		}
 
 		// Initializes managers and providers
-		this.api = options.apiManager ?? new APIManager(this);
-		this.commands = options.commandManager ?? new CommandManager(this);
-		this.formatting =
-			options.formattingManager ?? new FormattingManager(this);
-		this.plugins = options.pluginManager ?? new PluginManager(this);
-		this.provider = options.provider ?? new BaseProvider(this);
+		if (options.autoInitialize.api != false)
+			this.api = new APIManager(this);
+		if (options.autoInitialize.commands != false)
+			this.commands = new CommandManager(this);
+		if (options.autoInitialize.formatting != false)
+			this.formatting = new FormattingManager(this);
+		if (options.autoInitialize.plugins != false)
+			this.plugins = new PluginManager(this);
+		if (options.autoInitialize.provider != false)
+			this.provider = new BaseProvider(this);
 	}
 
 	/**

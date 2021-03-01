@@ -1,14 +1,16 @@
 import { Logger } from "@framedjs/logger";
-import Options from "../interfaces/other/RequireAllOptions";
 import { Client } from "../structures/Client";
+import { APIManagerOptions } from "../interfaces/APIManagerOptions";
 import { DiscordUtils } from "../utils/discord/DiscordUtils";
 import { BaseRouter } from "../structures/BaseRouter";
+import { Base } from "../structures/Base";
+import Options from "../interfaces/other/RequireAllOptions";
 import Koa from "koa";
 import Router from "koa-router";
 import util from "util";
 import path from "path";
 
-export class APIManager {
+export class APIManager extends Base {
 	static readonly defaultPath = path.join(__dirname, "api", "routes");
 	readonly app = new Koa();
 	readonly router = new Router();
@@ -17,7 +19,9 @@ export class APIManager {
 	 * Starts listening for API queries
 	 * @param client
 	 */
-	constructor(readonly client: Client) {
+	constructor(client: Client, options?: APIManagerOptions) {
+		super(client);
+
 		// No clue if this is a good idea
 		// https://inviqa.com/blog/how-build-basic-api-typescript-koa-and-typeorm
 		this.app.use(async (ctx: Koa.Context, next: () => Promise<unknown>) => {
@@ -37,8 +41,8 @@ export class APIManager {
 		// Application error logging
 		this.app.on("error", Logger.error);
 
-		// Send to port
-		const port: number = Number(process.env.API_PORT) || 42069;
+		// Sets port and listens
+		const port = options?.port || Number(process.env.API_PORT) || 42069;
 		this.app.listen(port);
 		Logger.http(`API is listening on port ${port}`);
 	}

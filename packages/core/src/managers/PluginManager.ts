@@ -96,7 +96,7 @@ export class PluginManager extends Base {
 		}
 
 		if (plugin.paths.routes) {
-			this.client.api.loadRoutesIn({
+			this.client.api?.loadRoutesIn({
 				dirname: plugin.paths.routes,
 				filter: fileName => {
 					const success = importFilter.test(fileName);
