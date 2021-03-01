@@ -158,6 +158,59 @@ export abstract class BaseCommand {
 	}
 
 	/**
+	 * Run the command.
+	 *
+	 * @param msg Framed Message
+	 *
+	 * @returns true if successful
+	 */
+	abstract run(msg: BaseMessage): Promise<boolean>;
+
+	/**
+	 * Puts all text entry fields into formatting
+	 *
+	 * @param place Place data
+	 */
+	getCommandNotationFormatting(
+		place: Place
+	): {
+		about: string | undefined;
+		description: string | undefined;
+		examples: string | undefined;
+		notes: string | undefined;
+		usage: string | undefined;
+	} {
+		return {
+			about: this.client.formatting.formatCommandNotation(
+				this.about,
+				this,
+				place
+			),
+			description: this.client.formatting.formatCommandNotation(
+				this.description,
+				this,
+				place
+			),
+			examples: this.client.formatting.formatCommandNotation(
+				this.examples,
+				this,
+				place
+			),
+			notes: this.client.formatting.formatCommandNotation(
+				this.notes,
+				this,
+				place
+			),
+			usage: this.client.formatting.formatCommandNotation(
+				this.usage,
+				this,
+				place
+			),
+		};
+	}
+
+	//#region Prefix-related functions
+	/**
 	 * Gets the default prefix for the command.
 	 *
 	 * @param place Place data
@@ -252,58 +305,7 @@ export abstract class BaseCommand {
 
 		return prefixes;
 	}
-
-	/**
-	 * Puts all text entry fields into formatting
-	 *
-	 * @param place Place data
-	 */
-	getCommandNotationFormatting(
-		place: Place
-	): {
-		about: string | undefined;
-		description: string | undefined;
-		examples: string | undefined;
-		notes: string | undefined;
-		usage: string | undefined;
-	} {
-		return {
-			about: this.client.formatting.formatCommandNotation(
-				this.about,
-				this,
-				place
-			),
-			description: this.client.formatting.formatCommandNotation(
-				this.description,
-				this,
-				place
-			),
-			examples: this.client.formatting.formatCommandNotation(
-				this.examples,
-				this,
-				place
-			),
-			notes: this.client.formatting.formatCommandNotation(
-				this.notes,
-				this,
-				place
-			),
-			usage: this.client.formatting.formatCommandNotation(
-				this.usage,
-				this,
-				place
-			),
-		};
-	}
-
-	/**
-	 * Run the command.
-	 *
-	 * @param msg Framed Message
-	 *
-	 * @returns true if successful
-	 */
-	abstract run(msg: BaseMessage): Promise<boolean>;
+	//#endregion
 
 	//#region Permissions
 
@@ -317,7 +319,7 @@ export abstract class BaseCommand {
 	 * @param checkAdmin
 	 * @param checkOwner
 	 */
-	checkForPermissions(
+	checkForUserPermissions(
 		msg: BaseMessage,
 		userPermissions = this.userPermissions,
 		checkAdmin = true,
@@ -439,13 +441,13 @@ export abstract class BaseCommand {
 	 * @param checkAdmin
 	 * @param checkOwner
 	 */
-	hasPermission(
+	hasUserPermission(
 		msg: BaseMessage,
 		userPermissions = this.userPermissions,
 		checkAdmin = true,
 		checkOwner = true
 	): boolean {
-		return this.checkForPermissions(
+		return this.checkForUserPermissions(
 			msg,
 			userPermissions,
 			checkAdmin,
@@ -462,7 +464,7 @@ export abstract class BaseCommand {
 	async sendPermissionErrorMessage(
 		msg: BaseMessage,
 		permissions = this.userPermissions,
-		deniedData = this.checkForPermissions(msg, permissions)
+		deniedData = this.checkForUserPermissions(msg, permissions)
 	): Promise<boolean> {
 		if (deniedData.success) {
 			throw new Error(
@@ -674,6 +676,7 @@ export abstract class BaseCommand {
 
 	//#endregion
 
+	//#region Getting subcommands
 	/**
 	 * Gets the subcommand to run from command arguments.
 	 *
@@ -758,4 +761,5 @@ export abstract class BaseCommand {
 
 		return subcommands;
 	}
+	//#endregion
 }

@@ -405,6 +405,7 @@ export class BaseMessage extends Base {
 
 	//#endregion
 
+	//#region Place functions
 	/**
 	 * Gets the place data, using Discord data.
 	 *
@@ -578,6 +579,7 @@ export class BaseMessage extends Base {
 		// Returns the result
 		return place;
 	}
+	//#endregion
 
 	/**
 	 * Parses the emoji and contents of a Message or string.

@@ -414,7 +414,7 @@ export class CommandManager extends Base {
 							tempCommand.userPermissions?.checkAutomatically ==
 								true
 						) {
-							const data = tempCommand.checkForPermissions(msg);
+							const data = tempCommand.checkForUserPermissions(msg);
 							if (!data.success) {
 								const sent = await tempCommand.sendPermissionErrorMessage(
 									msg,
