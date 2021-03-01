@@ -2,11 +2,11 @@ import { Logger } from "@framedjs/logger";
 import Options from "../interfaces/other/RequireAllOptions";
 import { Client } from "../structures/Client";
 import { DiscordUtils } from "../utils/discord/DiscordUtils";
-import util from "util";
+import { BaseRouter } from "../structures/BaseRouter";
 import Koa from "koa";
 import Router from "koa-router";
+import util from "util";
 import path from "path";
-import { BaseRouter } from "../structures/BaseRouter";
 
 export class APIManager {
 	static readonly defaultPath = path.join(__dirname, "api", "routes");
