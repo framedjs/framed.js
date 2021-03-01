@@ -85,7 +85,14 @@ export class BaseMessage extends Base {
 	 * @returns prefix
 	 */
 	private getPrefix(place: Place, guild?: Discord.Guild): string | undefined {
-		const prefixes = this.client.commands.getPossiblePrefixes(place, guild);
+		// Gets the prefixes and sorts them from longest to shortest
+		// This is so if there are multiple matching prefixes,
+		// the longest one of them all should be checked first.
+		const prefixes = this.client.commands
+			.getPossiblePrefixes(place, guild)
+			.sort((a, b) => b.length - a.length);
+
+		// Finds a matching prefix and returns it
 		let prefix: string | undefined;
 		for (const testPrefix of prefixes) {
 			if (this.content.startsWith(testPrefix)) {
