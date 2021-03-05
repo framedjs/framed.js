@@ -2,7 +2,7 @@
 	"name": "@framedjs/core",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
-	"version": "0.3.0",
+	"version": "0.4.0",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/some1chan/framed.js.git",
@@ -16,8 +16,8 @@
 		"test:watch": "jest --watchAll"
 	},
 	"dependencies": {
-		"@framedjs/logger": "workspace:../logger",
-		"@framedjs/shared": "workspace:../shared",
+		"@framedjs/logger": "^0.1.0",
+		"@framedjs/shared": "^0.2.0",
 		"axios": "^0.21.1",
 		"common-tags": "^1.8.0",
 		"koa": "^2.13.1",

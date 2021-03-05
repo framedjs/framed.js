@@ -1,5 +1,25 @@
 # @framedjs/core
 
+## 0.4.0
+
+### Minor Changes
+
+-   d8e7462: - Noteable Features: - Bot permissions
+
+    -   Noteable Bugfixes:
+
+        -   Prefix checks go from longest to smallest
+        -   Utils.formatHrTime outputs proper numbers with smaller hrTime numbers
+
+    -   Breaking Changes:
+        -   Utils.hasPermission has been renamed to Utils.hasUserPermission
+        -   Utils.sendPermissionErrorMessage has been renamed to Utils.sendBotPermissionErrorMessage
+
+### Patch Changes
+
+-   Updated dependencies [d8e7462]
+    -   @framedjs/shared@0.2.0
+
 ## 0.3.0
 
 ### Patch Changes
