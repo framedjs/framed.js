@@ -393,9 +393,9 @@ export class CommandManager extends Base {
 				for await (const element of data) {
 					// Attempts to get the subcommand if it exists.
 					// If not, use the base command.
-					let tempCommand = element.command;
+					let command = element.command;
 					if (element.subcommands.length > 0) {
-						tempCommand =
+						command =
 							element.subcommands[element.subcommands.length - 1];
 					}
 
@@ -404,41 +404,56 @@ export class CommandManager extends Base {
 						Logger.debug(
 							`${Utils.hrTimeElapsed(
 								startTime
-							)}s - Found a command (${tempCommand.fullId})`
+							)}s - Found a command (${command.fullId})`
 						);
 
-						// Checks automatically the permissions
+						// Checks automatically for user permissions
 						if (
-							tempCommand.userPermissions?.checkAutomatically ==
-								undefined ||
-							tempCommand.userPermissions?.checkAutomatically ==
-								true
+							command.userPermissions?.checkAutomatically != false
 						) {
-							const data = tempCommand.checkForUserPermissions(msg);
+							const data = command.checkUserPermissions(msg);
 							if (!data.success) {
-								const sent = await tempCommand.sendPermissionErrorMessage(
+								const sent = await command.sendUserPermissionErrorMessage(
 									msg,
-									tempCommand.userPermissions,
+									command.userPermissions,
 									data
 								);
 								if (!sent) {
-									Logger.error(oneLine`"${tempCommand.id}" tried to send
-									a permission error message, but couldn't send anything!`);
+									Logger.error(oneLine`"${command.id}" tried to send
+									a user permission error message, but something went wrong!`);
 								}
-								map.set(tempCommand.fullId, false);
+								map.set(command.fullId, false);
+								continue;
+							}
+						}
+
+						// Checks automatically for bot permissions
+						if (
+							command.botPermissions?.checkAutomatically != false
+						) {
+							const data = command.checkBotPermissions(msg);
+							if (!data.success) {
+								const sent = await command.sendBotPermissionErrorMessage(
+									msg,
+									command.botPermissions,
+									data
+								);
+								if (!sent) {
+									Logger.error(oneLine`"${command.id}" tried to send
+									a user permission error message, but something went wrong!`);
+								}
+								map.set(command.fullId, false);
 								continue;
 							}
 						}
 						Logger.verbose(`Running command "${msg.content}"`);
-						const success = await tempCommand.run(msg);
-						map.set(tempCommand.fullId, success);
+						const success = await command.run(msg);
+						map.set(command.fullId, success);
 					} catch (error) {
 						if (error instanceof FriendlyError) {
-							Logger.warn(
-								`${error.stack}${oneLine`(Likely,
-								this warning is safe to ignore, unless
-								it's needed for debug purposes.)`}`
-							);
+							Logger.warn(oneLine`The below warning is likely
+							safe to ignore, unless needed for debug purposes.`);
+							Logger.warn(error.stack);
 							await this.sendErrorMessage(msg, error);
 						} else {
 							Logger.error(error.stack);

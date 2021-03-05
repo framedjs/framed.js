@@ -13,7 +13,7 @@ export interface UserPermissionDeniedData extends UserPermissionData {
 
 export type UserPermissionDeniedReasons =
 	| "botOwnersOnly"
-	| "discordDMs"
+	| "discordMemberPermissions"
 	| "discordMissingPermissions"
 	| "discordMissingRole"
 	| "discordNoData"

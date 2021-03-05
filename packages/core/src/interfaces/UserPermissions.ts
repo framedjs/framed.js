@@ -11,13 +11,18 @@ export interface UserPermissions {
 	 *
 	 * **WARNING**: handle with care when set to false! If this variable is set to false,
 	 * all options will be ignored automatically, including bot owners only. This could lead
-	 * to nasty situations. 
-	 * 
+	 * to nasty situations.
+	 *
 	 * @example
 	 * ```ts
 	 * // Put this inside your run() function in the command:
-	 * if (!this.hasPermission(msg, this.userPermissions)) {
-	 * 	await this.sendPermissionErrorMessage(msg);
+	 * const permsResult = this.hasUserPermission(msg, this.userPermissions);
+	 * if (!permsResult.success) {
+	 * 	await this.sendUserPermissionErrorMessage(
+	 * 		msg,
+	 * 		this.userPermissions,
+	 * 		permsResults
+	 * 	);
 	 * 	return false;
 	 * }
 	 * ```

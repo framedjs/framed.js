@@ -20,6 +20,7 @@ export { TwitchMessage } from "./structures/TwitchMessage";
 export { Argument } from "./interfaces/Argument";
 // export { ArgumentOptions } from "./interfaces/ArgumentOptions"
 export { BaseCommandOptions } from "./interfaces/BaseCommandOptions";
+export { BotPermissions } from "./interfaces/BotPermissions";
 export { ClientOptions } from "./interfaces/ClientOptions";
 // export { DiscordMessageData } from "./interfaces/DiscordMessageData";
 // export { DiscordMessageDataOptions } from "./interfaces/DiscordMessageDataOptions";

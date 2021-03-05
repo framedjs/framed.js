@@ -1,6 +1,7 @@
 import { UserPermissions } from "../interfaces/UserPermissions";
 import { Prefixes } from "./Prefixes";
 import { InlineOptions } from "./InlineOptions";
+import { BotPermissions } from "./BotPermissions";
 
 /**
  * To be used with BaseCommand and BaseSubcommand
@@ -76,11 +77,10 @@ export interface BaseCommandOptions {
 	 */
 	notes?: string;
 
-	/**
-	 * Primary permissions for running the command.
-	 *
-	 * This doesn't act as a complete override for commands, so be careful!
-	 */
+	/** Bot permissions needed to run the command. */
+	botPermissions?: BotPermissions;
+
+	/** User permissions needed to run the command. */
 	userPermissions?: UserPermissions;
 
 	/**

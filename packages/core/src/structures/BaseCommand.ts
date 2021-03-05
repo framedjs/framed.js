@@ -20,6 +20,11 @@ import {
 	UserPermissionDeniedData,
 	UserPermissionDeniedReasons,
 } from "../interfaces/UserPermissionData";
+import {
+	BotPermissionAllowedData,
+	BotPermissionDeniedData,
+} from "../interfaces/BotPermissionData";
+import { BotPermissions } from "../interfaces/BotPermissions";
 
 export abstract class BaseCommand {
 	// static readonly type: string = "BaseCommand";
@@ -91,7 +96,10 @@ export abstract class BaseCommand {
 	/** Extra notes about the command, that isn't in the description. */
 	notes?: string;
 
-	/** User permissions to compare to. */
+	/** Bot permissions needed to run the command. */
+	botPermissions?: BotPermissions;
+
+	/** User permissions needed to run the command. */
 	userPermissions?: UserPermissions;
 
 	/**
@@ -147,6 +155,7 @@ export abstract class BaseCommand {
 		this.usage = info.usage;
 		this.examples = info.examples;
 		this.notes = info.notes;
+		this.botPermissions = info.botPermissions;
 		this.userPermissions = info.userPermissions;
 		this.hideUsageInHelp = info.hideUsageInHelp;
 
@@ -319,17 +328,15 @@ export abstract class BaseCommand {
 	 * @param checkAdmin
 	 * @param checkOwner
 	 */
-	checkForUserPermissions(
+	checkUserPermissions(
 		msg: BaseMessage,
 		userPermissions = this.userPermissions,
 		checkAdmin = true,
 		checkOwner = true
 	): UserPermissionAllowedData | UserPermissionDeniedData {
+		// If the command doesn't specify permissions, assume it's fine
 		if (!userPermissions) {
-			// If the command doesn't specify permissions, assume it's fine
-			return {
-				success: true,
-			};
+			return { success: true };
 		}
 
 		if (msg instanceof DiscordMessage) {
@@ -419,11 +426,14 @@ export abstract class BaseCommand {
 					return { success: false, reasons: reasons };
 				}
 			} else {
-				return { success: false, reasons: ["discordDMs"] };
+				return {
+					success: false,
+					reasons: ["discordMemberPermissions"],
+				};
 			}
 		} else if (msg instanceof TwitchMessage) {
 			// TODO: Twitch Message permissions
-			Logger.warn("Twitch permissions haven't been implemented");
+			Logger.warn("Twitch user permissions haven't been implemented");
 			return { success: true };
 		}
 
@@ -432,7 +442,7 @@ export abstract class BaseCommand {
 	}
 
 	/**
-	 * Checks for if a user has a permission to do something.
+	 * Checks for if a user has the permission to do something.
 	 *
 	 * NOTE: If userPermissions is undefined, this returns true.
 	 *
@@ -447,12 +457,97 @@ export abstract class BaseCommand {
 		checkAdmin = true,
 		checkOwner = true
 	): boolean {
-		return this.checkForUserPermissions(
+		return this.checkUserPermissions(
 			msg,
 			userPermissions,
 			checkAdmin,
 			checkOwner
 		).success;
+	}
+
+	checkBotPermissions(
+		msg: BaseMessage,
+		botPermissions = this.botPermissions
+	): BotPermissionAllowedData | BotPermissionDeniedData {
+		// If the command doesn't specify permissions, assume it's fine
+		if (!botPermissions) {
+			return { success: true };
+		}
+
+		if (msg instanceof DiscordMessage) {
+			// If there's no discord data/entry, block it for safety
+			if (!botPermissions.discord) {
+				return {
+					success: false,
+					reason: "discordNoData",
+				};
+			}
+
+			// Finds all the missing permissions
+			const missingPerms = this.getMissingDiscordBotPermissions(
+				msg,
+				botPermissions.discord.permissions
+			);
+
+			if (missingPerms.length > 0) {
+				return {
+					success: false,
+					reason: "discordMissingPermissions",
+				};
+			} else {
+				return {
+					success: true,
+				};
+			}
+		} else if (msg instanceof TwitchMessage) {
+			// TODO: Twitch Message permissions
+			// Logger.warn("Twitch bot permissions haven't been implemented");
+			return { success: true };
+		}
+
+		// Return true by default, to lean towards hitting API errors
+		// rather than having no output whatsoever
+		return { success: true };
+	}
+
+	private getMissingDiscordBotPermissions(
+		msg: DiscordMessage,
+		permissions: Discord.PermissionResolvable = []
+	): Discord.PermissionString[] {
+		// If we're not in a guild, we're assuming these are the bot's permissions in DMs
+		const dmDiscordPerms: Discord.PermissionString[] = [
+			"ADD_REACTIONS",
+			"ATTACH_FILES",
+			"EMBED_LINKS",
+			"READ_MESSAGE_HISTORY",
+			"SEND_MESSAGES",
+			"SEND_TTS_MESSAGES",
+			"USE_EXTERNAL_EMOJIS",
+		];
+
+		// Gets the requested permisisons and actual permissions
+		const requestedBotPerms = new Discord.Permissions(permissions);
+		const actualBotPerms = new Discord.Permissions(
+			msg.discord.guild?.me
+				? msg.discord.guild.me.permissionsIn(msg.discord.channel)
+				: dmDiscordPerms
+		);
+
+		// Returns all the missing ones
+		return actualBotPerms.missing(requestedBotPerms);
+	}
+
+	/**
+	 * Checks for if the bot has the permission to do something.
+	 *
+	 * @param msg
+	 * @param botPermissions
+	 */
+	hasBotPermissions(
+		msg: BaseMessage,
+		botPermissions = this.botPermissions
+	): boolean {
+		return this.checkBotPermissions(msg, botPermissions).success;
 	}
 
 	/**
@@ -461,10 +556,10 @@ export abstract class BaseCommand {
 	 * @param msg
 	 * @param permissions
 	 */
-	async sendPermissionErrorMessage(
+	async sendUserPermissionErrorMessage(
 		msg: BaseMessage,
 		permissions = this.userPermissions,
-		deniedData = this.checkForUserPermissions(msg, permissions)
+		deniedData = this.checkUserPermissions(msg, permissions)
 	): Promise<boolean> {
 		if (deniedData.success) {
 			throw new Error(
@@ -472,42 +567,55 @@ export abstract class BaseCommand {
 			);
 		}
 
-		if (msg.discord) {
+		if (msg instanceof DiscordMessage) {
 			const discord = msg.discord;
 			const embed = EmbedHelper.getTemplate(
 				msg.discord,
 				await EmbedHelper.getCheckOutFooter(msg, this.id)
-			)
-				.setTitle("Permission Denied")
-				.setDescription(
-					`${msg.discord.author}, you aren't allowed to do that!`
-				);
+			).setTitle("Permission Denied");
 
-			const missingMessage = oneLine`${embed.description}
-			You are missing and/or aren't:`;
+			let useEmbed = true;
+			if (deniedData.reasons.includes("discordMissingPermissions")) {
+				if (permissions?.discord?.permissions) {
+					// Gets user's permissions and missing permissions
+					const userPerms = new Discord.Permissions(
+						msg.discord.member?.permissions
+					);
+					const missingPerms = userPerms.missing(
+						permissions.discord.permissions
+					);
+					useEmbed = !missingPerms.includes("EMBED_LINKS");
+				}
+			}
+
+			const notAllowed = `${msg.discord.author}, you aren't allowed to do that!`;
+			const missingMessage = useEmbed
+				? `You are missing:`
+				: `You are missing (or aren't):`;
+			let addToDescription = "";
+			let exitForLoop = false;
 
 			for (const reason of deniedData.reasons) {
+				if (exitForLoop) break;
+
 				switch (reason) {
 					case "botOwnersOnly":
-						embed.setDescription(
-							oneLine`${embed.description}
-							Only the bot owner(s) are.`
-						);
+						embed.setDescription(oneLine`
+						${notAllowed} Only the bot owner(s) are.`);
+						exitForLoop = true;
 						break;
 					case "discordNoData":
-						embed.setDescription(
-							oneLine`${embed.description} User permissions were
-							specified, but there was no specific Discord
-							permission data entered. By default, this will deny
-							permissions to anyone but bot owners.`
-						);
+						embed.setDescription(oneLine`User permissions were
+						specified, but there was no specific Discord
+						permission data entered. By default, this will deny
+						permissions to anyone but bot owners.`);
+						exitForLoop = true;
 						break;
-					case "discordDMs":
-						embed.setDescription(
-							oneLine`${embed.description} There are certain member
-							permissions needed to run this. Try running this
-							command again, but on a Discord server.`
-						);
+					case "discordMemberPermissions":
+						embed.setDescription(oneLine`
+						There are certain member permissions needed to run this.
+						Try running this command again, but on a Discord server.`);
+						exitForLoop = true;
 						break;
 					case "discordMissingPermissions":
 						if (permissions?.discord?.permissions) {
@@ -529,20 +637,18 @@ export abstract class BaseCommand {
 							if (!missingPermsString) {
 								missingPermsString = oneLine`No missing
 								permissions found, something went wrong!`;
+							} else {
+								addToDescription = missingMessage;
 							}
 
-							embed
-								.setDescription(oneLine`${missingMessage}`)
-								.addField(
-									"Discord Permissions",
-									missingPermsString
-								);
-						} else {
-							embed.setDescription(
-								oneLine`${embed.description} I think there are
-								missing permissions, but there are no permissions
-								to check with. Something went wrong!`
+							embed.addField(
+								"Discord Permissions",
+								missingPermsString
 							);
+						} else {
+							addToDescription += oneLine`I think there are
+							missing permissions, but there are no permissions
+							to check with. Something went wrong!`;
 						}
 						break;
 					case "discordMissingRole":
@@ -568,20 +674,19 @@ export abstract class BaseCommand {
 							}
 
 							if (roles.length > 0) {
-								embed
-									.setDescription(missingMessage)
-									.addField(
-										"Discord Roles",
-										oneLineInlineLists`${roles}`
-									);
+								addToDescription = `${notAllowed} ${missingMessage}`;
+								embed.addField(
+									"Discord Roles",
+									oneLineInlineLists`${roles}`
+								);
 								break;
 							}
 						}
 
 						// If the above didn't set anything, show this instead
-						embed.setDescription(oneLine`${embed.description}
-						I think you are missing a role, but there's no
-						roles for me to check with. Something went wrong!`);
+						embed.setDescription(oneLine`I think you are missing a
+						role, but there's no roles for me to check with.
+						Something went wrong!`);
 
 						break;
 					case "discordUser":
@@ -589,7 +694,7 @@ export abstract class BaseCommand {
 							const listOfUsers: string[] = [];
 
 							for (const user of permissions.discord.users) {
-								listOfUsers.push(`<@${user}>`);
+								listOfUsers.push(`<@!${user}>`);
 							}
 
 							embed
@@ -601,16 +706,95 @@ export abstract class BaseCommand {
 						}
 						break;
 					default:
-						embed.setDescription(oneLine`${embed.description}
+						embed.setDescription(oneLine`${notAllowed} ${missingMessage}
 						The specified reason is not known. Something went wrong!`);
+						exitForLoop = true;
 						break;
 				}
+			}
+
+			if (addToDescription) {
+				embed.setDescription(oneLine`${notAllowed} ${missingMessage}`);
 			}
 
 			await msg.discord.channel.send(embed);
 			return true;
 		} else {
-			await msg.send("Something went wrong when checking permissions!");
+			await msg.send(
+				"Something went wrong when checking user permissions!"
+			);
+			return false;
+		}
+	}
+
+	async sendBotPermissionErrorMessage(
+		msg: BaseMessage,
+		botPermissions = this.botPermissions,
+		deniedData = this.checkBotPermissions(msg, botPermissions)
+	): Promise<boolean> {
+		if (deniedData.success) {
+			throw new Error(
+				"deniedData should have been denied; deniedData.success was true"
+			);
+		}
+
+		let description = "";
+		let permissionString = "";
+		if (msg instanceof DiscordMessage) {
+			if (
+				!botPermissions?.discord ||
+				deniedData.reason.includes("discordNoData")
+			) {
+				description += `User permissions were
+				specified, but there was no specific Discord
+				permission data entered. By default, this will deny
+				permissions to anyone but bot owners.`;
+			} else {
+				// Finds all the missing permissions
+				const missingPerms = this.getMissingDiscordBotPermissions(
+					msg,
+					botPermissions.discord.permissions
+				);
+
+				// Puts all the missing permissions into a formatted string
+				let missingPermsString = "";
+				for (const perm of missingPerms) {
+					missingPermsString += `\`${perm}\` `;
+				}
+
+				// If it's empty, show an error
+				if (!missingPermsString) {
+					description = oneLine`No missing
+					permissions found, something went wrong!`;
+				} else {
+					description = `The bot is missing the following permissions:`;
+					permissionString = missingPermsString;
+				}
+			}
+
+			const title = "Bot Permissions Error";
+			if (deniedData.reason.includes("EMBED_LINKS")) {
+				await msg.discord.channel.send(`**${title}**\n${description}`);
+			} else {
+				const embed = EmbedHelper.getTemplate(
+					msg.discord,
+					await EmbedHelper.getCheckOutFooter(msg, this.id)
+				)
+					.setTitle(title)
+					.setDescription(description);
+
+				if (permissionString) {
+					embed.addField("Discord Permissions", permissionString);
+				}
+
+				await msg.discord.channel.send(embed);
+			}
+
+			return true;
+		} else {
+			await msg.send(
+				"Something went wrong when checking bot permissions!"
+			);
 			return false;
 		}
 	}
