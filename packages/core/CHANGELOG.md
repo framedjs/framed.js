@@ -1,5 +1,15 @@
 # @framedjs/core
 
+## 0.4.1
+
+### Patch Changes
+
+-   588bef7: Release 0.4.1
+
+    Bugfixes:
+
+    -   If there's an prefix with an empty string, ANY command will be able to be triggered by its ID. Any specified prefix doesn't matter.
+
 ## 0.4.0
 
 ### Minor Changes
