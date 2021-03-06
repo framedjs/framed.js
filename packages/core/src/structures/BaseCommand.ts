@@ -244,10 +244,12 @@ export abstract class BaseCommand {
 
 		const prefix = this.client.provider.prefixes.get(place.id);
 		if (!prefix) {
-			Logger.warn(
-				oneLine`Couldn't find default prefix from
-				place ID ${place.id}; falling back to defaultPrefix.default`
-			);
+			try {
+				throw new Error(oneLine`Couldn't find default prefix from
+				place ID ${place.id}; falling back to defaultPrefix.default`);
+			} catch (error) {
+				Logger.warn(error.stack);
+			}
 			return this.defaultPrefix.default;
 		}
 
