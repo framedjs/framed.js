@@ -329,7 +329,7 @@ export class CommandManager extends Base {
 			if (command != undefined) {
 				let commandUsesPrefix = true;
 
-				if (prefix && place) {
+				if (prefix != undefined && place) {
 					// Gets all valid prefixes for the place, and command
 					const commandPrefixes = command.getPrefixes(place);
 					commandPrefixes.push(...this.defaultPrefixes);
