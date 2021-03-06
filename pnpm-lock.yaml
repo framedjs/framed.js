@@ -52,8 +52,8 @@ importers:
       twitch-chat-client: 4.5.0_twitch@4.5.0
       typescript: 4.2.3
     specifiers:
-      '@framedjs/logger': link:../logger
-      '@framedjs/shared': link:../shared
+      '@framedjs/logger': workspace:^0.1.0
+      '@framedjs/shared': workspace:^0.2.0
       '@types/common-tags': ^1.8.0
       '@types/koa': ^2.13.1
       '@types/koa-router': ^7.4.1
