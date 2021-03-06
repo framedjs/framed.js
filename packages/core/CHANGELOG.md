@@ -1,5 +1,15 @@
 # @framedjs/core
 
+## 0.4.2
+
+### Patch Changes
+
+-   34c97ef: Release 0.4.2
+
+    Bugfixes:
+
+    -   Fixed the package install
+
 ## 0.4.1
 
 ### Patch Changes
