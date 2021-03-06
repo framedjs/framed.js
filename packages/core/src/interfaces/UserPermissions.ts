@@ -16,12 +16,12 @@ export interface UserPermissions {
 	 * @example
 	 * ```ts
 	 * // Put this inside your run() function in the command:
-	 * const permsResult = this.hasUserPermission(msg, this.userPermissions);
+	 * const permsResult = this.checkUserPermissions(msg, this.userPermissions);
 	 * if (!permsResult.success) {
 	 * 	await this.sendUserPermissionErrorMessage(
 	 * 		msg,
 	 * 		this.userPermissions,
-	 * 		permsResults
+	 * 		permsResult
 	 * 	);
 	 * 	return false;
 	 * }

@@ -10,12 +10,12 @@ export interface BotPermissions {
 	 * @example
 	 * ```ts
 	 * // Put this inside your run() function in the command:
-	 * const permsResult = this.hasBotPermission(msg, this.botPermissions);
+	 * const permsResult = this.checkBotPermission(msg, this.botPermissions);
 	 * if (!permsResult.success) {
 	 * 	await this.sendBotPermissionErrorMessage(
 	 * 		msg,
 	 * 		this.botPermissions,
-	 * 		permsResults
+	 * 		permsResult
 	 * 	);
 	 * 	return false;
 	 * }
