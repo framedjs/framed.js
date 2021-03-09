@@ -1,5 +1,15 @@
 # @framedjs/core
 
+## 0.4.4
+
+### Patch Changes
+
+-   e0a563e: Release 0.4.4
+
+    Bugfixes:
+
+    -   Don't fetch partials without permission
+
 ## 0.4.3
 
 ### Patch Changes
