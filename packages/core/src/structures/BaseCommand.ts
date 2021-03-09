@@ -596,6 +596,7 @@ export abstract class BaseCommand {
 				: `You are missing (or aren't):`;
 			let addToDescription = "";
 			let exitForLoop = false;
+			let missingPerms: Discord.PermissionString[] = [];
 
 			for (const reason of deniedData.reasons) {
 				if (exitForLoop) break;
@@ -625,7 +626,7 @@ export abstract class BaseCommand {
 							const userPerms = new Discord.Permissions(
 								msg.discord.member?.permissions
 							);
-							const missingPerms = userPerms.missing(
+							missingPerms = userPerms.missing(
 								permissions.discord.permissions
 							);
 
@@ -719,7 +720,19 @@ export abstract class BaseCommand {
 				embed.setDescription(oneLine`${notAllowed} ${missingMessage}`);
 			}
 
-			await msg.discord.channel.send(embed);
+			if (missingPerms.includes("SEND_MESSAGES")) {
+				throw new Error(
+					"Missing SEND_MESSAGES permission, cannot send error"
+				);
+			} else if (missingPerms.includes("EMBED_LINKS")) {
+				await msg.discord.channel.send(
+					`**${embed.title}**\n${oneLine`Unfortunately, the
+					\`EMBED_LINKS\` permission is disabled, so I can't send any details.`}`
+				);
+			} else {
+				await msg.discord.channel.send(embed);
+			}
+
 			return true;
 		} else {
 			await msg.send(
@@ -740,8 +753,10 @@ export abstract class BaseCommand {
 			);
 		}
 
+		let missingPerms: Discord.PermissionString[] = [];
 		let description = "";
 		let permissionString = "";
+
 		if (msg instanceof DiscordMessage) {
 			if (
 				!botPermissions?.discord ||
@@ -753,7 +768,7 @@ export abstract class BaseCommand {
 				permissions to anyone but bot owners.`;
 			} else {
 				// Finds all the missing permissions
-				const missingPerms = this.getMissingDiscordBotPermissions(
+				missingPerms = this.getMissingDiscordBotPermissions(
 					msg,
 					botPermissions.discord.permissions
 				);
@@ -775,8 +790,14 @@ export abstract class BaseCommand {
 			}
 
 			const title = "Bot Permissions Error";
-			if (deniedData.reason.includes("EMBED_LINKS")) {
-				await msg.discord.channel.send(`**${title}**\n${description}`);
+			if (missingPerms.includes("SEND_MESSAGES")) {
+				throw new Error(
+					"Missing SEND_MESSAGES permission, cannot send error"
+				);
+			} else if (missingPerms.includes("EMBED_LINKS")) {
+				await msg.discord.channel.send(
+					`**${title}**\n${description} ${permissionString}`
+				);
 			} else {
 				const embed = EmbedHelper.getTemplate(
 					msg.discord,

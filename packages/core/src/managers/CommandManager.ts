@@ -433,15 +433,25 @@ export class CommandManager extends Base {
 						) {
 							const data = command.checkBotPermissions(msg);
 							if (!data.success) {
-								const sent = await command.sendBotPermissionErrorMessage(
-									msg,
-									command.botPermissions,
-									data
-								);
-								if (!sent) {
+								let sent = false;
+								let sentError: Error | undefined;
+								try {
+									sent = await command.sendBotPermissionErrorMessage(
+										msg,
+										command.botPermissions,
+										data
+									);
+								} catch (error) {
+									sentError = error;
+								}
+
+								if (sentError) {
+									Logger.error(sentError);
+								} else if (!sent) {
 									Logger.error(oneLine`"${command.id}" tried to send
 									a user permission error message, but something went wrong!`);
 								}
+
 								map.set(command.fullId, false);
 								continue;
 							}
