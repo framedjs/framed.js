@@ -3,6 +3,7 @@ dependencies:
   '@framedjs/shared': 0.2.0
   axios: 0.21.1
   common-tags: 1.8.0
+  emoji-regex: 9.2.2
   koa: 2.13.1
   koa-router: 10.0.0
   nanoid: 3.1.20
@@ -534,6 +535,10 @@ packages:
     dev: false
     resolution:
       integrity: sha1-WQxhFWsK4vTwJVcyoViyZrxWsh0=
+  /emoji-regex/9.2.2:
+    dev: false
+    resolution:
+      integrity: sha512-L18DaJsXSUk2+42pv8mLs5jJT2hqFkFE4j21wOmgbUqsZ2hL72NsUU785g9RXgo3s0ZNgVl42TiHp3ZtOv/Vyg==
   /enabled/2.0.0:
     dev: false
     resolution:
@@ -1319,6 +1324,7 @@ specifiers:
   axios: ^0.21.1
   common-tags: ^1.8.0
   discord.js: ^12.5.1
+  emoji-regex: ^9.2.2
   koa: ^2.13.1
   koa-router: ^10.0.0
   nanoid: ^3.1.20
