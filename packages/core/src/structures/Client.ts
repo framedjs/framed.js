@@ -256,9 +256,30 @@ export class Client extends EventEmitter {
 			try {
 				Logger.silly(`Message Update`);
 
+				// Attempts to fetch a partial message, if the bot has permission to do so
 				let newMessage: Discord.Message;
 				if (partialNew.partial) {
 					try {
+						if (
+							partialOld.guild?.available &&
+							partialOld.guild?.me
+						) {
+							const requestedBotPerms = new Discord.Permissions([
+								"READ_MESSAGE_HISTORY",
+							]);
+							const actualBotPerms = new Discord.Permissions(
+								partialOld.guild.me.permissionsIn(
+									partialOld.channel
+								)
+							);
+
+							if (
+								actualBotPerms.missing(requestedBotPerms)
+									.length > 0
+							) {
+								return;
+							}
+						}
 						newMessage = await partialNew.channel.messages.fetch(
 							partialNew.id
 						);
