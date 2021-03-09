@@ -14,6 +14,7 @@ import { Logger } from "@framedjs/logger";
 import { FriendlyError } from "./errors/FriendlyError";
 
 import Discord from "discord.js";
+import EmojiRegex from "emoji-regex/RGI_Emoji";
 import Emoji from "node-emoji";
 
 enum ArgumentState {
@@ -616,7 +617,7 @@ export class BaseMessage extends Base {
 		// https://stackoverflow.com/questions/62955907/discordjs-nodejs-how-can-i-check-if-a-message-only-contains-custom-emotes#62960102
 		const regex = /(:[^:\s]+:|<:[^:\s]+:[\d]+>|<a:[^:\s]+:[0-9]+>)+$/g;
 		const markdownEmote = newArgs[0].match(regex);
-		const genericEmoji = Emoji.unemojify(newArgs[0]).match(regex);
+		const genericEmoji = newArgs[0].match(EmojiRegex());
 
 		let newContent = argsContent;
 		let newEmote = markdownEmote

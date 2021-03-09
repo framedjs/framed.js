@@ -34,6 +34,7 @@ importers:
       '@framedjs/shared': link:../shared
       axios: 0.21.1
       common-tags: 1.8.0
+      emoji-regex: 9.2.2
       koa: 2.13.1
       koa-router: 10.0.0
       nanoid: 3.1.20
@@ -52,8 +53,8 @@ importers:
       twitch-chat-client: 4.5.0_twitch@4.5.0
       typescript: 4.2.3
     specifiers:
-      '@framedjs/logger': workspace:^0.1.0
-      '@framedjs/shared': workspace:^0.2.0
+      '@framedjs/logger': ^0.1.0
+      '@framedjs/shared': ^0.2.0
       '@types/common-tags': ^1.8.0
       '@types/koa': ^2.13.1
       '@types/koa-router': ^7.4.1
@@ -62,6 +63,7 @@ importers:
       axios: ^0.21.1
       common-tags: ^1.8.0
       discord.js: ^12.5.1
+      emoji-regex: ^9.2.2
       koa: ^2.13.1
       koa-router: ^10.0.0
       nanoid: ^3.1.20
@@ -5624,6 +5626,10 @@ packages:
     dev: false
     resolution:
       integrity: sha512-DNc3KFPK18bPdElMJnf/Pkv5TXhxFU3YFDEuGLDRtPmV4rkmCjBkCSEp22u6rBHdSN9Vlp/GK7k98prmE1Jgug==
+  /emoji-regex/9.2.2:
+    dev: false
+    resolution:
+      integrity: sha512-L18DaJsXSUk2+42pv8mLs5jJT2hqFkFE4j21wOmgbUqsZ2hL72NsUU785g9RXgo3s0ZNgVl42TiHp3ZtOv/Vyg==
   /emojis-list/2.1.0:
     dev: false
     engines:
