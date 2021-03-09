@@ -263,7 +263,7 @@ export class Client extends EventEmitter {
 							partialNew.id
 						);
 					} catch (error) {
-						Logger.error(error);
+						Logger.error(error.stack);
 						return;
 					}
 				} else {
