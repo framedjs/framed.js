@@ -2,7 +2,7 @@
 	"name": "@framedjs/core",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
-	"version": "0.4.2",
+	"version": "0.4.3",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/some1chan/framed.js.git",
@@ -16,8 +16,8 @@
 		"test:watch": "jest --watchAll"
 	},
 	"dependencies": {
-		"@framedjs/logger": "workspace:^0.1.0",
-		"@framedjs/shared": "workspace:^0.2.0",
+		"@framedjs/logger": "^0.1.0",
+		"@framedjs/shared": "^0.2.0",
 		"axios": "^0.21.1",
 		"common-tags": "^1.8.0",
 		"emoji-regex": "^9.2.2",

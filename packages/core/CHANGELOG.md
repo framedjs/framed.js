@@ -1,5 +1,16 @@
 # @framedjs/core
 
+## 0.4.3
+
+### Patch Changes
+
+-   8dc219c: Release 0.4.3
+
+    Bugfixes:
+
+    -   Emoji parsing on specific emojis (such as 🧇)
+    -   Permission error message sending issues
+
 ## 0.4.2
 
 ### Patch Changes
