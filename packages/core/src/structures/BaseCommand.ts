@@ -512,7 +512,7 @@ export abstract class BaseCommand {
 		return { success: true };
 	}
 
-	private getMissingDiscordBotPermissions(
+	getMissingDiscordBotPermissions(
 		msg: DiscordMessage,
 		permissions: Discord.PermissionResolvable = []
 	): Discord.PermissionString[] {
@@ -553,10 +553,12 @@ export abstract class BaseCommand {
 	}
 
 	/**
-	 * Sends an error message, with what perms the user needs to work with.
+	 * Sends an error message, with what permissions the user needs to work with.
 	 *
 	 * @param msg
 	 * @param permissions
+	 * @param deniedData
+	 * @returns
 	 */
 	async sendUserPermissionErrorMessage(
 		msg: BaseMessage,
@@ -742,84 +744,25 @@ export abstract class BaseCommand {
 		}
 	}
 
+	/**
+	 * Sends an error message, with what permissions the bot needs to work with.
+	 *
+	 * @param msg
+	 * @param botPermissions
+	 * @param deniedData
+	 * @returns
+	 */
 	async sendBotPermissionErrorMessage(
 		msg: BaseMessage,
 		botPermissions = this.botPermissions,
 		deniedData = this.checkBotPermissions(msg, botPermissions)
 	): Promise<boolean> {
-		if (deniedData.success) {
-			throw new Error(
-				"deniedData should have been denied; deniedData.success was true"
-			);
-		}
-
-		let missingPerms: Discord.PermissionString[] = [];
-		let description = "";
-		let permissionString = "";
-
-		if (msg instanceof DiscordMessage) {
-			if (
-				!botPermissions?.discord ||
-				deniedData.reason.includes("discordNoData")
-			) {
-				description += `User permissions were
-				specified, but there was no specific Discord
-				permission data entered. By default, this will deny
-				permissions to anyone but bot owners.`;
-			} else {
-				// Finds all the missing permissions
-				missingPerms = this.getMissingDiscordBotPermissions(
-					msg,
-					botPermissions.discord.permissions
-				);
-
-				// Puts all the missing permissions into a formatted string
-				let missingPermsString = "";
-				for (const perm of missingPerms) {
-					missingPermsString += `\`${perm}\` `;
-				}
-
-				// If it's empty, show an error
-				if (!missingPermsString) {
-					description = oneLine`No missing
-					permissions found, something went wrong!`;
-				} else {
-					description = `The bot is missing the following permissions:`;
-					permissionString = missingPermsString;
-				}
-			}
-
-			const title = "Bot Permissions Error";
-			if (missingPerms.includes("SEND_MESSAGES")) {
-				throw new Error(
-					"Missing SEND_MESSAGES permission, cannot send error"
-				);
-			} else if (missingPerms.includes("EMBED_LINKS")) {
-				await msg.discord.channel.send(
-					`**${title}**\n${description} ${permissionString}`
-				);
-			} else {
-				const embed = EmbedHelper.getTemplate(
-					msg.discord,
-					await EmbedHelper.getCheckOutFooter(msg, this.id)
-				)
-					.setTitle(title)
-					.setDescription(description);
-
-				if (permissionString) {
-					embed.addField("Discord Permissions", permissionString);
-				}
-
-				await msg.discord.channel.send(embed);
-			}
-
-			return true;
-		} else {
-			await msg.send(
-				"Something went wrong when checking bot permissions!"
-			);
-			return false;
-		}
+		return this.client.commands.sendBotPermissionErrorMessage(
+			msg,
+			this,
+			botPermissions,
+			deniedData
+		);
 	}
 
 	//#endregion

@@ -1,5 +1,5 @@
 import { Logger } from "@framedjs/logger";
-import { oneLine, oneLineInlineLists } from "common-tags";
+import { oneLine, oneLineCommaListsOr, oneLineInlineLists } from "common-tags";
 
 import { Base } from "../structures/Base";
 import { BaseCommand } from "../structures/BaseCommand";
@@ -407,55 +407,15 @@ export class CommandManager extends Base {
 							)}s - Found a command (${command.fullId})`
 						);
 
-						// Checks automatically for user permissions
-						if (
-							command.userPermissions?.checkAutomatically != false
-						) {
-							const data = command.checkUserPermissions(msg);
-							if (!data.success) {
-								const sent = await command.sendUserPermissionErrorMessage(
-									msg,
-									command.userPermissions,
-									data
-								);
-								if (!sent) {
-									Logger.error(oneLine`"${command.id}" tried to send
-									a user permission error message, but something went wrong!`);
-								}
-								map.set(command.fullId, false);
-								continue;
-							}
+						const passed = this.checkForPermissions(
+							msg,
+							command,
+							map
+						);
+						if (!passed) {
+							continue;
 						}
 
-						// Checks automatically for bot permissions
-						if (
-							command.botPermissions?.checkAutomatically != false
-						) {
-							const data = command.checkBotPermissions(msg);
-							if (!data.success) {
-								let sent = false;
-								let sentError: Error | undefined;
-								try {
-									sent = await command.sendBotPermissionErrorMessage(
-										msg,
-										command.botPermissions,
-										data
-									);
-								} catch (error) {
-									sentError = error;
-								}
-
-								if (sentError) {
-									Logger.error(sentError);
-								} else if (!sent) {
-									Logger.error(oneLine`"${command.id}" tried to send
-									a user permission error message, but something went wrong!`);
-								}
-
-								map.set(command.fullId, false);
-								continue;
-							}
-						}
 						Logger.verbose(`Running command "${msg.content}"`);
 						const success = await command.run(msg);
 						map.set(command.fullId, success);
@@ -481,6 +441,69 @@ export class CommandManager extends Base {
 			)}s - Finished finding and sending commands`
 		);
 		return map;
+	}
+
+	/**
+	 * Checks for permission, and sends an error message
+	 *
+	 * @param msg
+	 * @param command
+	 * @param map Optional results map
+	 *
+	 * @returns true if passed
+	 */
+	async checkForPermissions(
+		msg: BaseMessage,
+		command: BaseCommand,
+		map?: Map<string, boolean>
+	): Promise<boolean> {
+		// Checks automatically for user permissions
+		if (command.userPermissions?.checkAutomatically != false) {
+			const data = command.checkUserPermissions(msg);
+			if (!data.success) {
+				const sent = await command.sendUserPermissionErrorMessage(
+					msg,
+					command.userPermissions,
+					data
+				);
+				if (!sent) {
+					Logger.error(oneLine`"${command.id}" tried to send
+					a user permission error message, but something went wrong!`);
+				}
+				map?.set(command.fullId, false);
+				return false;
+			}
+		}
+
+		// Checks automatically for bot permissions
+		if (command.botPermissions?.checkAutomatically != false) {
+			const data = command.checkBotPermissions(msg);
+			if (!data.success) {
+				let sent = false;
+				let sentError: Error | undefined;
+				try {
+					sent = await command.sendBotPermissionErrorMessage(
+						msg,
+						command.botPermissions,
+						data
+					);
+				} catch (error) {
+					sentError = error;
+				}
+
+				if (sentError) {
+					Logger.error(sentError);
+				} else if (!sent) {
+					Logger.error(oneLine`"${command.id}" tried to send
+					a user permission error message, but something went wrong!`);
+				}
+
+				map?.set(command.fullId, false);
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	/**
@@ -574,6 +597,290 @@ export class CommandManager extends Base {
 			await msg.send(
 				`${friendlyError.friendlyName}: ${friendlyError.message}`
 			);
+		}
+	}
+
+	/**
+	 * Sends an error message, with what permissions the user needs to work with.
+	 *
+	 * @param msg
+	 * @param command
+	 * @param permissions
+	 * @param deniedData
+	 * @returns
+	 */
+	async sendUserPermissionErrorMessage(
+		msg: BaseMessage,
+		command: BaseCommand,
+		permissions = command.userPermissions,
+		deniedData = command.checkUserPermissions(msg, permissions)
+	): Promise<boolean> {
+		if (deniedData.success) {
+			throw new Error(
+				"deniedData should have been denied; deniedData.success was true"
+			);
+		}
+
+		if (msg instanceof DiscordMessage) {
+			const discord = msg.discord;
+			const embed = EmbedHelper.getTemplate(
+				msg.discord,
+				await EmbedHelper.getCheckOutFooter(msg, command.id)
+			).setTitle("Permission Denied");
+
+			let useEmbed = true;
+			if (deniedData.reasons.includes("discordMissingPermissions")) {
+				if (permissions?.discord?.permissions) {
+					// Gets user's permissions and missing permissions
+					const userPerms = new Discord.Permissions(
+						msg.discord.member?.permissions
+					);
+					const missingPerms = userPerms.missing(
+						permissions.discord.permissions
+					);
+					useEmbed = !missingPerms.includes("EMBED_LINKS");
+				}
+			}
+
+			const notAllowed = `${msg.discord.author}, you aren't allowed to do that!`;
+			const missingMessage = useEmbed
+				? `You are missing:`
+				: `You are missing (or aren't):`;
+			let addToDescription = "";
+			let exitForLoop = false;
+			let missingPerms: Discord.PermissionString[] = [];
+
+			for (const reason of deniedData.reasons) {
+				if (exitForLoop) break;
+
+				switch (reason) {
+					case "botOwnersOnly":
+						embed.setDescription(oneLine`
+							${notAllowed} Only the bot owner(s) are.`);
+						exitForLoop = true;
+						break;
+					case "discordNoData":
+						embed.setDescription(oneLine`User permissions were
+							specified, but there was no specific Discord
+							permission data entered. By default, this will deny
+							permissions to anyone but bot owners.`);
+						exitForLoop = true;
+						break;
+					case "discordMemberPermissions":
+						embed.setDescription(oneLine`
+							There are certain member permissions needed to run this.
+							Try running this command again, but on a Discord server.`);
+						exitForLoop = true;
+						break;
+					case "discordMissingPermissions":
+						if (permissions?.discord?.permissions) {
+							// Gets user's permissions and missing permissions
+							const userPerms = new Discord.Permissions(
+								msg.discord.member?.permissions
+							);
+							missingPerms = userPerms.missing(
+								permissions.discord.permissions
+							);
+
+							// Puts all the missing permissions into a formatted string
+							let missingPermsString = "";
+							for (const perm of missingPerms) {
+								missingPermsString += `\`${perm}\` `;
+							}
+
+							// If it's empty, show an error
+							if (!missingPermsString) {
+								missingPermsString = oneLine`No missing
+									permissions found, something went wrong!`;
+							} else {
+								addToDescription = missingMessage;
+							}
+
+							embed.addField(
+								"Discord Permissions",
+								missingPermsString
+							);
+						} else {
+							addToDescription += oneLine`I think there are
+								missing permissions, but there are no permissions
+								to check with. Something went wrong!`;
+						}
+						break;
+					case "discordMissingRole":
+						// Goes through roles
+						if (permissions?.discord?.roles) {
+							const roles: string[] = [];
+							for (const role of permissions.discord.roles) {
+								// Correctly parses the resolvable
+								if (typeof role == "string") {
+									const newRole = discord.guild?.roles.cache.get(
+										role
+									);
+									if (!newRole) {
+										Logger.error(oneLine`BaseCommand.ts:
+											Couldn't find role with role ID "${role}".`);
+										roles.push(`<@&${role}>`);
+									} else {
+										roles.push(`${newRole}`);
+									}
+								} else {
+									roles.push(`${role}`);
+								}
+							}
+
+							if (roles.length > 0) {
+								addToDescription = `${notAllowed} ${missingMessage}`;
+								embed.addField(
+									"Discord Roles",
+									oneLineInlineLists`${roles}`
+								);
+								break;
+							}
+						}
+
+						// If the above didn't set anything, show this instead
+						embed.setDescription(oneLine`I think you are missing a
+							role, but there's no roles for me to check with.
+							Something went wrong!`);
+
+						break;
+					case "discordUser":
+						if (permissions?.discord?.users) {
+							const listOfUsers: string[] = [];
+
+							for (const user of permissions.discord.users) {
+								listOfUsers.push(`<@!${user}>`);
+							}
+
+							embed
+								.setDescription(missingMessage)
+								.addField(
+									"Users",
+									oneLineCommaListsOr`${listOfUsers}`
+								);
+						}
+						break;
+					default:
+						embed.setDescription(oneLine`${notAllowed} ${missingMessage}
+							The specified reason is not known. Something went wrong!`);
+						exitForLoop = true;
+						break;
+				}
+			}
+
+			if (addToDescription) {
+				embed.setDescription(oneLine`${notAllowed} ${missingMessage}`);
+			}
+
+			if (missingPerms.includes("SEND_MESSAGES")) {
+				throw new Error(
+					"Missing SEND_MESSAGES permission, cannot send error"
+				);
+			} else if (missingPerms.includes("EMBED_LINKS")) {
+				await msg.discord.channel.send(
+					`**${embed.title}**\n${oneLine`Unfortunately, the
+						\`EMBED_LINKS\` permission is disabled, so I can't send any details.`}`
+				);
+			} else {
+				await msg.discord.channel.send(embed);
+			}
+
+			return true;
+		} else {
+			await msg.send(
+				"Something went wrong when checking user permissions!"
+			);
+			return false;
+		}
+	}
+
+	/**
+	 * Sends an error message, with what permissions the bot needs to work with.
+	 * 
+	 * @param msg
+	 * @param command
+	 * @param botPermissions
+	 * @param deniedData
+	 * @returns
+	 */
+	async sendBotPermissionErrorMessage(
+		msg: BaseMessage,
+		command: BaseCommand,
+		botPermissions = command.botPermissions,
+		deniedData = command.checkBotPermissions(msg, botPermissions)
+	): Promise<boolean> {
+		if (deniedData.success) {
+			throw new Error(
+				"deniedData should have been denied; deniedData.success was true"
+			);
+		}
+
+		let missingPerms: Discord.PermissionString[] = [];
+		let description = "";
+		let permissionString = "";
+
+		if (msg instanceof DiscordMessage) {
+			if (
+				!botPermissions?.discord ||
+				deniedData.reason.includes("discordNoData")
+			) {
+				description += oneLine`User permissions were
+					specified, but there was no specific Discord
+					permission data entered. By default, this will deny
+					permissions to anyone but bot owners.`;
+			} else {
+				// Finds all the missing permissions
+				missingPerms = command.getMissingDiscordBotPermissions(
+					msg,
+					botPermissions.discord.permissions
+				);
+
+				// Puts all the missing permissions into a formatted string
+				let missingPermsString = "";
+				for (const perm of missingPerms) {
+					missingPermsString += `\`${perm}\` `;
+				}
+
+				// If it's empty, show an error
+				if (!missingPermsString) {
+					description = oneLine`No missing
+						permissions found, something went wrong!`;
+				} else {
+					description = `The bot is missing the following permissions:`;
+					permissionString = missingPermsString;
+				}
+			}
+
+			const title = "Bot Permissions Error";
+			if (missingPerms.includes("SEND_MESSAGES")) {
+				throw new Error(
+					"Missing SEND_MESSAGES permission, cannot send error"
+				);
+			} else if (missingPerms.includes("EMBED_LINKS")) {
+				await msg.discord.channel.send(
+					`**${title}**\n${description} ${permissionString}`
+				);
+			} else {
+				const embed = EmbedHelper.getTemplate(
+					msg.discord,
+					await EmbedHelper.getCheckOutFooter(msg, command.id)
+				)
+					.setTitle(title)
+					.setDescription(description);
+
+				if (permissionString) {
+					embed.addField("Discord Permissions", permissionString);
+				}
+
+				await msg.discord.channel.send(embed);
+			}
+
+			return true;
+		} else {
+			await msg.send(
+				"Something went wrong when checking bot permissions!"
+			);
+			return false;
 		}
 	}
 }
