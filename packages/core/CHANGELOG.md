@@ -1,5 +1,15 @@
 # @framedjs/core
 
+## 0.5.0
+
+### Minor Changes
+
+-   87a0b69: Release 0.5.0
+
+    Features:
+
+    -   Discord client login options
+
 ## 0.4.4
 
 ### Patch Changes
