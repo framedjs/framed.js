@@ -1,4 +1,5 @@
 import { ChatClientOptions } from "twitch-chat-client/lib/ChatClient";
+import { ClientOptions } from "discord.js";
 
 export interface LoginOptions {
 	type: "discord" | "twitch";
@@ -8,6 +9,7 @@ export interface LoginOptions {
 
 export interface DiscordLoginOptions {
 	token?: string;
+	clientOptions?: ClientOptions;
 }
 
 export interface TwitchLoginOptions {

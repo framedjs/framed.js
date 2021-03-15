@@ -130,10 +130,9 @@ export class Client extends EventEmitter {
 					}
 
 					// Sets up some Discord events and logs into Discord
-					// this.discord.client = new Discord.Client();
-					this.discord.client = new Discord.Client({
-						partials: ["MESSAGE", "CHANNEL", "REACTION", "USER"],
-					});
+					this.discord.client = new Discord.Client(
+						option.discord.clientOptions
+					);
 					this.setupDiscordEvents(this.discord.client);
 					break;
 				case "twitch":
