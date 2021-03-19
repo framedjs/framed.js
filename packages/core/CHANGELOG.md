@@ -1,5 +1,15 @@
 # @framedjs/core
 
+## 0.5.1
+
+### Patch Changes
+
+-   5ca641e: Release 0.5.1
+
+    Bugfixes:
+
+    -   Fixed automatic user permissions to actually get blocked
+
 ## 0.5.0
 
 ### Minor Changes
