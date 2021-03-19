@@ -407,7 +407,7 @@ export class CommandManager extends Base {
 							)}s - Found a command (${command.fullId})`
 						);
 
-						const passed = this.checkForPermissions(
+						const passed = await this.checkForPermissions(
 							msg,
 							command,
 							map
