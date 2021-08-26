@@ -15,8 +15,9 @@ export interface ClientOptions {
 
 	/**
 	 * Should the Client initialize certain things?
+	 * All nested options default to true if left undefined.
 	 */
-	autoInitialize: {
+	autoInitialize?: {
 		api?: boolean;
 		commands?: boolean;
 		provider?: boolean;

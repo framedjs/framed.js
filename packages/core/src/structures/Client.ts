@@ -99,15 +99,18 @@ export class Client extends EventEmitter {
 		}
 
 		// Initializes managers and providers
-		if (options.autoInitialize.api != false)
+		if (!options.autoInitialize || options.autoInitialize.api != false)
 			this.api = new APIManager(this);
-		if (options.autoInitialize.commands != false)
+		if (!options.autoInitialize || options.autoInitialize.commands != false)
 			this.commands = new CommandManager(this);
-		if (options.autoInitialize.formatting != false)
+		if (
+			!options.autoInitialize ||
+			options.autoInitialize.formatting != false
+		)
 			this.formatting = new FormattingManager(this);
-		if (options.autoInitialize.plugins != false)
+		if (!options.autoInitialize || options.autoInitialize.plugins != false)
 			this.plugins = new PluginManager(this);
-		if (options.autoInitialize.provider != false)
+		if (!options.autoInitialize || options.autoInitialize.provider != false)
 			this.provider = new BaseProvider(this);
 	}
 
