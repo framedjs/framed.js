@@ -592,7 +592,7 @@ export class CommandManager extends Base {
 				.setTitle(friendlyError.friendlyName)
 				.setDescription(friendlyError.message);
 
-			await msg.discord.channel.send(embed);
+			await msg.discord.channel.send({ embeds: [embed] });
 		} else {
 			await msg.send(
 				`${friendlyError.friendlyName}: ${friendlyError.message}`
@@ -782,7 +782,7 @@ export class CommandManager extends Base {
 						\`EMBED_LINKS\` permission is disabled, so I can't send any details.`}`
 				);
 			} else {
-				await msg.discord.channel.send(embed);
+				await msg.discord.channel.send({ embeds: [embed] });
 			}
 
 			return true;
@@ -796,7 +796,7 @@ export class CommandManager extends Base {
 
 	/**
 	 * Sends an error message, with what permissions the bot needs to work with.
-	 * 
+	 *
 	 * @param msg
 	 * @param command
 	 * @param botPermissions
@@ -872,7 +872,7 @@ export class CommandManager extends Base {
 					embed.addField("Discord Permissions", permissionString);
 				}
 
-				await msg.discord.channel.send(embed);
+				await msg.discord.channel.send({ embeds: [embed] });
 			}
 
 			return true;

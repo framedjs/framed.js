@@ -74,8 +74,11 @@ export interface ObjectTemplateSettings {
  * Discord Embed helper function class
  */
 export class EmbedHelper {
-	static defaultColor = process.env.DEFAULT_EMBED_COLOR
-		? process.env.DEFAULT_EMBED_COLOR
+	static defaultColor: Discord.ColorResolvable = process.env
+		.DEFAULT_EMBED_COLOR
+		? process.env.DEFAULT_EMBED_COLOR[0] == "#"
+			? (process.env.DEFAULT_EMBED_COLOR as Discord.ColorResolvable)
+			: `#${process.env.DEFAULT_EMBED_COLOR}`
 		: "#ffffff";
 
 	/**
@@ -92,7 +95,7 @@ export class EmbedHelper {
 		}
 
 		const client = guild.client;
-		let botColor: Discord.ColorResolvable = "";
+		let botColor: Discord.ColorResolvable = "#";
 
 		if (client.user) {
 			if (
@@ -110,7 +113,7 @@ export class EmbedHelper {
 			}
 
 			// If the guild isn't availiable (or in DMs), we fallback to a preset color
-			if (botColor == "#000000" || botColor == "") {
+			if (botColor == "#000000" || botColor == "#") {
 				botColor = defaultColor;
 			}
 		}
@@ -134,7 +137,7 @@ export class EmbedHelper {
 		baseEmbed?: Discord.MessageEmbed
 	): Discord.MessageEmbed {
 		const newEmbed = new Discord.MessageEmbed(baseEmbed)
-			.setFooter(footer?.text, footer?.iconURL)
+			.setFooter(footer?.text ?? "", footer?.iconURL)
 			.setColor(EmbedHelper.getColorWithFallback(msg.guild));
 
 		return newEmbed;
@@ -159,7 +162,7 @@ export class EmbedHelper {
 		baseEmbed?: Discord.MessageEmbed
 	): Discord.MessageEmbed {
 		return new Discord.MessageEmbed(baseEmbed)
-			.setFooter(footer?.text, footer?.iconURL)
+			.setFooter(footer?.text ?? "", footer?.iconURL)
 			.setColor(EmbedHelper.getColorWithFallback(null, color));
 	}
 

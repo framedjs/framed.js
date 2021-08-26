@@ -19,10 +19,7 @@ export interface DiscordMessageData {
 	/**
 	 * The channel the message was sent through.
 	 */
-	readonly channel:
-		| Discord.TextChannel
-		| Discord.DMChannel
-		| Discord.NewsChannel;
+	readonly channel: Discord.TextBasedChannels;
 
 	/**
 	 * The author of the message.

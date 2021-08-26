@@ -22,7 +22,7 @@ export interface DiscordMessageDataOptions {
 	/**
 	 * The channel the message was sent through.
 	 */
-	channel?: Discord.TextChannel | Discord.DMChannel | Discord.NewsChannel;
+	channel?: Discord.TextBasedChannels;
 
 	/**
 	 * The author of the message.

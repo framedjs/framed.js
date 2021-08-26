@@ -16,38 +16,41 @@
 		"test:watch": "jest --watchAll"
 	},
 	"dependencies": {
-		"@framedjs/logger": "^0.1.0",
-		"@framedjs/shared": "^0.2.0",
+		"@discordjs/builders": "^0.6.0",
+		"@discordjs/rest": "^0.1.0-canary.0",
+		"@framedjs/logger": "workspace:^0.1.0",
+		"@framedjs/shared": "workspace:^0.2.0",
 		"axios": "^0.21.1",
 		"common-tags": "^1.8.0",
+		"discord-api-types": "^0.22.0",
 		"emoji-regex": "^9.2.2",
 		"koa": "^2.13.1",
-		"koa-router": "^10.0.0",
-		"nanoid": "^3.1.20",
-		"node-emoji": "^1.10.0",
+		"koa-router": "^10.1.1",
+		"nanoid": "^3.1.25",
+		"node-emoji": "^1.11.0",
 		"reflect-metadata": "^0.1.13",
 		"require-all": "^3.0.0"
 	},
 	"devDependencies": {
-		"@types/common-tags": "^1.8.0",
-		"@types/koa": "^2.13.1",
-		"@types/koa-router": "^7.4.1",
+		"@types/common-tags": "^1.8.1",
+		"@types/koa": "^2.13.4",
+		"@types/koa-router": "^7.4.4",
 		"@types/node-emoji": "^1.8.1",
-		"@types/require-all": "^3.0.1",
-		"discord.js": "^12.5.1",
-		"twitch": "^4.5.0",
-		"twitch-auth": "^4.5.0",
-		"twitch-chat-client": "^4.5.0",
-		"typescript": "^4.2.3"
+		"@types/require-all": "^3.0.3",
+		"discord.js": "13.1.0",
+		"twitch": "^4.6.5",
+		"twitch-auth": "^4.6.5",
+		"twitch-chat-client": "^4.6.5",
+		"typescript": "^4.3.5"
 	},
 	"peerDependencies": {
-		"discord.js": "^12.5.0",
+		"discord.js": "^13.0.0",
 		"twitch": "^4.4.0",
 		"twitch-auth": "^4.4.0",
 		"twitch-chat-client": "^4.4.0"
 	},
 	"engines": {
-		"node": ">=14.0.0"
+		"node": ">=16.0.0"
 	},
 	"files": [
 		"dist/**/*.js",

@@ -275,11 +275,8 @@ export class DiscordUtils {
 	static resolveGuildChannel(
 		channel: Discord.GuildChannelResolvable | string,
 		channels: Discord.GuildChannelManager
-	): Discord.GuildChannel | undefined {
-		let newChannel:
-			| Discord.GuildChannel
-			| null
-			| undefined = channels.resolve(channel);
+	): Discord.GuildChannel | Discord.ThreadChannel | undefined {
+		let newChannel = channels.resolve(channel) ?? undefined;
 
 		if (!newChannel && typeof channel == "string") {
 			// If the resolve didn't work...
@@ -287,23 +284,21 @@ export class DiscordUtils {
 			// ...try to parse out a mention
 			const newChannelId = DiscordUtils.getIdFromMention(channel);
 			if (newChannelId) {
-				newChannel = channels.resolve(newChannelId);
+				newChannel = channels.resolve(newChannelId) ?? undefined;
 			}
 		}
 
 		if (!newChannel) {
-			newChannel = channels.cache.find(cachedChannels => {
-				if (cachedChannels.isText()) {
-					const textChannel = cachedChannels as Discord.TextChannel;
-
+			newChannel = channels.cache.find(cachedChannel => {
+				if (cachedChannel.isText()) {
 					const parse = BaseMessage.parseEmojiAndString(
-						textChannel.name
+						cachedChannel.name
 					);
 
 					// Finds the name of the channel, also with
 					// excluding the emotes at the beginning
 					if (
-						channel == textChannel.name ||
+						channel == cachedChannel.name ||
 						channel == parse?.newContent
 					) {
 						return true;
@@ -802,11 +797,7 @@ export class DiscordUtils {
 	 */
 	static async renderOutputData(
 		newData: DiscohookOutputData | DiscohookMessageData,
-		channelOrMessage:
-			| Discord.TextChannel
-			| Discord.NewsChannel
-			| Discord.DMChannel
-			| Discord.Message,
+		channelOrMessage: Discord.TextBasedChannels | Discord.Message,
 		client?: Client,
 		place?: Place
 	): Promise<Discord.Message[]> {
@@ -871,11 +862,7 @@ export class DiscordUtils {
 	 */
 	static async renderSingleMessage(
 		messageData: DiscohookMessageData,
-		channelOrMessage:
-			| Discord.Message
-			| Discord.TextChannel
-			| Discord.NewsChannel
-			| Discord.DMChannel,
+		channelOrMessage: Discord.TextBasedChannels | Discord.Message,
 		client?: Client,
 		place?: Place,
 		shouldEdit = false
@@ -929,9 +916,15 @@ export class DiscordUtils {
 			if (content) {
 				if (embed) {
 					if (channel) {
-						msgToReturn = await channel.send(content, embed);
+						msgToReturn = await channel.send({
+							content: "",
+							embeds: [embed],
+						});
 					} else if (msgToEdit) {
-						msgToReturn = await msgToEdit.edit(content, embed);
+						msgToReturn = await msgToEdit.edit({
+							content: "",
+							embeds: [embed],
+						});
 					}
 				} else {
 					if (channel) {
@@ -942,9 +935,15 @@ export class DiscordUtils {
 				}
 			} else if (embed) {
 				if (channel) {
-					msgToReturn = await channel.send("", embed);
+					msgToReturn = await channel.send({
+						content: "",
+						embeds: [embed],
+					});
 				} else if (msgToEdit) {
-					msgToReturn = await msgToEdit.edit("", embed);
+					msgToReturn = await msgToEdit.edit({
+						content: "",
+						embeds: [embed],
+					});
 				}
 			}
 

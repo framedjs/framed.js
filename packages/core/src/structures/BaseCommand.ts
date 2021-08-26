@@ -327,14 +327,10 @@ export abstract class BaseCommand {
 	 *
 	 * @param msg
 	 * @param userPermissions
-	 * @param checkAdmin
-	 * @param checkOwner
 	 */
 	checkUserPermissions(
 		msg: BaseMessage,
-		userPermissions = this.userPermissions,
-		checkAdmin = true,
-		checkOwner = true
+		userPermissions = this.userPermissions
 	): UserPermissionAllowedData | UserPermissionDeniedData {
 		// If the command doesn't specify permissions, assume it's fine
 		if (!userPermissions) {
@@ -389,10 +385,7 @@ export abstract class BaseCommand {
 					? userPermissions.discord.permissions
 					: new Discord.Permissions();
 
-				hasPermission = member.hasPermission(perms, {
-					checkAdmin,
-					checkOwner,
-				});
+				hasPermission = member.permissions.has(perms);
 
 				if (!hasPermission) {
 					reasons.push("discordMissingPermissions");
@@ -455,16 +448,9 @@ export abstract class BaseCommand {
 	 */
 	hasUserPermission(
 		msg: BaseMessage,
-		userPermissions = this.userPermissions,
-		checkAdmin = true,
-		checkOwner = true
+		userPermissions = this.userPermissions
 	): boolean {
-		return this.checkUserPermissions(
-			msg,
-			userPermissions,
-			checkAdmin,
-			checkOwner
-		).success;
+		return this.checkUserPermissions(msg, userPermissions).success;
 	}
 
 	checkBotPermissions(
@@ -530,7 +516,8 @@ export abstract class BaseCommand {
 		// Gets the requested permisisons and actual permissions
 		const requestedBotPerms = new Discord.Permissions(permissions);
 		const actualBotPerms = new Discord.Permissions(
-			msg.discord.guild?.me
+			msg.discord.guild?.me &&
+			msg.discord.channel instanceof Discord.GuildChannel
 				? msg.discord.guild.me.permissionsIn(msg.discord.channel)
 				: dmDiscordPerms
 		);
@@ -732,7 +719,7 @@ export abstract class BaseCommand {
 					\`EMBED_LINKS\` permission is disabled, so I can't send any details.`}`
 				);
 			} else {
-				await msg.discord.channel.send(embed);
+				await msg.discord.channel.send({ embeds: [embed] });
 			}
 
 			return true;

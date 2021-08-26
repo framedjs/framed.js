@@ -131,7 +131,9 @@ export class Client extends EventEmitter {
 
 					// Sets up some Discord events and logs into Discord
 					this.discord.client = new Discord.Client(
-						option.discord.clientOptions
+						option.discord.clientOptions ?? {
+							intents: [Discord.Intents.FLAGS.GUILDS],
+						}
 					);
 					this.setupDiscordEvents(this.discord.client);
 					break;
@@ -261,7 +263,8 @@ export class Client extends EventEmitter {
 					try {
 						if (
 							partialOld.guild?.available &&
-							partialOld.guild?.me
+							partialOld.guild?.me &&
+							partialOld.channel instanceof Discord.GuildChannel
 						) {
 							const requestedBotPerms = new Discord.Permissions([
 								"READ_MESSAGE_HISTORY",
