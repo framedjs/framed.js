@@ -1,5 +1,12 @@
 # @framedjs/core
 
+## 0.6.0
+
+### Minor Changes
+
+-   3ffdd32: - Discord.js v13 update and update deps
+    -   Made auto-initalize option optional
+
 ## 0.5.1
 
 ### Patch Changes
