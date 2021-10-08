@@ -767,7 +767,7 @@ export class DiscordUtils {
 					throw new Error("No request path");
 				}
 			} catch (error) {
-				if (!suppressWarnings) Logger.warn(error.stack);
+				if (!suppressWarnings) Logger.warn((error as Error).stack);
 				throw new FriendlyError("The link couldn't be read!");
 			}
 		} else if (jsonOrLink) {
@@ -775,7 +775,7 @@ export class DiscordUtils {
 			try {
 				newEmbedData = JSON.parse(jsonOrLink);
 			} catch (error) {
-				if (!suppressWarnings) Logger.warn(error.stack);
+				if (!suppressWarnings) Logger.warn((error as Error).stack);
 				throw new FriendlyError(
 					"The data couldn't be parsed into an embed!"
 				);
@@ -842,7 +842,7 @@ export class DiscordUtils {
 			if (error instanceof FriendlyError) {
 				throw error;
 			} else {
-				Logger.error(error.stack);
+				Logger.error((error as Error).stack);
 				throw new FriendlyError(
 					"An unknown error happened while rendering"
 				);

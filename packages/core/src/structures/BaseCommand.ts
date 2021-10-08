@@ -248,7 +248,7 @@ export abstract class BaseCommand {
 				throw new Error(oneLine`Couldn't find default prefix from
 				place ID ${place.id}; falling back to defaultPrefix.default`);
 			} catch (error) {
-				Logger.warn(error.stack);
+				Logger.warn((error as Error).stack);
 			}
 			return this.defaultPrefix.default;
 		}
@@ -767,7 +767,7 @@ export abstract class BaseCommand {
 			) => BaseSubcommand)[];
 			this.loadSubcommands(subcommands);
 		} catch (error) {
-			Logger.error(error.stack);
+			Logger.error((error as Error).stack);
 		}
 	}
 

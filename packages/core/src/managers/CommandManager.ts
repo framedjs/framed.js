@@ -182,7 +182,7 @@ export class CommandManager extends Base {
 				try {
 					await msgOrCommand.discord.guild?.roles.fetch();
 				} catch (error) {
-					Logger.error(error.stack);
+					Logger.error((error as Error).stack);
 				}
 			}
 
@@ -423,16 +423,16 @@ export class CommandManager extends Base {
 						if (error instanceof FriendlyError) {
 							Logger.warn(oneLine`The below warning is likely
 							safe to ignore, unless needed for debug purposes.`);
-							Logger.warn(error.stack);
+							Logger.warn((error as Error).stack);
 							await this.sendErrorMessage(msg, error);
 						} else {
-							Logger.error(error.stack);
+							Logger.error((error as Error).stack);
 						}
 					}
 				}
 			}
 		} catch (error) {
-			Logger.error(error.stack);
+			Logger.error((error as Error).stack);
 		}
 
 		Logger.debug(
@@ -488,7 +488,7 @@ export class CommandManager extends Base {
 						data
 					);
 				} catch (error) {
-					sentError = error;
+					sentError = error as Error;
 				}
 
 				if (sentError) {
@@ -568,7 +568,7 @@ export class CommandManager extends Base {
 				throw new Error("Help command execution didn't succeed");
 			}
 		} catch (error) {
-			Logger.error(error.stack);
+			Logger.error((error as Error).stack);
 			return false;
 		}
 	}

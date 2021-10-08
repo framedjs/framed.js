@@ -32,7 +32,7 @@ export class APIManager extends Base {
 				Logger.http(`${ctx.method} ${ctx.url} - ${ms}ms`);
 			} catch (error) {
 				ctx.status = 500;
-				error.status = ctx.status;
+				(error as any).status = ctx.status;
 				ctx.body = { error };
 				ctx.app.emit("error", error, ctx);
 			}

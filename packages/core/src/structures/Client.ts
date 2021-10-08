@@ -182,7 +182,7 @@ export class Client extends EventEmitter {
 					try {
 						plugin.initEvent(event);
 					} catch (error) {
-						Logger.error(error.stack);
+						Logger.error((error as Error).stack);
 					}
 				}
 			}
@@ -190,7 +190,7 @@ export class Client extends EventEmitter {
 			try {
 				await plugin.setupEvents();
 			} catch (error) {
-				Logger.error(error.stack);
+				Logger.error((error as Error).stack);
 			}
 		}
 
@@ -289,7 +289,7 @@ export class Client extends EventEmitter {
 							partialNew.id
 						);
 					} catch (error) {
-						Logger.error(error.stack);
+						Logger.error((error as Error).stack);
 						return;
 					}
 				} else {
@@ -320,7 +320,7 @@ export class Client extends EventEmitter {
 				);
 				this.processMsg(msg);
 			} catch (error) {
-				Logger.error(error.stack);
+				Logger.error((error as Error).stack);
 			}
 		});
 	}

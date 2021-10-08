@@ -563,7 +563,7 @@ export class BaseMessage extends Base {
 						`Platform is ${this.platform}, but there's no existing data for it`
 					);
 				} catch (error) {
-					Logger.error(error.stack);
+					Logger.error((error as Error).stack);
 				}
 
 				Logger.warn('Attempting to use the fallback "default" instead');

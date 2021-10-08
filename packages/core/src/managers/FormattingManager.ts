@@ -43,7 +43,7 @@ export class FormattingManager extends Base {
 						throw new Error(`Invalid parameter ${formatCommand}`);
 				}
 			} catch (error) {
-				Logger.error(error.stack);
+				Logger.error((error as Error).stack);
 			}
 		}
 
@@ -162,7 +162,7 @@ export class FormattingManager extends Base {
 					place
 				);
 			} catch (error) {
-				Logger.error(error.stack);
+				Logger.error((error as Error).stack);
 			}
 		}
 
@@ -175,7 +175,7 @@ export class FormattingManager extends Base {
 						place
 					);
 				} catch (error) {
-					Logger.error(error.stack);
+					Logger.error((error as Error).stack);
 				}
 				try {
 					field.value = await BaseMessage.format(
@@ -184,7 +184,7 @@ export class FormattingManager extends Base {
 						place
 					);
 				} catch (error) {
-					Logger.error(error.stack);
+					Logger.error((error as Error).stack);
 				}
 			}
 		}
@@ -197,7 +197,7 @@ export class FormattingManager extends Base {
 					place
 				);
 			} catch (error) {
-				Logger.error(error.stack);
+				Logger.error((error as Error).stack);
 			}
 		}
 
@@ -228,7 +228,7 @@ export class FormattingManager extends Base {
 				try {
 					throw new Error("Default prefix wasn't found");
 				} catch (error) {
-					Logger.error(error.stack);
+					Logger.error((error as Error).stack);
 				}
 				prefix = command.defaultPrefix.default;
 			}

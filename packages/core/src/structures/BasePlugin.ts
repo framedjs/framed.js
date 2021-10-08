@@ -150,10 +150,10 @@ export abstract class BasePlugin extends Base {
 			} catch (error) {
 				if (error instanceof ImportError) {
 					// Wrong import type was used
-					Logger.silly(`~99% safe to ignore: ${error.stack}`);
+					Logger.silly(`~99% safe to ignore: ${(error as Error).stack}`);
 				} else {
 					// If it's something else, a normal error will appear
-					Logger.error(error.stack);
+					Logger.error((error as Error).stack);
 				}
 			}
 		}
@@ -227,7 +227,7 @@ export abstract class BasePlugin extends Base {
 				const initEvent = new event(this);
 				this.loadEvent(initEvent);
 			} catch (error) {
-				Logger.error(error.stack);
+				Logger.error((error as Error).stack);
 			}
 		}
 	}
