@@ -1,5 +1,11 @@
 # @framedjs/core
 
+## 0.6.1
+
+### Patch Changes
+
+-   b72dd2e: Update deps
+
 ## 0.6.0
 
 ### Minor Changes
