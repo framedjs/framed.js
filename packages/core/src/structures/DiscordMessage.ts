@@ -1,8 +1,8 @@
 import { oneLine } from "common-tags";
-import { DiscordMessageData } from "../interfaces/DiscordMessageData";
-import { MessageOptions } from "../interfaces/MessageOptions";
 import { BaseMessage } from "./BaseMessage";
 import Discord from "discord.js";
+import type { DiscordMessageData } from "../interfaces/DiscordMessageData";
+import type { MessageOptions } from "../interfaces/MessageOptions";
 
 export class DiscordMessage extends BaseMessage {
 	discord!: DiscordMessageData;
