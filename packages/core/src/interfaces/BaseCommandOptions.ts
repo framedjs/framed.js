@@ -1,7 +1,7 @@
-import { UserPermissions } from "../interfaces/UserPermissions";
-import { Prefixes } from "./Prefixes";
-import { InlineOptions } from "./InlineOptions";
-import { BotPermissions } from "./BotPermissions";
+import type { UserPermissions } from "./UserPermissions";
+import type { Prefixes } from "./Prefixes";
+import type { InlineOptions } from "./InlineOptions";
+import type { BotPermissions } from "./BotPermissions";
 
 /**
  * To be used with BaseCommand and BaseSubcommand

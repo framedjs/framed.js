@@ -1,30 +1,31 @@
 import { BaseMessage } from "./BaseMessage";
 import { BasePlugin } from "./BasePlugin";
 import { Client } from "./Client";
-import { BaseCommandOptions } from "../interfaces/BaseCommandOptions";
-import Discord from "discord.js";
+import { DiscordMessage } from "./DiscordMessage";
+import { TwitchMessage } from "./TwitchMessage";
 import { EmbedHelper } from "../utils/discord/EmbedHelper";
 import { Logger } from "@framedjs/logger";
-import Options from "../interfaces/other/RequireAllOptions";
 import { DiscordUtils } from "../utils/discord/DiscordUtils";
 import { BaseSubcommand } from "./BaseSubcommand";
 import { oneLine, oneLineCommaListsOr, oneLineInlineLists } from "common-tags";
-import { Prefixes } from "../interfaces/Prefixes";
-import { InlineOptions } from "../interfaces/InlineOptions";
-import { Place } from "../interfaces/Place";
-import { UserPermissions } from "../interfaces/UserPermissions";
-import { DiscordMessage } from "./DiscordMessage";
-import { TwitchMessage } from "./TwitchMessage";
-import {
+import Discord from "discord.js";
+
+import type Options from "../interfaces/other/RequireAllOptions";
+import type { BaseCommandOptions } from "../interfaces/BaseCommandOptions";
+import type { Prefixes } from "../interfaces/Prefixes";
+import type { InlineOptions } from "../interfaces/InlineOptions";
+import type { Place } from "../interfaces/Place";
+import type { UserPermissions } from "../interfaces/UserPermissions";
+import type {
 	UserPermissionAllowedData,
 	UserPermissionDeniedData,
 	UserPermissionDeniedReasons,
 } from "../interfaces/UserPermissionData";
-import {
+import type {
 	BotPermissionAllowedData,
 	BotPermissionDeniedData,
 } from "../interfaces/BotPermissionData";
-import { BotPermissions } from "../interfaces/BotPermissions";
+import type { BotPermissions } from "../interfaces/BotPermissions";
 
 export abstract class BaseCommand {
 	// static readonly type: string = "BaseCommand";
@@ -180,9 +181,7 @@ export abstract class BaseCommand {
 	 *
 	 * @param place Place data
 	 */
-	getCommandNotationFormatting(
-		place: Place
-	): {
+	getCommandNotationFormatting(place: Place): {
 		about: string | undefined;
 		description: string | undefined;
 		examples: string | undefined;
@@ -650,9 +649,8 @@ export abstract class BaseCommand {
 							for (const role of permissions.discord.roles) {
 								// Correctly parses the resolvable
 								if (typeof role == "string") {
-									const newRole = discord.guild?.roles.cache.get(
-										role
-									);
+									const newRole =
+										discord.guild?.roles.cache.get(role);
 									if (!newRole) {
 										Logger.error(oneLine`BaseCommand.ts:
 										Couldn't find role with role ID "${role}".`);
