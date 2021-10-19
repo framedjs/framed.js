@@ -29,13 +29,10 @@ export class DiscordMessage extends BaseMessage {
 	}
 
 	init(options: MessageOptions): DiscordMessageData | undefined {
-		// Grabs the base of a possible message
-		const base = options.base;
-
 		// Gets the Discord Base for elements such as author, channel, etc.
 		// First check for any entries in info.discord.base
 		const discordBase =
-			options.discord?.base ?? base?.discord ?? options.discord;
+			options.discord?.base ?? options.base?.discord ?? options.discord;
 
 		if (!discordBase) return;
 
