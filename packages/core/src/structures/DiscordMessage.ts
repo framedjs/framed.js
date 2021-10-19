@@ -34,11 +34,8 @@ export class DiscordMessage extends BaseMessage {
 
 		// Gets the Discord Base for elements such as author, channel, etc.
 		// First check for any entries in info.discord.base
-		const discordBase = options.discord?.base
-			? options.discord.base
-			: base?.discord
-			? base.discord
-			: options.discord;
+		const discordBase =
+			options.discord?.base ?? base?.discord ?? options.discord;
 
 		if (!discordBase) return;
 
@@ -56,21 +53,9 @@ export class DiscordMessage extends BaseMessage {
 		id = id ?? msg?.id;
 
 		const client = discordBase?.client ?? msg?.client;
-		const guild = discordBase?.guild
-			? discordBase?.guild
-			: msg?.guild
-			? msg.guild
-			: null;
-		const member = discordBase?.member
-			? discordBase.member
-			: msg?.member
-			? msg.member
-			: undefined;
-		const author = discordBase?.author
-			? discordBase.author
-			: msg?.author
-			? member?.user
-			: undefined;
+		const guild = discordBase?.guild ?? msg?.guild ?? null;
+		const member = discordBase.member ?? msg?.member ?? null;
+		const author = discordBase?.author ?? msg?.author ?? member?.user;
 
 		// Gets client or throws error
 		if (!client) {
