@@ -78,7 +78,7 @@ export abstract class BaseCommand {
 	/** A brief, one-liner about section to talk about what the command does. */
 	about?: string;
 
-	/** A  description of what the command does. This is encouraged to span multiple sentences. */
+	/** A description of what the command does. This is encouraged to span multiple sentences. */
 	description?: string;
 
 	/**
