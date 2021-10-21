@@ -8,6 +8,7 @@ import { Logger } from "@framedjs/logger";
 import { DiscordUtils } from "../utils/discord/DiscordUtils";
 import { BaseSubcommand } from "./BaseSubcommand";
 import { oneLine, oneLineCommaListsOr, oneLineInlineLists } from "common-tags";
+import { SlashCommandBuilder } from "@discordjs/builders";
 import Discord from "discord.js";
 
 import type Options from "../interfaces/other/RequireAllOptions";
@@ -26,6 +27,7 @@ import type {
 	BotPermissionDeniedData,
 } from "../interfaces/BotPermissionData";
 import type { BotPermissions } from "../interfaces/BotPermissions";
+import { DiscordInteraction } from "..";
 
 export abstract class BaseCommand {
 	// static readonly type: string = "BaseCommand";
@@ -109,6 +111,14 @@ export abstract class BaseCommand {
 	 */
 	inline?: boolean | InlineOptions;
 
+	/**
+	 * Discord slash command options
+	 */
+	slashCommandBuilder?: Omit<
+		SlashCommandBuilder,
+		"addSubcommand" | "addSubcommandGroup"
+	>;
+
 	/** Contains the raw info of how this command was initialized. */
 	rawInfo: BaseCommandOptions;
 
@@ -161,6 +171,8 @@ export abstract class BaseCommand {
 		this.hideUsageInHelp = info.hideUsageInHelp;
 
 		this.inline = info.inline ?? false;
+
+		this.slashCommandBuilder = info.slashCommandBuilder;
 
 		this.rawInfo = info;
 		this.subcommands = new Map();
@@ -461,7 +473,10 @@ export abstract class BaseCommand {
 			return { success: true };
 		}
 
-		if (msg instanceof DiscordMessage) {
+		if (
+			msg instanceof DiscordMessage ||
+			msg instanceof DiscordInteraction
+		) {
 			// If there's no discord data/entry, block it for safety
 			if (!botPermissions.discord) {
 				return {
@@ -498,7 +513,7 @@ export abstract class BaseCommand {
 	}
 
 	getMissingDiscordBotPermissions(
-		msg: DiscordMessage,
+		msg: DiscordMessage | DiscordInteraction,
 		permissions: Discord.PermissionResolvable = []
 	): Discord.PermissionString[] {
 		// If we're not in a guild, we're assuming these are the bot's permissions in DMs
@@ -513,11 +528,22 @@ export abstract class BaseCommand {
 		];
 
 		// Gets the requested permisisons and actual permissions
+		const guild =
+			msg instanceof DiscordMessage
+				? msg.discord.guild
+				: msg instanceof DiscordInteraction
+				? msg.discordInteraction.interaction.guild
+				: undefined;
+		const channel =
+			msg instanceof DiscordMessage
+				? msg.discord.channel
+				: msg instanceof DiscordInteraction
+				? msg.discordInteraction.interaction.channel
+				: undefined;
 		const requestedBotPerms = new Discord.Permissions(permissions);
 		const actualBotPerms = new Discord.Permissions(
-			msg.discord.guild?.me &&
-			msg.discord.channel instanceof Discord.GuildChannel
-				? msg.discord.guild.me.permissionsIn(msg.discord.channel)
+			guild?.me && channel instanceof Discord.GuildChannel
+				? guild.me.permissionsIn(channel)
 				: dmDiscordPerms
 		);
 

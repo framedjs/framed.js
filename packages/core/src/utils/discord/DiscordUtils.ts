@@ -4,20 +4,20 @@ import { Utils } from "@framedjs/shared";
 import { Logger } from "@framedjs/logger";
 import util from "util";
 import RequireAll from "require-all";
-import Options from "../../interfaces/other/RequireAllOptions";
+import type Options from "../../interfaces/other/RequireAllOptions";
 import { existsSync } from "fs";
 import { NotFoundError } from "../../structures/errors/NotFoundError";
 import { InvalidError } from "../../structures/errors/InvalidError";
 import { BaseMessage } from "../../structures/BaseMessage";
 import { FriendlyError } from "../../structures/errors/FriendlyError";
-import {
+import type {
 	DiscohookMessageData,
 	DiscohookOutputData,
 } from "../../interfaces/other/DiscohookOutputData";
 import { stripIndents } from "common-tags";
 import Axios from "axios";
 import { Client } from "../../structures/Client";
-import { Place } from "../../interfaces/Place";
+import type { Place } from "../../interfaces/Place";
 
 interface RequireAllScriptData {
 	[key: string]: ScriptElement;

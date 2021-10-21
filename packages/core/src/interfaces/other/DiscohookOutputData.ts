@@ -1,4 +1,4 @@
-import Discord from "discord.js";
+import type Discord from "discord.js";
 
 export interface DiscohookOutputData {
 	messages: [

@@ -1,23 +1,20 @@
 import type Discord from "discord.js";
 
-export interface DiscordMessageDataOptions {
+export interface DiscordInteractionDataOptions {
+	readonly type: 'dataOptions';
+
 	/**
-	 * The object the message data will be based off of.
-	 *
+	 * The object the interaction data will be based off of.
+	 * 
 	 * The base itself shouldn't be modified, but the rest of the Discord data
 	 * should be changed to fake a command, and override the base.
 	 */
-	base?: Discord.Message;
+	base?: Discord.Interaction;
 
 	/**
 	 * The Discord client object.
 	 */
 	client?: Discord.Client;
-
-	/**
-	 * The Discord message ID.
-	 */
-	id?: string;
 
 	/**
 	 * The channel the message was sent through.
@@ -27,12 +24,12 @@ export interface DiscordMessageDataOptions {
 	/**
 	 * The author of the message.
 	 */
-	author?: Discord.User;
+	user?: Discord.User;
 
 	/**
 	 * The member of a guild.
 	 */
-	member?: Discord.GuildMember;
+	// member?: Discord.GuildMember;
 
 	/**
 	 * The guild of where the Discord message came from.

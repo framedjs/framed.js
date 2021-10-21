@@ -1,14 +1,15 @@
 /* eslint-disable no-mixed-spaces-and-tabs */
-import { Argument } from "../interfaces/Argument";
-import { ArgumentOptions } from "../interfaces/ArgumentOptions";
-import { DiscordMessageData } from "../interfaces/DiscordMessageData";
-import { TwitchMessageData } from "../interfaces/TwitchMessageData";
-import { MessageOptions } from "../interfaces/MessageOptions";
-import { Place } from "../interfaces/Place";
+import type { Argument } from "../interfaces/Argument";
+import type { ArgumentOptions } from "../interfaces/ArgumentOptions";
+import type { DiscordMessageData } from "../interfaces/DiscordMessageData";
+import type { DiscordInteractionData } from "../interfaces/DiscordInteractionData";
+import type { TwitchMessageData } from "../interfaces/TwitchMessageData";
+import type { MessageOptions } from "../interfaces/MessageOptions";
+import type { Place } from "../interfaces/Place";
+import type { Platform } from "../types/Platform";
 
 import { Base } from "./Base";
 import { Client } from "./Client";
-import { Platform } from "../types/Platform";
 import { Logger } from "@framedjs/logger";
 
 import { FriendlyError } from "./errors/FriendlyError";
@@ -27,6 +28,7 @@ export class BaseMessage extends Base {
 	platform: Platform;
 
 	discord?: DiscordMessageData;
+	discordInteraction?: DiscordInteractionData;
 	twitch?: TwitchMessageData;
 
 	content = "";
@@ -61,8 +63,8 @@ export class BaseMessage extends Base {
 	 * @param guild Discord Guild, for the role prefix
 	 */
 	async getMessageElements(
-		place?: Place,
-		guild?: Discord.Guild
+		place?: Place | null,
+		guild?: Discord.Guild | null
 	): Promise<{
 		prefix: string | undefined;
 		args: string[] | undefined;
@@ -70,7 +72,10 @@ export class BaseMessage extends Base {
 	}> {
 		place = place ?? (await this.getPlace());
 
-		this.prefix = this.getPrefix(place, guild);
+		this.prefix =
+			this.discordInteraction != null
+				? "/"
+				: this.getPrefix(place, guild);
 		this.args = this.getArgs();
 		this.command = this.getCommand() ?? "";
 
@@ -85,7 +90,10 @@ export class BaseMessage extends Base {
 	 *
 	 * @returns prefix
 	 */
-	private getPrefix(place: Place, guild?: Discord.Guild): string | undefined {
+	private getPrefix(
+		place: Place,
+		guild?: Discord.Guild | null
+	): string | undefined {
 		// Gets the prefixes and sorts them from longest to shortest
 		// This is so if there are multiple matching prefixes,
 		// the longest one of them all should be checked first.
@@ -108,6 +116,13 @@ export class BaseMessage extends Base {
 	 * Gets the command of the message.
 	 */
 	private getCommand(): string | undefined {
+		// Discord slash command specific code
+		if (this.discordInteraction) {
+			const interaction = this.discordInteraction.interaction;
+			if (interaction.isCommand()) return interaction.commandName;
+			return;
+		}
+
 		// Gets the first arg from args, and sets it to all lowercase
 		let command = this.args?.shift()?.toLocaleLowerCase();
 
@@ -131,7 +146,7 @@ export class BaseMessage extends Base {
 	 * ```
 	 */
 	private getArgs(): string[] | undefined {
-		if (this.prefix != undefined) {
+		if (this.prefix != undefined && !this.discordInteraction) {
 			// Note that this content will still include the command inside
 			// the arguments, and will be removed when getCommand() is called
 			const content = this.content.slice(this.prefix.length).trim();
@@ -455,9 +470,8 @@ export class BaseMessage extends Base {
 			throw new ReferenceError("client.twitch.api is undefined");
 		}
 
-		const channelData = await client.twitch.api.helix.channels.getChannelInfo(
-			channel
-		);
+		const channelData =
+			await client.twitch.api.helix.channels.getChannelInfo(channel);
 
 		const platformDefault = "twitch_default";
 		const platformId = channelData?.id ?? platformDefault;
@@ -554,6 +568,12 @@ export class BaseMessage extends Base {
 						`Platform is ${this.platform}, but there's no existing data for it`
 					);
 				}
+				break;
+			case "discordInteraction":
+				place = {
+					id: "default",
+					platform: "discordInteraction",
+				};
 				break;
 			default:
 				// For an unknown platform: this should NEVER happen,

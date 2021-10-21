@@ -1,20 +1,17 @@
 import type Discord from "discord.js";
 
-export interface DiscordMessageData {
+export interface DiscordInteractionData {
+	readonly type: 'data';
+
 	/**
-	 * The Discord message object.
+	 * The Discord interaction object.
 	 */
-	readonly msg?: Discord.Message;
+	readonly interaction: Discord.Interaction;
 
 	/**
 	 * The Discord client object.
 	 */
 	readonly client: Discord.Client;
-
-	/**
-	 * The Discord message ID.
-	 */
-	readonly id?: string;
 
 	/**
 	 * The channel the message was sent through.
@@ -24,12 +21,12 @@ export interface DiscordMessageData {
 	/**
 	 * The author of the message.
 	 */
-	readonly author: Discord.User;
+	readonly user: Discord.User;
 
 	/**
 	 * The member of a guild.
 	 */
-	readonly member?: Discord.GuildMember | null;
+	// readonly member?: Discord.GuildMember | Discord.APIInteractionGuildMember | null;
 
 	/**
 	 * The guild of where the Discord message came from.

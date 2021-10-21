@@ -1,1 +1,1 @@
-export type Platform = "discord" | "twitch" | "none";
+export type Platform = "discord" | "discordInteraction" | "twitch" | "none";

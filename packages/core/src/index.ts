@@ -14,26 +14,28 @@ export { BaseSubcommand } from "./structures/BaseSubcommand";
 export { BaseEvent } from "./structures/BaseEvent";
 export { BaseRouter } from "./structures/BaseRouter";
 export { DiscordMessage } from "./structures/DiscordMessage";
+export { DiscordInteraction } from "./structures/DiscordInteraction";
+export { DiscordCommandInteraction } from "./structures/DiscordCommandInteraction";
 export { TwitchMessage } from "./structures/TwitchMessage";
 
 // Interfaces
-export { Argument } from "./interfaces/Argument";
-// export { ArgumentOptions } from "./interfaces/ArgumentOptions"
-export { BaseCommandOptions } from "./interfaces/BaseCommandOptions";
-export { BotPermissions } from "./interfaces/BotPermissions";
-export { ClientOptions } from "./interfaces/ClientOptions";
+export type { Argument } from "./interfaces/Argument";
+// export type { ArgumentOptions } from "./interfaces/ArgumentOptions"
+export type { BaseCommandOptions } from "./interfaces/BaseCommandOptions";
+export type { BotPermissions } from "./interfaces/BotPermissions";
+export type { ClientOptions } from "./interfaces/ClientOptions";
 // export { DiscordMessageData } from "./interfaces/DiscordMessageData";
 // export { DiscordMessageDataOptions } from "./interfaces/DiscordMessageDataOptions";
-export { DiscohookOutputData } from "./interfaces/other/DiscohookOutputData";
-export { FoundCommandData } from "./interfaces/FoundCommandData";
-export { HelpData } from "./interfaces/other/HelpData";
-export { LoginOptions } from "./interfaces/LoginOptions";
-export { MessageOptions } from "./interfaces/MessageOptions";
-export { Place } from "./interfaces/Place";
-export { InlineOptions } from "./interfaces/InlineOptions";
+export type { DiscohookOutputData } from "./interfaces/other/DiscohookOutputData";
+export type { FoundCommandData } from "./interfaces/FoundCommandData";
+export type { HelpData } from "./interfaces/other/HelpData";
+export type { LoginOptions } from "./interfaces/LoginOptions";
+export type { MessageOptions } from "./interfaces/MessageOptions";
+export type { Place } from "./interfaces/Place";
+export type { InlineOptions } from "./interfaces/InlineOptions";
 // export { ResponseData } from "./managers/database/interfaces/ResponseData";
-export { default as RequireAllOptions } from "./interfaces/other/RequireAllOptions";
-export { Settings } from "./providers/interfaces/Settings";
+export type { default as RequireAllOptions } from "./interfaces/other/RequireAllOptions";
+export type { Settings } from "./providers/interfaces/Settings";
 
 // Providers
 export { BaseProvider } from "./providers/BaseProvider";
@@ -59,9 +61,7 @@ export { PermissionDeniedError } from "./structures/errors/PermissionDeniedError
 export { DiscordBotMissingPermissionsError } from "./structures/errors/DiscordBotMissingPermissionsError";
 
 // Version
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const version = require("../package.json").version as string;
-export { version };
+export { version } from "./utils/Version";
 
 // Logger
 export { Logger, defaultLevels, defaultFormat } from "@framedjs/logger";
@@ -70,6 +70,8 @@ export { Logger, defaultLevels, defaultFormat } from "@framedjs/logger";
 // checking instanceof classes doesn't work without the internal Discord module
 import * as Discord from "discord.js";
 export { Discord };
+
+export { SlashCommandBuilder } from "@discordjs/builders";
 
 // Twitch exports because things will probably go wrong without it, like with Discord.js
 import * as Twitch from "twitch";

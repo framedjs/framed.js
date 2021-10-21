@@ -1,10 +1,11 @@
 import Discord from "discord.js";
 import { Logger } from "@framedjs/logger";
-import { DiscordMessageData } from "../../interfaces/DiscordMessageData";
 import { Client } from "../../structures/Client";
 import { FormattingManager } from "../../managers/FormattingManager";
-import { Place } from "../../interfaces/Place";
 import { BaseMessage } from "../../structures/BaseMessage";
+import type { DiscordInteractionData } from "../../interfaces/DiscordInteractionData";
+import type { DiscordMessageData } from "../../interfaces/DiscordMessageData";
+import type { Place } from "../../interfaces/Place";
 
 export interface RawTemplateSettings {
 	/**
@@ -132,7 +133,11 @@ export class EmbedHelper {
 	 * @returns Discord embed
 	 */
 	static getTemplate(
-		msg: Discord.Message | DiscordMessageData,
+		msg:
+			| Discord.Message
+			| DiscordMessageData
+			| Discord.Interaction
+			| DiscordInteractionData,
 		footer?: Discord.MessageEmbedFooter,
 		baseEmbed?: Discord.MessageEmbed
 	): Discord.MessageEmbed {

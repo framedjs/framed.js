@@ -15,6 +15,7 @@ import { TwitchMessage } from "../structures/TwitchMessage";
 import { EmbedHelper } from "../utils/discord/EmbedHelper";
 
 import Discord from "discord.js";
+import { DiscordInteraction } from "..";
 
 export class CommandManager extends Base {
 	constructor(client: Client) {
@@ -57,7 +58,7 @@ export class CommandManager extends Base {
 	 *
 	 * @returns String array of all possible prefixes
 	 */
-	getPossiblePrefixes(place: Place, guild?: Discord.Guild): string[] {
+	getPossiblePrefixes(place: Place, guild?: Discord.Guild | null): string[] {
 		const startTime = process.hrtime();
 		const prefixes = this.defaultPrefixes;
 
@@ -329,6 +330,11 @@ export class CommandManager extends Base {
 			if (command != undefined) {
 				let commandUsesPrefix = true;
 
+				if (msgOrCommand instanceof DiscordInteraction) {
+					commandList.push(command);
+					continue;
+				}
+
 				if (prefix != undefined && place) {
 					// Gets all valid prefixes for the place, and command
 					const commandPrefixes = command.getPrefixes(place);
@@ -383,6 +389,15 @@ export class CommandManager extends Base {
 			return map;
 		}
 
+		// If for some reason I see this, I'm going to
+		if (msg.discordInteraction?.user.bot) {
+			Logger.warn(
+				oneLine`${msg.discordInteraction.user.tag} (from discordInteraction)
+				attempted to run a command, but was a bot!`
+			);
+			return map;
+		}
+
 		try {
 			if (msg.prefix != undefined && msg.command != undefined) {
 				Logger.debug(`Checking for commands for "${msg.content}"`);
@@ -416,7 +431,23 @@ export class CommandManager extends Base {
 							continue;
 						}
 
-						Logger.verbose(`Running command "${msg.content}"`);
+						if (msg instanceof DiscordMessage)
+							Logger.verbose(
+								oneLine`Running command "${msg.content}" from
+								user ${msg.discord.author.tag} (${msg.discord.author.id})`
+							);
+						else if (
+							msg instanceof DiscordInteraction &&
+							msg.discordInteraction.interaction.isCommand()
+						)
+							Logger.verbose(
+								oneLine`Running slash command
+								${msg.discordInteraction.interaction.commandName}
+								from user ${msg.discordInteraction.user.tag}
+								(${msg.discordInteraction.user.id})`
+							);
+						else Logger.verbose(`Running command "${msg.content}"`);
+
 						const success = await command.run(msg);
 						map.set(command.fullId, success);
 					} catch (error) {
@@ -593,6 +624,25 @@ export class CommandManager extends Base {
 				.setDescription(friendlyError.message);
 
 			await msg.discord.channel.send({ embeds: [embed] });
+		} else if (msg.discordInteraction) {
+			const embed = EmbedHelper.getTemplate(
+				msg.discordInteraction,
+				await EmbedHelper.getCheckOutFooter(msg, commandId)
+			)
+				.setTitle(friendlyError.friendlyName)
+				.setDescription(friendlyError.message);
+
+			if (
+				msg.discordInteraction.interaction.isButton() ||
+				msg.discordInteraction.interaction.isCommand() ||
+				msg.discordInteraction.interaction.isContextMenu() ||
+				msg.discordInteraction.interaction.isMessageComponent() ||
+				msg.discordInteraction.interaction.isSelectMenu()
+			)
+				await msg.discordInteraction.interaction.reply({
+					embeds: [embed],
+					ephemeral: true,
+				});
 		} else {
 			await msg.send(
 				`${friendlyError.friendlyName}: ${friendlyError.message}`
@@ -713,9 +763,8 @@ export class CommandManager extends Base {
 							for (const role of permissions.discord.roles) {
 								// Correctly parses the resolvable
 								if (typeof role == "string") {
-									const newRole = discord.guild?.roles.cache.get(
-										role
-									);
+									const newRole =
+										discord.guild?.roles.cache.get(role);
 									if (!newRole) {
 										Logger.error(oneLine`BaseCommand.ts:
 											Couldn't find role with role ID "${role}".`);

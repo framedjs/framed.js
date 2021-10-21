@@ -7,6 +7,7 @@ import { ClientOptions } from "../interfaces/ClientOptions";
 import { LoginOptions } from "../interfaces/LoginOptions";
 import { BaseMessage } from "./BaseMessage";
 import { DiscordMessage } from "./DiscordMessage";
+import { DiscordInteraction } from "./DiscordInteraction";
 import { TwitchMessage } from "./TwitchMessage";
 
 import { APIManager } from "../managers/APIManager";
@@ -15,10 +16,11 @@ import { PluginManager } from "../managers/PluginManager";
 
 import { EventEmitter } from "events";
 import { Logger } from "@framedjs/logger";
-import { version } from "../index";
+import { version } from "../utils/Version";
 
 import { CommandManager } from "../managers/CommandManager";
 import { BaseProvider } from "../providers/BaseProvider";
+import { DiscordCommandInteraction } from "./DiscordCommandInteraction";
 
 const DEFAULT_PREFIX = "!";
 
@@ -208,11 +210,11 @@ export class Client extends EventEmitter {
 		if (msg.command != undefined) {
 			if (msg.discord) {
 				if (msg.discord.author.bot) return;
-				await this.commands.run(msg);
 			} else if (msg.twitch) {
 				if (this.twitch.chat?.currentNick == msg.twitch.user) return;
-				await this.commands.run(msg);
 			}
+
+			await this.commands.run(msg);
 		}
 	}
 
@@ -234,10 +236,7 @@ export class Client extends EventEmitter {
 					base: discordMsg,
 				},
 			});
-			await msg.getMessageElements(
-				undefined,
-				discordMsg.guild ?? undefined
-			);
+			await msg.getMessageElements(undefined, discordMsg.guild);
 			this.processMsg(msg);
 		});
 
@@ -322,6 +321,30 @@ export class Client extends EventEmitter {
 			} catch (error) {
 				Logger.error((error as Error).stack);
 			}
+		});
+
+		client.on("interactionCreate", async interaction => {
+			let msg: DiscordInteraction;
+			if (interaction.isCommand()) {
+				msg = new DiscordCommandInteraction({
+					client: this,
+					discordInteraction: {
+						type: "dataOptions",
+						base: interaction,
+					},
+				});
+			} else {
+				msg = new DiscordInteraction({
+					client: this,
+					discordInteraction: {
+						type: "dataOptions",
+						base: interaction,
+					},
+				});
+			}
+
+			await msg.getMessageElements(undefined, interaction.guild);
+			this.processMsg(msg);
 		});
 	}
 
