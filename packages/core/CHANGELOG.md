@@ -1,5 +1,11 @@
 # @framedjs/core
 
+## 0.7.0
+
+### Minor Changes
+
+-   733950f: Discord interactions
+
 ## 0.6.1
 
 ### Patch Changes
