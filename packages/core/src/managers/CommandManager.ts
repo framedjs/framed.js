@@ -73,8 +73,8 @@ export class CommandManager extends Base {
 			}
 		}
 
-		if (guild) {
-			const rolePrefix = this.getBotRolePrefix(guild);
+		if (guild && guild.available) {
+			const rolePrefix = guild.me?.roles.botRole?.toString();
 			if (rolePrefix) {
 				prefixes.push(rolePrefix);
 			}
@@ -92,7 +92,10 @@ export class CommandManager extends Base {
 
 	/**
 	 * Retrieves the bot's automatic role for a prefix
+	 *
 	 * @param guild Discord Guild
+	 *
+	 * @deprecated Use guild.me.roles.botRole.toString() instead.
 	 */
 	getBotRolePrefix(guild: Discord.Guild): string | undefined {
 		const roles = guild.roles;
@@ -344,9 +347,8 @@ export class CommandManager extends Base {
 						msgOrCommand instanceof DiscordMessage &&
 						msgOrCommand.discord.guild
 					) {
-						const rolePrefix = this.getBotRolePrefix(
-							msgOrCommand.discord.guild
-						);
+						const rolePrefix =
+							msgOrCommand.discord.guild.me?.roles.botRole?.toString();
 						if (rolePrefix) commandPrefixes.push(rolePrefix);
 					}
 
