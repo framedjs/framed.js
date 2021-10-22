@@ -1,5 +1,11 @@
 # @framedjs/core
 
+## 0.7.1
+
+### Patch Changes
+
+-   e1f784c: fix: use d.js botRole.toString()
+
 ## 0.7.0
 
 ### Minor Changes
