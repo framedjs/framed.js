@@ -1,5 +1,11 @@
 # @framedjs/core
 
+## 0.7.2
+
+### Patch Changes
+
+-   ed90ad6: Let's pretend I didn't forget to build
+
 ## 0.7.1
 
 ### Patch Changes
