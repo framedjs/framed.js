@@ -677,6 +677,20 @@ export class BaseMessage extends Base {
 	async send(content: string): Promise<void> {
 		if (this.discord) {
 			await this.discord.channel.send(content);
+		} else if (this.discordInteraction) {
+			if (
+				this.discordInteraction.interaction.isButton() || 
+				this.discordInteraction.interaction.isCommand() || 
+				this.discordInteraction.interaction.isContextMenu() || 
+				this.discordInteraction.interaction.isMessageComponent() || 
+				this.discordInteraction.interaction.isSelectMenu()
+			) {
+				await this.discordInteraction.interaction.reply({
+					content: content,
+				});
+			} else {
+				throw new Error("Interaction does not have a reply function");
+			}
 		} else if (this.twitch) {
 			this.twitch.chat.say(this.twitch.channel, content);
 		} else {
