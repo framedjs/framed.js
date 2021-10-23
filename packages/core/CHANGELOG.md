@@ -1,5 +1,11 @@
 # @framedjs/core
 
+## 0.8.0-next.1
+
+### Minor Changes
+
+-   a1d30c2: feat: expose @discordjs/rest and builders
+
 ## 0.8.0-next.0
 
 ### Minor Changes
