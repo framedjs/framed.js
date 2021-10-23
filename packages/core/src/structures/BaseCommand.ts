@@ -2,6 +2,7 @@ import { BaseMessage } from "./BaseMessage";
 import { BasePlugin } from "./BasePlugin";
 import { Client } from "./Client";
 import { DiscordMessage } from "./DiscordMessage";
+import { DiscordInteraction } from "./DiscordInteraction";
 import { TwitchMessage } from "./TwitchMessage";
 import { EmbedHelper } from "../utils/discord/EmbedHelper";
 import { Logger } from "@framedjs/logger";
@@ -27,7 +28,6 @@ import type {
 	BotPermissionDeniedData,
 } from "../interfaces/BotPermissionData";
 import type { BotPermissions } from "../interfaces/BotPermissions";
-import { DiscordInteraction } from "..";
 
 export abstract class BaseCommand {
 	// static readonly type: string = "BaseCommand";
@@ -111,13 +111,22 @@ export abstract class BaseCommand {
 	 */
 	inline?: boolean | InlineOptions;
 
-	/**
-	 * Discord slash command options
-	 */
-	slashCommandBuilder?: Omit<
-		SlashCommandBuilder,
-		"addSubcommand" | "addSubcommandGroup"
-	>;
+	discordInteracion: {
+		/**
+		 * Discord slash command options
+		 */
+		slashCommandBuilder?: Omit<
+			SlashCommandBuilder,
+			"addSubcommand" | "addSubcommandGroup"
+		>;
+
+		/**
+		 * Should this slash command be a global command?
+		 *
+		 * @default true
+		 */
+		global: boolean;
+	};
 
 	/** Contains the raw info of how this command was initialized. */
 	rawInfo: BaseCommandOptions;
@@ -172,7 +181,13 @@ export abstract class BaseCommand {
 
 		this.inline = info.inline ?? false;
 
-		this.slashCommandBuilder = info.slashCommandBuilder;
+		this.discordInteracion = {
+			global:
+				info.discordInteracion?.global != undefined
+					? info.discordInteracion.global
+					: true,
+			slashCommandBuilder: info.discordInteracion?.slashCommandBuilder,
+		};
 
 		this.rawInfo = info;
 		this.subcommands = new Map();
