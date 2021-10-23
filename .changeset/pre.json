@@ -7,5 +7,7 @@
     "@framedjs/logger": "0.1.0",
     "@framedjs/shared": "0.2.0"
   },
-  "changesets": []
+  "changesets": [
+    "spotty-experts-attack"
+  ]
 }
