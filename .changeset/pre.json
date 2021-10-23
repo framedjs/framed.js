@@ -8,6 +8,7 @@
     "@framedjs/shared": "0.2.0"
   },
   "changesets": [
+    "rich-turtles-compete",
     "spotty-experts-attack"
   ]
 }
