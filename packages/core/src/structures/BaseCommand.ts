@@ -5,6 +5,7 @@ import { DiscordMessage } from "./DiscordMessage";
 import { DiscordInteraction } from "./DiscordInteraction";
 import { TwitchMessage } from "./TwitchMessage";
 import { EmbedHelper } from "../utils/discord/EmbedHelper";
+import { Utils } from "@framedjs/shared";
 import { Logger } from "@framedjs/logger";
 import { DiscordUtils } from "../utils/discord/DiscordUtils";
 import { BaseSubcommand } from "./BaseSubcommand";
@@ -363,11 +364,17 @@ export abstract class BaseCommand {
 			return { success: true };
 		}
 
-		if (msg instanceof DiscordMessage) {
+		const interaction = msg.discordInteraction?.interaction;
+		const userId = msg.discord?.author.id ?? interaction?.user.id;
+
+		if (
+			userId &&
+			(msg instanceof DiscordMessage || msg instanceof DiscordInteraction)
+		) {
 			const reasons: UserPermissionDeniedReasons[] = [];
 
 			// Bot owners always have permission
-			if (msg.client.discord.botOwners.includes(msg.discord.author.id)) {
+			if (msg.client.discord.botOwners.includes(userId)) {
 				return {
 					success: true,
 				};
@@ -391,9 +398,8 @@ export abstract class BaseCommand {
 			}
 
 			// If a user is in the list, let them pass
-			const passedUserCheck = userPermissions.discord.users?.includes(
-				msg.discord.author.id
-			);
+			const passedUserCheck =
+				userPermissions.discord.users?.includes(userId);
 			// Checks for false, not undefined
 			if (passedUserCheck == false) {
 				reasons.push("discordUser");
@@ -401,15 +407,21 @@ export abstract class BaseCommand {
 				return { success: true };
 			}
 
-			const member = msg.discord.member;
+			const member = msg.discord?.member || interaction?.member;
 			if (member) {
+				if (!(member instanceof Discord.GuildMember)) {
+					Logger.error("member was expected to be a GuildMember");
+					Logger.error(Utils.util.inspect(member));
+					return { success: false, reasons: ["unknown"] };
+				}
+
 				// Stores if some checks has already passed
 				let hasRole = false;
 				let hasPermission = false;
 
-				const perms = userPermissions.discord.permissions
-					? userPermissions.discord.permissions
-					: new Discord.Permissions();
+				const perms =
+					userPermissions.discord.permissions ??
+					new Discord.Permissions();
 
 				hasPermission = member.permissions.has(perms);
 
