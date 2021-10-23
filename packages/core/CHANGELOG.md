@@ -1,5 +1,12 @@
 # @framedjs/core
 
+## 0.8.0-next.2
+
+### Minor Changes
+
+-   ce0f4ac: - fix: discord interaction user permission check
+    -   refactor: log "/" instead of "slash command"
+
 ## 0.8.0-next.1
 
 ### Minor Changes
