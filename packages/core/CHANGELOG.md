@@ -1,5 +1,11 @@
 # @framedjs/core
 
+## 0.8.0-next.0
+
+### Minor Changes
+
+-   3ba183b: feat: msg.send support Discord interaction replies
+
 ## 0.7.2
 
 ### Patch Changes
