@@ -443,8 +443,8 @@ export class CommandManager extends Base {
 							msg.discordInteraction.interaction.isCommand()
 						)
 							Logger.verbose(
-								oneLine`Running slash command
-								${msg.discordInteraction.interaction.commandName}
+								oneLine`Running
+								/${msg.discordInteraction.interaction.commandName}
 								from user ${msg.discordInteraction.user.tag}
 								(${msg.discordInteraction.user.id})`
 							);
