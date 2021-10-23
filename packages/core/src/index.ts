@@ -71,7 +71,10 @@ export { Logger, defaultLevels, defaultFormat } from "@framedjs/logger";
 import * as Discord from "discord.js";
 export { Discord };
 
+// Slash commands
 export { SlashCommandBuilder } from "@discordjs/builders";
+export { REST as DiscordJsREST } from "@discordjs/rest";
+export { Routes as DiscordJsRoutes } from "discord-api-types/v9";
 
 // Twitch exports because things will probably go wrong without it, like with Discord.js
 import * as Twitch from "twitch";
