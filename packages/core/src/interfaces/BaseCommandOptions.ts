@@ -108,14 +108,11 @@ export interface BaseCommandOptions {
 		 *
 		 * @default true
 		 */
-		global?: boolean
-		
+		global?: boolean;
+
 		/**
 		 * Discord slash command options
-		 */;
-		slashCommandBuilder?: Omit<
-			SlashCommandBuilder,
-			"addSubcommand" | "addSubcommandGroup"
-		>;
+		 */
+		slashCommandBuilder?: SlashCommandBuilder;
 	};
 }

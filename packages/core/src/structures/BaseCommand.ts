@@ -116,10 +116,7 @@ export abstract class BaseCommand {
 		/**
 		 * Discord slash command options
 		 */
-		slashCommandBuilder?: Omit<
-			SlashCommandBuilder,
-			"addSubcommand" | "addSubcommandGroup"
-		>;
+		slashCommandBuilder?: SlashCommandBuilder;
 
 		/**
 		 * Should this slash command be a global command?
