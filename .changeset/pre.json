@@ -8,6 +8,7 @@
     "@framedjs/shared": "0.2.0"
   },
   "changesets": [
+    "eight-eels-yell",
     "polite-boats-suffer",
     "rich-turtles-compete",
     "spotty-experts-attack"
