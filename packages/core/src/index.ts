@@ -20,7 +20,7 @@ export { TwitchMessage } from "./structures/TwitchMessage";
 
 // Interfaces
 export type { Argument } from "./interfaces/Argument";
-export type { ArgumentOptions } from "./interfaces/ArgumentOptions"
+export type { ArgumentOptions } from "./interfaces/ArgumentOptions";
 export type { BaseCommandOptions } from "./interfaces/BaseCommandOptions";
 export type { BotPermissions } from "./interfaces/BotPermissions";
 export type { ClientOptions } from "./interfaces/ClientOptions";
@@ -72,7 +72,8 @@ import * as Discord from "discord.js";
 export { Discord };
 
 // Slash commands
-export { SlashCommandBuilder } from "@discordjs/builders";
+import * as DiscordJsBuilders from "@discordjs/builders";
+export { DiscordJsBuilders };
 export { REST as DiscordJsREST } from "@discordjs/rest";
 export { Routes as DiscordJsRoutes } from "discord-api-types/v9";
 
