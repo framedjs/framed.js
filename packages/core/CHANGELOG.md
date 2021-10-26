@@ -1,5 +1,14 @@
 # @framedjs/core
 
+## 0.8.0-next.4
+
+### Minor Changes
+
+-   eb8c183: Changes:
+
+    -   feat: export all of SlashCommandBuilder
+    -   fix: slash subcommands implementation
+
 ## 0.8.0-next.3
 
 ### Minor Changes
