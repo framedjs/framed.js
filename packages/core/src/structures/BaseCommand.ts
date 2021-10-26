@@ -10,7 +10,10 @@ import { Logger } from "@framedjs/logger";
 import { DiscordUtils } from "../utils/discord/DiscordUtils";
 import { BaseSubcommand } from "./BaseSubcommand";
 import { oneLine, oneLineCommaListsOr, oneLineInlineLists } from "common-tags";
-import { SlashCommandBuilder } from "@discordjs/builders";
+import {
+	SlashCommandOptionsOnlyBuilder,
+	SlashCommandSubcommandsOnlyBuilder,
+} from "@discordjs/builders";
 import Discord from "discord.js";
 
 import type Options from "../interfaces/other/RequireAllOptions";
@@ -116,7 +119,9 @@ export abstract class BaseCommand {
 		/**
 		 * Discord slash command options
 		 */
-		slashCommandBuilder?: SlashCommandBuilder;
+		slashCommandBuilder?:
+			| SlashCommandOptionsOnlyBuilder
+			| SlashCommandSubcommandsOnlyBuilder;
 
 		/**
 		 * Should this slash command be a global command?
