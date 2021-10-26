@@ -11,7 +11,7 @@ import { DiscordUtils } from "../utils/discord/DiscordUtils";
 import { BaseSubcommand } from "./BaseSubcommand";
 import { oneLine, oneLineCommaListsOr, oneLineInlineLists } from "common-tags";
 import {
-	SlashCommandOptionsOnlyBuilder,
+	SlashCommandBuilder,
 	SlashCommandSubcommandsOnlyBuilder,
 } from "@discordjs/builders";
 import Discord from "discord.js";
@@ -120,7 +120,7 @@ export abstract class BaseCommand {
 		 * Discord slash command options
 		 */
 		slashCommandBuilder?:
-			| SlashCommandOptionsOnlyBuilder
+			| Omit<SlashCommandBuilder, "addSubcommand" | "addSubcommandGroup">
 			| SlashCommandSubcommandsOnlyBuilder;
 
 		/**
