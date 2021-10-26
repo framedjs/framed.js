@@ -634,14 +634,16 @@ export class CommandManager extends Base {
 				.setTitle(friendlyError.friendlyName)
 				.setDescription(friendlyError.message);
 
+			const interaction = msg.discordInteraction.interaction;
+
 			if (
-				msg.discordInteraction.interaction.isButton() ||
-				msg.discordInteraction.interaction.isCommand() ||
-				msg.discordInteraction.interaction.isContextMenu() ||
-				msg.discordInteraction.interaction.isMessageComponent() ||
-				msg.discordInteraction.interaction.isSelectMenu()
+				interaction.isButton() ||
+				interaction.isCommand() ||
+				interaction.isContextMenu() ||
+				interaction.isMessageComponent() ||
+				interaction.isSelectMenu()
 			)
-				await msg.discordInteraction.interaction.reply({
+				await interaction.reply({
 					embeds: [embed],
 					ephemeral: true,
 				});
