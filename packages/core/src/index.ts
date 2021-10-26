@@ -20,7 +20,7 @@ export { TwitchMessage } from "./structures/TwitchMessage";
 
 // Interfaces
 export type { Argument } from "./interfaces/Argument";
-// export type { ArgumentOptions } from "./interfaces/ArgumentOptions"
+export type { ArgumentOptions } from "./interfaces/ArgumentOptions"
 export type { BaseCommandOptions } from "./interfaces/BaseCommandOptions";
 export type { BotPermissions } from "./interfaces/BotPermissions";
 export type { ClientOptions } from "./interfaces/ClientOptions";
