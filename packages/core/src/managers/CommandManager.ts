@@ -642,11 +642,18 @@ export class CommandManager extends Base {
 				interaction.isContextMenu() ||
 				interaction.isMessageComponent() ||
 				interaction.isSelectMenu()
-			)
-				await interaction.reply({
-					embeds: [embed],
-					ephemeral: true,
-				});
+			) {
+				if (!interaction.deferred) {
+					await interaction.reply({
+						embeds: [embed],
+						ephemeral: true,
+					});
+				} else {
+					await interaction.editReply({
+						embeds: [embed],
+					});
+				}
+			}
 		} else {
 			await msg.send(
 				`${friendlyError.friendlyName}: ${friendlyError.message}`
