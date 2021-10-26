@@ -1,5 +1,11 @@
 # @framedjs/core
 
+## 0.8.0-next.5
+
+### Patch Changes
+
+-   cbfcce0: fix: slash subcommands types
+
 ## 0.8.0-next.4
 
 ### Minor Changes
