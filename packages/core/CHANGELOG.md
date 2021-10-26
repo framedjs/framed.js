@@ -1,5 +1,16 @@
 # @framedjs/core
 
+## 0.8.0-next.3
+
+### Minor Changes
+
+-   f6e644d: Changes:
+
+    -   feat: export ArgumentOptions
+    -   fix: deferred interactions for sendErrorMessage
+    -   fix: enable subcommands for slash commands
+    -   refactor: simplify msg.discordInteraction.interaction
+
 ## 0.8.0-next.2
 
 ### Minor Changes
