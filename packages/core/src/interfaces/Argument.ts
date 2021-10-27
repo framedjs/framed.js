@@ -20,6 +20,22 @@ export interface Argument {
 	/**
 	 * If this argument was a part of a quoted section, but quotes weren't
 	 * closed properly at the end, this will be true.
+	 *
+	 * This includes anything with a starting quote character.
 	 */
 	nonClosedQuoteSection: boolean;
+}
+
+export interface ArgumentWrappedInQuotes extends Argument {
+	startQuoteChar: string;
+	endQuoteChar: string;
+	wrappedInQuotes: true;
+	nonClosedQuoteSection: true;
+}
+
+export interface ArgumentNotWrappedInQuotes extends Argument {
+	startQuoteChar: undefined;
+	endQuoteChar: undefined;
+	wrappedInQuotes: false;
+	nonClosedQuoteSection: false;
 }

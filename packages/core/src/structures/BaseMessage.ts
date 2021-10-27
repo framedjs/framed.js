@@ -1,4 +1,8 @@
-import type { Argument } from "../interfaces/Argument";
+import type {
+	Argument,
+	ArgumentNotWrappedInQuotes,
+	ArgumentWrappedInQuotes,
+} from "../interfaces/Argument";
 import type { ArgumentOptions } from "../interfaces/ArgumentOptions";
 import type { DiscordMessageData } from "../interfaces/DiscordMessageData";
 import type { DiscordInteractionData } from "../interfaces/DiscordInteractionData";
@@ -201,7 +205,7 @@ export class BaseMessage extends Base {
 	static getDetailedArgs(
 		content: string,
 		settings?: ArgumentOptions
-	): Argument[] {
+	): (Argument | ArgumentWrappedInQuotes | ArgumentNotWrappedInQuotes)[] {
 		const args: Argument[] = [];
 
 		// Parse states; for if in a quoted/unquoted section, or is in a codeblock
