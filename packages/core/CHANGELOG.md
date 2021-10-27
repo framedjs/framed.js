@@ -1,5 +1,15 @@
 # @framedjs/core
 
+## 0.8.0-next.6
+
+### Minor Changes
+
+-   31714f8: Changes:
+
+    -   feat: arguments contain the wrapping quotes
+    -   feat: start + end quote characters in Argument
+    -   fix: disallow quote char mixes in args parsing
+
 ## 0.8.0-next.5
 
 ### Patch Changes
