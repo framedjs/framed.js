@@ -215,7 +215,8 @@ export class BaseMessage extends Base {
 		const leftDoubleQuote = "“";
 		const rightDoubleQuote = "”";
 
-		let previousQuoteChar = "";
+		let startQuoteChar = "";
+		let endQuoteChar = "";
 
 		for (let i = 0; i < content.length; i++) {
 			const char = content[i];
@@ -235,16 +236,16 @@ export class BaseMessage extends Base {
 			// Quote character consistency for iPhone quotes
 			if (
 				char == leftDoubleQuote &&
-				previousQuoteChar.length > 0 &&
-				previousQuoteChar != rightDoubleQuote
+				startQuoteChar.length > 0 &&
+				startQuoteChar != rightDoubleQuote
 			) {
 				charIsQuote = false;
 			}
 
 			if (
 				char == rightDoubleQuote &&
-				previousQuoteChar.length > 0 &&
-				previousQuoteChar != leftDoubleQuote
+				startQuoteChar.length > 0 &&
+				startQuoteChar != leftDoubleQuote
 			) {
 				charIsQuote = false;
 			}
@@ -252,7 +253,7 @@ export class BaseMessage extends Base {
 			if (
 				// Should not start with a right double quote
 				char == rightDoubleQuote &&
-				previousQuoteChar.length == 0
+				startQuoteChar.length == 0
 			) {
 				charIsQuote = false;
 			}
@@ -260,8 +261,8 @@ export class BaseMessage extends Base {
 			// Quote character consistency for normal " chars
 			if (
 				char == `"` &&
-				previousQuoteChar.length > 0 &&
-				previousQuoteChar != char
+				startQuoteChar.length > 0 &&
+				startQuoteChar != char
 			) {
 				charIsQuote = false;
 			}
@@ -283,7 +284,8 @@ export class BaseMessage extends Base {
 			const clearArgStrings = function clearArgStrings() {
 				argString = "";
 				untrimmedArgString = "";
-				previousQuoteChar = "";
+				startQuoteChar = "";
+				endQuoteChar = "";
 			};
 
 			const pushArgStrings = function pushArgStrings(
@@ -296,10 +298,24 @@ export class BaseMessage extends Base {
 					untrimmedArgument: untrimmedArgString,
 					wrappedInQuotes: wrappedInQuotes,
 					nonClosedQuoteSection: nonClosedQuoteSection,
+
+					// Intentionally ||, not ??
+					startQuoteChar: startQuoteChar || undefined,
+					endQuoteChar: endQuoteChar || undefined,
 				});
 			};
 
-			// If there was a " to close off a quote section
+			const setQuoteChar = function _() {
+				// If start quote wasn't set, set it here
+				// Else, set the end quote
+				if (startQuoteChar.length == 0) {
+					startQuoteChar = char;
+				} else {
+					endQuoteChar = char;
+				}
+			};
+
+			// If there was a quote marker to close off a quote section
 			// and the character hasn't been escaped by a \ or `
 			if (charIsQuote && !(charIsEscaped || hasCodeBlock)) {
 				argumentStateChanged = true;
@@ -309,7 +325,9 @@ export class BaseMessage extends Base {
 						// NOTE: we don't unquote it back immediately, so we
 						// can process the last " character
 						changeStateToUnquotedLater = true;
-						// state = ArgumentState.Unquoted
+
+						// We'll need to set it now, since later will be too late
+						setQuoteChar();
 						break;
 					case ArgumentState.Unquoted:
 						argumentState = ArgumentState.Quoted;
@@ -348,8 +366,7 @@ export class BaseMessage extends Base {
 					if (charIsQuote && settings?.showQuoteCharacters) {
 						// Fixes edge case where we're just entering quotes now,
 						// and we have the setting to put it in
-						argString += char;
-						untrimmedArgString += char;
+						addToArgStrings();
 					} else if (!hasCodeBlock) {
 						if (argString.trim().length != 0) {
 							// Since it's been carried over as an unquoted argument
@@ -402,9 +419,9 @@ export class BaseMessage extends Base {
 				clearArgStrings();
 			}
 
-			// Sets the previous quote char
-			if (charIsQuote) {
-				previousQuoteChar = char;
+			// Runs after the first quote marker
+			if (argumentStateChanged && startQuoteChar.length == 0) {
+				setQuoteChar();
 			}
 
 			// Finally changes the state to the proper one

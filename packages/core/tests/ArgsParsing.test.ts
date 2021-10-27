@@ -3,6 +3,7 @@ import { BaseMessage } from "../src/structures/BaseMessage";
 
 const leftDoubleQuote = "“";
 const rightDoubleQuote = "”";
+const codeblock = "```";
 
 test(`Parses content by separating spaces, then into an array`, () => {
 	const args = BaseMessage.getArgs("arg0 arg1 arg2");
@@ -72,6 +73,52 @@ test(`Do not have improper quote combinations per quoted section`, () => {
 	]);
 });
 
+test(`Proper quote chararacter detection`, () => {
+	// Check " characters
+	let inputData = `"arg 0" "arg 1"`;
+	let detailedArgs = BaseMessage.getDetailedArgs(inputData);
+	expect(detailedArgs).toMatchObject([
+		{
+			argument: "arg 0",
+			startQuoteChar: `"`,
+			endQuoteChar: `"`,
+			wrappedInQuotes: true,
+		},
+		{
+			argument: "arg 1",
+			startQuoteChar: `"`,
+			endQuoteChar: `"`,
+			wrappedInQuotes: true,
+		},
+	]);
+
+	// Check left and right double quotes
+	inputData = `${leftDoubleQuote}arg 0${rightDoubleQuote}`;
+	detailedArgs = BaseMessage.getDetailedArgs(inputData);
+	expect(detailedArgs).toMatchObject([
+		{
+			argument: `arg 0`,
+			startQuoteChar: leftDoubleQuote,
+			endQuoteChar: rightDoubleQuote,
+			wrappedInQuotes: true,
+		},
+	]);
+
+	// Codeblock testing
+	const content = oneLine`a${codeblock}"b${leftDoubleQuote}
+		${rightDoubleQuote}${codeblock}c;`;
+	inputData = `${leftDoubleQuote}${content}${rightDoubleQuote}`;
+	detailedArgs = BaseMessage.getDetailedArgs(inputData);
+	expect(detailedArgs).toMatchObject([
+		{
+			argument: content,
+			startQuoteChar: leftDoubleQuote,
+			endQuoteChar: rightDoubleQuote,
+			wrappedInQuotes: true,
+		},
+	]);
+});
+
 test(`Trims the contents`, () => {
 	const args = BaseMessage.getArgs(` 0 1 2 `);
 	expect(args).toStrictEqual([`0`, `1`, `2`]);
@@ -103,7 +150,7 @@ test(`Parse quoted in-betweens as a valid quote section`, () => {
 	const detailedArgs = BaseMessage.getDetailedArgs(`arg 0 "arg 1" arg 2`, {
 		quoteSections: "flexible",
 	});
-	expect(detailedArgs).toStrictEqual([
+	expect(detailedArgs).toMatchObject([
 		{
 			argument: "arg 0",
 			untrimmedArgument: "arg 0 ",

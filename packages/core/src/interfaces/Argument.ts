@@ -2,19 +2,19 @@
  * Used for detailed argument data
  */
 export interface Argument {
-	/**
-	 * The argument string
-	 */
+	/** The argument string */
 	argument: string;
 
-	/**
-	 * Untrimmed argument string
-	 */
+	/** Untrimmed argument string */
 	untrimmedArgument: string;
 
-	/**
-	 * Was this argument wrapped in quoted?
-	 */
+	/** The starting quote character */
+	startQuoteChar?: string;
+
+	/** The ending quote character */
+	endQuoteChar?: string;
+
+	/** Was this argument wrapped in quoted? */
 	wrappedInQuotes: boolean;
 
 	/**
