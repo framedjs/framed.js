@@ -1,4 +1,3 @@
-/* eslint-disable no-mixed-spaces-and-tabs */
 import type { Argument } from "../interfaces/Argument";
 import type { ArgumentOptions } from "../interfaces/ArgumentOptions";
 import type { DiscordMessageData } from "../interfaces/DiscordMessageData";
@@ -206,39 +205,89 @@ export class BaseMessage extends Base {
 		const args: Argument[] = [];
 
 		// Parse states; for if in a quoted/unquoted section, or is in a codeblock
-		let state = ArgumentState.Unquoted;
+		let argumentState = ArgumentState.Unquoted;
 		let hasCodeBlock = false;
 
 		// What the current argument is
 		let argString = "";
 		let untrimmedArgString = "";
 
+		const leftDoubleQuote = "“";
+		const rightDoubleQuote = "”";
+
+		let previousQuoteChar = "";
+
 		for (let i = 0; i < content.length; i++) {
 			const char = content[i];
 
 			// Character comparisons
-			const charIsDoubleQuote = char == `"`;
+			let charIsDoubleQuote =
+				char == `"` ||
+				char == leftDoubleQuote ||
+				char == rightDoubleQuote;
 			const charIsSpace = char == " ";
-			const charIsCodeBlock = char == "`";
+			const charIsBackTick = char == "`";
 
 			// Special character comparisons
 			const charIsEscaped = content[i - 1] == "\\";
 			const charIsEnd = i + 1 == content.length;
 
+			// // Quote character consistency for iPhone quotes
+			// if (
+			// 	char == rightDoubleQuote &&
+			// 	previousQuoteChar.length > 0 &&
+			// 	previousQuoteChar != leftDoubleQuote
+			// ) {
+			// 	charIsDoubleQuote = false;
+			// }
+
+			// // Quote character consistency for normal " chars
+			// if (
+			// 	char == `"` &&
+			// 	previousQuoteChar.length > 0 &&
+			// 	previousQuoteChar != char
+			// ) {
+			// 	charIsDoubleQuote = false;
+			// }
+
 			// hasCodeBlock will be true when the message has codeblocks
-			if (charIsCodeBlock) hasCodeBlock = !hasCodeBlock;
+			if (charIsBackTick) hasCodeBlock = !hasCodeBlock;
 
 			// Check for state change
-			let stateChanged = false;
+			let argumentStateChanged = false;
 			let changeStateToUnquotedLater = false;
-			let justStartedQuote = false;
+			let justStartedWrapper = false;
+
+			// Inline functions
+			const addToArgStrings = function addToArgStrings() {
+				argString += char;
+				untrimmedArgString += char;
+			};
+
+			const clearArgStrings = function clearArgStrings() {
+				argString = "";
+				untrimmedArgString = "";
+			};
+
+			const pushArgStrings = function pushArgStrings(
+				argument: string,
+				wrappedInQuotes = false,
+				nonClosedQuoteSection = false
+			) {
+				args.push({
+					argument: argument,
+					untrimmedArgument: untrimmedArgString,
+					wrappedInQuotes: wrappedInQuotes,
+					nonClosedQuoteSection: nonClosedQuoteSection,
+				});
+			};
 
 			// If there was a " to close off a quote section
 			// and the character hasn't been escaped by a \ or `
 			if (charIsDoubleQuote && !(charIsEscaped || hasCodeBlock)) {
-				stateChanged = true;
+				argumentStateChanged = true;
 
-				switch (state) {
+				switch (argumentState) {
 					case ArgumentState.Quoted:
 						// NOTE: we don't unquote it back immediately, so we
 						// can process the last " character
@@ -246,13 +295,13 @@ export class BaseMessage extends Base {
 						// state = ArgumentState.Unquoted
 						break;
 					case ArgumentState.Unquoted:
-						state = ArgumentState.Quoted;
-						justStartedQuote = true;
+						argumentState = ArgumentState.Quoted;
+						justStartedWrapper = true;
 						break;
 				}
 			}
 
-			if (state == ArgumentState.Unquoted) {
+			if (argumentState == ArgumentState.Unquoted) {
 				// If we're unquoted, split with spaces if settings allow it
 				// We'll process excess spaces later
 				if (
@@ -265,33 +314,20 @@ export class BaseMessage extends Base {
 							return [];
 						}
 					} else {
-						argString += char;
-						untrimmedArgString += char;
+						addToArgStrings();
 					}
 					// Logger.debug(`uq '${argString}'`); // LARGE DEBUG OUTPUT
 				} else if (argString.length != 0) {
 					// A separator space has been used, so we push our non-empty argument
-					// Logger.debug(
-					// 	`'${char}' <${content}> ${i} Unquoted "${argString}"`
-					// ); // LARGE DEBUG OUTPUT
+
 					// Trim argument string, since we're pushing an unquoted argument
-					args.push({
-						argument: argString.trim(),
-						untrimmedArgument: untrimmedArgString,
-						wrappedInQuotes: false,
-						nonClosedQuoteSection: false,
-					});
-					argString = "";
-					untrimmedArgString = "";
+					pushArgStrings(argString.trim());
+					clearArgStrings();
 				}
-			} else if (state == ArgumentState.Quoted) {
+			} else if (argumentState == ArgumentState.Quoted) {
 				// If we've just started the quote, but the string isn't empty,
 				// push its contents out (carryover from unquoted)
-				if (justStartedQuote) {
-					// Logger.debug(
-					// 	`'${char}' <${content}> ${i} JSQ_NonEmpty - CStU: ${changeStateToUnquotedLater} justStartedQuote ${justStartedQuote} - (${ArgumentState[state]}) - "${argString}"`
-					// ); // LARGE DEBUG OUTPUT
-
+				if (justStartedWrapper) {
 					if (char == `"` && settings?.showQuoteCharacters) {
 						// Fixes edge case where we're just entering quotes now,
 						// and we have the setting to put it in
@@ -301,15 +337,9 @@ export class BaseMessage extends Base {
 						if (argString.trim().length != 0) {
 							// Since it's been carried over as an unquoted argument
 							// And is just finishing in quoted, we can trim it here
-							args.push({
-								argument: argString.trim(),
-								untrimmedArgument: untrimmedArgString,
-								wrappedInQuotes: false,
-								nonClosedQuoteSection: false,
-							});
+							pushArgStrings(argString.trim());
 						}
-						argString = "";
-						untrimmedArgString = "";
+						clearArgStrings();
 					}
 				} else if (
 					settings?.showQuoteCharacters ||
@@ -319,24 +349,18 @@ export class BaseMessage extends Base {
 				) {
 					// If we should be showing quoted characters because of settings,
 					// or we're unquoted, or there's an escape if not
-					argString += char;
-					untrimmedArgString += char;
-					// Logger.debug(` q '${argString}'`); // LARGE DEBUG OUTPUT
+					addToArgStrings();
 				}
 			}
 
-			// If state change, and the first character isn't a " and just that,
-			// or this is the end of the string,
-			// push the new argument
 			if (
-				(stateChanged && !justStartedQuote) ||
+				// If the argument state changed, and the first char
+				// isn't a quote and just that
+				(argumentStateChanged && !justStartedWrapper) ||
+				// Or, this is the end of the strong, and there's arguments to push,
 				(charIsEnd && argString.length > 0)
+				// Push the new args
 			) {
-				// Is ending off with a quote
-				// Logger.debug(
-				// 	`'${char}' <${content}> ${i} State change - CStU: ${changeStateToUnquotedLater} justStartedQuote ${justStartedQuote} - (${ArgumentState[state]}) - "${argString}"`
-				// ); // LARGE DEBUG OUTPUT
-
 				const nonClosedQuoteSection =
 					charIsEnd &&
 					argString.length > 0 &&
@@ -344,7 +368,7 @@ export class BaseMessage extends Base {
 					!charIsDoubleQuote;
 
 				// Trim if unquoted
-				if (state == ArgumentState.Unquoted)
+				if (argumentState == ArgumentState.Unquoted)
 					argString = argString.trim();
 
 				if (settings?.quoteSections == "strict") {
@@ -353,21 +377,18 @@ export class BaseMessage extends Base {
 					}
 				}
 
-				args.push({
-					argument: argString,
-					untrimmedArgument: untrimmedArgString,
-					wrappedInQuotes: state == ArgumentState.Quoted,
-					nonClosedQuoteSection: nonClosedQuoteSection,
-				});
-
-				argString = "";
-				untrimmedArgString = "";
+				pushArgStrings(
+					argString,
+					argumentState == ArgumentState.Quoted,
+					nonClosedQuoteSection
+				);
+				clearArgStrings();
 			}
 
 			// Finally changes the state to the proper one
-			// We don't do this for quotes because we need to process putting the " in or not
+			// We don't do this for quotes because we need to process putting the quote chars in or not
 			if (changeStateToUnquotedLater) {
-				state = ArgumentState.Unquoted;
+				argumentState = ArgumentState.Unquoted;
 			}
 		}
 
@@ -679,10 +700,10 @@ export class BaseMessage extends Base {
 			await this.discord.channel.send(content);
 		} else if (this.discordInteraction) {
 			if (
-				this.discordInteraction.interaction.isButton() || 
-				this.discordInteraction.interaction.isCommand() || 
-				this.discordInteraction.interaction.isContextMenu() || 
-				this.discordInteraction.interaction.isMessageComponent() || 
+				this.discordInteraction.interaction.isButton() ||
+				this.discordInteraction.interaction.isCommand() ||
+				this.discordInteraction.interaction.isContextMenu() ||
+				this.discordInteraction.interaction.isMessageComponent() ||
 				this.discordInteraction.interaction.isSelectMenu()
 			) {
 				await this.discordInteraction.interaction.reply({
