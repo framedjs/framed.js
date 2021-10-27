@@ -221,7 +221,7 @@ export class BaseMessage extends Base {
 			const char = content[i];
 
 			// Character comparisons
-			let charIsDoubleQuote =
+			let charIsQuote =
 				char == `"` ||
 				char == leftDoubleQuote ||
 				char == rightDoubleQuote;
@@ -232,23 +232,39 @@ export class BaseMessage extends Base {
 			const charIsEscaped = content[i - 1] == "\\";
 			const charIsEnd = i + 1 == content.length;
 
-			// // Quote character consistency for iPhone quotes
-			// if (
-			// 	char == rightDoubleQuote &&
-			// 	previousQuoteChar.length > 0 &&
-			// 	previousQuoteChar != leftDoubleQuote
-			// ) {
-			// 	charIsDoubleQuote = false;
-			// }
+			// Quote character consistency for iPhone quotes
+			if (
+				char == leftDoubleQuote &&
+				previousQuoteChar.length > 0 &&
+				previousQuoteChar != rightDoubleQuote
+			) {
+				charIsQuote = false;
+			}
 
-			// // Quote character consistency for normal " chars
-			// if (
-			// 	char == `"` &&
-			// 	previousQuoteChar.length > 0 &&
-			// 	previousQuoteChar != char
-			// ) {
-			// 	charIsDoubleQuote = false;
-			// }
+			if (
+				char == rightDoubleQuote &&
+				previousQuoteChar.length > 0 &&
+				previousQuoteChar != leftDoubleQuote
+			) {
+				charIsQuote = false;
+			}
+
+			if (
+				// Should not start with a right double quote
+				char == rightDoubleQuote &&
+				previousQuoteChar.length == 0
+			) {
+				charIsQuote = false;
+			}
+
+			// Quote character consistency for normal " chars
+			if (
+				char == `"` &&
+				previousQuoteChar.length > 0 &&
+				previousQuoteChar != char
+			) {
+				charIsQuote = false;
+			}
 
 			// hasCodeBlock will be true when the message has codeblocks
 			if (charIsBackTick) hasCodeBlock = !hasCodeBlock;
@@ -267,6 +283,7 @@ export class BaseMessage extends Base {
 			const clearArgStrings = function clearArgStrings() {
 				argString = "";
 				untrimmedArgString = "";
+				previousQuoteChar = "";
 			};
 
 			const pushArgStrings = function pushArgStrings(
@@ -284,7 +301,7 @@ export class BaseMessage extends Base {
 
 			// If there was a " to close off a quote section
 			// and the character hasn't been escaped by a \ or `
-			if (charIsDoubleQuote && !(charIsEscaped || hasCodeBlock)) {
+			if (charIsQuote && !(charIsEscaped || hasCodeBlock)) {
 				argumentStateChanged = true;
 
 				switch (argumentState) {
@@ -310,7 +327,7 @@ export class BaseMessage extends Base {
 					hasCodeBlock
 				) {
 					if (settings?.quoteSections == "strict") {
-						if (!charIsSpace && !charIsDoubleQuote) {
+						if (!charIsSpace && !charIsQuote) {
 							return [];
 						}
 					} else {
@@ -328,7 +345,7 @@ export class BaseMessage extends Base {
 				// If we've just started the quote, but the string isn't empty,
 				// push its contents out (carryover from unquoted)
 				if (justStartedWrapper) {
-					if (char == `"` && settings?.showQuoteCharacters) {
+					if (charIsQuote && settings?.showQuoteCharacters) {
 						// Fixes edge case where we're just entering quotes now,
 						// and we have the setting to put it in
 						argString += char;
@@ -343,7 +360,7 @@ export class BaseMessage extends Base {
 					}
 				} else if (
 					settings?.showQuoteCharacters ||
-					!charIsDoubleQuote ||
+					!charIsQuote ||
 					charIsEscaped ||
 					hasCodeBlock
 				) {
@@ -365,7 +382,7 @@ export class BaseMessage extends Base {
 					charIsEnd &&
 					argString.length > 0 &&
 					settings?.quoteSections == "strict" &&
-					!charIsDoubleQuote;
+					!charIsQuote;
 
 				// Trim if unquoted
 				if (argumentState == ArgumentState.Unquoted)
@@ -383,6 +400,11 @@ export class BaseMessage extends Base {
 					nonClosedQuoteSection
 				);
 				clearArgStrings();
+			}
+
+			// Sets the previous quote char
+			if (charIsQuote) {
+				previousQuoteChar = char;
 			}
 
 			// Finally changes the state to the proper one

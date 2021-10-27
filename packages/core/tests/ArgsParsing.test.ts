@@ -1,4 +1,8 @@
+import { oneLine } from "common-tags";
 import { BaseMessage } from "../src/structures/BaseMessage";
+
+const leftDoubleQuote = "“";
+const rightDoubleQuote = "”";
 
 test(`Parses content by separating spaces, then into an array`, () => {
 	const args = BaseMessage.getArgs("arg0 arg1 arg2");
@@ -22,6 +26,50 @@ test(`Parses content inside quotes`, () => {
 	expect(args).toStrictEqual([`arg 0`, `arg 1 but spaces`, `arg 2`]);
 	const args2 = BaseMessage.getArgs(`"arg 0" "arg 1 but spaces"`);
 	expect(args2).toStrictEqual([`arg 0`, `arg 1 but spaces`]);
+});
+
+test(`Parses content inside quotes, but using iPhone quotes`, () => {
+	const inputData = oneLine`
+		${leftDoubleQuote}arg 0${rightDoubleQuote}
+		${leftDoubleQuote}arg 1 but spaces${rightDoubleQuote}
+		${leftDoubleQuote}arg 2${rightDoubleQuote}`;
+	const args = BaseMessage.getArgs(inputData);
+	expect(args).toStrictEqual([`arg 0`, `arg 1 but spaces`, `arg 2`]);
+});
+
+test(`Do not have improper quote combinations per quoted section`, () => {
+	// Tests left double quotes inside left double quotes
+	let inputData = oneLine`
+		${leftDoubleQuote}arg 0${leftDoubleQuote}
+		arg 1 but spaces${rightDoubleQuote}
+		${leftDoubleQuote}arg 2${rightDoubleQuote}`;
+	let args = BaseMessage.getArgs(inputData);
+	expect(args).toStrictEqual([
+		`arg 0${leftDoubleQuote} arg 1 but spaces`,
+		`arg 2`,
+	]);
+
+	// Tests right double quotes as starting
+	inputData = oneLine`
+		${rightDoubleQuote}arg 0${rightDoubleQuote}
+		arg 1`;
+	args = BaseMessage.getArgs(inputData);
+	expect(args).toStrictEqual([
+		`${rightDoubleQuote}arg`,
+		`0${rightDoubleQuote}`,
+		`arg`,
+		`1`,
+	]);
+
+	// Tests single quotes inside iPhone quotes
+	inputData = oneLine`
+		"${leftDoubleQuote}arg 0${rightDoubleQuote} aa"
+		"arg 1"`;
+	args = BaseMessage.getArgs(inputData);
+	expect(args).toStrictEqual([
+		`${leftDoubleQuote}arg 0${rightDoubleQuote} aa`,
+		`arg 1`,
+	]);
 });
 
 test(`Trims the contents`, () => {
