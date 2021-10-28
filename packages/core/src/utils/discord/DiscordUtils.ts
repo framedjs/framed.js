@@ -150,11 +150,7 @@ export class DiscordUtils {
 		}
 
 		const args = link
-			.replace("https://", "")
-			.replace("http://", "")
-			.replace("discordapp.com/", "")
-			.replace("discord.com/", "")
-			.replace("channels/", "")
+			.replace(/.*(discord|discordapp).com\/channels\//g, "")
 			.split("/");
 
 		if (args.length != 3) {
@@ -220,9 +216,8 @@ export class DiscordUtils {
 		channel: Discord.ChannelResolvable,
 		channels: Discord.ChannelManager
 	): Discord.Channel | undefined {
-		let newChannel: Discord.Channel | null | undefined = channels.resolve(
-			channel
-		);
+		let newChannel: Discord.Channel | null | undefined =
+			channels.resolve(channel);
 
 		if (!newChannel && typeof channel == "string") {
 			// If the resolve didn't work...
@@ -636,8 +631,9 @@ export class DiscordUtils {
 
 			// ...try to get it by their tag (username#0000), username, or nickname
 			if (!newRoleId) {
-				newRoleId = roles.cache.find(newRole => newRole.name == role)
-					?.id;
+				newRoleId = roles.cache.find(
+					newRole => newRole.name == role
+				)?.id;
 			}
 		}
 
@@ -731,8 +727,9 @@ export class DiscordUtils {
 		suppressWarnings?: boolean
 	): Promise<DiscohookOutputData> {
 		// http://urlregex.com/
-		// eslint-disable-next-line no-useless-escape
-		const regex = /((([A-Za-z]{3,9}:(?:\/\/)?)(?:[\-;:&=\+\$,\w]+@)?[A-Za-z0-9\.\-]+|(?:www\.|[\-;:&=\+\$,\w]+@)[A-Za-z0-9\.\-]+)((?:\/[\+~%\/\.\w\-_]*)?\??(?:[\-\+=&;%@\.\w_]*)#?(?:[\.\!\/\\\w]*))?)/g;
+		const regex =
+			// eslint-disable-next-line no-useless-escape
+			/((([A-Za-z]{3,9}:(?:\/\/)?)(?:[\-;:&=\+\$,\w]+@)?[A-Za-z0-9\.\-]+|(?:www\.|[\-;:&=\+\$,\w]+@)[A-Za-z0-9\.\-]+)((?:\/[\+~%\/\.\w\-_]*)?\??(?:[\-\+=&;%@\.\w_]*)#?(?:[\.\!\/\\\w]*))?)/g;
 		const matches = jsonOrLink.matchAll(regex);
 
 		// Embed data
