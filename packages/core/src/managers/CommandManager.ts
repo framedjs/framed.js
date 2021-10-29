@@ -402,7 +402,7 @@ export class CommandManager extends Base {
 
 		try {
 			if (msg.prefix != undefined && msg.command != undefined) {
-				Logger.debug(`Checking for commands for "${msg.content}"`);
+				Logger.silly(`Checking for commands for "${msg.content}"`);
 
 				// Attempts to get the command data from a message, including comparing prefixes
 				const data = await this.getFoundCommandData(msg, place);
@@ -467,12 +467,13 @@ export class CommandManager extends Base {
 		} catch (error) {
 			Logger.error((error as Error).stack);
 		}
-
-		Logger.debug(
-			`${Utils.hrTimeElapsed(
-				startTime
-			)}s - Finished finding and sending commands`
-		);
+		
+		if (Logger.isSillyEnabled())
+			Logger.silly(
+				`${Utils.hrTimeElapsed(
+					startTime
+				)}s - Finished finding and sending commands`
+			);
 		return map;
 	}
 
@@ -617,43 +618,31 @@ export class CommandManager extends Base {
 		friendlyError: FriendlyError,
 		commandId?: string
 	): Promise<void> {
+		let embed: Discord.MessageEmbed | undefined;
+		let options:
+			| string
+			| Discord.MessagePayload
+			| Discord.MessageOptions
+			| Discord.InteractionReplyOptions
+			| undefined;
+
 		if (msg.discord) {
-			const embed = EmbedHelper.getTemplate(
+			embed = EmbedHelper.getTemplate(
 				msg.discord,
 				await EmbedHelper.getCheckOutFooter(msg, commandId)
 			)
 				.setTitle(friendlyError.friendlyName)
 				.setDescription(friendlyError.message);
+			options = { embeds: [embed] };
+		}
 
-			await msg.discord.channel.send({ embeds: [embed] });
-		} else if (msg.discordInteraction) {
-			const embed = EmbedHelper.getTemplate(
-				msg.discordInteraction,
-				await EmbedHelper.getCheckOutFooter(msg, commandId)
-			)
-				.setTitle(friendlyError.friendlyName)
-				.setDescription(friendlyError.message);
+		// If it's an interaction, make it ephemeral
+		if (msg instanceof DiscordInteraction && embed) {
+			options = { embeds: [embed], ephemeral: true };
+		}
 
-			const interaction = msg.discordInteraction.interaction;
-
-			if (
-				interaction.isButton() ||
-				interaction.isCommand() ||
-				interaction.isContextMenu() ||
-				interaction.isMessageComponent() ||
-				interaction.isSelectMenu()
-			) {
-				if (!interaction.deferred) {
-					await interaction.reply({
-						embeds: [embed],
-						ephemeral: true,
-					});
-				} else {
-					await interaction.editReply({
-						embeds: [embed],
-					});
-				}
-			}
+		if (options) {
+			await msg.send(options);
 		} else {
 			await msg.send(
 				`${friendlyError.friendlyName}: ${friendlyError.message}`
@@ -682,10 +671,13 @@ export class CommandManager extends Base {
 			);
 		}
 
-		if (msg instanceof DiscordMessage) {
+		if (
+			msg instanceof DiscordMessage ||
+			msg instanceof DiscordInteraction
+		) {
 			const discord = msg.discord;
 			const embed = EmbedHelper.getTemplate(
-				msg.discord,
+				discord,
 				await EmbedHelper.getCheckOutFooter(msg, command.id)
 			).setTitle("Permission Denied");
 
@@ -703,7 +695,7 @@ export class CommandManager extends Base {
 				}
 			}
 
-			const notAllowed = `${msg.discord.author}, you aren't allowed to do that!`;
+			const notAllowed = `${discord.author}, you aren't allowed to do that!`;
 			const missingMessage = useEmbed
 				? `You are missing:`
 				: `You are missing (or aren't):`;
@@ -737,7 +729,7 @@ export class CommandManager extends Base {
 						if (permissions?.discord?.permissions) {
 							// Gets user's permissions and missing permissions
 							const userPerms = new Discord.Permissions(
-								msg.discord.member?.permissions
+								discord.member?.permissions
 							);
 							missingPerms = userPerms.missing(
 								permissions.discord.permissions
@@ -837,12 +829,12 @@ export class CommandManager extends Base {
 					"Missing SEND_MESSAGES permission, cannot send error"
 				);
 			} else if (missingPerms.includes("EMBED_LINKS")) {
-				await msg.discord.channel.send(
+				await msg.send(
 					`**${embed.title}**\n${oneLine`Unfortunately, the
 						\`EMBED_LINKS\` permission is disabled, so I can't send any details.`}`
 				);
 			} else {
-				await msg.discord.channel.send({ embeds: [embed] });
+				await msg.send({ embeds: [embed] });
 			}
 
 			return true;
