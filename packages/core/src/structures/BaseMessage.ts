@@ -735,31 +735,10 @@ export class BaseMessage extends Base {
 
 	/**
 	 * Sends a message, regardless of platform.
-	 *
-	 * @param content
 	 */
-	async send(content: string): Promise<void> {
-		if (this.discord) {
-			await this.discord.channel.send(content);
-		} else if (this.discordInteraction) {
-			if (
-				this.discordInteraction.interaction.isButton() ||
-				this.discordInteraction.interaction.isCommand() ||
-				this.discordInteraction.interaction.isContextMenu() ||
-				this.discordInteraction.interaction.isMessageComponent() ||
-				this.discordInteraction.interaction.isSelectMenu()
-			) {
-				await this.discordInteraction.interaction.reply({
-					content: content,
-				});
-			} else {
-				throw new Error("Interaction does not have a reply function");
-			}
-		} else if (this.twitch) {
-			this.twitch.chat.say(this.twitch.channel, content);
-		} else {
-			throw new Error("There was no valid platform!");
-		}
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	async send(..._parms: unknown[]): Promise<unknown> {
+		throw new Error("There was no valid platform!");
 	}
 
 	/**

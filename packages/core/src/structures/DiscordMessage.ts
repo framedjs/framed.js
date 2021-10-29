@@ -1,5 +1,6 @@
 import { oneLine } from "common-tags";
 import { BaseMessage } from "./BaseMessage";
+import { Utils } from "@framedjs/shared";
 import Discord from "discord.js";
 import type { DiscordMessageData } from "../interfaces/DiscordMessageData";
 import type { MessageOptions } from "../interfaces/MessageOptions";
@@ -104,5 +105,45 @@ export class DiscordMessage extends BaseMessage {
 		}
 
 		return this.discord;
+	}
+
+	/**
+	 * Sends a message on Discord.
+	 *
+	 * @param options
+	 */
+	async send(
+		options: string | Discord.MessagePayload | Discord.MessageOptions
+	): Promise<Discord.Message> {
+		return this.discord.channel.send(options);
+	}
+
+	static async startCountdownBeforeDeletion(
+		msg: Discord.Message,
+		options: {
+			seconds: number;
+			showTimer: boolean;
+		} = {
+			seconds: 3,
+			showTimer: true,
+		}
+	): Promise<void> {
+		let startTime: [number, number];
+		let content = "";
+		for (let i = options.seconds; i > 0; i--) {
+			startTime = process.hrtime();
+
+			if (!content) {
+				content = msg.content;
+			}
+
+			if (options.showTimer && msg && !msg.deleted) {
+				await msg.edit(`${content} (Hiding message in ${i}...)`);
+			}
+
+			const stopTime = Math.round(process.hrtime(startTime)[1] / 1e6);
+			await Utils.sleep(1000 - stopTime);
+		}
+		if (msg && !msg.deleted) await msg.delete();
 	}
 }

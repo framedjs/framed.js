@@ -67,4 +67,12 @@ export class TwitchMessage extends BaseMessage {
 			user: user,
 		};
 	}
+	/**
+	 * Sends a message, regardless of platform.
+	 *
+	 * @param content
+	 */
+	async send(content: string): Promise<void> {
+		this.twitch.chat.say(this.twitch.channel, content);
+	}
 }

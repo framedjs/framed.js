@@ -467,7 +467,7 @@ export class CommandManager extends Base {
 		} catch (error) {
 			Logger.error((error as Error).stack);
 		}
-		
+
 		if (Logger.isSillyEnabled())
 			Logger.silly(
 				`${Utils.hrTimeElapsed(
@@ -871,7 +871,10 @@ export class CommandManager extends Base {
 		let description = "";
 		let permissionString = "";
 
-		if (msg instanceof DiscordMessage) {
+		if (
+			msg instanceof DiscordMessage ||
+			msg instanceof DiscordInteraction
+		) {
 			if (
 				!botPermissions?.discord ||
 				deniedData.reason.includes("discordNoData")
@@ -909,7 +912,7 @@ export class CommandManager extends Base {
 					"Missing SEND_MESSAGES permission, cannot send error"
 				);
 			} else if (missingPerms.includes("EMBED_LINKS")) {
-				await msg.discord.channel.send(
+				await msg.send(
 					`**${title}**\n${description} ${permissionString}`
 				);
 			} else {
@@ -924,7 +927,7 @@ export class CommandManager extends Base {
 					embed.addField("Discord Permissions", permissionString);
 				}
 
-				await msg.discord.channel.send({ embeds: [embed] });
+				await msg.send({ embeds: [embed] });
 			}
 
 			return true;

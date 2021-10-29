@@ -3,9 +3,11 @@ import { BaseMessage } from "./BaseMessage";
 import Discord from "discord.js";
 
 import type { DiscordInteractionData } from "../interfaces/DiscordInteractionData";
+import type { DiscordMessageData } from "../interfaces/DiscordMessageData";
 import type { MessageOptions } from "../interfaces/MessageOptions";
 
 export class DiscordInteraction extends BaseMessage {
+	discord!: DiscordMessageData;
 	discordInteraction!: DiscordInteractionData;
 
 	// Forces platform to be "discordInteraction"
@@ -25,6 +27,12 @@ export class DiscordInteraction extends BaseMessage {
 		if (!this.discordInteraction) {
 			throw new ReferenceError(
 				`this.discordInteraction is undefined, you likely only gave non-Discord data.`
+			);
+		}
+		// Forces this.discord to not be undefined
+		if (!this.discord) {
+			throw new ReferenceError(
+				`this.discord is undefined, you likely only gave non-Discord data.`
 			);
 		}
 	}
@@ -109,5 +117,32 @@ export class DiscordInteraction extends BaseMessage {
 			member,
 			guild,
 		};
+	}
+
+	/**
+	 * Sends a message on Discord, through interactions.
+	 *
+	 * @param options
+	 */
+	async send(
+		options:
+			| string
+			| Discord.MessagePayload
+			| Discord.InteractionReplyOptions
+	): Promise<void> {
+		const interaction = this.discordInteraction.interaction;
+		if (
+			interaction.isButton() ||
+			interaction.isCommand() ||
+			interaction.isContextMenu() ||
+			interaction.isMessageComponent() ||
+			interaction.isSelectMenu()
+		) {
+			if (!interaction.deferred) {
+				await interaction.reply(options);
+			} else {
+				await interaction.editReply(options);
+			}
+		}
 	}
 }
