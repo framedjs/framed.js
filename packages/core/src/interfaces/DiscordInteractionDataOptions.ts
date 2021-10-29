@@ -29,7 +29,7 @@ export interface DiscordInteractionDataOptions {
 	/**
 	 * The member of a guild.
 	 */
-	// member?: Discord.GuildMember;
+	member?: Discord.GuildMember;
 
 	/**
 	 * The guild of where the Discord message came from.

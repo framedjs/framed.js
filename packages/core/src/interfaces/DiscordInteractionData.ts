@@ -1,7 +1,7 @@
 import type Discord from "discord.js";
 
 export interface DiscordInteractionData {
-	readonly type: 'data';
+	readonly type: "data";
 
 	/**
 	 * The Discord interaction object.
@@ -25,8 +25,10 @@ export interface DiscordInteractionData {
 
 	/**
 	 * The member of a guild.
+	 *
+	 * Note that if the member was an APIInteractionGuildMember, this will be null.
 	 */
-	// readonly member?: Discord.GuildMember | Discord.APIInteractionGuildMember | null;
+	readonly member?: Discord.GuildMember | null;
 
 	/**
 	 * The guild of where the Discord message came from.

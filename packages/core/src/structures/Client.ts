@@ -328,18 +328,12 @@ export class Client extends EventEmitter {
 			if (interaction.isCommand()) {
 				msg = new DiscordCommandInteraction({
 					client: this,
-					discordInteraction: {
-						type: "dataOptions",
-						base: interaction,
-					},
+					discordInteraction: interaction,
 				});
 			} else {
 				msg = new DiscordInteraction({
 					client: this,
-					discordInteraction: {
-						type: "dataOptions",
-						base: interaction,
-					},
+					discordInteraction: interaction,
 				});
 			}
 

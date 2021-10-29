@@ -3,6 +3,7 @@ import type { BaseMessage } from "../structures/BaseMessage";
 import type { DiscordMessageDataOptions } from "./DiscordMessageDataOptions";
 import type { TwitchMessageOptions } from "./TwitchMessageOptions";
 import type { DiscordInteractionDataOptions } from "./DiscordInteractionDataOptions";
+import type Discord from "discord.js";
 
 export interface MessageOptions {
 	/**
@@ -26,15 +27,15 @@ export interface MessageOptions {
 
 	/**
 	 * Discord data.
-	 * 
+	 *
 	 * If no base is specified, client, channel and author is required.
 	 */
-	discord?: DiscordMessageDataOptions;
+	discord?: DiscordMessageDataOptions | Discord.Message;
 
 	/**
-	 * Discord interaction data.
+	 * Discord interaction, or Discord interaction data.
 	 */
-	discordInteraction?: DiscordInteractionDataOptions;
+	discordInteraction?: DiscordInteractionDataOptions | Discord.Interaction;
 
 	/**
 	 * Twitch data.

@@ -8,7 +8,7 @@ import type { MessageOptions } from "../interfaces/MessageOptions";
 export class DiscordInteraction extends BaseMessage {
 	discordInteraction!: DiscordInteractionData;
 
-	// Forces platform to be "discord"
+	// Forces platform to be "discordInteraction"
 	platform: "discordInteraction" = "discordInteraction";
 
 	/**
@@ -29,16 +29,18 @@ export class DiscordInteraction extends BaseMessage {
 		}
 	}
 
-	init(options: MessageOptions): DiscordInteractionData | undefined {
+	init(options: MessageOptions): void {
 		// Grabs the base of a possible message
 		const base = options.base;
 
 		// Gets the Discord Base for elements such as author, channel, etc.
 		// First check for any entries in info.discordInteraction.base
 		const discordInteractionBase =
-			options.discordInteraction?.base ??
-			base?.discordInteraction ??
-			options.discordInteraction;
+			options.discordInteraction instanceof Discord.Interaction
+				? options.discordInteraction
+				: options.discordInteraction?.base
+				? base?.discordInteraction
+				: undefined;
 
 		if (!discordInteractionBase) return;
 
@@ -46,11 +48,11 @@ export class DiscordInteraction extends BaseMessage {
 
 		// Gets a Discord Interaction object
 		const interaction =
-			options.discordInteraction?.base instanceof Discord.Interaction
-				? options.discordInteraction.base
-				: base?.discordInteraction?.type == "data"
-				? base.discordInteraction.interaction
-				: base?.discordInteraction?.base;
+			discordInteractionBase instanceof Discord.Interaction
+				? discordInteractionBase
+				: discordInteractionBase.type == "data"
+				? discordInteractionBase.interaction
+				: discordInteractionBase.base;
 
 		if (!interaction) return;
 
@@ -58,10 +60,13 @@ export class DiscordInteraction extends BaseMessage {
 		const client = discordInteractionBase?.client ?? interaction?.client;
 		const guild =
 			discordInteractionBase?.guild ?? interaction?.guild ?? null;
-		// const member =
-		// 	discordInteractionBase?.member ?? interaction?.member ?? null;
 		const user =
 			discordInteractionBase?.user ?? interaction?.user ?? undefined;
+
+		// Make sure it's a GuildMember object, else it's null
+		let member =
+			discordInteractionBase?.member ?? interaction?.member ?? null;
+		if (!(member instanceof Discord.GuildMember)) member = null;
 
 		// Gets client or throws error
 		if (!client) {
@@ -93,10 +98,16 @@ export class DiscordInteraction extends BaseMessage {
 			client,
 			channel,
 			user,
-			// member,
+			member,
 			guild,
 		};
 
-		return this.discordInteraction;
+		this.discord = {
+			author: user,
+			client,
+			channel,
+			member,
+			guild,
+		};
 	}
 }
