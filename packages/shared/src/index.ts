@@ -114,14 +114,14 @@ export class Utils {
 		 * and is used to get the proper millisecond value.
 		 *
 		 * We can't use this number value immediately, as there's decimals.
-		 * To change that, we floor the value.
+		 * To change that, we round the value.
 		 *
 		 * Now, we need it to be a string for padding zeros.
 		 *
 		 * Finally, we add extra zeros at the start of our new number string.
 		 * It's set to have 3 zeros at most.
 		 */
-		const ms = Math.floor(diffTime[1] / 1e6)
+		const ms = Math.round(diffTime[1] / 1e6)
 			.toString()
 			.padStart(3, "0");
 
