@@ -545,37 +545,16 @@ export abstract class BaseCommand {
 		msg: DiscordMessage | DiscordInteraction,
 		permissions: Discord.PermissionResolvable = []
 	): Discord.PermissionString[] {
-		// If we're not in a guild, we're assuming these are the bot's permissions in DMs
-		const dmDiscordPerms: Discord.PermissionString[] = [
-			"ADD_REACTIONS",
-			"ATTACH_FILES",
-			"EMBED_LINKS",
-			"READ_MESSAGE_HISTORY",
-			"SEND_MESSAGES",
-			"SEND_TTS_MESSAGES",
-			"USE_EXTERNAL_EMOJIS",
-		];
-
 		// Gets the requested permisisons and actual permissions
-		const guild =
-			msg instanceof DiscordMessage
-				? msg.discord.guild
-				: msg instanceof DiscordInteraction
-				? msg.discordInteraction.interaction.guild
-				: undefined;
-		const channel =
-			msg instanceof DiscordMessage
-				? msg.discord.channel
-				: msg instanceof DiscordInteraction
-				? msg.discordInteraction.interaction.channel
-				: undefined;
+		const guild = msg.discord.guild;
+		const channel = msg.discord.channel;
 		const requestedBotPerms = new Discord.Permissions(permissions);
 		const actualBotPerms = new Discord.Permissions(
 			guild?.me && channel instanceof Discord.GuildChannel
 				? guild.me.permissionsIn(channel)
-				: dmDiscordPerms
+				: Discord.Permissions.DEFAULT
 		);
-
+		
 		// Returns all the missing ones
 		return actualBotPerms.missing(requestedBotPerms);
 	}
