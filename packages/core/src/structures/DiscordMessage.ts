@@ -32,7 +32,13 @@ export class DiscordMessage extends BaseMessage {
 		// Gets the Discord Base for elements such as author, channel, etc.
 		// First check for any entries in info.discord.base
 		const discordBase =
-			options.discord?.base ?? options.base?.discord ?? options.discord;
+			options.discord instanceof Discord.Message
+				? options.discord
+				: options.discord?.base
+				? options.discord.base
+				: options.base?.discord
+				? options.base.discord
+				: options.discord;
 
 		if (!discordBase) return;
 

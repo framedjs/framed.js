@@ -232,9 +232,7 @@ export class Client extends EventEmitter {
 		client.on("message", async discordMsg => {
 			const msg = new DiscordMessage({
 				client: this,
-				discord: {
-					base: discordMsg,
-				},
+				discord: discordMsg,
 			});
 			await msg.getMessageElements(undefined, discordMsg.guild);
 			this.processMsg(msg);
