@@ -204,7 +204,7 @@ export abstract class BaseCommand {
 	 *
 	 * @returns true if successful
 	 */
-	abstract run(msg: BaseMessage): Promise<boolean>;
+	abstract run(msg: BaseMessage, _?: unknown): Promise<boolean>;
 
 	/**
 	 * Puts all text entry fields into formatting
@@ -547,14 +547,15 @@ export abstract class BaseCommand {
 	): Discord.PermissionString[] {
 		// Gets the requested permisisons and actual permissions
 		const guild = msg.discord.guild;
+		const botMember = guild?.me;
 		const channel = msg.discord.channel;
 		const requestedBotPerms = new Discord.Permissions(permissions);
 		const actualBotPerms = new Discord.Permissions(
-			guild?.me && channel instanceof Discord.GuildChannel
-				? guild.me.permissionsIn(channel)
+			botMember && channel instanceof Discord.GuildChannel
+				? botMember.permissionsIn(channel)
 				: Discord.Permissions.DEFAULT
 		);
-		
+
 		// Returns all the missing ones
 		return actualBotPerms.missing(requestedBotPerms);
 	}

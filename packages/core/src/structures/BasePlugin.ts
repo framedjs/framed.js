@@ -1,15 +1,21 @@
+import { Base } from "./Base";
 import { BaseCommand } from "./BaseCommand";
-import { BaseSubcommand } from "./BaseSubcommand";
+import { BaseDiscordInteraction } from "./BaseDiscordInteraction";
 import { BaseEvent } from "./BaseEvent";
-import { BasePluginOptions } from "../interfaces/BasePluginOptions";
-import { Logger } from "@framedjs/logger";
+import { BaseSubcommand } from "./BaseSubcommand";
 import { Client } from "./Client";
 import { DiscordUtils } from "../utils/discord/DiscordUtils";
-import Options from "../interfaces/other/RequireAllOptions";
-import util from "util";
-import { Prefixes } from "../interfaces/Prefixes";
 import { ImportError } from "./errors/non-friendly/ImportError";
-import { Base } from "./Base";
+import { Logger } from "@framedjs/logger";
+
+import type { Prefixes } from "../interfaces/Prefixes";
+import type Options from "../interfaces/other/RequireAllOptions";
+import type {
+	BasePluginOptions,
+	BasePluginPathOptions,
+} from "../interfaces/BasePluginOptions";
+
+import util from "util";
 
 export abstract class BasePlugin extends Base {
 	id: string;
@@ -45,15 +51,12 @@ export abstract class BasePlugin extends Base {
 			version: string;
 		}
 	];
-	paths: {
-		commands?: string;
-		events?: string;
-		routes?: string;
-	};
+	paths: BasePluginPathOptions;
 
 	commands = new Map<string, BaseCommand>();
 	aliases = new Map<string, BaseCommand>();
 	events = new Map<string, BaseEvent>();
+	discordInteractions = new Map<string, BaseDiscordInteraction>();
 
 	constructor(client: Client, info: BasePluginOptions) {
 		super(client);
@@ -150,7 +153,9 @@ export abstract class BasePlugin extends Base {
 			} catch (error) {
 				if (error instanceof ImportError) {
 					// Wrong import type was used
-					Logger.silly(`~99% safe to ignore: ${(error as Error).stack}`);
+					Logger.silly(
+						`~99% safe to ignore: ${(error as Error).stack}`
+					);
 				} else {
 					// If it's something else, a normal error will appear
 					Logger.error((error as Error).stack);
@@ -281,5 +286,70 @@ export abstract class BasePlugin extends Base {
 		return;
 	}
 
+	//#endregion
+
+	//#region Interaction loading
+
+	/**
+	 * Loads Discord interactions, through RequireAll options.
+	 * @param options
+	 */
+	loadDiscordInteractionsIn(options: Options): void {
+		const interactions = DiscordUtils.importScripts(options) as (new (
+			plugin: BasePlugin
+		) => BaseDiscordInteraction)[];
+		Logger.silly(`Interactions: ${util.inspect(interactions)}`);
+		this.loadDiscordInteractions(interactions);
+	}
+
+	/**
+	 * Loads interactions from a list of uninitiated classes.
+	 *
+	 * This function will attempt to get the instance of the new command,
+	 * and then compare if it is just a BaseInteraction and not a BaseSubcommand.
+	 *
+	 * BaseSubcommand will get imported by the BaseInteraction itself.
+	 *
+	 * @param interactions
+	 */
+	loadDiscordInteractions<T extends BaseDiscordInteraction>(
+		interactions: (new (plugin: BasePlugin) => T)[]
+	): void {
+		for (const interaction of interactions) {
+			try {
+				const initInteraction = new interaction(this);
+				if (initInteraction instanceof BaseDiscordInteraction) {
+					this.loadInteraction(initInteraction);
+				}
+			} catch (error) {
+				if (error instanceof ImportError) {
+					// Wrong import type was used
+					Logger.silly(
+						`~99% safe to ignore: ${(error as Error).stack}`
+					);
+				} else {
+					// If it's something else, a normal error will appear
+					Logger.error((error as Error).stack);
+				}
+			}
+		}
+	}
+
+	/**
+	 *
+	 * @param command
+	 */
+	loadInteraction<T extends BaseDiscordInteraction>(command: T): void {
+		// Sets up some interactions
+		if (this.discordInteractions.get(command.fullId)) {
+			Logger.error(
+				`Interaction with ID "${command.fullId}" already exists!`
+			);
+			return;
+		}
+		this.discordInteractions.set(command.fullId, command);
+
+		Logger.debug(`Loaded Discord interaction "${command.fullId}"`);
+	}
 	//#endregion
 }

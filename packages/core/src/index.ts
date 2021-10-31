@@ -10,6 +10,11 @@ export { BaseMessage } from "./structures/BaseMessage";
 export { Base } from "./structures/Base";
 export { BasePlugin } from "./structures/BasePlugin";
 export { BaseCommand } from "./structures/BaseCommand";
+export { BaseDiscordButtonInteraction } from "./structures/BaseDiscordButtonInteraction";
+export { BaseDiscordContextMenuInteraction } from "./structures/BaseDiscordContextMenuInteraction";
+export { BaseDiscordInteraction } from "./structures/BaseDiscordInteraction";
+export { BaseDiscordMessageComponentInteraction } from "./structures/BaseDiscordMessageComponentInteraction";
+export { BaseDiscordSelectMenuInteraction } from "./structures/BaseDiscordSelectMenuInteraction";
 export { BaseSubcommand } from "./structures/BaseSubcommand";
 export { BaseEvent } from "./structures/BaseEvent";
 export { BaseRouter } from "./structures/BaseRouter";
@@ -24,6 +29,7 @@ export type { ArgumentNotWrappedInQuotes } from "./interfaces/Argument";
 export type { ArgumentOptions } from "./interfaces/ArgumentOptions";
 export type { ArgumentWrappedInQuotes } from "./interfaces/Argument";
 export type { BaseCommandOptions } from "./interfaces/BaseCommandOptions";
+export type { BaseDiscordInteractionOptions } from "./interfaces/BaseDiscordInteractionOptions";
 export type { BotPermissions } from "./interfaces/BotPermissions";
 export type { ClientOptions } from "./interfaces/ClientOptions";
 // export { DiscordMessageData } from "./interfaces/DiscordMessageData";
@@ -74,10 +80,9 @@ import * as Discord from "discord.js";
 export { Discord };
 
 // Slash commands
-import * as DiscordJsBuilders from "@discordjs/builders";
-export { DiscordJsBuilders };
+export * as DiscordJsBuilders from "@discordjs/builders";
 export { REST as DiscordJsREST } from "@discordjs/rest";
-export { Routes as DiscordJsRoutes } from "discord-api-types/v9";
+export * as DiscordJsApi from "discord-api-types/v9";
 
 // Twitch exports because things will probably go wrong without it, like with Discord.js
 import * as Twitch from "twitch";

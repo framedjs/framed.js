@@ -5,8 +5,10 @@ import Discord from "discord.js";
 import type { DiscordInteractionData } from "../interfaces/DiscordInteractionData";
 import type { DiscordMessageData } from "../interfaces/DiscordMessageData";
 import type { MessageOptions } from "../interfaces/MessageOptions";
+import { DiscordJsApi } from "..";
 
 export class DiscordInteraction extends BaseMessage {
+	args: undefined;
 	discord!: DiscordMessageData;
 	discordInteraction!: DiscordInteractionData;
 
@@ -72,9 +74,13 @@ export class DiscordInteraction extends BaseMessage {
 			discordInteractionBase?.user ?? interaction?.user ?? undefined;
 
 		// Make sure it's a GuildMember object, else it's null
-		let member =
-			discordInteractionBase?.member ?? interaction?.member ?? null;
-		if (!(member instanceof Discord.GuildMember)) member = null;
+		// NOTE: DiscordJsApi.APIInteractionGuildMember would work, if not for discord-api-types being outdated,
+		// compared to discord.js(?) - 0.22.0 vs 0.24.0
+		const tempMember =
+			discordInteractionBase?.member ?? interaction?.member;
+		let member: Discord.GuildMember | null;
+		if (!(tempMember instanceof Discord.GuildMember)) member = null;
+		else member = tempMember;
 
 		// Gets client or throws error
 		if (!client) {

@@ -3,6 +3,13 @@ import { oneLine, oneLineCommaListsOr, oneLineInlineLists } from "common-tags";
 
 import { Base } from "../structures/Base";
 import { BaseCommand } from "../structures/BaseCommand";
+import { BaseDiscordInteraction } from "../structures/BaseDiscordInteraction";
+import { BaseDiscordButtonInteraction } from "../structures/BaseDiscordButtonInteraction";
+import { BaseDiscordContextMenuInteraction } from "../structures/BaseDiscordContextMenuInteraction";
+import { BaseDiscordMessageComponentInteraction } from "../structures/BaseDiscordMessageComponentInteraction";
+import { BaseDiscordSelectMenuInteraction } from "../structures/BaseDiscordSelectMenuInteraction";
+import { DiscordCommandInteraction } from "../structures/DiscordCommandInteraction";
+import { DiscordInteraction } from "../structures/DiscordInteraction";
 import { Client } from "../structures/Client";
 import { FriendlyError } from "../structures/errors/FriendlyError";
 import { BaseMessage } from "../structures/BaseMessage";
@@ -15,7 +22,6 @@ import { TwitchMessage } from "../structures/TwitchMessage";
 import { EmbedHelper } from "../utils/discord/EmbedHelper";
 
 import Discord from "discord.js";
-import { DiscordInteraction } from "..";
 
 export class CommandManager extends Base {
 	constructor(client: Client) {
@@ -176,20 +182,6 @@ export class CommandManager extends Base {
 		// Runs the commands
 		let commandList: BaseCommand[] = [];
 		if (msgOrCommand instanceof BaseMessage) {
-			// Grabs all the guild's roles here, so this.getCommands and
-			// this.getBotRolePrefix doesn't have to be async to retrieve
-			// possibly missing roles from cache
-			if (
-				msgOrCommand instanceof DiscordMessage &&
-				msgOrCommand.content.includes("<@&")
-			) {
-				try {
-					await msgOrCommand.discord.guild?.roles.fetch();
-				} catch (error) {
-					Logger.error((error as Error).stack);
-				}
-			}
-
 			commandList = this.getCommands(msgOrCommand, place);
 		} else {
 			commandList = this.getCommands(command, place, prefix);
@@ -374,8 +366,6 @@ export class CommandManager extends Base {
 	 */
 	async run(msg: BaseMessage): Promise<Map<string, boolean>> {
 		const startTime = process.hrtime();
-
-		const place = await msg.getPlace();
 		const map = new Map<string, boolean>();
 
 		// If the author is a bot, we ignore their command.
@@ -404,63 +394,27 @@ export class CommandManager extends Base {
 			if (msg.prefix != undefined && msg.command != undefined) {
 				Logger.silly(`Checking for commands for "${msg.content}"`);
 
-				// Attempts to get the command data from a message, including comparing prefixes
-				const data = await this.getFoundCommandData(msg, place);
-
-				for await (const element of data) {
-					// Attempts to get the subcommand if it exists.
-					// If not, use the base command.
-					let command = element.command;
-					if (element.subcommands.length > 0) {
-						command =
-							element.subcommands[element.subcommands.length - 1];
-					}
-
-					// Attempts to run it and sets the data
-					try {
-						Logger.debug(
-							`${Utils.hrTimeElapsed(
-								startTime
-							)}s - Found a command (${command.fullId})`
-						);
-
-						const passed = await this.checkForPermissions(
+				try {
+					if (
+						!(msg instanceof DiscordInteraction) ||
+						msg instanceof DiscordCommandInteraction
+					) {
+						await this.scanAndRunCommands(msg, map, startTime);
+					} else {
+						await this.scanAndRunDiscordInteractions(
 							msg,
-							command,
-							map
+							map,
+							startTime
 						);
-						if (!passed) {
-							continue;
-						}
-
-						if (msg instanceof DiscordMessage)
-							Logger.verbose(
-								oneLine`Running command "${msg.content}" from
-								user ${msg.discord.author.tag} (${msg.discord.author.id})`
-							);
-						else if (
-							msg instanceof DiscordInteraction &&
-							msg.discordInteraction.interaction.isCommand()
-						)
-							Logger.verbose(
-								oneLine`Running
-								/${msg.discordInteraction.interaction.commandName}
-								from user ${msg.discordInteraction.user.tag}
-								(${msg.discordInteraction.user.id})`
-							);
-						else Logger.verbose(`Running command "${msg.content}"`);
-
-						const success = await command.run(msg);
-						map.set(command.fullId, success);
-					} catch (error) {
-						if (error instanceof FriendlyError) {
-							Logger.warn(oneLine`The below warning is likely
-							safe to ignore, unless needed for debug purposes.`);
-							Logger.warn((error as Error).stack);
-							await this.sendErrorMessage(msg, error);
-						} else {
-							Logger.error((error as Error).stack);
-						}
+					}
+				} catch (error) {
+					if (error instanceof FriendlyError) {
+						Logger.warn(oneLine`The below warning is likely
+						safe to ignore, unless needed for debug purposes.`);
+						Logger.warn((error as Error).stack);
+						await this.sendErrorMessage(msg, error);
+					} else {
+						Logger.error((error as Error).stack);
 					}
 				}
 			}
@@ -475,6 +429,137 @@ export class CommandManager extends Base {
 				)}s - Finished finding and sending commands`
 			);
 		return map;
+	}
+
+	async scanAndRunCommands(
+		msg: BaseMessage,
+		map: Map<string, boolean>,
+		startTime?: [number, number]
+	): Promise<Map<string, boolean>> {
+		// Attempts to get the command data from a message, including comparing prefixes
+		const data = await this.getFoundCommandData(msg, await msg.getPlace());
+
+		for await (const element of data) {
+			// Attempts to get the subcommand if it exists.
+			// If not, use the base command.
+			let command = element.command;
+			if (element.subcommands.length > 0) {
+				command = element.subcommands[element.subcommands.length - 1];
+			}
+
+			// Attempts to run it and sets the data
+			if (startTime && Logger.isDebugEnabled()) {
+				Logger.debug(
+					`${Utils.hrTimeElapsed(startTime)}s - Found a command (${
+						command.fullId
+					})`
+				);
+			}
+
+			const passed = await this.checkForPermissions(msg, command, map);
+			if (!passed) {
+				continue;
+			}
+
+			if (msg instanceof DiscordMessage)
+				Logger.verbose(
+					oneLine`Running command "${msg.content}" from
+					user ${msg.discord.author.tag} (${msg.discord.author.id})`
+				);
+			else if (
+				msg instanceof DiscordInteraction &&
+				msg.discordInteraction.interaction.isCommand()
+			)
+				Logger.verbose(
+					oneLine`Running
+					/${msg.discordInteraction.interaction.commandName}
+					from user ${msg.discordInteraction.user.tag}
+					(${msg.discordInteraction.user.id})`
+				);
+			else {
+				Logger.verbose(`Running command "${msg.content}"`);
+			}
+
+			let success = false;
+			if (
+				command instanceof BaseDiscordInteraction &&
+				msg.discordInteraction
+			) {
+				success = await command.run(
+					msg,
+					msg.discordInteraction.interaction
+				);
+			} else {
+				success = await command.run(msg);
+			}
+
+			map.set(command.fullId, success);
+		}
+
+		return map;
+	}
+
+	async scanAndRunDiscordInteractions(
+		msg: DiscordInteraction,
+		map: Map<string, boolean>,
+		startTime?: [number, number]
+	): Promise<Map<string, boolean>> {
+		const interactions = this.client.plugins.discordInteractionsArray;
+		for await (const command of interactions) {
+			// Attempts to run it and sets the data
+			if (startTime && Logger.isDebugEnabled()) {
+				Logger.debug(
+					`${Utils.hrTimeElapsed(startTime)}s - Found a command (${
+						command.fullId
+					})`
+				);
+			}
+
+			const passed = await this.checkForPermissions(msg, command, map);
+			if (!passed) {
+				continue;
+			}
+
+			const interaction = msg.discordInteraction.interaction;
+			const matchesType = this.discordInteractionMatchesBaseType(
+				interaction,
+				command
+			);
+
+			if (matchesType) {
+				Logger.verbose(oneLine`Running
+				interaction ${msg.discordInteraction.interaction.id}
+				from user ${msg.discordInteraction.user.tag}
+				(${msg.discordInteraction.user.id})`);
+
+				const success = await command.run(
+					msg,
+					msg.discordInteraction.interaction
+				);
+
+				map.set(command.fullId, success);
+			}
+		}
+
+		return map;
+	}
+
+	protected discordInteractionMatchesBaseType(
+		interaction: Discord.Interaction,
+		command: BaseCommand
+	): boolean {
+		return (
+			(interaction.isButton() &&
+				command instanceof BaseDiscordButtonInteraction) ||
+			(interaction.isCommand() &&
+				command instanceof BaseDiscordInteraction) ||
+			(interaction.isContextMenu() &&
+				command instanceof BaseDiscordContextMenuInteraction) ||
+			(interaction.isMessageComponent() &&
+				command instanceof BaseDiscordMessageComponentInteraction) ||
+			(interaction.isSelectMenu() &&
+				command instanceof BaseDiscordSelectMenuInteraction)
+		);
 	}
 
 	/**
@@ -638,7 +723,16 @@ export class CommandManager extends Base {
 
 		// If it's an interaction, make it ephemeral
 		if (msg instanceof DiscordInteraction && embed) {
-			options = { embeds: [embed], ephemeral: true };
+			const useEmbedForFriendlyErrors =
+				process.env.FRAMED_USE_EMBED_FOR_FRIENDLY_ERRORS;
+			if (useEmbedForFriendlyErrors?.toLocaleLowerCase() != "true") {
+				options = { embeds: [embed], ephemeral: true };
+			} else {
+				options = {
+					content: `**${friendlyError.friendlyName}**\n${friendlyError.message}`,
+					ephemeral: true,
+				};
+			}
 		}
 
 		if (options) {

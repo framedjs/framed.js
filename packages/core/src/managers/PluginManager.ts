@@ -3,6 +3,7 @@ import Discord from "discord.js";
 import util from "util";
 
 import { BaseCommand } from "../structures/BaseCommand";
+import { BaseDiscordInteraction } from "../structures/BaseDiscordInteraction";
 import { BaseEvent } from "../structures/BaseEvent";
 import { BasePlugin } from "../structures/BasePlugin";
 import { Client } from "../structures/Client";
@@ -95,6 +96,17 @@ export class PluginManager extends Base {
 			});
 		}
 
+		// Load Discord interactions
+		if (plugin.paths.discordInteractions) {
+			plugin.loadDiscordInteractionsIn({
+				dirname: plugin.paths.discordInteractions,
+				filter: fileName => {
+					const success = importFilter.test(fileName);
+					return success ? fileName : false;
+				},
+			});
+		}
+
 		if (plugin.paths.routes) {
 			this.client.api?.loadRoutesIn({
 				dirname: plugin.paths.routes,
@@ -139,6 +151,21 @@ export class PluginManager extends Base {
 			events.push(...Array.from(plugin.events.values()));
 		});
 		return events;
+	}
+
+	/**
+	 * BaseDiscordInteraction array.
+	 * @returns List of all the base Discord interactions,
+	 * excluding slash commands.
+	 */
+	get discordInteractionsArray(): BaseDiscordInteraction[] {
+		const discordInteractions: BaseDiscordInteraction[] = [];
+		this.map.forEach(plugin => {
+			discordInteractions.push(
+				...Array.from(plugin.discordInteractions.values())
+			);
+		});
+		return discordInteractions;
 	}
 
 	/**
@@ -206,10 +233,11 @@ export class PluginManager extends Base {
 
 					// If there's a command found,
 					if (foundData) {
-						const commandString = this.client.formatting.getCommandRan(
-							foundData,
-							place
-						);
+						const commandString =
+							this.client.formatting.getCommandRan(
+								foundData,
+								place
+							);
 						const lastSubcommand =
 							foundData.subcommands[
 								foundData.subcommands.length - 1

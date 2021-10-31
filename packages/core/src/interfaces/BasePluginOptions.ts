@@ -1,5 +1,19 @@
 import { Prefixes } from "./Prefixes";
 
+export interface BasePluginPathOptions {
+	/** Commands path  */
+	commands?: string;
+
+	/** Events path */
+	events?: string;
+
+	/** Routes path */
+	routes?: string;
+
+	/** Discord interactions path */
+	discordInteractions?: string;
+}
+
 /**
  * To be used with BasePlugin.
  */
@@ -89,25 +103,5 @@ export interface BasePluginOptions {
 	/**
 	 * Framed will try and import scripts from paths found in this object.
 	 */
-	paths: {
-		/** Commands path  */
-		commands?: string;
-
-		/** Events path */
-		events?: string;
-
-		/** Routes path */
-		routes?: string;
-
-		// TypeORM-specific data
-
-		/** Entities path (TypeORM) */
-		entities?: string;
-
-		/** Migrations path (TypeORM) */
-		migrations?: string;
-
-		/** Subscribers path (TypeORM) */
-		subscribers?: string;
-	};
+	paths: BasePluginPathOptions;
 }
