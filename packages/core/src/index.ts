@@ -2,6 +2,7 @@
 export { APIManager } from "./managers/APIManager";
 // export { ArgumentManger } from "./managers/ArgumentManager";
 export { CommandManager } from "./managers/CommandManager";
+export { FormattingManager } from "./managers/FormattingManager";
 export { PluginManager } from "./managers/PluginManager";
 
 // Structures
