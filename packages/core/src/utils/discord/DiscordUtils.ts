@@ -749,7 +749,11 @@ export class DiscordUtils {
 
 		// Attempts to parse out the URL, and get base64 data from it
 		// if a link that has the data needed is used
-		if (link.length > 0 && domain.length > 0 && jsonOrLink.trim() == link) {
+		if (
+			link.length > 0 &&
+			domain.length > 0 &&
+			jsonOrLink.split(" ")[0].trim() == link
+		) {
 			const response = await Axios.get(link);
 			try {
 				if (response.request.path) {
@@ -767,7 +771,7 @@ export class DiscordUtils {
 				if (!suppressWarnings) Logger.warn((error as Error).stack);
 				throw new FriendlyError("The link couldn't be read!");
 			}
-		} else if (jsonOrLink) {
+		} else {
 			// The contents are JSON, and should attempt to be parsed
 			try {
 				newEmbedData = JSON.parse(jsonOrLink);
@@ -914,12 +918,12 @@ export class DiscordUtils {
 				if (embed) {
 					if (channel) {
 						msgToReturn = await channel.send({
-							content: "",
+							content,
 							embeds: [embed],
 						});
 					} else if (msgToEdit) {
 						msgToReturn = await msgToEdit.edit({
-							content: "",
+							content,
 							embeds: [embed],
 						});
 					}
@@ -933,12 +937,12 @@ export class DiscordUtils {
 			} else if (embed) {
 				if (channel) {
 					msgToReturn = await channel.send({
-						content: "",
+						content: undefined,
 						embeds: [embed],
 					});
 				} else if (msgToEdit) {
 					msgToReturn = await msgToEdit.edit({
-						content: "",
+						content: undefined,
 						embeds: [embed],
 					});
 				}
