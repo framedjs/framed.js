@@ -8,10 +8,13 @@
     "@framedjs/shared": "0.2.0"
   },
   "changesets": [
+    "cyan-cooks-play",
+    "early-planes-act",
     "eight-eels-yell",
     "eleven-days-sparkle",
     "polite-boats-suffer",
     "rich-turtles-compete",
+    "silver-bears-crash",
     "spotty-experts-attack",
     "sweet-candles-matter",
     "tough-melons-count"
