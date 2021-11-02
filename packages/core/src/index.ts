@@ -40,6 +40,7 @@ export type { FoundCommandData } from "./interfaces/FoundCommandData";
 export type { HelpData } from "./interfaces/other/HelpData";
 export type { LoginOptions } from "./interfaces/LoginOptions";
 export type { MessageOptions } from "./interfaces/MessageOptions";
+export type { ParseEmojiAndStringData } from "./interfaces/ParseEmojiAndStringData";
 export type { Place } from "./interfaces/Place";
 export type { InlineOptions } from "./interfaces/InlineOptions";
 // export { ResponseData } from "./managers/database/interfaces/ResponseData";

@@ -8,6 +8,7 @@ import type { DiscordMessageData } from "../interfaces/DiscordMessageData";
 import type { DiscordInteractionData } from "../interfaces/DiscordInteractionData";
 import type { TwitchMessageData } from "../interfaces/TwitchMessageData";
 import type { MessageOptions } from "../interfaces/MessageOptions";
+import type { ParseEmojiAndStringData } from "../interfaces/ParseEmojiAndStringData";
 import type { Place } from "../interfaces/Place";
 import type { Platform } from "../types/Platform";
 
@@ -676,10 +677,7 @@ export class BaseMessage extends Base {
 	static parseEmojiAndString(
 		msgOrString: BaseMessage | string,
 		parseOut: string[] = []
-	): {
-		newContent: string;
-		newEmote?: string;
-	} {
+	): ParseEmojiAndStringData {
 		let argsContent = "";
 		if (msgOrString instanceof BaseMessage) {
 			argsContent = msgOrString.getArgsContent([...parseOut]);
