@@ -1,5 +1,17 @@
 # @framedjs/core
 
+## 0.8.0-next.7
+
+### Minor Changes
+
+-   25d14ee: Better Discord interaction helpers and support
+
+### Patch Changes
+
+-   27a57e2: feat: minor edits to logging in CommandManager
+-   Updated dependencies [a244b9b]
+    -   @framedjs/shared@0.2.1-next.0
+
 ## 0.8.0-next.6
 
 ### Minor Changes
