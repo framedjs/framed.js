@@ -506,15 +506,6 @@ export class CommandManager extends Base {
 	): Promise<Map<string, boolean>> {
 		const interactions = this.client.plugins.discordInteractionsArray;
 		for await (const command of interactions) {
-			// Attempts to run it and sets the data
-			if (startTime && Logger.isDebugEnabled()) {
-				Logger.debug(
-					`${Utils.hrTimeElapsed(startTime)}s - Found a command (${
-						command.fullId
-					})`
-				);
-			}
-
 			const passed = await this.checkForPermissions(msg, command, map);
 			if (!passed) {
 				continue;
@@ -527,6 +518,15 @@ export class CommandManager extends Base {
 			);
 
 			if (matchesType) {
+				// Attempts to run it and sets the data
+				if (startTime && Logger.isDebugEnabled()) {
+					Logger.debug(
+						`${Utils.hrTimeElapsed(
+							startTime
+						)}s - Found interaction (${command.fullId})`
+					);
+				}
+
 				Logger.verbose(oneLine`Running
 				interaction ${msg.discordInteraction.interaction.id}
 				from user ${msg.discordInteraction.user.tag}
