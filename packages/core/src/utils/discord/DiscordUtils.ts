@@ -260,6 +260,71 @@ export class DiscordUtils {
 	}
 
 	/**
+	 * Resolves a TextChannelResolvable into a Discord channel.
+	 *
+	 * @param channel TextChannelResolvable
+	 * @param channels Discord Channel Manager
+	 *
+	 * @returns Discord channel, or undefined
+	 */
+	static resolveTextChannel(
+		channel: Discord.TextChannelResolvable,
+		channels: Discord.ChannelManager
+	): Discord.TextChannel | undefined {
+		let newChannel: Discord.TextChannel | null | undefined;
+		const resolveChannel = channels.resolve(channel);
+		if (resolveChannel instanceof Discord.TextChannel) {
+			newChannel = resolveChannel;
+		}
+
+		if (!newChannel && typeof channel == "string") {
+			// If the resolve didn't work...
+
+			// ...try to parse out a mention
+			const newChannelId = DiscordUtils.getIdFromMention(channel);
+			if (newChannelId) {
+				const resolveChannel = channels.resolve(newChannelId);
+				if (resolveChannel instanceof Discord.TextChannel) {
+					newChannel = resolveChannel;
+				}
+			}
+		}
+
+		if (!newChannel) {
+			// Gets name
+			const resolveChannel = channels.cache.find(cachedChannels => {
+				if (cachedChannels.isText()) {
+					const textChannel = cachedChannels as Discord.TextChannel;
+
+					const parse = BaseMessage.parseEmojiAndString(
+						textChannel.name
+					);
+
+					// Finds the name of the channel, also with
+					// excluding the emotes at the beginning
+					if (
+						channel == textChannel.name ||
+						channel == parse?.newContent
+					) {
+						return true;
+					}
+				}
+				return false;
+			});
+
+			if (resolveChannel instanceof Discord.TextChannel) {
+				newChannel = resolveChannel;
+			}
+		}
+
+		if (newChannel) {
+			return newChannel;
+		} else {
+			return undefined;
+		}
+	}
+
+	/**
 	 * Resolves a DiscordGuildChannelResolvable into a Discord channel.
 	 *
 	 * @param channel DiscordGuildChannelResolvable
