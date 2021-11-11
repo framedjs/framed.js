@@ -56,10 +56,20 @@ export class DiscordMessage extends BaseMessage {
 		channel = channel ?? msg?.channel;
 		id = id ?? msg?.id;
 
-		const client = discordBase?.client ?? msg?.client;
-		const guild = discordBase?.guild ?? msg?.guild ?? null;
-		const member = discordBase.member ?? msg?.member ?? null;
-		const author = discordBase?.author ?? msg?.author ?? member?.user;
+		const client =
+			options.discord?.client ?? discordBase?.client ?? msg?.client;
+		const guild =
+			options.discord?.guild ?? discordBase?.guild ?? msg?.guild ?? null;
+		const member =
+			options.discord?.member ??
+			discordBase.member ??
+			msg?.member ??
+			null;
+		const author =
+			options.discord?.author ??
+			discordBase?.author ??
+			msg?.author ??
+			member?.user;
 
 		// Gets client or throws error
 		if (!client) {
