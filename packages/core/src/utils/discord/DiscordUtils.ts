@@ -142,7 +142,7 @@ export class DiscordUtils {
 	static async getMessageFromLink(
 		link: string,
 		client: Discord.Client,
-		guild: Discord.Guild
+		guildOrAuthor: Discord.Guild | Discord.User
 	): Promise<Discord.Message | undefined> {
 		// If it's not an actual link, return undefined
 		if (!link.includes(".com")) {
@@ -160,15 +160,18 @@ export class DiscordUtils {
 			});
 		}
 
-		if (guild.id != args[0]) {
-			throw new InvalidError({
-				name: "Message Link",
-				input: args[0],
-				extraMessage: "The message link cannot be from another server!",
-			});
+		if (guildOrAuthor instanceof Discord.Guild) {
+			if (guildOrAuthor.id != args[0]) {
+				throw new InvalidError({
+					name: "Message Link",
+					input: args[0],
+					extraMessage:
+						"The message link cannot be from another server!",
+				});
+			}
 		}
 
-		const channel = client.channels.cache.get(args[1]) as
+		const channel = (await client.channels.fetch(args[1])) as
 			| Discord.TextChannel
 			| Discord.NewsChannel
 			| Discord.DMChannel;
