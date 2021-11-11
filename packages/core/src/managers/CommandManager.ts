@@ -4,6 +4,7 @@ import { oneLine, oneLineCommaListsOr, oneLineInlineLists } from "common-tags";
 import { Base } from "../structures/Base";
 import { BaseCommand } from "../structures/BaseCommand";
 import { BaseDiscordInteraction } from "../structures/BaseDiscordInteraction";
+import { BaseDiscordAutocompleteInteraction } from "../structures/BaseDiscordAutocompleteInteraction";
 import { BaseDiscordButtonInteraction } from "../structures/BaseDiscordButtonInteraction";
 import { BaseDiscordContextMenuInteraction } from "../structures/BaseDiscordContextMenuInteraction";
 import { BaseDiscordMessageComponentInteraction } from "../structures/BaseDiscordMessageComponentInteraction";
@@ -505,9 +506,14 @@ export class CommandManager extends Base {
 		startTime?: [number, number]
 	): Promise<Map<string, boolean>> {
 		const interactions = this.client.plugins.discordInteractionsArray;
+
 		for await (const command of interactions) {
 			const passed = await this.checkForPermissions(msg, command, map);
 			if (!passed) {
+				continue;
+			}
+
+			if (command.id != msg.command?.toLocaleLowerCase()) {
 				continue;
 			}
 
@@ -517,28 +523,30 @@ export class CommandManager extends Base {
 				command
 			);
 
-			if (matchesType) {
-				// Attempts to run it and sets the data
-				if (startTime && Logger.isDebugEnabled()) {
-					Logger.debug(
-						`${Utils.hrTimeElapsed(
-							startTime
-						)}s - Found interaction (${command.fullId})`
-					);
-				}
+			if (!matchesType) {
+				continue;
+			}
 
-				Logger.verbose(oneLine`Running
+			// Attempts to run it and sets the data
+			if (startTime && Logger.isDebugEnabled()) {
+				Logger.debug(
+					`${Utils.hrTimeElapsed(startTime)}s - Found interaction (${
+						command.fullId
+					})`
+				);
+			}
+
+			Logger.verbose(oneLine`Running
 				interaction ${msg.discordInteraction.interaction.id}
 				from user ${msg.discordInteraction.user.tag}
 				(${msg.discordInteraction.user.id})`);
 
-				const success = await command.run(
-					msg,
-					msg.discordInteraction.interaction
-				);
+			const success = await command.run(
+				msg,
+				msg.discordInteraction.interaction
+			);
 
-				map.set(command.fullId, success);
-			}
+			map.set(command.fullId, success);
 		}
 
 		return map;
@@ -549,6 +557,8 @@ export class CommandManager extends Base {
 		command: BaseCommand
 	): boolean {
 		return (
+			(interaction.isAutocomplete() &&
+				command instanceof BaseDiscordAutocompleteInteraction) ||
 			(interaction.isButton() &&
 				command instanceof BaseDiscordButtonInteraction) ||
 			(interaction.isCommand() &&

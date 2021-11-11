@@ -105,7 +105,7 @@ export interface BaseCommandOptions {
 	/**
 	 * Discord slash command options
 	 */
-	discordInteracion?: {
+	discordInteraction?: {
 		/**
 		 * Should this slash command be a global command?
 		 *

@@ -186,10 +186,10 @@ export abstract class BaseCommand {
 
 		this.discordInteracion = {
 			global:
-				info.discordInteracion?.global != undefined
-					? info.discordInteracion.global
+				info.discordInteraction?.global != undefined
+					? info.discordInteraction.global
 					: true,
-			slashCommandBuilder: info.discordInteracion?.slashCommandBuilder,
+			slashCommandBuilder: info.discordInteraction?.slashCommandBuilder,
 		};
 
 		this.rawInfo = info;
