@@ -19,8 +19,8 @@ import { Logger } from "@framedjs/logger";
 import { FriendlyError } from "./errors/FriendlyError";
 
 import Discord from "discord.js";
-import EmojiRegex from "emoji-regex/RGI_Emoji";
 import Emoji from "node-emoji";
+import * as TwemojiParser from "twemoji-parser";
 
 enum ArgumentState {
 	Quoted,
@@ -123,7 +123,8 @@ export class BaseMessage extends Base {
 		// Discord slash command specific code
 		if (this.discordInteraction) {
 			const interaction = this.discordInteraction.interaction;
-			if (interaction.isCommand()) return interaction.commandName;
+			if (interaction.isApplicationCommand())
+				return interaction.commandName;
 			return;
 		}
 
@@ -698,14 +699,16 @@ export class BaseMessage extends Base {
 
 		// https://stackoverflow.com/questions/62955907/discordjs-nodejs-how-can-i-check-if-a-message-only-contains-custom-emotes#62960102
 		const regex = /(:[^:\s]+:|<:[^:\s]+:[\d]+>|<a:[^:\s]+:[0-9]+>)+$/g;
-		const markdownEmote = newArgs[0].match(regex);
-		const genericEmoji = newArgs[0].match(EmojiRegex());
+		const markdownEmote = newArgs[0] ? newArgs[0].match(regex) : undefined;
+
+		// const genericEmoji = newArgs[0].match(EmojiRegex());
+		const genericEmojiData = TwemojiParser.parse(newArgs[0]);
 
 		let newContent = argsContent;
 		let newEmote = markdownEmote
 			? markdownEmote[0]
-			: genericEmoji
-			? genericEmoji[0]
+			: genericEmojiData[0]
+			? genericEmojiData[0].text
 			: undefined;
 		if (newEmote) {
 			newEmote = Emoji.emojify(newEmote);

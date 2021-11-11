@@ -43,6 +43,7 @@ importers:
       '@types/koa-router': ^7.4.4
       '@types/node-emoji': ^1.8.1
       '@types/require-all': ^3.0.3
+      '@types/twemoji-parser': ^13.1.1
       axios: ^0.22.0
       common-tags: ^1.8.0
       discord-api-types: ^0.22.0
@@ -52,9 +53,9 @@ importers:
       koa-router: ^10.1.1
       madge: ^5.0.1
       nanoid: ^3.1.30
-      node-emoji: ^1.11.0
       reflect-metadata: ^0.1.13
       require-all: ^3.0.0
+      twemoji-parser: ^13.1.0
       twitch: ^4.6.7
       twitch-auth: ^4.6.7
       twitch-chat-client: ^4.6.7
@@ -71,15 +72,16 @@ importers:
       koa: 2.13.4
       koa-router: 10.1.1
       nanoid: 3.1.30
-      node-emoji: 1.11.0
       reflect-metadata: 0.1.13
       require-all: 3.0.0
+      twemoji-parser: 13.1.0
     devDependencies:
       '@types/common-tags': 1.8.1
       '@types/koa': 2.13.4
       '@types/koa-router': 7.4.4
       '@types/node-emoji': 1.8.1
       '@types/require-all': 3.0.3
+      '@types/twemoji-parser': 13.1.1
       discord.js: 13.3.1
       madge: 5.0.1
       twitch: 4.6.7
@@ -3037,6 +3039,10 @@ packages:
     dependencies:
       '@types/jest': 26.0.20
     dev: false
+
+  /@types/twemoji-parser/13.1.1:
+    resolution: {integrity: sha512-KhGr5xLxf8XCITgMMG8CIHpnZ5EzbVFPmStoEPd6KqtX7Lc7pc7OZyicfcWJgPv68lq/+y52zu+S5A58oOdVJw==}
+    dev: true
 
   /@types/uglify-js/3.11.1:
     resolution: {integrity: sha512-7npvPKV+jINLu1SpSYVWG8KvyJBhBa8tmzMMdDoVc2pWUYHN8KIXlPJhjJ4LT97c4dXJA2SHL/q6ADbDriZN+Q==}
@@ -9911,12 +9917,6 @@ packages:
       tslib: 2.1.0
     dev: false
 
-  /node-emoji/1.11.0:
-    resolution: {integrity: sha512-wo2DpQkQp7Sjm2A0cq+sN7EHKO6Sl0ctXeBdFZrL9T9+UywORbufTcTZxom8YqpLQt/FqNMUkOpkZrJVYSKD3A==}
-    dependencies:
-      lodash: 4.17.21
-    dev: false
-
   /node-fetch/2.6.1:
     resolution: {integrity: sha512-V4aYg89jEoVRxRb2fJdAg8FHvI7cEyYdVAh94HH0UIK8oJxUfkjlDQN9RbMx+bEjP7+ggMiFRprSti032Oipxw==}
     engines: {node: 4.x || >=6.0.0}
@@ -12667,6 +12667,7 @@ packages:
   /source-map/0.6.1:
     resolution: {integrity: sha512-UjgapumWlbMhkBgzT7Ykc5YXUT46F0iKu8SGXq0bcwP5dz/h0Plj6enJqjz1Zbq2l5WaqYnrVbwWOWMyF3F47g==}
     engines: {node: '>=0.10.0'}
+    requiresBuild: true
 
   /source-map/0.7.3:
     resolution: {integrity: sha512-CkCj6giN3S+n9qrYiBTX5gystlENnRW5jZeNLHpe6aue+SrHcG5VYwujhW9s4dY31mEGsxBDrHR6oI69fTXsaQ==}
@@ -13467,6 +13468,10 @@ packages:
       wcwidth: 1.0.1
       yargs: 15.4.1
     dev: true
+
+  /twemoji-parser/13.1.0:
+    resolution: {integrity: sha512-AQOzLJpYlpWMy8n+0ATyKKZzWlZBJN+G0C+5lhX7Ftc2PeEVdUU/7ns2Pn2vVje26AIZ/OHwFoUbdv6YYD/wGg==}
+    dev: false
 
   /twitch-api-call/4.6.7:
     resolution: {integrity: sha512-JPiboygoHX3O2jdeWrmwW+VxpJbBYQJRg6+Th9GmqrsHivFFiyjBQproSMVJEgtrViGV1gHw6xlw1wHpoSU4Mw==}
