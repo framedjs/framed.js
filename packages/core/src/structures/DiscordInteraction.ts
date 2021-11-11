@@ -5,7 +5,6 @@ import Discord from "discord.js";
 import type { DiscordInteractionData } from "../interfaces/DiscordInteractionData";
 import type { DiscordMessageData } from "../interfaces/DiscordMessageData";
 import type { MessageOptions } from "../interfaces/MessageOptions";
-import { DiscordJsApi } from "..";
 
 export class DiscordInteraction extends BaseMessage {
 	args: undefined;
@@ -40,17 +39,16 @@ export class DiscordInteraction extends BaseMessage {
 	}
 
 	init(options: MessageOptions): void {
-		// Grabs the base of a possible message
-		const base = options.base;
-
 		// Gets the Discord Base for elements such as author, channel, etc.
 		// First check for any entries in info.discordInteraction.base
 		const discordInteractionBase =
 			options.discordInteraction instanceof Discord.Interaction
 				? options.discordInteraction
 				: options.discordInteraction?.base
-				? base?.discordInteraction
-				: undefined;
+				? options.discordInteraction.base
+				: options.base?.discordInteraction
+				? options.base.discordInteraction
+				: options.discordInteraction;
 
 		if (!discordInteractionBase) return;
 
@@ -66,12 +64,29 @@ export class DiscordInteraction extends BaseMessage {
 
 		if (!interaction) return;
 
-		const channel = discordInteractionBase?.channel ?? interaction?.channel;
-		const client = discordInteractionBase?.client ?? interaction?.client;
+		// Redundant code, if getMessageElements is ran
+		if (interaction.isApplicationCommand()) {
+			this.command = interaction.commandName;
+		}
+
+		const channel =
+			options.discordInteraction?.channel ??
+			discordInteractionBase?.channel ??
+			interaction?.channel;
+		const client =
+			options.discordInteraction?.client ??
+			discordInteractionBase?.client ??
+			interaction?.client;
 		const guild =
-			discordInteractionBase?.guild ?? interaction?.guild ?? null;
+			options.discordInteraction?.guild ??
+			discordInteractionBase?.guild ??
+			interaction?.guild ??
+			null;
 		const user =
-			discordInteractionBase?.user ?? interaction?.user ?? undefined;
+			options.discordInteraction?.user ??
+			discordInteractionBase?.user ??
+			interaction?.user ??
+			undefined;
 
 		// Make sure it's a GuildMember object, else it's null
 		// NOTE: DiscordJsApi.APIInteractionGuildMember would work, if not for discord-api-types being outdated,
@@ -85,7 +100,7 @@ export class DiscordInteraction extends BaseMessage {
 		// Gets client or throws error
 		if (!client) {
 			throw new ReferenceError(
-				oneLine`Parameter discord.client wasn't set when creating Message!
+				oneLine`Parameter discordInteraction.client wasn't set when creating Message!
 					This value should be set if the discord.msg parameter hasn't been set.`
 			);
 		}
@@ -93,7 +108,7 @@ export class DiscordInteraction extends BaseMessage {
 		// Gets channel or throws error
 		if (!channel) {
 			throw new ReferenceError(
-				oneLine`Parameter discord.channel wasn't set when creating Message!
+				oneLine`Parameter discordInteraction.channel wasn't set when creating Message!
 					This value should be set if the discord.msg parameter hasn't been set.`
 			);
 		}
@@ -101,7 +116,7 @@ export class DiscordInteraction extends BaseMessage {
 		// Gets author or throws error
 		if (!user) {
 			throw new ReferenceError(
-				oneLine`Parameter discord.author is undefined.`
+				oneLine`Parameter discordInteraction.user is undefined.`
 			);
 		}
 
@@ -138,11 +153,12 @@ export class DiscordInteraction extends BaseMessage {
 	): Promise<void> {
 		const interaction = this.discordInteraction.interaction;
 		if (
-			interaction.isButton() ||
-			interaction.isCommand() ||
-			interaction.isContextMenu() ||
-			interaction.isMessageComponent() ||
-			interaction.isSelectMenu()
+			// interaction.isButton() ||
+			// interaction.isCommand() ||
+			// interaction.isContextMenu() ||
+			// interaction.isMessageComponent() ||
+			// interaction.isSelectMenu()
+			interaction.isApplicationCommand()
 		) {
 			if (!interaction.deferred) {
 				await interaction.reply(options);
