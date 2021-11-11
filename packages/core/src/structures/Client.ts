@@ -301,7 +301,7 @@ export class Client extends EventEmitter {
 
 				// Edge case: pinned uncached messages could still go through.
 				// Pins shouldn't be treated as retriggering of commands
-				if (!partialOld.pinned && newMessage.pinned) {
+				if (!partialOld.partial && !partialOld.pinned && newMessage.pinned) {
 					return;
 				}
 
