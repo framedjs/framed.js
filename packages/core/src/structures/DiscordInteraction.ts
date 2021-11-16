@@ -153,12 +153,12 @@ export class DiscordInteraction extends BaseMessage {
 	): Promise<void> {
 		const interaction = this.discordInteraction.interaction;
 		if (
+			interaction.isApplicationCommand() ||
 			interaction.isButton() ||
 			interaction.isCommand() ||
 			interaction.isContextMenu() ||
 			interaction.isMessageComponent() ||
 			interaction.isSelectMenu()
-			// interaction.isApplicationCommand()
 		) {
 			if (!interaction.deferred) {
 				await interaction.reply(options);

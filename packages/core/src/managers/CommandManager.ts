@@ -23,6 +23,10 @@ import { TwitchMessage } from "../structures/TwitchMessage";
 import { EmbedHelper } from "../utils/discord/EmbedHelper";
 
 import Discord from "discord.js";
+import {
+	BotPermissionAllowedData,
+	BotPermissionDeniedData,
+} from "../interfaces/BotPermissionData";
 
 export class CommandManager extends Base {
 	constructor(client: Client) {
@@ -513,7 +517,7 @@ export class CommandManager extends Base {
 				continue;
 			}
 
-			if (command.id != msg.command?.toLocaleLowerCase()) {
+			if (msg.command && command.id != msg.command.toLocaleLowerCase()) {
 				continue;
 			}
 
@@ -606,7 +610,7 @@ export class CommandManager extends Base {
 
 		// Checks automatically for bot permissions
 		if (command.botPermissions?.checkAutomatically != false) {
-			const data = command.checkBotPermissions(msg);
+			const data = await command.checkBotPermissions(msg);
 			if (!data.success) {
 				let sent = false;
 				let sentError: Error | undefined;
@@ -963,7 +967,7 @@ export class CommandManager extends Base {
 		msg: BaseMessage,
 		command: BaseCommand,
 		botPermissions = command.botPermissions,
-		deniedData = command.checkBotPermissions(msg, botPermissions)
+		deniedData: BotPermissionAllowedData | BotPermissionDeniedData
 	): Promise<boolean> {
 		if (deniedData.success) {
 			throw new Error(
@@ -989,7 +993,7 @@ export class CommandManager extends Base {
 					permissions to anyone but bot owners.`;
 			} else {
 				// Finds all the missing permissions
-				missingPerms = command.getMissingDiscordBotPermissions(
+				missingPerms = await command.getMissingDiscordBotPermissions(
 					msg,
 					botPermissions.discord.permissions
 				);

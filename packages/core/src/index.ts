@@ -45,6 +45,7 @@ export type { Place } from "./interfaces/Place";
 export type { InlineOptions } from "./interfaces/InlineOptions";
 // export { ResponseData } from "./managers/database/interfaces/ResponseData";
 export type { default as RequireAllOptions } from "./interfaces/other/RequireAllOptions";
+export type { UserPermissions } from "./interfaces/UserPermissions";
 export type { Settings } from "./providers/interfaces/Settings";
 
 // Providers

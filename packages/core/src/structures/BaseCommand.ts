@@ -361,6 +361,21 @@ export abstract class BaseCommand {
 		msg: BaseMessage,
 		userPermissions = this.userPermissions
 	): UserPermissionAllowedData | UserPermissionDeniedData {
+		return BaseCommand.checkUserPermissions(msg, userPermissions);
+	}
+
+	/**
+	 * Shows data for if a user has a permission to do something.
+	 *
+	 * NOTE: If userPermissions is undefined, this will return a success.
+	 *
+	 * @param msg
+	 * @param userPermissions
+	 */
+	static checkUserPermissions(
+		msg: BaseMessage,
+		userPermissions?: UserPermissions
+	): UserPermissionAllowedData | UserPermissionDeniedData {
 		// If the command doesn't specify permissions, assume it's fine
 		if (!userPermissions) {
 			return { success: true };
@@ -493,10 +508,10 @@ export abstract class BaseCommand {
 		return this.checkUserPermissions(msg, userPermissions).success;
 	}
 
-	checkBotPermissions(
+	async checkBotPermissions(
 		msg: BaseMessage,
 		botPermissions = this.botPermissions
-	): BotPermissionAllowedData | BotPermissionDeniedData {
+	): Promise<BotPermissionAllowedData | BotPermissionDeniedData> {
 		// If the command doesn't specify permissions, assume it's fine
 		if (!botPermissions) {
 			return { success: true };
@@ -515,7 +530,7 @@ export abstract class BaseCommand {
 			}
 
 			// Finds all the missing permissions
-			const missingPerms = this.getMissingDiscordBotPermissions(
+			const missingPerms = await this.getMissingDiscordBotPermissions(
 				msg,
 				botPermissions.discord.permissions
 			);
@@ -541,14 +556,19 @@ export abstract class BaseCommand {
 		return { success: true };
 	}
 
-	getMissingDiscordBotPermissions(
+	async getMissingDiscordBotPermissions(
 		msg: DiscordMessage | DiscordInteraction,
 		permissions: Discord.PermissionResolvable = []
-	): Discord.PermissionString[] {
+	): Promise<Discord.PermissionString[]> {
 		// Gets the requested permisisons and actual permissions
 		const guild = msg.discord.guild;
 		const botMember = guild?.me;
-		const channel = msg.discord.channel;
+		const channel = msg.discord.channel.isThread()
+			? msg.discord.channel.parent ?? msg.discord.channel
+			: msg.discord.channel;
+		if (channel.partial) {
+			await channel.fetch();
+		}
 		const requestedBotPerms = new Discord.Permissions(permissions);
 		const actualBotPerms = new Discord.Permissions(
 			botMember && channel instanceof Discord.GuildChannel
@@ -566,11 +586,11 @@ export abstract class BaseCommand {
 	 * @param msg
 	 * @param botPermissions
 	 */
-	hasBotPermissions(
+	async hasBotPermissions(
 		msg: BaseMessage,
 		botPermissions = this.botPermissions
-	): boolean {
-		return this.checkBotPermissions(msg, botPermissions).success;
+	): Promise<boolean> {
+		return (await this.checkBotPermissions(msg, botPermissions)).success;
 	}
 
 	/**
@@ -586,17 +606,33 @@ export abstract class BaseCommand {
 		permissions = this.userPermissions,
 		deniedData = this.checkUserPermissions(msg, permissions)
 	): Promise<boolean> {
+		return BaseCommand.sendUserPermissionErrorMessage(
+			msg,
+			permissions,
+			deniedData
+		);
+	}
+
+	static async sendUserPermissionErrorMessage(
+		msg: BaseMessage,
+		permissions: UserPermissions | undefined,
+		deniedData = BaseCommand.checkUserPermissions(msg, permissions),
+		id?: string
+	): Promise<boolean> {
 		if (deniedData.success) {
 			throw new Error(
 				"deniedData should have been denied; deniedData.success was true"
 			);
 		}
 
-		if (msg instanceof DiscordMessage) {
+		if (
+			msg instanceof DiscordMessage ||
+			msg instanceof DiscordInteraction
+		) {
 			const discord = msg.discord;
 			const embed = EmbedHelper.getTemplate(
 				msg.discord,
-				await EmbedHelper.getCheckOutFooter(msg, this.id)
+				await EmbedHelper.getCheckOutFooter(msg, id)
 			).setTitle("Permission Denied");
 
 			let useEmbed = true;
@@ -752,7 +788,7 @@ export abstract class BaseCommand {
 					\`EMBED_LINKS\` permission is disabled, so I can't send any details.`}`
 				);
 			} else {
-				await msg.discord.channel.send({ embeds: [embed] });
+				await msg.send({ embeds: [embed] });
 			}
 
 			return true;
@@ -775,7 +811,7 @@ export abstract class BaseCommand {
 	async sendBotPermissionErrorMessage(
 		msg: BaseMessage,
 		botPermissions = this.botPermissions,
-		deniedData = this.checkBotPermissions(msg, botPermissions)
+		deniedData: BotPermissionAllowedData | BotPermissionDeniedData
 	): Promise<boolean> {
 		return this.client.commands.sendBotPermissionErrorMessage(
 			msg,
