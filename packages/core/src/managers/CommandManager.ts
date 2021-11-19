@@ -413,14 +413,7 @@ export class CommandManager extends Base {
 						);
 					}
 				} catch (error) {
-					if (error instanceof FriendlyError) {
-						Logger.warn(oneLine`The below warning is likely
-						safe to ignore, unless needed for debug purposes.`);
-						Logger.warn((error as Error).stack);
-						await this.sendErrorMessage(msg, error);
-					} else {
-						Logger.error((error as Error).stack);
-					}
+					await this.handleFriendlyError(msg, error);
 				}
 			}
 		} catch (error) {
@@ -434,6 +427,36 @@ export class CommandManager extends Base {
 				)}s - Finished finding and sending commands`
 			);
 		return map;
+	}
+
+	/**
+	 * If a non-friendly error was passed, it'll be outputted to console
+	 *
+	 * @param msg
+	 * @param error
+	 */
+	async handleFriendlyError(
+		msg: BaseMessage,
+		error: unknown,
+		catchSendMessage = false
+	): Promise<void> {
+		if (error instanceof FriendlyError) {
+			Logger.warn(oneLine`The below warning is likely
+			safe to ignore, unless needed for debug purposes.`);
+			Logger.warn((error as Error).stack);
+
+			try {
+				await this.sendErrorMessage(msg, error);
+			} catch (error) {
+				if (catchSendMessage) {
+					Logger.error((error as Error).stack);
+				} else {
+					throw error;
+				}
+			}
+		} else {
+			Logger.error((error as Error).stack);
+		}
 	}
 
 	async scanAndRunCommands(
