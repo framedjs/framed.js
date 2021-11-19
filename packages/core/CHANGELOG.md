@@ -1,5 +1,56 @@
 # @framedjs/core
 
+## 0.8.0
+
+### Minor Changes
+
+-   6760492: feat: add emoji and string data to export
+-   25d14ee: Better Discord interaction helpers and support
+-   f6e644d: Changes:
+
+    -   feat: export ArgumentOptions
+    -   fix: deferred interactions for sendErrorMessage
+    -   fix: enable subcommands for slash commands
+    -   refactor: simplify msg.discordInteraction.interaction
+
+-   7e589ff: feat: add DiscordUtils.resolveTextChannel
+-   ce0f4ac: - fix: discord interaction user permission check
+    -   refactor: log "/" instead of "slash command"
+-   a1d30c2: feat: expose @discordjs/rest and builders
+-   3ba183b: feat: msg.send support Discord interaction replies
+-   eb8c183: Changes:
+
+    -   feat: export all of SlashCommandBuilder
+    -   fix: slash subcommands implementation
+
+-   31714f8: Changes:
+
+    -   feat: arguments contain the wrapping quotes
+    -   feat: start + end quote characters in Argument
+    -   fix: disallow quote char mixes in args parsing
+
+### Patch Changes
+
+-   cbfcce0: fix: slash subcommands types
+-   27a57e2: feat: minor edits to logging in CommandManager
+-   f1413f1: Changes:
+
+    -   feat: handleFriendlyError function in CommandManager
+    -   feat!: increase permissions functionality
+    -   feat: change interaction comamnd name behavior
+    -   feat: preliminary auto-complete Discord interaction
+    -   fix: import of DiscordInteraction options
+    -   fix: use options.discord, to have that as an override
+    -   fix: names in logging
+    -   fix: better emoji parsing coverage, using Twemoji
+    -   fix: edited partial messages will now run on first-time
+    -   fix: interaction match handling
+
+    BREAKING CHANGE: bot permission checks are now async, for more accuracy.
+
+-   Updated dependencies [a244b9b]
+    -   @framedjs/shared@0.2.1
+
 ## 0.8.0-next.7
 
 ### Minor Changes

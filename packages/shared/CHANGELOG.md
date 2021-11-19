@@ -1,5 +1,11 @@
 # @framedjs/shared
 
+## 0.2.1
+
+### Patch Changes
+
+-   a244b9b: fix: round instead of floor
+
 ## 0.2.1-next.0
 
 ### Patch Changes
