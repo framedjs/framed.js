@@ -1,3 +1,4 @@
+/* eslint-disable no-mixed-spaces-and-tabs */
 import { BaseMessage } from "./BaseMessage";
 import { BasePlugin } from "./BasePlugin";
 import { Client } from "./Client";
@@ -12,6 +13,8 @@ import { BaseSubcommand } from "./BaseSubcommand";
 import { oneLine, oneLineCommaListsOr, oneLineInlineLists } from "common-tags";
 import {
 	SlashCommandBuilder,
+	SlashCommandSubcommandBuilder,
+	SlashCommandSubcommandGroupBuilder,
 	SlashCommandSubcommandsOnlyBuilder,
 } from "@discordjs/builders";
 import Discord from "discord.js";
@@ -32,6 +35,7 @@ import type {
 	BotPermissionDeniedData,
 } from "../interfaces/BotPermissionData";
 import type { BotPermissions } from "../interfaces/BotPermissions";
+import type { UniversalSlashCommandBuilder } from "../types/UniversalSlashCommandBuilder";
 
 export abstract class BaseCommand {
 	// static readonly type: string = "BaseCommand";
@@ -119,10 +123,7 @@ export abstract class BaseCommand {
 		/**
 		 * Discord slash command options
 		 */
-		slashCommandBuilder?:
-			| Omit<SlashCommandBuilder, "addSubcommand" | "addSubcommandGroup">
-			| SlashCommandSubcommandsOnlyBuilder;
-
+		slashCommandBuilder?: UniversalSlashCommandBuilder;
 		/**
 		 * Should this slash command be a global command?
 		 *

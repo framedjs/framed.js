@@ -1,20 +1,14 @@
-/* eslint-disable no-mixed-spaces-and-tabs */
 import type { UserPermissions } from "./UserPermissions";
 import type { Prefixes } from "./Prefixes";
 import type { InlineOptions } from "./InlineOptions";
 import type { BotPermissions } from "./BotPermissions";
-import type {
+import {
 	SlashCommandBuilder,
 	SlashCommandSubcommandBuilder,
 	SlashCommandSubcommandGroupBuilder,
-	SlashCommandSubcommandsOnlyBuilder,
 } from "@discordjs/builders";
-import type { UniversalSlashCommandBuilder } from "../types/UniversalSlashCommandBuilder";
 
-/**
- * To be used with BaseCommand and BaseSubcommand
- */
-export interface BaseCommandOptions {
+export interface BaseDiscordSlashSubcommandOptions {
 	/**
 	 * The ID of the command, which cannot use spaces. All plugin IDs should try to be unique,
 	 * to make sure that no plugin from different developers would overlap.
@@ -107,9 +101,9 @@ export interface BaseCommandOptions {
 	inlineAliases?: boolean;
 
 	/**
-	 * Discord slash command options
+	 * Discord slash subcommand options
 	 */
-	discordInteraction?: {
+	discordInteraction: {
 		/**
 		 * Should this slash command be a global command?
 		 *
@@ -118,8 +112,10 @@ export interface BaseCommandOptions {
 		global?: boolean;
 
 		/**
-		 * Discord slash command options
+		 * Discord slash subcommand options
 		 */
-		slashCommandBuilder?: UniversalSlashCommandBuilder;
+		slashCommandBuilder:
+			| SlashCommandSubcommandBuilder
+			| SlashCommandSubcommandGroupBuilder;
 	};
 }
