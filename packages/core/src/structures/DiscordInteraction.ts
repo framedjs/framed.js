@@ -92,7 +92,9 @@ export class DiscordInteraction extends BaseMessage {
 		// NOTE: DiscordJsApi.APIInteractionGuildMember would work, if not for discord-api-types being outdated,
 		// compared to discord.js(?) - 0.22.0 vs 0.24.0
 		const tempMember =
-			discordInteractionBase?.member ?? interaction?.member;
+			options.discordInteraction?.member ??
+			discordInteractionBase?.member ??
+			interaction?.member;
 		let member: Discord.GuildMember | null;
 		if (!(tempMember instanceof Discord.GuildMember)) member = null;
 		else member = tempMember;
