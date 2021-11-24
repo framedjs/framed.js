@@ -789,7 +789,7 @@ export abstract class BaseCommand {
 					\`EMBED_LINKS\` permission is disabled, so I can't send any details.`}`
 				);
 			} else {
-				await msg.send({ embeds: [embed] });
+				await msg.send({ embeds: [embed], ephemeral: true });
 			}
 
 			return true;
