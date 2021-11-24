@@ -99,6 +99,12 @@ export class DiscordInteraction extends BaseMessage {
 		if (!(tempMember instanceof Discord.GuildMember)) member = null;
 		else member = tempMember;
 
+		const msg =
+			interaction.isMessageComponent() &&
+			interaction.message instanceof Discord.Message
+				? interaction.message
+				: undefined;
+
 		// Gets client or throws error
 		if (!client) {
 			throw new ReferenceError(
@@ -137,6 +143,7 @@ export class DiscordInteraction extends BaseMessage {
 			author: user,
 			client,
 			channel,
+			msg,
 			member,
 			guild,
 		};
