@@ -555,18 +555,20 @@ export class CommandManager extends Base {
 			}
 
 			// Attempts to run it and sets the data
-			if (startTime && Logger.isDebugEnabled()) {
-				Logger.debug(
+			if (startTime && Logger.isSillyEnabled()) {
+				Logger.silly(
 					`${Utils.hrTimeElapsed(startTime)}s - Found interaction (${
 						command.fullId
 					})`
 				);
 			}
 
-			Logger.verbose(oneLine`Running
+			if (Logger.isSillyEnabled()) {
+				Logger.silly(oneLine`Running
 				interaction ${msg.discordInteraction.interaction.id}
 				from user ${msg.discordInteraction.user.tag}
 				(${msg.discordInteraction.user.id})`);
+			}
 
 			const success = await command.run(
 				msg,
