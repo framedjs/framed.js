@@ -1,5 +1,14 @@
 # @framedjs/core
 
+## 0.8.1
+
+### Patch Changes
+
+-   1b6156b: fix: send ephemeral permission errors when possible
+-   880d954: fix slash command builder times, and custom member input in DiscordInteraction
+-   1d84ce0: fix: if interaction message exists, apply to DiscodInteration
+-   af23f61: fix: excessive logs for interactions
+
 ## 0.8.0
 
 ### Minor Changes
