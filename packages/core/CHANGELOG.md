@@ -1,5 +1,11 @@
 # @framedjs/core
 
+## 0.8.2
+
+### Patch Changes
+
+-   e820968: fix: prune silly logs
+
 ## 0.8.1
 
 ### Patch Changes
