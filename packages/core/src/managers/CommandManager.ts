@@ -70,7 +70,7 @@ export class CommandManager extends Base {
 	 * @returns String array of all possible prefixes
 	 */
 	getPossiblePrefixes(place: Place, guild?: Discord.Guild | null): string[] {
-		const startTime = process.hrtime();
+		// const startTime = process.hrtime();
 		const prefixes = this.defaultPrefixes;
 
 		// From commands: adds to the list of potential prefixes (also removes duplicates)
@@ -78,7 +78,7 @@ export class CommandManager extends Base {
 			const commandPrefixes = command.getPrefixes(place);
 			for (const prefix of commandPrefixes) {
 				if (!prefixes.includes(prefix)) {
-					Logger.silly(`[${process.hrtime(startTime)}] - ${prefix}`);
+					// Logger.silly(`[${process.hrtime(startTime)}] - ${prefix}`);
 					prefixes.push(prefix);
 				}
 			}
@@ -91,13 +91,13 @@ export class CommandManager extends Base {
 			}
 		}
 
-		Logger.silly(
-			`${Utils.hrTimeElapsed(
-				startTime
-			)}s - Finished finding all possible prefixes.`
-		);
-		Logger.silly(process.hrtime(startTime));
-		Logger.silly(`Prefixes: ${prefixes}`);
+		// Logger.silly(
+		// 	`${Utils.hrTimeElapsed(
+		// 		startTime
+		// 	)}s - Finished finding all possible prefixes.`
+		// );
+		// Logger.silly(process.hrtime(startTime));
+		// Logger.silly(`Prefixes: ${prefixes}`);
 		return prefixes;
 	}
 
@@ -397,7 +397,7 @@ export class CommandManager extends Base {
 
 		try {
 			if (msg.prefix != undefined && msg.command != undefined) {
-				Logger.silly(`Checking for commands for "${msg.content}"`);
+				// Logger.silly(`Checking for commands for "${msg.content}"`);
 
 				try {
 					if (
@@ -420,12 +420,13 @@ export class CommandManager extends Base {
 			Logger.error((error as Error).stack);
 		}
 
-		if (Logger.isSillyEnabled())
+		if (Logger.isSillyEnabled() && map.size > 0) {
 			Logger.silly(
 				`${Utils.hrTimeElapsed(
 					startTime
 				)}s - Finished finding and sending commands`
 			);
+		}
 		return map;
 	}
 
@@ -475,36 +476,37 @@ export class CommandManager extends Base {
 				command = element.subcommands[element.subcommands.length - 1];
 			}
 
-			// Attempts to run it and sets the data
-			if (startTime && Logger.isDebugEnabled()) {
-				Logger.debug(
-					`${Utils.hrTimeElapsed(startTime)}s - Found a command (${
-						command.fullId
-					})`
-				);
-			}
-
 			const passed = await this.checkForPermissions(msg, command, map);
 			if (!passed) {
 				continue;
 			}
 
+			const displayTime = startTime
+				? `${Utils.hrTimeElapsed(startTime)}s - `
+				: "";
+
 			if (msg instanceof DiscordMessage)
 				Logger.verbose(
-					oneLine`Running command "${msg.content}" from
+					oneLine`${displayTime}Running command "${msg.content}" from
 					user ${msg.discord.author.tag} (${msg.discord.author.id})`
 				);
 			else if (
 				msg instanceof DiscordInteraction &&
 				msg.discordInteraction.interaction.isCommand()
-			)
+			) {
+				const interaction = msg.discordInteraction.interaction;
+				const options = Utils.util.inspect(interaction.options);
+
 				Logger.verbose(
-					oneLine`Running
-					/${msg.discordInteraction.interaction.commandName}
-					from user ${msg.discordInteraction.user.tag}
+					oneLine`${displayTime}Running
+					/${interaction.commandName}
+					from user ${interaction.user.tag}
 					(${msg.discordInteraction.user.id})`
 				);
-			else {
+				if (options) {
+					Logger.verbose(options);
+				}
+			} else {
 				Logger.verbose(`Running command "${msg.content}"`);
 			}
 
@@ -554,27 +556,28 @@ export class CommandManager extends Base {
 				continue;
 			}
 
-			// Attempts to run it and sets the data
-			if (startTime && Logger.isSillyEnabled()) {
-				Logger.silly(
-					`${Utils.hrTimeElapsed(startTime)}s - Found interaction (${
-						command.fullId
-					})`
-				);
-			}
-
 			if (Logger.isSillyEnabled()) {
-				Logger.silly(oneLine`Running
-				interaction ${msg.discordInteraction.interaction.id}
-				from user ${msg.discordInteraction.user.tag}
-				(${msg.discordInteraction.user.id})`);
+				let options = "";
+				if (
+					interaction.isApplicationCommand() ||
+					interaction.isContextMenu() ||
+					interaction.isCommand()
+				) {
+					options = Utils.util.inspect(interaction.options);
+				}
+
+				if (options) {
+					const displayTime = startTime
+						? `${Utils.hrTimeElapsed(startTime)}s - `
+						: "";
+					Logger.silly(oneLine`${displayTime}Running interaction
+						${interaction.id} from user ${interaction.user.tag}
+						(${interaction.user.id})`);
+					Logger.silly(options);
+				}
 			}
 
-			const success = await command.run(
-				msg,
-				msg.discordInteraction.interaction
-			);
-
+			const success = await command.run(msg, interaction);
 			map.set(command.fullId, success);
 		}
 

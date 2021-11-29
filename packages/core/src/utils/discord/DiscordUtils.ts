@@ -2,7 +2,6 @@
 import Discord from "discord.js";
 import { Utils } from "@framedjs/shared";
 import { Logger } from "@framedjs/logger";
-import util from "util";
 import RequireAll from "require-all";
 import type Options from "../../interfaces/other/RequireAllOptions";
 import { existsSync } from "fs";
@@ -41,23 +40,23 @@ export class DiscordUtils {
 		if (!existsSync(options.dirname)) return scriptsList;
 
 		const requiredScripts: RequireAllScriptData = RequireAll(options);
-		Logger.silly(`requiredScripts: ${util.inspect(requiredScripts)}`);
+		// Logger.silly(`requiredScripts: ${util.inspect(requiredScripts)}`);
 
 		const requiredScriptsValues = Object.values(requiredScripts);
-		Logger.silly(
-			`requiredScriptsValues: ${util.inspect(requiredScriptsValues)}`
-		);
+		// Logger.silly(
+		// 	`requiredScriptsValues: ${util.inspect(requiredScriptsValues)}`
+		// );
 
 		for (const key in requiredScriptsValues) {
 			const script = requiredScriptsValues[key];
-			Logger.silly(`Key1: ${key} | ${util.inspect(script)}`);
+			// Logger.silly(`Key1: ${key} | ${util.inspect(script)}`);
 
 			// Recursively gets scripts from the object, for nested folders
 			const values = Object.values(script);
 			scriptsList.push(...this.recursiveGetScript(values));
 		}
 
-		Logger.silly(`Scripts: ${util.inspect(scriptsList)}`);
+		// Logger.silly(`Scripts: ${util.inspect(scriptsList)}`);
 
 		return scriptsList;
 	}
@@ -71,14 +70,14 @@ export class DiscordUtils {
 		const scripts: unknown[] = [];
 
 		for (const key in values) {
-			Logger.silly(`Key2: ${key} | ${util.inspect(values)}`);
+			// Logger.silly(`Key2: ${key} | ${util.inspect(values)}`);
 
 			let exports = values[key];
 
 			// For some reason, TypeScript thinks this value can be a number
 			if (typeof exports == "object") {
 				if (typeof exports.default === "function") {
-					Logger.silly("Exported default is a function");
+					// Logger.silly("Exported default is a function");
 					exports = exports.default;
 				} else {
 					scripts.push(...this.recursiveGetScript(exports));
