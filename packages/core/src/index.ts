@@ -38,7 +38,10 @@ export type { ClientOptions } from "./interfaces/ClientOptions";
 export type { DiscohookOutputData } from "./interfaces/other/DiscohookOutputData";
 export type { FoundCommandData } from "./interfaces/FoundCommandData";
 export type { HelpData } from "./interfaces/other/HelpData";
-export type { LoginOptions } from "./interfaces/LoginOptions";
+export type {
+	DiscordLoginOptions,
+	TwitchLoginOptions,
+} from "./interfaces/LoginOptions";
 export type { MessageOptions } from "./interfaces/MessageOptions";
 export type { ParseEmojiAndStringData } from "./interfaces/ParseEmojiAndStringData";
 export type { Place } from "./interfaces/Place";

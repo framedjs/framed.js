@@ -514,7 +514,8 @@ export class BaseMessage extends Base {
 						`place with ID ${platformId} should have already existed!`
 					);
 				}
-				return BaseMessage.createPlace(client, platformId, "discord");
+				Logger.debug("Writing new place...");
+				return BaseMessage.createPlace(client, platformId, "discord", platformId);
 			}
 		}
 		return place;

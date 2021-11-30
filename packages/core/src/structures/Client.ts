@@ -3,8 +3,11 @@ import * as Twitch from "twitch";
 import * as TwitchAuth from "twitch-auth";
 import * as TwitchChatClient from "twitch-chat-client";
 
-import { ClientOptions } from "../interfaces/ClientOptions";
-import { LoginOptions } from "../interfaces/LoginOptions";
+import type { ClientOptions } from "../interfaces/ClientOptions";
+import type {
+	DiscordLoginOptions,
+	TwitchLoginOptions,
+} from "../interfaces/LoginOptions";
 import { BaseMessage } from "./BaseMessage";
 import { DiscordMessage } from "./DiscordMessage";
 import { DiscordInteraction } from "./DiscordInteraction";
@@ -119,61 +122,49 @@ export class Client extends EventEmitter {
 	/**
 	 * Login
 	 */
-	async login(options: LoginOptions[]): Promise<void> {
+	async login(
+		option: DiscordLoginOptions | TwitchLoginOptions
+	): Promise<void> {
 		// Loads the database
 		// await this.database.start();
 
-		// Logins for each platform and sets up some events
-		for await (const option of options) {
-			// For types of platforms, we try and
-			switch (option.type) {
-				case "discord":
-					if (!option.discord) {
-						throw new ReferenceError(
-							`Login option type is ${option.type}, but the object supposedly containing its login data is undefined.`
-						);
+		// For types of platforms, we try and
+		switch (option.type) {
+			case "discord":
+				// Sets up some Discord events and logs into Discord
+				this.discord.client = new Discord.Client(
+					option.clientOptions ?? {
+						intents: [Discord.Intents.FLAGS.GUILDS],
 					}
-
-					// Sets up some Discord events and logs into Discord
-					this.discord.client = new Discord.Client(
-						option.discord.clientOptions ?? {
-							intents: [Discord.Intents.FLAGS.GUILDS],
-						}
-					);
-					this.setupDiscordEvents(this.discord.client);
-					break;
-				case "twitch":
-					if (!option.twitch) {
-						throw new ReferenceError(
-							`Login option type is ${option.type}, but the object supposedly containing its login data is undefined.`
-						);
+				);
+				this.setupDiscordEvents(this.discord.client);
+				break;
+			case "twitch":
+				this.twitch.auth = new TwitchAuth.RefreshableAuthProvider(
+					new TwitchAuth.StaticAuthProvider(
+						option.clientId,
+						option.accessToken
+						// onRefresh: (token: AccessToken) => {
+						// 	// do things with the new token data, e.g. save them in your database
+						// }
+					),
+					{
+						clientSecret: option.clientSecret,
+						refreshToken: option.refreshToken,
 					}
-
-					this.twitch.auth = new TwitchAuth.RefreshableAuthProvider(
-						new TwitchAuth.StaticAuthProvider(
-							option.twitch.clientId,
-							option.twitch.accessToken
-							// onRefresh: (token: AccessToken) => {
-							// 	// do things with the new token data, e.g. save them in your database
-							// }
-						),
-						{
-							clientSecret: option.twitch.clientSecret,
-							refreshToken: option.twitch.refreshToken,
-						}
-					);
-					this.twitch.api = new Twitch.ApiClient({
-						authProvider: this.twitch.auth,
-					});
-					this.twitch.chat = new TwitchChatClient.ChatClient(
-						this.twitch.auth,
-						option.twitch.clientOptions
-					);
-					this.setupTwitchEvents(this.twitch.chat);
-					break;
-				default:
-					throw new Error(`Platform "${option.type}" is invalid`);
-			}
+				);
+				this.twitch.api = new Twitch.ApiClient({
+					authProvider: this.twitch.auth,
+				});
+				this.twitch.chat = new TwitchChatClient.ChatClient(
+					this.twitch.auth,
+					option.clientOptions
+				);
+				this.setupTwitchEvents(this.twitch.chat);
+				break;
+			default:
+				// @ts-expect-error If more types are added, this will handle it correctly
+				throw new Error(`Platform "${option.type}" is invalid`);
 		}
 
 		// Imports all events now, since the plugins are done
@@ -301,7 +292,11 @@ export class Client extends EventEmitter {
 
 				// Edge case: pinned uncached messages could still go through.
 				// Pins shouldn't be treated as retriggering of commands
-				if (!partialOld.partial && !partialOld.pinned && newMessage.pinned) {
+				if (
+					!partialOld.partial &&
+					!partialOld.pinned &&
+					newMessage.pinned
+				) {
 					return;
 				}
 
