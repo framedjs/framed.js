@@ -1,0 +1,11 @@
+{
+  "mode": "pre",
+  "tag": "next",
+  "initialVersions": {
+    "@framedjs/core": "0.8.2",
+    "@framedjs/gui": "0.0.0",
+    "@framedjs/logger": "0.1.0",
+    "@framedjs/shared": "0.2.1"
+  },
+  "changesets": []
+}
