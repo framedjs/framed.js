@@ -1,5 +1,12 @@
 # @framedjs/core
 
+## 0.9.0-next.0
+
+### Minor Changes
+
+-   21b46c8: feat!: remove array for login options
+-   66d71b3: feat: default internal plugin
+
 ## 0.8.2
 
 ### Patch Changes
