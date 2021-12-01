@@ -23,3 +23,4 @@ testVariation("↔️", "Some Symbol");
 testVariation("👩", "Emoji Modifier Base");
 testVariation("🙍🏿‍♀️", "Emoji Modifier Base followed by a modifier");
 testVariation("invalid emoji", "let's see!", true);
+testVariation("<:test:123>", "Discord emote");
