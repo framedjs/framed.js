@@ -1,5 +1,5 @@
 import { Logger } from "@framedjs/logger";
-import Discord from "discord.js";
+import type Discord from "discord.js";
 import util from "util";
 
 import { BaseCommand } from "../structures/BaseCommand";
@@ -9,26 +9,62 @@ import { BasePlugin } from "../structures/BasePlugin";
 import { Client } from "../structures/Client";
 import { BaseMessage } from "../structures/BaseMessage";
 
-import { HelpData } from "../interfaces/other/HelpData";
-import Options from "../interfaces/other/RequireAllOptions";
+import type { HelpData } from "../interfaces/other/HelpData";
+import type Options from "../interfaces/other/RequireAllOptions";
 
 import { DiscordUtils } from "../utils/discord/DiscordUtils";
-import { Place } from "../interfaces/Place";
+import type { Place } from "../interfaces/Place";
 import { Base } from "../structures/Base";
+
+import type { PluginManagerOptions } from "../interfaces/PluginManagerOptions";
+import InternalPlugin from "../built-in/internal/Internal.plugin";
 
 export class PluginManager extends Base {
 	/**
 	 * The key is the plugin's full ID
 	 */
 	map = new Map<string, BasePlugin>();
-	// importingCommand?: BaseCommand;
+
+	private _pluginLoadOptions: Options | undefined;
+	public get pluginLoadOptions(): Options | undefined {
+		return this._pluginLoadOptions;
+	}
+	private set pluginLoadOptions(value: Options | undefined) {
+		this._pluginLoadOptions = value;
+	}
+	private defaultPluginIds: string[] = [];
 
 	/**
 	 *
 	 * @param client
 	 */
-	constructor(client: Client) {
+	constructor(client: Client, options?: PluginManagerOptions) {
 		super(client);
+
+		if (options?.importDefaultPlugins != false) {
+			this.loadDefaultPlugins();
+		}
+	}
+
+	loadDefaultPlugins(): void {
+		const internalPlugin = new InternalPlugin(this.client);
+		this.loadPlugin(internalPlugin);
+		this.defaultPluginIds.push(internalPlugin.id);
+	}
+
+	unloadDefaultPlugins(): void {
+		for (const id of this.defaultPluginIds) {
+			this.unloadPlugin(id);
+		}
+	}
+
+	unloadPlugin(id: string): void {
+		const plugin = this.map.get(id);
+		if (plugin) {
+			this.map.delete(id);
+		} else {
+			Logger.error(`Plugin with ID ${id} was not found to unload!`);
+		}
 	}
 
 	/**
@@ -36,6 +72,7 @@ export class PluginManager extends Base {
 	 * @param options RequireAll options
 	 */
 	loadPluginsIn(options: Options): BasePlugin[] {
+		this.pluginLoadOptions = options;
 		const plugins = DiscordUtils.importScripts(options) as (new (
 			client: Client
 		) => BasePlugin)[];

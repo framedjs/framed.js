@@ -20,6 +20,19 @@ import util from "util";
 export abstract class BasePlugin extends Base {
 	id: string;
 
+	commandLoadOptions: Options | undefined;
+
+	protected subcommandLoadOptions(dirname: string): Options {
+		return {
+			dirname: dirname,
+			filter: (name: string) => {
+				const match = name.match(this.client.importFilter);
+				if (match) return name;
+			},
+			recursive: false,
+		};
+	}
+
 	group: string;
 	groupEmote: string;
 	groupId: string;
@@ -121,6 +134,7 @@ export abstract class BasePlugin extends Base {
 	 * @param options
 	 */
 	loadCommandsIn(options: Options): void {
+		this.commandLoadOptions = options;
 		const commands = DiscordUtils.importScripts(options) as (new (
 			plugin: BasePlugin
 		) => BaseCommand)[];
@@ -191,17 +205,59 @@ export abstract class BasePlugin extends Base {
 
 		// Load subcommands from script
 		if (command.paths?.subcommands) {
-			command.loadSubcommandsIn({
-				dirname: command.paths.subcommands,
-				filter: (name: string) => {
-					const match = name.match(this.client.importFilter);
-					if (match) return name;
-				},
-				recursive: false,
-			});
+			command.loadSubcommandsIn(
+				this.subcommandLoadOptions(command.paths.subcommands)
+			);
 		}
 
 		Logger.debug(`Loaded command "${command.id}"`);
+	}
+
+	unloadCommands(): void {
+		for (const [id] of this.commands) {
+			this.unloadCommand(id);
+		}
+	}
+
+	/**
+	 *
+	 * @param id
+	 */
+	unloadCommand(id: string): void {
+		const command = this.commands.get(id);
+		if (!command) {
+			Logger.error(`Command ID ${id} doesn't exist!`);
+			return;
+		}
+		this.commands.delete(id);
+
+		// Sets up some aliases
+		if (command.aliases) {
+			for (const alias of command.aliases) {
+				const aliasDeleteResult = this.aliases.delete(alias);
+				if (!aliasDeleteResult) {
+					Logger.warn(
+						`Alias "${alias}" from command ID "${id}" doesn't exist!`
+					);
+					continue;
+				}
+			}
+		}
+
+		// Load subcommands from script
+		// TODO
+		// if (command.paths?.subcommands) {
+		// 	command.loadSubcommandsIn({
+		// 		dirname: command.paths.subcommands,
+		// 		filter: (name: string) => {
+		// 			const match = name.match(this.client.importFilter);
+		// 			if (match) return name;
+		// 		},
+		// 		recursive: false,
+		// 	});
+		// }
+
+		Logger.debug(`Unloaded command "${command.id}"`);
 	}
 
 	//#endregion
@@ -279,6 +335,45 @@ export abstract class BasePlugin extends Base {
 			Logger.warn(
 				`There was an imported event with no Discord event! Only Discord is supported currently.`
 			);
+		}
+	}
+
+	unloadEvents(): void {
+		if (!this.client.discord.client) {
+			throw new Error(`Discord client doesn't exist!`);
+		}
+
+		for (const [, event] of this.events) {
+			this.unloadEvent(event);
+		}
+		this.client.discord.client.removeAllListeners();
+
+		Logger.debug(`Unloaded events from plugin ${this.id}`);
+	}
+
+	unloadEvent(eventOrId: BaseEvent | string): void {
+		let event: BaseEvent | undefined;
+		let id: string | undefined;
+
+		if (eventOrId instanceof BaseEvent) {
+			event = eventOrId;
+			id = event.id;
+		} else {
+			id = eventOrId;
+		}
+
+		if (!event) {
+			event = this.events.get(id);
+			if (!event) {
+				Logger.error("Event wasn't found!");
+				return;
+			}
+		}
+
+		this.events.delete(id);
+
+		if (!this.client.discord.client) {
+			throw new Error(`Discord client doesn't exist!`);
 		}
 	}
 

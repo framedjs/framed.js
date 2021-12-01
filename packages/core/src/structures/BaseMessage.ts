@@ -19,7 +19,6 @@ import { Logger } from "@framedjs/logger";
 import { FriendlyError } from "./errors/FriendlyError";
 
 import Discord from "discord.js";
-import Emoji from "node-emoji";
 import * as TwemojiParser from "twemoji-parser";
 
 enum ArgumentState {
@@ -706,13 +705,12 @@ export class BaseMessage extends Base {
 		const genericEmojiData = TwemojiParser.parse(newArgs[0]);
 
 		let newContent = argsContent;
-		let newEmote = markdownEmote
+		const newEmote = markdownEmote
 			? markdownEmote[0]
 			: genericEmojiData[0]
 			? genericEmojiData[0].text
 			: undefined;
 		if (newEmote) {
-			newEmote = Emoji.emojify(newEmote);
 			newContent = newEmote
 				? argsContent.replace(newEmote, "").trimLeft()
 				: argsContent;

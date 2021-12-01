@@ -167,6 +167,19 @@ export class Client extends EventEmitter {
 				throw new Error(`Platform "${option.type}" is invalid`);
 		}
 
+		await this.setupPluginEvents();
+
+		// Logs into all platforms
+		if (this.discord.client) {
+			await this.discord.client.login();
+		}
+
+		if (this.twitch.chat) {
+			await this.twitch.chat.connect();
+		}
+	}
+
+	async setupPluginEvents(): Promise<void> {
 		// Imports all events now, since the plugins are done
 		for await (const plugin of this.plugins.map.values()) {
 			for (const event of plugin.events.values()) {
@@ -186,15 +199,6 @@ export class Client extends EventEmitter {
 				Logger.error((error as Error).stack);
 			}
 		}
-
-		// Logs into all platforms
-		if (this.discord.client) {
-			await this.discord.client.login();
-		}
-
-		if (this.twitch.chat) {
-			await this.twitch.chat.connect();
-		}
 	}
 
 	async processMsg(msg: BaseMessage): Promise<void> {
@@ -209,7 +213,7 @@ export class Client extends EventEmitter {
 		}
 	}
 
-	protected setupDiscordEvents(client: Discord.Client): void {
+	setupDiscordEvents(client: Discord.Client): void {
 		client.on("ready", async () => {
 			Logger.info(`Logged in as ${client.user?.tag}.`);
 		});
