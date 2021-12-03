@@ -167,9 +167,14 @@ export abstract class BasePlugin extends Base {
 			} catch (error) {
 				if (error instanceof ImportError) {
 					// Wrong import type was used
-					Logger.silly(
-						`~99% safe to ignore: ${(error as Error).stack}`
-					);
+					if (
+						process.env.FRAMED_HIDE_INSTANCE_IMPORT_ERROR?.toLocaleLowerCase() !=
+						"true"
+					) {
+						Logger.silly(
+							`~99% safe to ignore: ${(error as Error).stack}`
+						);
+					}
 				} else {
 					// If it's something else, a normal error will appear
 					Logger.error((error as Error).stack);
@@ -419,9 +424,14 @@ export abstract class BasePlugin extends Base {
 			} catch (error) {
 				if (error instanceof ImportError) {
 					// Wrong import type was used
-					Logger.silly(
-						`~99% safe to ignore: ${(error as Error).stack}`
-					);
+					if (
+						process.env.FRAMED_HIDE_INSTANCE_IMPORT_ERROR?.toLocaleLowerCase() ==
+						"true"
+					) {
+						Logger.silly(
+							`~99% safe to ignore: ${(error as Error).stack}`
+						);
+					}
 				} else {
 					// If it's something else, a normal error will appear
 					Logger.error((error as Error).stack);

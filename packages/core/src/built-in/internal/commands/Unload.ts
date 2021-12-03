@@ -6,13 +6,12 @@ import InternalPlugin, {
 	InternalParseEverythingOptions,
 	InternalParsePluginCommandOptions,
 } from "../Internal.plugin";
-import { FriendlyError } from "../../..";
 
 export default class extends BaseCommand {
 	constructor(plugin: BasePlugin) {
 		super(plugin, {
-			id: "reload",
-			about: "Reload framed.js commands and events.",
+			id: "unload",
+			about: "Unload framed.js commands and events.",
 			usage: "[everything]",
 			botPermissions: {
 				discord: {
@@ -39,7 +38,7 @@ export default class extends BaseCommand {
 			return false;
 		}
 
-		await msg.send(`Reloading...`);
+		await msg.send(`Unloading...`);
 
 		const internalPlugin = this.plugin as InternalPlugin;
 		await internalPlugin.parse(msg, "unload");
@@ -49,45 +48,32 @@ export default class extends BaseCommand {
 		return true;
 	}
 
-	async reload(
+	unload(
 		options:
 			| InternalParseEverythingOptions
 			| InternalParsePluginCommandOptions
-	): Promise<void> {
+	): void {
+		const internalPlugin = this.plugin as InternalPlugin;
+
+		// Unloads all events and commands
 		if (options.everything) {
-			// Because reloadEverything is true, all events were wiped.
-			// This requires us to re-init the old Discord events in client
-			if (this.client.discord.client) {
-				this.client.setupDiscordEvents(this.client.discord.client);
+			for (const [, plugin] of this.client.plugins.map) {
+				plugin.unloadEvents();
+				plugin.unloadCommands();
 			}
 
-			// If there is load options, clear and reload
-			// plugins back in
-			const plugins = this.client.plugins;
-			if (plugins.pluginLoadOptions) {
-				plugins.map.clear();
-				plugins.loadPluginsIn(plugins.pluginLoadOptions);
-
-				// Re-adds internal plugin
-				plugins.map.set(this.plugin.id, this.plugin);
-			}
-
-			// Sets up plugin events again
-			await this.client.setupPluginEvents();
+			internalPlugin.reload.reload({
+				command: internalPlugin.reload,
+				everything: false,
+				load: "reload",
+			});
+			internalPlugin.reload.reload({
+				command: internalPlugin.unload,
+				everything: false,
+				load: "reload",
+			});
 		} else {
-			// if (options.command instanceof BasePlugin) {
-			// 	// Reloads the commands back in from all plugins
-			// 	for (const [, plugin] of this.client.plugins.map) {
-			// 		if (plugin.commandLoadOptions) {
-			// 			plugin.loadCommandsIn(plugin.commandLoadOptions);
-			// 		}
-			// 	}
-			// }
-
-			// options.command.plugin.loadCommand(options.command);
-			throw new FriendlyError(
-				"Reloading commands back in isn't supported."
-			);
+			options.command.plugin.unloadCommand(options.command.id);
 		}
 	}
 }

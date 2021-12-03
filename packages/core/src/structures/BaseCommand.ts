@@ -36,6 +36,7 @@ import type {
 } from "../interfaces/BotPermissionData";
 import type { BotPermissions } from "../interfaces/BotPermissions";
 import type { UniversalSlashCommandBuilder } from "../types/UniversalSlashCommandBuilder";
+import { ImportError } from "./errors/non-friendly/ImportError";
 
 export abstract class BaseCommand {
 	// static readonly type: string = "BaseCommand";
@@ -831,14 +832,10 @@ export abstract class BaseCommand {
 	 * @param options RequireAll options
 	 */
 	loadSubcommandsIn(options: Options): void {
-		try {
-			const subcommands = DiscordUtils.importScripts(options) as (new (
-				command: BaseCommand
-			) => BaseSubcommand)[];
-			this.loadSubcommands(subcommands);
-		} catch (error) {
-			Logger.error((error as Error).stack);
-		}
+		const subcommands = DiscordUtils.importScripts(options) as (new (
+			command: BaseCommand
+		) => BaseSubcommand)[];
+		this.loadSubcommands(subcommands);
 	}
 
 	/**
