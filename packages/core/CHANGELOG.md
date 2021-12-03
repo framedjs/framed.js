@@ -1,5 +1,11 @@
 # @framedjs/core
 
+## 0.9.0-next.1
+
+### Minor Changes
+
+-   60796ac: feat: logging variable tweaks, better reload, unload
+
 ## 0.9.0-next.0
 
 ### Minor Changes
