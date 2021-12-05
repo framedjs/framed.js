@@ -1,5 +1,11 @@
 # @framedjs/core
 
+## 0.9.0-next.2
+
+### Patch Changes
+
+-   2855605: fix: stop context menu global to need explicitly set to true
+
 ## 0.9.0-next.1
 
 ### Minor Changes
