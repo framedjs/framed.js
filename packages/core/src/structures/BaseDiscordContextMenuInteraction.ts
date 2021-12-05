@@ -12,7 +12,7 @@ export abstract class BaseDiscordContextMenuInteraction
 {
 	contextMenuBuilder: ContextMenuCommandBuilder;
 
-	global?: boolean = true;
+	global: boolean;
 
 	constructor(
 		plugin: BasePlugin,
@@ -20,7 +20,7 @@ export abstract class BaseDiscordContextMenuInteraction
 	) {
 		super(plugin, info);
 		this.contextMenuBuilder = info.contextMenuBuilder;
-		this.global = info.global;
+		this.global = info.global != undefined ? info.global : true;
 		this.fullId = `${this.plugin.id}.interaction.contextmenu.${this.id}`;
 	}
 
