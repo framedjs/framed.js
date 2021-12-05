@@ -11,12 +11,6 @@ import { Logger } from "@framedjs/logger";
 import { DiscordUtils } from "../utils/discord/DiscordUtils";
 import { BaseSubcommand } from "./BaseSubcommand";
 import { oneLine, oneLineCommaListsOr, oneLineInlineLists } from "common-tags";
-import {
-	SlashCommandBuilder,
-	SlashCommandSubcommandBuilder,
-	SlashCommandSubcommandGroupBuilder,
-	SlashCommandSubcommandsOnlyBuilder,
-} from "@discordjs/builders";
 import Discord from "discord.js";
 
 import type Options from "../interfaces/other/RequireAllOptions";
@@ -36,7 +30,6 @@ import type {
 } from "../interfaces/BotPermissionData";
 import type { BotPermissions } from "../interfaces/BotPermissions";
 import type { UniversalSlashCommandBuilder } from "../types/UniversalSlashCommandBuilder";
-import { ImportError } from "./errors/non-friendly/ImportError";
 
 export abstract class BaseCommand {
 	// static readonly type: string = "BaseCommand";
