@@ -1,5 +1,11 @@
 # @framedjs/core
 
+## 0.9.0-next.3
+
+### Minor Changes
+
+-   29cbd2d: fix!: discordInteraction typo in BaseCommand
+
 ## 0.9.0-next.2
 
 ### Patch Changes
