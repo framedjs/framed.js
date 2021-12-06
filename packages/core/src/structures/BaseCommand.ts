@@ -113,7 +113,7 @@ export abstract class BaseCommand {
 	 */
 	inline?: boolean | InlineOptions;
 
-	discordInteracion: {
+	discordInteraction: {
 		/**
 		 * Discord slash command options
 		 */
@@ -179,7 +179,7 @@ export abstract class BaseCommand {
 
 		this.inline = info.inline ?? false;
 
-		this.discordInteracion = {
+		this.discordInteraction = {
 			global:
 				info.discordInteraction?.global != undefined
 					? info.discordInteraction.global
