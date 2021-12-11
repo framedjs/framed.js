@@ -169,7 +169,7 @@ export class DiscordInteraction extends BaseMessage {
 			interaction.isMessageComponent() ||
 			interaction.isSelectMenu()
 		) {
-			if (!interaction.deferred) {
+			if (!(interaction.deferred || interaction.replied)) {
 				await interaction.reply(options);
 			} else {
 				await interaction.editReply(options);
