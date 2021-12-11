@@ -1,5 +1,11 @@
 # @framedjs/core
 
+## 0.9.0-next.4
+
+### Patch Changes
+
+-   acdc6d0: fix: check for reply, before sending first reply
+
 ## 0.9.0-next.3
 
 ### Minor Changes
