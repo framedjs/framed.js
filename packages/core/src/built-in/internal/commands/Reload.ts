@@ -13,7 +13,7 @@ export default class extends BaseCommand {
 		super(plugin, {
 			id: "reload",
 			about: "Reload framed.js commands and events.",
-			usage: "[everything]",
+			usage: "[all]",
 			botPermissions: {
 				discord: {
 					permissions: ["SEND_MESSAGES"],
