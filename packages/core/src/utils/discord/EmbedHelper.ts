@@ -142,7 +142,7 @@ export class EmbedHelper {
 		baseEmbed?: Discord.MessageEmbed
 	): Discord.MessageEmbed {
 		const newEmbed = new Discord.MessageEmbed(baseEmbed)
-			.setFooter(footer?.text ?? "", footer?.iconURL)
+			.setFooter({ text: footer?.text ?? "", iconURL: footer?.iconURL })
 			.setColor(EmbedHelper.getColorWithFallback(msg.guild));
 
 		return newEmbed;
@@ -167,7 +167,7 @@ export class EmbedHelper {
 		baseEmbed?: Discord.MessageEmbed
 	): Discord.MessageEmbed {
 		return new Discord.MessageEmbed(baseEmbed)
-			.setFooter(footer?.text ?? "", footer?.iconURL)
+			.setFooter({ text: footer?.text ?? "", iconURL: footer?.iconURL })
 			.setColor(EmbedHelper.getColorWithFallback(null, color));
 	}
 
