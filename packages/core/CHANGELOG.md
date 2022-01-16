@@ -1,5 +1,11 @@
 # @framedjs/core
 
+## 0.9.0-next.5
+
+### Patch Changes
+
+-   057d8de: fix: discord.js types
+
 ## 0.9.0-next.4
 
 ### Patch Changes
