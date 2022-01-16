@@ -22,12 +22,12 @@
 		"@framedjs/logger": "workspace:^0.1.0",
 		"@framedjs/shared": "workspace:^0.2.1",
 		"axios": "^0.22.0",
-		"common-tags": "^1.8.0",
+		"common-tags": "^1.8.2",
 		"discord-api-types": "^0.22.0",
 		"emoji-regex": "^9.2.2",
 		"koa": "^2.13.4",
 		"koa-router": "^10.1.1",
-		"nanoid": "^3.1.30",
+		"nanoid": "^3.1.32",
 		"reflect-metadata": "^0.1.13",
 		"require-all": "^3.0.0",
 		"twemoji-parser": "^13.1.0"
@@ -39,12 +39,12 @@
 		"@types/node-emoji": "^1.8.1",
 		"@types/require-all": "^3.0.3",
 		"@types/twemoji-parser": "^13.1.1",
-		"discord.js": "13.3.1",
+		"discord.js": "13.6.0",
 		"madge": "^5.0.1",
 		"twitch": "^4.6.7",
 		"twitch-auth": "^4.6.7",
 		"twitch-chat-client": "^4.6.7",
-		"typescript": "^4.4.4"
+		"typescript": "^4.5.4"
 	},
 	"peerDependencies": {
 		"discord.js": "^13.3.0",

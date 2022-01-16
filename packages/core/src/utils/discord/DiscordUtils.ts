@@ -217,8 +217,8 @@ export class DiscordUtils {
 	static resolveChannel(
 		channel: Discord.ChannelResolvable,
 		channels: Discord.ChannelManager
-	): Discord.Channel | undefined {
-		let newChannel: Discord.Channel | null | undefined =
+	): Discord.AnyChannel | undefined {
+		let newChannel: Discord.AnyChannel | null | undefined =
 			channels.resolve(channel);
 
 		if (!newChannel && typeof channel == "string") {
@@ -865,7 +865,7 @@ export class DiscordUtils {
 	 */
 	static async renderOutputData(
 		newData: DiscohookOutputData | DiscohookMessageData,
-		channelOrMessage: Discord.TextBasedChannels | Discord.Message,
+		channelOrMessage: Discord.TextBasedChannel | Discord.Message,
 		client?: Client,
 		place?: Place
 	): Promise<Discord.Message[]> {
@@ -930,7 +930,7 @@ export class DiscordUtils {
 	 */
 	static async renderSingleMessage(
 		messageData: DiscohookMessageData,
-		channelOrMessage: Discord.TextBasedChannels | Discord.Message,
+		channelOrMessage: Discord.TextBasedChannel | Discord.Message,
 		client?: Client,
 		place?: Place,
 		shouldEdit = false
