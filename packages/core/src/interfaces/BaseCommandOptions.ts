@@ -3,13 +3,8 @@ import type { UserPermissions } from "./UserPermissions";
 import type { Prefixes } from "./Prefixes";
 import type { InlineOptions } from "./InlineOptions";
 import type { BotPermissions } from "./BotPermissions";
-import type {
-	SlashCommandBuilder,
-	SlashCommandSubcommandBuilder,
-	SlashCommandSubcommandGroupBuilder,
-	SlashCommandSubcommandsOnlyBuilder,
-} from "@discordjs/builders";
 import type { UniversalSlashCommandBuilder } from "../types/UniversalSlashCommandBuilder";
+import { CooldownOptions } from "./CooldownOptions";
 
 /**
  * To be used with BaseCommand and BaseSubcommand
@@ -35,54 +30,37 @@ export interface BaseCommandOptions {
 		subcommands?: string;
 	};
 
-	/**
-	 * Stores a list of command aliases possible to trigger the command.
-	 */
+	/** Stores a list of command aliases possible to trigger the command. */
 	aliases?: string[];
 
-	/**
-	 * Optional prefix override from the client.
-	 */
+	/** Optional prefix override from the client. */
 	defaultPrefix?: Prefixes | string;
 
-	/**
-	 * A list of all possible prefixes.
-	 */
+	/** A list of all possible prefixes. */
 	prefixes?: string[];
 
-	/**
-	 * Group
-	 */
+	/** Group */
 	group?: string;
 
-	/**
-	 * A brief, one-liner about section to talk about what the command does.
-	 */
+	/** A brief, one-liner about section to talk about what the command does. */
 	about?: string;
 
-	/**
-	 * A description of what the command does. This is encouraged to span multiple lines
-	 */
+	/** A description of what the command does. This is encouraged to span multiple lines */
 	description?: string;
 
-	/**
-	 * Info on how to use the command.
-	 */
+	/** Info on how to use the command. */
 	usage?: string;
 
-	/**
-	 * Should this command hide its usage instructions on the help embed?
-	 */
+	/** Should this command hide its usage instructions on the help embed? */
 	hideUsageInHelp?: boolean;
 
-	/**
-	 * Examples on how to use the command.
-	 */
+	/** Examples on how to use the command. */
 	examples?: string;
 
-	/**
-	 * Extra notes about the command, that isn't in the description.
-	 */
+	/** Cooldown behavior */
+	cooldown?: CooldownOptions;
+
+	/** Extra notes about the command, that isn't in the description. */
 	notes?: string;
 
 	/** Bot permissions needed to run the command. */
@@ -91,35 +69,24 @@ export interface BaseCommandOptions {
 	/** User permissions needed to run the command. */
 	userPermissions?: UserPermissions;
 
-	/**
-	 * The embed inline character limit, before it becomes not inline in the help embed.
-	 */
+	/** The embed inline character limit, before it becomes not inline in the help embed. */
 	inlineCharacterLimit?: number;
 
-	/**
-	 * Use inline for embed field?
-	 */
+	/** Use inline for embed field? */
 	inline?: boolean | InlineOptions;
 
-	/**
-	 * Use inline for embed for aliases field?
-	 */
+	/** Use inline for embed for aliases field? */
 	inlineAliases?: boolean;
 
-	/**
-	 * Discord slash command options
-	 */
+	/** Discord slash command options */
 	discordInteraction?: {
 		/**
 		 * Should this slash command be a global command?
-		 *
 		 * @default true
 		 */
 		global?: boolean;
 
-		/**
-		 * Discord slash command options
-		 */
+		/** Discord slash command options. */
 		slashCommandBuilder?: UniversalSlashCommandBuilder;
 	};
 }

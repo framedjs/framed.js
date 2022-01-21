@@ -4,6 +4,7 @@ import { BaseEventOptions } from "../interfaces/BaseEventOptions";
 import { BasePlugin } from "./BasePlugin";
 import { Client } from "./Client";
 import Discord from "discord.js";
+import { Logger } from "@framedjs/logger";
 
 export abstract class BaseEvent {
 	readonly client: Client;
@@ -52,6 +53,16 @@ export abstract class BaseEvent {
 				client: client,
 				name: name,
 			};
+
+			client.on(this.discord.name, this._run.bind(this));
+		}
+	}
+
+	private async _run(...args: any) {
+		try {
+			await this.run(...args);
+		} catch (error) {
+			Logger.error((error as Error).stack);
 		}
 	}
 

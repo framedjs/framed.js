@@ -4,7 +4,7 @@ export class PrefixProvider extends Provider {
 	/**
 	 * Data cached in memory. Key: Place ID. Value: Map<prefix ID, prefix>
 	 */
-	cache = new Map<string, Map<string, string>>();
+	protected cache = new Map<string, Map<string, string>>();
 
 	/**
 	 * Get an array of the cache. Key: Place ID. Value: Map<prefix ID, prefix>

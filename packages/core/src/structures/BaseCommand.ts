@@ -10,7 +10,12 @@ import { Utils } from "@framedjs/shared";
 import { Logger } from "@framedjs/logger";
 import { DiscordUtils } from "../utils/discord/DiscordUtils";
 import { BaseSubcommand } from "./BaseSubcommand";
-import { oneLine, oneLineCommaListsOr, oneLineInlineLists } from "common-tags";
+import {
+	oneLine,
+	oneLineCommaListsOr,
+	oneLineInlineLists,
+	stripIndents,
+} from "common-tags";
 import Discord from "discord.js";
 
 import type Options from "../interfaces/other/RequireAllOptions";
@@ -30,6 +35,8 @@ import type {
 } from "../interfaces/BotPermissionData";
 import type { BotPermissions } from "../interfaces/BotPermissions";
 import type { UniversalSlashCommandBuilder } from "../types/UniversalSlashCommandBuilder";
+import type { CooldownOptions } from "../interfaces/CooldownOptions";
+import type { CooldownData } from "../interfaces/CooldownData";
 
 export abstract class BaseCommand {
 	// static readonly type: string = "BaseCommand";
@@ -98,6 +105,9 @@ export abstract class BaseCommand {
 	/** Examples on how to use the command. */
 	examples?: string;
 
+	/** Cooldown options. */
+	cooldown?: CooldownOptions;
+
 	/** Extra notes about the command, that isn't in the description. */
 	notes?: string;
 
@@ -138,10 +148,11 @@ export abstract class BaseCommand {
 	constructor(plugin: BasePlugin, info: BaseCommandOptions) {
 		this.client = plugin.client;
 		this.plugin = plugin;
+		this.rawInfo = info;
 
 		this.id = info.id.toLocaleLowerCase();
-		this.paths = info.paths;
 		this.fullId = `${this.plugin.id}.command.${this.id}`;
+		this.paths = info.paths;
 		this.group = info.group
 			? info.group
 			: plugin.group
@@ -168,16 +179,18 @@ export abstract class BaseCommand {
 			};
 		}
 
+		
 		this.about = info.about;
 		this.description = info.description;
-		this.usage = info.usage;
+		this.cooldown = info.cooldown;
 		this.examples = info.examples;
+		this.hideUsageInHelp = info.hideUsageInHelp;
+		this.inline = info.inline ?? false;
 		this.notes = info.notes;
+		this.usage = info.usage;
+
 		this.botPermissions = info.botPermissions;
 		this.userPermissions = info.userPermissions;
-		this.hideUsageInHelp = info.hideUsageInHelp;
-
-		this.inline = info.inline ?? false;
 
 		this.discordInteraction = {
 			global:
@@ -187,7 +200,6 @@ export abstract class BaseCommand {
 			slashCommandBuilder: info.discordInteraction?.slashCommandBuilder,
 		};
 
-		this.rawInfo = info;
 		this.subcommands = new Map();
 		this.subcommandAliases = new Map();
 	}
@@ -773,11 +785,17 @@ export abstract class BaseCommand {
 				embed.setDescription(oneLine`${notAllowed} ${missingMessage}`);
 			}
 
-			if (missingPerms.includes("SEND_MESSAGES")) {
+			if (
+				msg instanceof DiscordMessage &&
+				missingPerms.includes("SEND_MESSAGES")
+			) {
 				throw new Error(
 					"Missing SEND_MESSAGES permission, cannot send error"
 				);
-			} else if (missingPerms.includes("EMBED_LINKS")) {
+			} else if (
+				msg instanceof DiscordMessage &&
+				missingPerms.includes("EMBED_LINKS")
+			) {
 				await msg.discord.channel.send(
 					`**${embed.title}**\n${oneLine`Unfortunately, the
 					\`EMBED_LINKS\` permission is disabled, so I can't send any details.`}`
@@ -817,6 +835,101 @@ export abstract class BaseCommand {
 	}
 
 	//#endregion
+
+	async getCooldown(userId: string): Promise<CooldownData | undefined> {
+		return this.client.provider.cooldowns.get({
+			userId,
+			commandId: this.fullId,
+		});
+	}
+
+	async setCooldown(userId: string): Promise<void> {
+		if (!this.cooldown) return;
+
+		const date = new Date();
+		date.setSeconds(date.getSeconds() + this.cooldown?.time);
+
+		return this.client.provider.cooldowns.set({
+			userId: userId,
+			commandId: this.fullId,
+			cooldownDate: date,
+		});
+	}
+
+	async sendCooldownErrorMessage(
+		msg: BaseMessage,
+		endDate: Date,
+		currentDate = new Date()
+	): Promise<boolean> {
+		function parseDateToDiscordTimestamp(date: Date): string {
+			return `<t:${(date.getTime() / 1000).toFixed(0)}:R>`;
+		}
+
+		const cooldownActive = endDate.getTime() > currentDate.getTime();
+		if (!cooldownActive) {
+			throw new Error(
+				"Cooldown should have been denied; the cooldown end date is current."
+			);
+		}
+
+		if (msg.discord?.guild?.me) {
+			const me = msg.discord.guild.me;
+			const channel = msg.discord.channel;
+			if (channel instanceof Discord.TextChannel) {
+				const perms = channel.permissionsFor(me);
+				const canSend =
+					channel instanceof Discord.ThreadChannel
+						? perms.has("SEND_MESSAGES_IN_THREADS")
+						: perms.has("SEND_MESSAGES");
+
+				if (!canSend) {
+					if (channel instanceof Discord.ThreadChannel) {
+						throw new Error(oneLine`Missing SEND_MESSAGES_IN_THREADS
+						permission, cannot send cooldown error message`);
+					} else {
+						throw new Error(oneLine`Missing SEND_MESSAGES permission,
+						cannot send cooldown error message`);
+					}
+				}
+
+				// https://stackoverflow.com/a/1322798
+				const totalSeconds =
+					(endDate.getTime() - currentDate.getTime()) / 1000;
+				// let editTotalSeconds = totalSeconds;
+				// const hours = Math.floor(editTotalSeconds / 3600);
+				// editTotalSeconds = totalSeconds % 3600;
+				// const minutes = Math.floor(editTotalSeconds / 60);
+				// const seconds = editTotalSeconds % 60;
+
+				const numText =
+					totalSeconds > 1
+						? Math.floor(totalSeconds)
+						: totalSeconds.toFixed(0);
+				const timestampText =
+					// 45 is what I assume the seconds count when
+					// relative timestamps only show "in a few seconds"
+					totalSeconds > 45
+						? parseDateToDiscordTimestamp(endDate)
+						: `in ${numText} second${numText == "1" ? "" : "s"}`;
+
+				await msg.send({
+					content: stripIndents`
+					You'll need to wait in order to use this again!
+					The cooldown will be up ${timestampText}.`,
+					ephemeral: true,
+				});
+
+				return true;
+			}
+		}
+		{
+			// TODO: Twitch cooldown logic, although by default
+			// Nightbot doesn't send any error message when a
+			// cooldown is still ticking.
+		}
+
+		return false;
+	}
 
 	//#region Loading in the subcommand
 

@@ -33,6 +33,8 @@ export type { BaseCommandOptions } from "./interfaces/BaseCommandOptions";
 export type { BaseDiscordInteractionOptions } from "./interfaces/BaseDiscordInteractionOptions";
 export type { BotPermissions } from "./interfaces/BotPermissions";
 export type { ClientOptions } from "./interfaces/ClientOptions";
+export type { CooldownOptions } from "./interfaces/CooldownOptions";
+export type { CooldownData } from "./interfaces/CooldownData";
 // export { DiscordMessageData } from "./interfaces/DiscordMessageData";
 // export { DiscordMessageDataOptions } from "./interfaces/DiscordMessageDataOptions";
 export type { DiscohookOutputData } from "./interfaces/other/DiscohookOutputData";
@@ -54,6 +56,7 @@ export type { Settings } from "./providers/interfaces/Settings";
 // Providers
 export { BaseProvider } from "./providers/BaseProvider";
 export { Provider } from "./providers/subproviders/Provider";
+export { CooldownProvider } from "./providers/subproviders/CooldownProvider";
 export { PrefixProvider } from "./providers/subproviders/PrefixProvider";
 export { PluginProvider } from "./providers/subproviders/PluginProvider";
 export { SettingsProvider } from "./providers/subproviders/SettingsProvider";

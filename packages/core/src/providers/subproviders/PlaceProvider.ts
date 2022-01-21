@@ -8,7 +8,7 @@ export class PlaceProvider extends Provider {
 	/**
 	 * Data cached in memory.
 	 */
-	cache = new Map<string, Place>();
+	protected cache = new Map<string, Place>();
 
 	/**
 	 * Get an array of the cache.

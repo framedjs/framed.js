@@ -57,6 +57,10 @@ export class BaseMessage extends Base {
 		this.content = options.content ?? "";
 	}
 
+	get userId(): string | undefined {
+		return this.discord ? this.discord.author.id : this.twitch?.user;
+	}
+
 	//#region Basic gets for the constructor
 
 	/**
@@ -514,7 +518,12 @@ export class BaseMessage extends Base {
 					);
 				}
 				Logger.debug("Writing new place...");
-				return BaseMessage.createPlace(client, platformId, "discord", platformId);
+				return BaseMessage.createPlace(
+					client,
+					platformId,
+					"discord",
+					platformId
+				);
 			}
 		}
 		return place;

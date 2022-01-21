@@ -476,8 +476,17 @@ export class CommandManager extends Base {
 				command = element.subcommands[element.subcommands.length - 1];
 			}
 
-			const passed = await this.checkForPermissions(msg, command, map);
-			if (!passed) {
+			const permCheck = await this.checkForPermissions(msg, command, map);
+			if (!permCheck) {
+				continue;
+			}
+
+			const cooldownCheck = await this.processCooldownCheck(
+				msg,
+				command,
+				map
+			);
+			if (!cooldownCheck) {
 				continue;
 			}
 
@@ -485,12 +494,12 @@ export class CommandManager extends Base {
 				? `${Utils.hrTimeElapsed(startTime)}s - `
 				: "";
 
-			if (msg instanceof DiscordMessage)
+			if (msg instanceof DiscordMessage) {
 				Logger.verbose(
 					oneLine`${displayTime}Running command "${msg.content}" from
 					user ${msg.discord.author.tag} (${msg.discord.author.id})`
 				);
-			else if (
+			} else if (
 				msg instanceof DiscordInteraction &&
 				msg.discordInteraction.interaction.isCommand()
 			) {
@@ -521,6 +530,14 @@ export class CommandManager extends Base {
 				);
 			} else {
 				success = await command.run(msg);
+			}
+
+			if (success && command.cooldown?.setAutomatically) {
+				if (!msg.userId) {
+					Logger.error("msg.userId is empty");
+				} else {
+					await this.setCooldown(msg.userId, command);
+				}
 			}
 
 			map.set(command.fullId, success);
@@ -665,6 +682,67 @@ export class CommandManager extends Base {
 		}
 
 		return true;
+	}
+
+	async processCooldownCheck(
+		msg: BaseMessage,
+		command: BaseCommand,
+		map?: Map<string, boolean>
+	): Promise<boolean> {
+		// Checks automatically for user permissions
+		if (command.cooldown?.checkAutomatically != false) {
+			const userId = msg.userId;
+
+			// Fallback, if for some reason there is no userId
+			if (userId == undefined) return true;
+
+			const cooldownData = await command.getCooldown(userId);
+			if (cooldownData) {
+				const currentDate = new Date();
+				const cooldownActive =
+					cooldownData.endDate.getTime() > currentDate.getTime();
+
+				if (cooldownActive) {
+					let sent = false;
+					let sentError: Error | undefined;
+					try {
+						sent = await command.sendCooldownErrorMessage(
+							msg,
+							cooldownData.endDate,
+							currentDate
+						);
+					} catch (error) {
+						sentError = error as Error;
+					}
+
+					if (sentError) {
+						Logger.error(sentError);
+					} else if (!sent) {
+						Logger.error(`"${command.id}" tried to send
+						a cooldown error message, but something went wrong!`);
+					}
+				}
+
+				map?.set(command.fullId, cooldownActive);
+				return cooldownActive;
+			}
+		}
+
+		return true;
+	}
+
+	async setCooldown(userId: string, command: BaseCommand): Promise<void> {
+		if (!command.cooldown) return;
+
+		const client = command.client;
+		const date = new Date();
+		date.setSeconds(date.getSeconds() + command.cooldown?.time);
+
+		return client.provider.cooldowns.set({
+			userId: userId,
+			commandId: command.fullId,
+			cooldownDate: date,
+		});
 	}
 
 	/**
@@ -960,17 +1038,40 @@ export class CommandManager extends Base {
 				embed.setDescription(oneLine`${notAllowed} ${missingMessage}`);
 			}
 
-			if (missingPerms.includes("SEND_MESSAGES")) {
-				throw new Error(
-					"Missing SEND_MESSAGES permission, cannot send error"
-				);
-			} else if (missingPerms.includes("EMBED_LINKS")) {
-				await msg.send(
-					`**${embed.title}**\n${oneLine`Unfortunately, the
-						\`EMBED_LINKS\` permission is disabled, so I can't send any details.`}`
-				);
+			if (msg instanceof DiscordMessage) {
+				if (missingPerms.includes("SEND_MESSAGES")) {
+					try {
+						if (
+							msg.prefix &&
+							msg.client.commands.defaultPrefixes.includes(
+								msg.prefix
+							)
+						) {
+							const dmChannel =
+								await msg.discord.author.createDM();
+							await dmChannel.send({ embeds: [embed] });
+							await dmChannel.send(oneLine`The bot couldn't send a message
+							in <#${msg.discord.channel.id}>, due to permissions. Please
+							report this to server staff, or if you are server staff,
+							please check the permissions in the channel.`);
+						} else {
+							throw new Error(
+								"Missing SEND_MESSAGES permission, cannot send error"
+							);
+						}
+					} catch (error) {
+						Logger.error((error as Error).stack);
+					}
+				} else if (missingPerms.includes("EMBED_LINKS")) {
+					await msg.send(
+						`**${embed.title}**\n${oneLine`Unfortunately, the
+							\`EMBED_LINKS\` permission is disabled, so I can't send any details.`}`
+					);
+				} else {
+					await msg.send({ embeds: [embed] });
+				}
 			} else {
-				await msg.send({ embeds: [embed] });
+				await msg.send({ embeds: [embed], ephemeral: true });
 			}
 
 			return true;
@@ -1042,16 +1143,14 @@ export class CommandManager extends Base {
 				}
 			}
 
-			const title = "Bot Permissions Error";
-			if (missingPerms.includes("SEND_MESSAGES")) {
-				throw new Error(
-					"Missing SEND_MESSAGES permission, cannot send error"
-				);
-			} else if (missingPerms.includes("EMBED_LINKS")) {
-				await msg.send(
-					`**${title}**\n${description} ${permissionString}`
-				);
-			} else {
+			// eslint-disable-next-line no-inner-declarations
+			async function createMessageOptions(
+				msg: DiscordMessage | DiscordInteraction
+			): Promise<
+				| Discord.MessagePayload
+				| Discord.MessageOptions
+				| Discord.InteractionReplyOptions
+			> {
 				const embed = EmbedHelper.getTemplate(
 					msg.discord,
 					await EmbedHelper.getCheckOutFooter(msg, command.id)
@@ -1063,7 +1162,37 @@ export class CommandManager extends Base {
 					embed.addField("Discord Permissions", permissionString);
 				}
 
-				await msg.send({ embeds: [embed] });
+				if (msg instanceof DiscordMessage) {
+					return { embeds: [embed] };
+				} else {
+					return { ephemeral: true, embeds: [embed] };
+				}
+			}
+
+			const title = "Bot Permissions Error";
+			if (
+				msg instanceof DiscordMessage &&
+				missingPerms.includes("SEND_MESSAGES")
+			) {
+				throw new Error(
+					"Missing SEND_MESSAGES permission, cannot send error"
+				);
+				// const dmChannel = await msg.discord.author.createDM();
+				// await dmChannel.send({ embeds: [embed] });
+				// await dmChannel.send(oneLine`The bot couldn't send a message
+				// in <#${msg.discord.channel.id}>, due to permissions. Please
+				// report this to server staff, or if you are server staff,
+				// please check the permissions in the channel.`);
+			} else if (
+				msg instanceof DiscordMessage &&
+				missingPerms.includes("EMBED_LINKS")
+			) {
+				await msg.send(
+					`**${title}**\n${description} ${permissionString}`
+				);
+			} else {
+				const options = await createMessageOptions(msg);
+				await msg.send(options);
 			}
 
 			return true;

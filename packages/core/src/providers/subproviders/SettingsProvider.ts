@@ -5,7 +5,7 @@ export class SettingsProvider extends Provider {
 	/**
 	 * Data cached in memory. Key: place ID. Value: object
 	 */
-	cache = new Map<string, Settings>();
+	protected cache = new Map<string, Settings>();
 
 	/**
 	 * Get an array of the cache.

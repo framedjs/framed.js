@@ -35,5 +35,8 @@ export abstract class BaseSubcommand extends BaseCommand {
 		this.inline = info.inline ? info.inline : false;
 
 		this.rawInfo = info;
+
+		this.cooldown = info.cooldown ?? command.cooldown;
+		this.botPermissions = info.botPermissions ?? command.botPermissions;
 	}
 }

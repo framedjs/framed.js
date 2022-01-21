@@ -6,7 +6,7 @@ export class PluginProvider extends Provider {
 	/**
 	 * Data cached in memory. Key: Plugin ID. Value: Map<key, value>
 	 */
-	cache = new Map<string, Settings>();
+	protected cache = new Map<string, Settings>();
 
 	/**
 	 * Get an array of the cache. Key: Plugin ID. Value: Map<key, value>

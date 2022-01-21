@@ -3,7 +3,7 @@ import { BaseProvider } from "../BaseProvider";
 
 export abstract class Provider extends Base {
 	baseProvider: BaseProvider;
-	cache = new Map();
+	protected cache = new Map();
 
 	constructor(baseProvider: BaseProvider) {
 		super(baseProvider.client);

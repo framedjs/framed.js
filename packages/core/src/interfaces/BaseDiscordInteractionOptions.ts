@@ -1,4 +1,5 @@
 import type { BotPermissions } from "./BotPermissions";
+import type { CooldownOptions } from "./CooldownOptions";
 import type { UserPermissions } from "./UserPermissions";
 
 export interface BaseDiscordInteractionOptions {
@@ -18,4 +19,7 @@ export interface BaseDiscordInteractionOptions {
 
 	/** User permissions needed to run the command. */
 	userPermissions?: UserPermissions;
+
+	/** Cooldown options. */
+	cooldown?: CooldownOptions;
 }

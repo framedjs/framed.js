@@ -329,10 +329,6 @@ export abstract class BasePlugin extends Base {
 				throw new Error(`Discord client doesn't exist!`);
 			}
 			event.init();
-			this.client.discord.client.on(
-				event.discord.name,
-				event.run.bind(event)
-			);
 			Logger.debug(
 				`Loaded event with ID "${event.id}" (${event.plugin.id})`
 			);

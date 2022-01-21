@@ -2,6 +2,7 @@ import { oneLine } from "common-tags";
 import { Base } from "../structures/Base";
 import { Client } from "../structures/Client";
 import { Providers } from "./interfaces/Providers";
+import { CooldownProvider } from "./subproviders/CooldownProvider";
 import { PlaceProvider } from "./subproviders/PlaceProvider";
 import { PluginProvider } from "./subproviders/PluginProvider";
 import { PrefixProvider } from "./subproviders/PrefixProvider";
@@ -9,6 +10,7 @@ import { SettingsProvider } from "./subproviders/SettingsProvider";
 import { Logger } from "@framedjs/logger";
 
 export class BaseProvider extends Base {
+	cooldowns: CooldownProvider;
 	places: PlaceProvider;
 	plugins: PluginProvider;
 	prefixes: PrefixProvider;
@@ -17,8 +19,10 @@ export class BaseProvider extends Base {
 	constructor(client: Client, options?: Providers) {
 		super(client);
 
+		this.cooldowns =
+			options?.cooldownProvider ?? new CooldownProvider(this);
 		this.places = options?.placeProvider ?? new PlaceProvider(this);
-		this.plugins = options?.pluginSettings ?? new PluginProvider(this);
+		this.plugins = options?.pluginProvider ?? new PluginProvider(this);
 		this.prefixes = options?.prefixProvider ?? new PrefixProvider(this);
 		this.settings = options?.settingsProvider ?? new SettingsProvider(this);
 	}
@@ -34,6 +38,7 @@ export class BaseProvider extends Base {
 
 		// Do everything else
 		await Promise.all([
+			this.cooldowns.init(),
 			this.plugins.init(),
 			this.prefixes.init(),
 			this.settings.init(),
