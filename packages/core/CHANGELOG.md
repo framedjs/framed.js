@@ -1,5 +1,20 @@
 # @framedjs/core
 
+## 0.9.0
+
+### Minor Changes
+
+-   21b46c8: feat!: remove array for login options
+-   60796ac: feat: logging variable tweaks, better reload, unload
+-   66d71b3: feat: default internal plugin
+-   29cbd2d: fix!: discordInteraction typo in BaseCommand
+
+### Patch Changes
+
+-   acdc6d0: fix: check for reply, before sending first reply
+-   2855605: fix: stop context menu global to need explicitly set to true
+-   057d8de: fix: discord.js types
+
 ## 0.9.0-next.5
 
 ### Patch Changes
