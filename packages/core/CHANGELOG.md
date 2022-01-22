@@ -1,5 +1,11 @@
 # @framedjs/core
 
+## 0.9.2
+
+### Patch Changes
+
+-   0c7de52: fix: crash on reload all
+
 ## 0.9.1
 
 ### Patch Changes
