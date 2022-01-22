@@ -48,11 +48,11 @@ export default class extends BaseCommand {
 		return true;
 	}
 
-	unload(
+	async unload(
 		options:
 			| InternalParseEverythingOptions
 			| InternalParsePluginCommandOptions
-	): void {
+	): Promise<void> {
 		const internalPlugin = this.plugin as InternalPlugin;
 
 		// Unloads all events and commands
@@ -62,12 +62,12 @@ export default class extends BaseCommand {
 				plugin.unloadCommands();
 			}
 
-			internalPlugin.reload.reload({
+			await internalPlugin.reload.reload({
 				command: internalPlugin.reload,
 				everything: false,
 				load: "reload",
 			});
-			internalPlugin.reload.reload({
+			await internalPlugin.reload.reload({
 				command: internalPlugin.unload,
 				everything: false,
 				load: "reload",
