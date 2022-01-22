@@ -37,7 +37,6 @@ export default class InternalPlugin extends BasePlugin {
 	}
 
 	async setupEvents(): Promise<void> {
-		Logger.verbose("aAAAAAAAAAAAAAAAAAAA");
 		const heapDump = new HeapDump(this);
 		this.reload = new Reload(this);
 		this.unload = new Unload(this);
