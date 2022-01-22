@@ -1,5 +1,11 @@
 # @framedjs/core
 
+## 0.9.1
+
+### Patch Changes
+
+-   a6cc15d: fix: remove screaming log in internal plugin
+
 ## 0.9.0
 
 ### Minor Changes
