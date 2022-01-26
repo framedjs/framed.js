@@ -1,5 +1,11 @@
 # @framedjs/core
 
+## 0.9.3
+
+### Patch Changes
+
+-   db77fc5: fix: cooldown set automatically
+
 ## 0.9.2
 
 ### Patch Changes
