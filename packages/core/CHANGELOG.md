@@ -1,5 +1,11 @@
 # @framedjs/core
 
+## 0.9.4
+
+### Patch Changes
+
+-   3678180: fix: parse string as dates when needed
+
 ## 0.9.3
 
 ### Patch Changes
