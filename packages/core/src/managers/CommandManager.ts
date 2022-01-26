@@ -532,7 +532,7 @@ export class CommandManager extends Base {
 				success = await command.run(msg);
 			}
 
-			if (success && command.cooldown?.setAutomatically) {
+			if (success && command.cooldown?.setAutomatically != false) {
 				if (!msg.userId) {
 					Logger.error("msg.userId is empty");
 				} else {
