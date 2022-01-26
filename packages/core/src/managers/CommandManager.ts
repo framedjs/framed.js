@@ -699,6 +699,9 @@ export class CommandManager extends Base {
 			const cooldownData = await command.getCooldown(userId);
 			if (cooldownData) {
 				const currentDate = new Date();
+				if (typeof cooldownData.endDate == "string") {
+					cooldownData.endDate = new Date(cooldownData.endDate);
+				}
 				const cooldownActive =
 					cooldownData.endDate.getTime() > currentDate.getTime();
 
@@ -723,8 +726,8 @@ export class CommandManager extends Base {
 					}
 				}
 
-				map?.set(command.fullId, cooldownActive);
-				return cooldownActive;
+				map?.set(command.fullId, !cooldownActive);
+				return !cooldownActive;
 			}
 		}
 
