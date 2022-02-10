@@ -72,6 +72,7 @@ export { Platform } from "./types/Platform";
 
 // Friendly Errors
 export { FriendlyError } from "./structures/errors/FriendlyError";
+export { InternalError } from "./structures/errors/InternalError";
 export { InvalidError } from "./structures/errors/InvalidError";
 export { NotFoundError } from "./structures/errors/NotFoundError";
 export { PermissionDeniedError } from "./structures/errors/PermissionDeniedError";
