@@ -1,22 +1,28 @@
 /* eslint-disable no-mixed-spaces-and-tabs */
+import Axios from "axios";
 import Discord from "discord.js";
+import { stripIndents } from "common-tags";
+import { existsSync } from "fs";
+import RequireAll from "require-all";
+
 import { Utils } from "@framedjs/shared";
 import { Logger } from "@framedjs/logger";
-import RequireAll from "require-all";
-import type Options from "../../interfaces/other/RequireAllOptions";
-import { existsSync } from "fs";
-import { NotFoundError } from "../../structures/errors/NotFoundError";
-import { InvalidError } from "../../structures/errors/InvalidError";
+
 import { BaseMessage } from "../../structures/BaseMessage";
+import { Client } from "../../structures/Client";
+import { DiscordCommandInteraction } from "../../structures/DiscordCommandInteraction";
 import { FriendlyError } from "../../structures/errors/FriendlyError";
+import { InternalError } from "../../structures/errors/InternalError";
+import { InvalidError } from "../../structures/errors/InvalidError";
+import { NotFoundError } from "../../structures/errors/NotFoundError";
+
 import type {
 	DiscohookMessageData,
 	DiscohookOutputData,
 } from "../../interfaces/other/DiscohookOutputData";
-import { stripIndents } from "common-tags";
-import Axios from "axios";
-import { Client } from "../../structures/Client";
 import type { Place } from "../../interfaces/Place";
+import type Options from "../../interfaces/other/RequireAllOptions";
+import { DiscordInteraction } from "../../structures/DiscordInteraction";
 
 interface RequireAllScriptData {
 	[key: string]: ScriptElement;
@@ -1020,5 +1026,89 @@ export class DiscordUtils {
 		}
 
 		return msgToReturn;
+	}
+
+	static async getMessageFromBaseMessage(
+		msg: BaseMessage
+	): Promise<Discord.Message | undefined> {
+		// Attempts to retrieve a link or ID from Discord
+		let messageLinkOrId = msg.args ? msg.args[0] : undefined;
+		if (msg instanceof DiscordInteraction) {
+			const interaction = msg.discordInteraction.interaction;
+			if (msg instanceof DiscordCommandInteraction) {
+				const interaction = msg.discordInteraction.interaction;
+				messageLinkOrId = interaction.options.getString(
+					"message",
+					true
+				);
+			} else if (interaction.isContextMenu()) {
+				const newMessage = interaction.options.getMessage(
+					"message",
+					true
+				);
+				if (!(newMessage instanceof Discord.Message)) {
+					throw new Error(`Message is not of type "Discord.Message"`);
+				}
+				return newMessage;
+			}
+		}
+
+		if (!messageLinkOrId) {
+			await msg.sendHelpForCommand();
+			return;
+		}
+
+		const discordClient =
+			msg.discord?.client || msg.discordInteraction?.client;
+		if (!discordClient) {
+			throw new InternalError("There is no Discord client to be found!");
+		}
+
+		// If the link didn't all contain numbers
+		let discordMsg: Discord.Message | undefined;
+		if (!/^\d+$/.test(messageLinkOrId)) {
+			const guildOrAuthor = msg.discord?.guild ?? msg.discord?.author;
+
+			if (!guildOrAuthor) {
+				throw new InternalError(`Guild or author not found!`);
+			}
+
+			discordMsg = await DiscordUtils.getMessageFromLink(
+				messageLinkOrId,
+				discordClient,
+				guildOrAuthor
+			);
+
+			if (!discordMsg) {
+				throw new FriendlyError(
+					`The message linked couldn't be found!`
+				);
+			}
+		} else {
+			const channel =
+				msg.discord?.channel ?? msg.discordInteraction?.channel;
+
+			if (!channel) {
+				throw new InternalError(
+					`Channel not found! Please report this to the support server.`
+				);
+			}
+
+			try {
+				const newMsg = await channel.messages.fetch(messageLinkOrId);
+				discordMsg = newMsg;
+			} catch (error) {
+				Logger.error((error as Error).stack);
+				throw new FriendlyError(
+					`The bot couldn't find a message with the ID of \`${messageLinkOrId}\`.`
+				);
+			}
+		}
+
+		if (!discordMsg) {
+			throw new FriendlyError("Message not found!");
+		}
+
+		return discordMsg;
 	}
 }
