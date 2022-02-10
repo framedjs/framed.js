@@ -1,5 +1,11 @@
 # @framedjs/core
 
+## 0.10.0-next.0
+
+### Minor Changes
+
+-   f5cb782: Add InternalError, and DiscordUtils.getMessageFromBaseMessage()
+
 ## 0.9.4
 
 ### Patch Changes
