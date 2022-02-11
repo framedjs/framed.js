@@ -1,4 +1,5 @@
 import { Logger } from "@framedjs/logger";
+import { Utils } from "@framedjs/shared";
 import { oneLine, oneLineCommaListsOr, oneLineInlineLists } from "common-tags";
 
 import { Base } from "../structures/Base";
@@ -9,21 +10,20 @@ import { BaseDiscordButtonInteraction } from "../structures/BaseDiscordButtonInt
 import { BaseDiscordContextMenuInteraction } from "../structures/BaseDiscordContextMenuInteraction";
 import { BaseDiscordMessageComponentInteraction } from "../structures/BaseDiscordMessageComponentInteraction";
 import { BaseDiscordSelectMenuInteraction } from "../structures/BaseDiscordSelectMenuInteraction";
+import { BaseMessage } from "../structures/BaseMessage";
 import { DiscordCommandInteraction } from "../structures/DiscordCommandInteraction";
 import { DiscordInteraction } from "../structures/DiscordInteraction";
-import { Client } from "../structures/Client";
-import { FriendlyError } from "../structures/errors/FriendlyError";
-import { BaseMessage } from "../structures/BaseMessage";
-
-import { FoundCommandData } from "../interfaces/FoundCommandData";
-import { Place } from "../interfaces/Place";
-import { Utils } from "@framedjs/shared";
 import { DiscordMessage } from "../structures/DiscordMessage";
-import { TwitchMessage } from "../structures/TwitchMessage";
+import { Client } from "../structures/Client";
 import { EmbedHelper } from "../utils/discord/EmbedHelper";
+import { FriendlyError } from "../structures/errors/FriendlyError";
+import { TwitchMessage } from "../structures/TwitchMessage";
+
+import type { FoundCommandData } from "../interfaces/FoundCommandData";
+import type { Place } from "../interfaces/Place";
 
 import Discord from "discord.js";
-import {
+import type {
 	BotPermissionAllowedData,
 	BotPermissionDeniedData,
 } from "../interfaces/BotPermissionData";
