@@ -5,6 +5,7 @@ import Discord from "discord.js";
 import type { DiscordInteractionData } from "../interfaces/DiscordInteractionData";
 import type { DiscordMessageData } from "../interfaces/DiscordMessageData";
 import type { MessageOptions } from "../interfaces/MessageOptions";
+import { DiscordInteractionSendOptions } from "../interfaces/DiscordInteractionSendOptions";
 
 export class DiscordInteraction extends BaseMessage {
 	args: undefined;
@@ -158,7 +159,8 @@ export class DiscordInteraction extends BaseMessage {
 		options:
 			| string
 			| Discord.MessagePayload
-			| Discord.InteractionReplyOptions
+			| Discord.InteractionReplyOptions,
+		extraOptions?: DiscordInteractionSendOptions
 	): Promise<void> {
 		const interaction = this.discordInteraction.interaction;
 		if (
@@ -169,10 +171,26 @@ export class DiscordInteraction extends BaseMessage {
 			interaction.isMessageComponent() ||
 			interaction.isSelectMenu()
 		) {
-			if (!(interaction.deferred || interaction.replied)) {
-				await interaction.reply(options);
+			const canEditReply = interaction.deferred || interaction.replied;
+			const canUpdate =
+				(interaction.isButton() || interaction.isSelectMenu()) &&
+				!interaction.replied;
+			const shouldEditReply = extraOptions?.editReply != false;
+
+			if (shouldEditReply && (canEditReply || canUpdate)) {
+				if (canUpdate) {
+					await interaction.update(options);
+				} else {
+					// Avoids empty message errors
+					if (typeof options != "string" && "ephemeral" in options) {
+						if (!options.content) {
+							options.content = "_ _";
+						}
+					}
+					await interaction.editReply(options);
+				}
 			} else {
-				await interaction.editReply(options);
+				await interaction.reply(options);
 			}
 		}
 	}

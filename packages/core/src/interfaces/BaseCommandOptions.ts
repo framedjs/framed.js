@@ -1,15 +1,13 @@
-/* eslint-disable no-mixed-spaces-and-tabs */
-import type { UserPermissions } from "./UserPermissions";
-import type { Prefixes } from "./Prefixes";
+import type { BasePluginObjectOptions } from "./BasePluginObjectOptions";
+import type { CooldownOptions } from "./CooldownOptions";
 import type { InlineOptions } from "./InlineOptions";
-import type { BotPermissions } from "./BotPermissions";
+import type { Prefixes } from "./Prefixes";
 import type { UniversalSlashCommandBuilder } from "../types/UniversalSlashCommandBuilder";
-import { CooldownOptions } from "./CooldownOptions";
 
 /**
  * To be used with BaseCommand and BaseSubcommand
  */
-export interface BaseCommandOptions {
+export interface BaseCommandOptions extends BasePluginObjectOptions {
 	/**
 	 * The ID of the command, which cannot use spaces. All plugin IDs should try to be unique,
 	 * to make sure that no plugin from different developers would overlap.
@@ -62,12 +60,6 @@ export interface BaseCommandOptions {
 
 	/** Extra notes about the command, that isn't in the description. */
 	notes?: string;
-
-	/** Bot permissions needed to run the command. */
-	botPermissions?: BotPermissions;
-
-	/** User permissions needed to run the command. */
-	userPermissions?: UserPermissions;
 
 	/** The embed inline character limit, before it becomes not inline in the help embed. */
 	inlineCharacterLimit?: number;

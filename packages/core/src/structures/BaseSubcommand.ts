@@ -8,6 +8,9 @@ export abstract class BaseSubcommand extends BaseCommand {
 	 */
 	baseCommand: BaseCommand;
 
+	/** Indicates what kind of plugin object this is. */
+	type: "subcommand";
+
 	constructor(command: BaseCommand, info: BaseCommandOptions) {
 		// Require-All was used;
 		if (!(command instanceof BaseCommand)) {
@@ -17,6 +20,7 @@ export abstract class BaseSubcommand extends BaseCommand {
 		}
 
 		super(command.plugin, command.rawInfo);
+		this.type = "subcommand";
 
 		this.id = `${info.id}`;
 		this.fullId = `${this.fullId}.${info.id}`;

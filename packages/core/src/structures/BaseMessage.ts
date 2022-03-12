@@ -765,16 +765,8 @@ export class BaseMessage extends Base {
 	 * Sends error message. This is a function shortcut to {@link CommandManger}.
 	 *
 	 * @param friendlyError
-	 * @param commandId Command ID for EmbedHelper.getTemplate
 	 */
-	async sendErrorMessage(
-		friendlyError: FriendlyError,
-		commandId?: string
-	): Promise<void> {
-		return this.client.commands.sendErrorMessage(
-			this,
-			friendlyError,
-			commandId
-		);
+	async sendErrorMessage(friendlyError: FriendlyError): Promise<void> {
+		return this.client.commands.sendErrorMessage(this, friendlyError);
 	}
 }

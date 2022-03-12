@@ -63,11 +63,5 @@ export interface UserPermissions {
 		 * you'll need to check for this manually for now.
 		 */
 		roles?: Discord.RoleResolvable[];
-
-		// /**
-		//  * Checks if the user has one of the roles in the list. If there is,
-		//  * the permission will be denied unless the user is the owner, adminstrator, or bot owner.
-		//  */
-		// excludedRoles?: Discord.RoleResolvable[];
 	};
 }

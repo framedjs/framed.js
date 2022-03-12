@@ -4,15 +4,16 @@ import util from "util";
 
 import { BaseCommand } from "../structures/BaseCommand";
 import { BaseDiscordInteraction } from "../structures/BaseDiscordInteraction";
+import { BaseDiscordMenuFlow } from "../structures/BaseDiscordMenuFlow";
 import { BaseEvent } from "../structures/BaseEvent";
 import { BasePlugin } from "../structures/BasePlugin";
 import { Client } from "../structures/Client";
 import { BaseMessage } from "../structures/BaseMessage";
 
 import type { HelpData } from "../interfaces/other/HelpData";
-import type Options from "../interfaces/other/RequireAllOptions";
+import { Utils } from "@framedjs/shared";
+import type { RequireAllOptions } from "@framedjs/shared";
 
-import { DiscordUtils } from "../utils/discord/DiscordUtils";
 import type { Place } from "../interfaces/Place";
 import { Base } from "../structures/Base";
 
@@ -25,11 +26,11 @@ export class PluginManager extends Base {
 	 */
 	map = new Map<string, BasePlugin>();
 
-	private _pluginLoadOptions: Options | undefined;
-	public get pluginLoadOptions(): Options | undefined {
+	private _pluginLoadOptions: RequireAllOptions | undefined;
+	public get pluginLoadOptions(): RequireAllOptions | undefined {
 		return this._pluginLoadOptions;
 	}
-	private set pluginLoadOptions(value: Options | undefined) {
+	private set pluginLoadOptions(value: RequireAllOptions | undefined) {
 		this._pluginLoadOptions = value;
 	}
 	private defaultPluginIds: string[] = [];
@@ -71,9 +72,9 @@ export class PluginManager extends Base {
 	 * Loads the plugins
 	 * @param options RequireAll options
 	 */
-	loadPluginsIn(options: Options): BasePlugin[] {
+	loadPluginsIn(options: RequireAllOptions): BasePlugin[] {
 		this.pluginLoadOptions = options;
-		const plugins = DiscordUtils.importScripts(options) as (new (
+		const plugins = Utils.importScripts(options) as (new (
 			client: Client
 		) => BasePlugin)[];
 		Logger.silly(`Plugins: ${util.inspect(plugins)}`);
@@ -144,9 +145,21 @@ export class PluginManager extends Base {
 			});
 		}
 
+		// Load API routes
 		if (plugin.paths.routes) {
 			this.client.api?.loadRoutesIn({
 				dirname: plugin.paths.routes,
+				filter: fileName => {
+					const success = importFilter.test(fileName);
+					return success ? fileName : false;
+				},
+			});
+		}
+
+		// Load menu flows
+		if (plugin.paths.discordMenuFlows) {
+			plugin.loadMenuFlowsIn({
+				dirname: plugin.paths.discordMenuFlows,
 				filter: fileName => {
 					const success = importFilter.test(fileName);
 					return success ? fileName : false;
@@ -203,6 +216,16 @@ export class PluginManager extends Base {
 			);
 		});
 		return discordInteractions;
+	}
+
+	get discordMenuFlowArray(): BaseDiscordMenuFlow[] {
+		const discordMenuFlows: BaseDiscordMenuFlow[] = [];
+		this.map.forEach(plugin => {
+			discordMenuFlows.push(
+				...Array.from(plugin.discordMenuFlows.values())
+			);
+		});
+		return discordMenuFlows;
 	}
 
 	/**

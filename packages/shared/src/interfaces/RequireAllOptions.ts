@@ -1,6 +1,6 @@
-// Same as index.d.ts for require-all, just too lazy to contribute to the
-// DefinitelyTyped repo to export this interface, then wait
-export default interface Options {
+// More-or-less the same as index.d.ts for require-all, but I'm just too lazy
+// to contribute to the DefinitelyTyped repo to export this interface, then wait
+export interface RequireAllOptions {
 	dirname: string;
 	filter?:
 		| ((name: string, path: string) => string | false | undefined)

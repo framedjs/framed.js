@@ -12,6 +12,9 @@ export interface BasePluginPathOptions {
 
 	/** Discord interactions path */
 	discordInteractions?: string;
+
+	/** Discord menu flow path */
+	discordMenuFlows?: string;
 }
 
 /**

@@ -100,7 +100,10 @@ importers:
       winston: 3.3.3
 
   packages/shared:
-    specifiers: {}
+    specifiers:
+      require-all: ^3.0.0
+    dependencies:
+      require-all: 3.0.0
 
 packages:
 

@@ -4,12 +4,13 @@ import { BaseDiscordInteraction } from "./BaseDiscordInteraction";
 import { BaseEvent } from "./BaseEvent";
 import { BaseSubcommand } from "./BaseSubcommand";
 import { Client } from "./Client";
-import { DiscordUtils } from "../utils/discord/DiscordUtils";
 import { ImportError } from "./errors/non-friendly/ImportError";
+import { BaseDiscordMenuFlow } from "./BaseDiscordMenuFlow";
 import { Logger } from "@framedjs/logger";
+import { Utils } from "@framedjs/shared";
 
 import type { Prefixes } from "../interfaces/Prefixes";
-import type Options from "../interfaces/other/RequireAllOptions";
+import type { RequireAllOptions } from "@framedjs/shared";
 import type {
 	BasePluginOptions,
 	BasePluginPathOptions,
@@ -20,9 +21,20 @@ import util from "util";
 export abstract class BasePlugin extends Base {
 	id: string;
 
-	commandLoadOptions: Options | undefined;
+	commandLoadOptions: RequireAllOptions | undefined;
 
-	protected subcommandLoadOptions(dirname: string): Options {
+	protected subcommandLoadOptions(dirname: string): RequireAllOptions {
+		return {
+			dirname: dirname,
+			filter: (name: string) => {
+				const match = name.match(this.client.importFilter);
+				if (match) return name;
+			},
+			recursive: false,
+		};
+	}
+
+	protected discordMenuFlowLoadOptions(dirname: string): RequireAllOptions {
 		return {
 			dirname: dirname,
 			filter: (name: string) => {
@@ -70,6 +82,7 @@ export abstract class BasePlugin extends Base {
 	aliases = new Map<string, BaseCommand>();
 	events = new Map<string, BaseEvent>();
 	discordInteractions = new Map<string, BaseDiscordInteraction>();
+	discordMenuFlows = new Map<string, BaseDiscordMenuFlow>();
 
 	constructor(client: Client, info: BasePluginOptions) {
 		super(client);
@@ -133,9 +146,9 @@ export abstract class BasePlugin extends Base {
 	 * Loads commands, through RequireAll options.
 	 * @param options
 	 */
-	loadCommandsIn(options: Options): void {
+	loadCommandsIn(options: RequireAllOptions): void {
 		this.commandLoadOptions = options;
-		const commands = DiscordUtils.importScripts(options) as (new (
+		const commands = Utils.importScripts(options) as (new (
 			plugin: BasePlugin
 		) => BaseCommand)[];
 		Logger.silly(`Commands: ${util.inspect(commands)}`);
@@ -273,8 +286,8 @@ export abstract class BasePlugin extends Base {
 	 *
 	 * @param options
 	 */
-	loadEventsIn(options: Options): void {
-		const events = DiscordUtils.importScripts(options) as (new (
+	loadEventsIn(options: RequireAllOptions): void {
+		const events = Utils.importScripts(options) as (new (
 			plugin: BasePlugin
 		) => BaseEvent)[];
 		Logger.silly(`Events: ${util.inspect(events)}`);
@@ -390,8 +403,8 @@ export abstract class BasePlugin extends Base {
 	 * Loads Discord interactions, through RequireAll options.
 	 * @param options
 	 */
-	loadDiscordInteractionsIn(options: Options): void {
-		const interactions = DiscordUtils.importScripts(options) as (new (
+	loadDiscordInteractionsIn(options: RequireAllOptions): void {
+		const interactions = Utils.importScripts(options) as (new (
 			plugin: BasePlugin
 		) => BaseDiscordInteraction)[];
 		Logger.silly(`Interactions: ${util.inspect(interactions)}`);
@@ -452,5 +465,81 @@ export abstract class BasePlugin extends Base {
 
 		Logger.debug(`Loaded Discord interaction "${command.fullId}"`);
 	}
+	//#endregion
+
+	//#region Discord Menu Flow loading
+
+	/**
+	 * Loads Discord menu flows, through RequireAll options.
+	 * @param options
+	 */
+	loadMenuFlowsIn(options: RequireAllOptions): void {
+		this.commandLoadOptions = options;
+		const menuFlows = Utils.importScripts(options) as (new (
+			plugin: BasePlugin
+		) => BaseDiscordMenuFlow)[];
+		Logger.silly(`Menu Flows: ${util.inspect(menuFlows)}`);
+		this.loadMenuFlows(menuFlows);
+	}
+
+	loadMenuFlows<T extends BaseDiscordMenuFlow>(
+		menuFlows: (new (plugin: BasePlugin) => T)[]
+	): void {
+		for (const menu of menuFlows) {
+			try {
+				const initMenuFlow = new menu(this);
+				if (initMenuFlow instanceof BaseDiscordMenuFlow) {
+					this.loadMenuFlow(initMenuFlow);
+				}
+			} catch (error) {
+				if (error instanceof ImportError) {
+					// Wrong import type was used
+					if (
+						process.env.FRAMED_HIDE_INSTANCE_IMPORT_ERROR?.toLocaleLowerCase() !=
+						"true"
+					) {
+						Logger.silly(
+							`~99% safe to ignore: ${(error as Error).stack}`
+						);
+					}
+				} else {
+					// If it's something else, a normal error will appear
+					Logger.error((error as Error).stack);
+				}
+			}
+		}
+	}
+
+	loadMenuFlow<T extends BaseDiscordMenuFlow>(menu: T): void {
+		// Sets up some menus into the Map
+		if (this.discordMenuFlows.get(menu.rawId)) {
+			Logger.error(`Menu flow with ID "${menu.rawId}" already exists!`);
+			return;
+		}
+		this.discordMenuFlows.set(menu.rawId, menu);
+
+		// Load pages from script
+		menu.loadPagesIn(this.discordMenuFlowLoadOptions(menu.paths.pages));
+
+		Logger.debug(`Loaded menu flow "${menu.rawId}"`);
+	}
+
+	unloadMenuFlows(): void {
+		for (const [id] of this.commands) {
+			this.unloadMenuFlow(id);
+		}
+	}
+
+	unloadMenuFlow(rawId: string): void {
+		const menu = this.discordMenuFlows.get(rawId);
+		if (!menu) {
+			Logger.error(`Menu flow ID ${rawId} doesn't exist!`);
+			return;
+		}
+		this.discordMenuFlows.delete(rawId);
+
+		Logger.debug(`Unloaded menu flow "${rawId}"`);
+	}
+
 	//#endregion
 }

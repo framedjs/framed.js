@@ -17,7 +17,7 @@ export abstract class BaseDiscordMessageComponentInteraction
 {
 	constructor(plugin: BasePlugin, info: BaseDiscordInteractionOptions) {
 		super(plugin, info);
-		this.fullId = `${this.plugin.id}.interaction.messagecomponent.${this.id}`;
+		this.fullId = `${this.plugin.id}.${this.type}.messagecomponent.${this.id}`;
 	}
 
 	/**

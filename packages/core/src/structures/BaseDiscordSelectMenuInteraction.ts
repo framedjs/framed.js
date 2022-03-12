@@ -11,7 +11,7 @@ export abstract class BaseDiscordSelectMenuInteraction
 {
 	constructor(plugin: BasePlugin, info: BaseDiscordInteractionOptions) {
 		super(plugin, info);
-		this.fullId = `${this.plugin.id}.interaction.selectmenu.${this.id}`;
+		this.fullId = `${this.plugin.id}.${this.type}.selectmenu.${this.id}`;
 	}
 
 	/**

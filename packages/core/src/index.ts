@@ -14,6 +14,9 @@ export { BaseCommand } from "./structures/BaseCommand";
 export { BaseDiscordButtonInteraction } from "./structures/BaseDiscordButtonInteraction";
 export { BaseDiscordContextMenuInteraction } from "./structures/BaseDiscordContextMenuInteraction";
 export { BaseDiscordInteraction } from "./structures/BaseDiscordInteraction";
+export { BaseDiscordMenuFlow } from "./structures/BaseDiscordMenuFlow";
+export { BaseDiscordMenuFlowPage } from "./structures/BaseDiscordMenuFlowPage";
+export { BaseDiscordMenuFlowStartPage } from "./structures/BaseDiscordMenuFlowStartPage";
 export { BaseDiscordMessageComponentInteraction } from "./structures/BaseDiscordMessageComponentInteraction";
 export { BaseDiscordSelectMenuInteraction } from "./structures/BaseDiscordSelectMenuInteraction";
 export { BaseSubcommand } from "./structures/BaseSubcommand";
@@ -31,14 +34,19 @@ export type { ArgumentOptions } from "./interfaces/ArgumentOptions";
 export type { ArgumentWrappedInQuotes } from "./interfaces/Argument";
 export type { BaseCommandOptions } from "./interfaces/BaseCommandOptions";
 export type { BaseDiscordInteractionOptions } from "./interfaces/BaseDiscordInteractionOptions";
+export type { BaseDiscordMenuFlowOptions } from "./interfaces/BaseDiscordMenuFlowOptions";
+export type { BaseDiscordMenuFlowPageOptions } from "./interfaces/BaseDiscordMenuFlowPageOptions";
+export type { BaseDiscordMenuFlowPageRenderOptions } from "./interfaces/BaseDiscordMenuFlowPageRenderOptions";
 export type { BotPermissions } from "./interfaces/BotPermissions";
 export type { ClientOptions } from "./interfaces/ClientOptions";
 export type { CooldownOptions } from "./interfaces/CooldownOptions";
 export type { CooldownData } from "./interfaces/CooldownData";
 // export { DiscordMessageData } from "./interfaces/DiscordMessageData";
 // export { DiscordMessageDataOptions } from "./interfaces/DiscordMessageDataOptions";
+export type { DiscordInteractionSendOptions } from "./interfaces/DiscordInteractionSendOptions";
 export type { DiscohookOutputData } from "./interfaces/other/DiscohookOutputData";
 export type { FoundCommandData } from "./interfaces/FoundCommandData";
+export type { HandleFriendlyErrorOptions } from "./interfaces/HandleFriendlyErrorOptions";
 export type { HelpData } from "./interfaces/other/HelpData";
 export type {
 	DiscordLoginOptions,
@@ -49,7 +57,7 @@ export type { ParseEmojiAndStringData } from "./interfaces/ParseEmojiAndStringDa
 export type { Place } from "./interfaces/Place";
 export type { InlineOptions } from "./interfaces/InlineOptions";
 // export { ResponseData } from "./managers/database/interfaces/ResponseData";
-export type { default as RequireAllOptions } from "./interfaces/other/RequireAllOptions";
+export type { RequireAllOptions } from "@framedjs/shared";
 export type { UserPermissions } from "./interfaces/UserPermissions";
 export type { Settings } from "./providers/interfaces/Settings";
 
@@ -71,6 +79,7 @@ export { EmbedHelper } from "./utils/discord/EmbedHelper";
 export { Platform } from "./types/Platform";
 
 // Friendly Errors
+export { DMError } from "./structures/errors/DMError";
 export { FriendlyError } from "./structures/errors/FriendlyError";
 export { InternalError } from "./structures/errors/InternalError";
 export { InvalidError } from "./structures/errors/InvalidError";

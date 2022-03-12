@@ -21,7 +21,7 @@ export abstract class BaseDiscordContextMenuInteraction
 		super(plugin, info);
 		this.contextMenuBuilder = info.contextMenuBuilder;
 		this.global = info.global != undefined ? info.global : true;
-		this.fullId = `${this.plugin.id}.interaction.contextmenu.${this.id}`;
+		this.fullId = `${this.plugin.id}.${this.type}.contextmenu.${this.id}`;
 	}
 
 	/**

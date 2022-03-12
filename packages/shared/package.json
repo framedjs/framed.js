@@ -17,5 +17,8 @@
   "files": [
     "dist/**/*.js",
     "dist/**/*.d.ts"
-  ]
+  ],
+  "dependencies": {
+    "require-all": "^3.0.0"
+  }
 }

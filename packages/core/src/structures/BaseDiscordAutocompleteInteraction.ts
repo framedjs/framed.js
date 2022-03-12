@@ -11,7 +11,7 @@ export abstract class BaseDiscordAutocompleteInteraction
 {
 	constructor(plugin: BasePlugin, info: BaseDiscordInteractionOptions) {
 		super(plugin, info);
-		this.fullId = `${this.plugin.id}.interaction.button.${this.id}`;
+		this.fullId = `${this.plugin.id}.${this.type}.autocomplete.${this.id}`;
 	}
 
 	/**

@@ -147,13 +147,13 @@ export class DiscordMessage extends BaseMessage {
 				content = msg.content;
 			}
 
-			if (options.showTimer && msg && !msg.deleted) {
+			if (options.showTimer && msg) {
 				await msg.edit(`${content} (Hiding message in ${i}...)`);
 			}
 
 			const stopTime = Math.round(process.hrtime(startTime)[1] / 1e6);
 			await Utils.sleep(1000 - stopTime);
 		}
-		if (msg && !msg.deleted) await msg.delete();
+		await msg.delete();
 	}
 }

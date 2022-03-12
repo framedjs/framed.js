@@ -1,32 +1,36 @@
-import { Logger } from "@framedjs/logger";
-import { Utils } from "@framedjs/shared";
-import { oneLine, oneLineCommaListsOr, oneLineInlineLists } from "common-tags";
-
+/* eslint-disable no-mixed-spaces-and-tabs */
 import { Base } from "../structures/Base";
 import { BaseCommand } from "../structures/BaseCommand";
 import { BaseDiscordInteraction } from "../structures/BaseDiscordInteraction";
 import { BaseDiscordAutocompleteInteraction } from "../structures/BaseDiscordAutocompleteInteraction";
 import { BaseDiscordButtonInteraction } from "../structures/BaseDiscordButtonInteraction";
 import { BaseDiscordContextMenuInteraction } from "../structures/BaseDiscordContextMenuInteraction";
+import { BaseDiscordMenuFlow } from "../structures/BaseDiscordMenuFlow";
+import { BaseDiscordMenuFlowPage } from "../structures/BaseDiscordMenuFlowPage";
 import { BaseDiscordMessageComponentInteraction } from "../structures/BaseDiscordMessageComponentInteraction";
 import { BaseDiscordSelectMenuInteraction } from "../structures/BaseDiscordSelectMenuInteraction";
 import { BaseMessage } from "../structures/BaseMessage";
+import { BasePluginObject } from "../structures/BasePluginObject";
+import Discord from "discord.js";
 import { DiscordCommandInteraction } from "../structures/DiscordCommandInteraction";
 import { DiscordInteraction } from "../structures/DiscordInteraction";
 import { DiscordMessage } from "../structures/DiscordMessage";
 import { Client } from "../structures/Client";
 import { EmbedHelper } from "../utils/discord/EmbedHelper";
 import { FriendlyError } from "../structures/errors/FriendlyError";
+import { Logger } from "@framedjs/logger";
 import { TwitchMessage } from "../structures/TwitchMessage";
+import { Utils } from "@framedjs/shared";
+import { oneLine, oneLineInlineLists } from "common-tags";
 
+import type { BaseDiscordMenuFlowPageRenderOptions } from "../interfaces/BaseDiscordMenuFlowPageRenderOptions";
 import type { FoundCommandData } from "../interfaces/FoundCommandData";
-import type { Place } from "../interfaces/Place";
-
-import Discord from "discord.js";
+import type { HandleFriendlyErrorOptions } from "../interfaces/HandleFriendlyErrorOptions";
 import type {
-	BotPermissionAllowedData,
-	BotPermissionDeniedData,
-} from "../interfaces/BotPermissionData";
+	UserPermissionAllowedData,
+	UserPermissionDeniedData,
+} from "../interfaces/UserPermissionData";
+import type { Place } from "../interfaces/Place";
 
 export class CommandManager extends Base {
 	constructor(client: Client) {
@@ -379,7 +383,11 @@ export class CommandManager extends Base {
 		 * to print out a plain message that contains a comamnd. Then, the command will
 		 * run with elevated permissions, as the bot likely has higher permissions than the user.
 		 */
-		if (msg.discord?.author.bot) {
+		if (
+			msg.discord?.author.bot &&
+			process.env.FRAMED_ALLOW_BOTS_TO_RUN_COMMANDS?.toLowerCase() !=
+				"true"
+		) {
 			Logger.warn(
 				`${msg.discord.author.tag} attempted to run a command, but was a bot!`
 			);
@@ -387,12 +395,26 @@ export class CommandManager extends Base {
 		}
 
 		// If for some reason I see this, I'm going to
-		if (msg.discordInteraction?.user.bot) {
+		if (
+			msg.discordInteraction?.user.bot &&
+			process.env.FRAMED_ALLOW_BOTS_TO_RUN_COMMANDS?.toLowerCase() !=
+				"true"
+		) {
 			Logger.warn(
 				oneLine`${msg.discordInteraction.user.tag} (from discordInteraction)
 				attempted to run a command, but was a bot!`
 			);
 			return map;
+		}
+
+		if (msg instanceof DiscordInteraction) {
+			try {
+				await this.scanAndRunMenuFlowPages(msg, map, {
+					errorHandling: "sendAllErrors",
+				});
+			} catch (error) {
+				await this.handleFriendlyError(msg, error);
+			}
 		}
 
 		try {
@@ -435,11 +457,12 @@ export class CommandManager extends Base {
 	 *
 	 * @param msg
 	 * @param error
+	 * @param options
 	 */
 	async handleFriendlyError(
 		msg: BaseMessage,
 		error: unknown,
-		catchSendMessage = false
+		options?: HandleFriendlyErrorOptions
 	): Promise<void> {
 		if (error instanceof FriendlyError) {
 			Logger.warn(oneLine`The below warning is likely
@@ -447,9 +470,13 @@ export class CommandManager extends Base {
 			Logger.warn((error as Error).stack);
 
 			try {
-				await this.sendErrorMessage(msg, error);
+				await this.sendErrorMessage(
+					msg,
+					error,
+					options?.sendSeparateReply
+				);
 			} catch (error) {
-				if (catchSendMessage) {
+				if (options?.catchSendMessage != false) {
 					Logger.error((error as Error).stack);
 				} else {
 					throw error;
@@ -522,14 +549,14 @@ export class CommandManager extends Base {
 			let success = false;
 			if (
 				command instanceof BaseDiscordInteraction &&
-				msg.discordInteraction
+				msg instanceof DiscordInteraction
 			) {
 				success = await command.run(
 					msg,
 					msg.discordInteraction.interaction
 				);
 			} else {
-				success = await command.run(msg);
+				success = await (command as BaseCommand).run(msg);
 			}
 
 			if (success && command.cooldown?.setAutomatically != false) {
@@ -554,11 +581,6 @@ export class CommandManager extends Base {
 		const interactions = this.client.plugins.discordInteractionsArray;
 
 		for await (const command of interactions) {
-			const passed = await this.checkForPermissions(msg, command, map);
-			if (!passed) {
-				continue;
-			}
-
 			if (msg.command && command.id != msg.command.toLocaleLowerCase()) {
 				continue;
 			}
@@ -570,6 +592,11 @@ export class CommandManager extends Base {
 			);
 
 			if (!matchesType) {
+				continue;
+			}
+
+			const permCheck = await this.checkForPermissions(msg, command, map);
+			if (!permCheck) {
 				continue;
 			}
 
@@ -601,6 +628,145 @@ export class CommandManager extends Base {
 		return map;
 	}
 
+	async scanAndRunMenuFlowPages(
+		msg: DiscordInteraction,
+		map?: Map<string, boolean>,
+		options?: {
+			errorHandling?: "throw" | "sendAllErrors";
+		}
+	): Promise<Map<string, boolean>> {
+		if (!map) {
+			map = new Map<string, boolean>();
+		}
+		let foundPage: BaseDiscordMenuFlowPage | undefined;
+		let flowPageResults: boolean | undefined;
+		for (const plugin of this.client.plugins.pluginsArray) {
+			for (const [, menu] of plugin.discordMenuFlows) {
+				const interaction = msg.discordInteraction.interaction;
+				if (!interaction.isButton() && !interaction.isSelectMenu()) {
+					continue;
+				}
+
+				const data = menu.parseId(interaction.customId);
+				if (!data) {
+					continue;
+				}
+
+				// Compares IDs and gets ephemeral state
+				const ephemeral =
+					data.args[0] == `${menu.rawId}${menu.idInteractionFlag}`;
+				if (
+					!ephemeral &&
+					data.args[0] != `${menu.rawId}${menu.idMessageFlag}`
+				) {
+					continue;
+				}
+
+				// Find a matching page
+				for (const [, page] of menu.pages) {
+					if (data.args[1] == page.id) {
+						foundPage = page;
+
+						const timestamp =
+							msg.discordInteraction.interaction.createdTimestamp;
+						const baseId = foundPage.menu.getDataId(
+							undefined,
+							foundPage.id
+						);
+						let doNotClose = false;
+
+						// Do permission checks
+						// NOTE: permCheckRenderOptions only really needs userId
+						const permCheckRenderOptions: BaseDiscordMenuFlowPageRenderOptions =
+							{
+								guildId: data.guildId ?? msg.discord.guild?.id,
+								messageId: data.messageId,
+								userId: data.userId ?? msg.discord.author.id,
+								ephemeral: ephemeral,
+							};
+						const permCheck = await this.checkForPermissions(
+							msg,
+							page.menu,
+							map,
+							permCheckRenderOptions
+						);
+						const permCheckPage = await this.checkForPermissions(
+							msg,
+							foundPage,
+							map,
+							permCheckRenderOptions
+						);
+						if (!permCheck || !permCheckPage) {
+							continue;
+						}
+
+						try {
+							Logger.silly(
+								`${timestamp} baseId "${baseId}" has started`
+							);
+							flowPageResults = await page.render(msg, {
+								guildId: data.guildId,
+								messageId: data.messageId,
+								userId: data.userId,
+								ephemeral: ephemeral,
+							});
+						} catch (error) {
+							const err = error as Error;
+							if (
+								err instanceof FriendlyError ||
+								err.message == "Unknown interaction"
+							) {
+								doNotClose = true;
+							}
+
+							if (
+								!options?.errorHandling ||
+								options?.errorHandling == "sendAllErrors"
+							) {
+								await this.handleFriendlyError(msg, err);
+							} else {
+								throw err;
+							}
+						}
+						Logger.silly(
+							`${timestamp} baseId "${baseId}" has processed`
+						);
+
+						/**
+						 * For mapResults; returns the results from render.
+						 *
+						 * If the bot takes too long, and there's no result,
+						 * return true so the user can try again.
+						 *
+						 * Else if it was just a FriendlyError, or a delayed interaction,
+						 * and it was for-sure a fail, return false.
+						 */
+						const mapResults = flowPageResults
+							? flowPageResults
+							: doNotClose
+							? false
+							: true;
+						if (!mapResults) {
+							Logger.silly(
+								`${timestamp} baseId "${baseId}" has closed`
+							);
+						}
+						map.set(baseId, mapResults);
+					}
+				}
+				if (!foundPage) {
+					Logger.error(
+						`Page with ID "${data.args[1]}" doesn't exist on menu with ID "${data.args[0]}"`
+					);
+				} else {
+					break;
+				}
+			}
+		}
+
+		return map;
+	}
+
 	protected discordInteractionMatchesBaseType(
 		interaction: Discord.Interaction,
 		command: BaseCommand
@@ -625,44 +791,57 @@ export class CommandManager extends Base {
 	 * Checks for permission, and sends an error message
 	 *
 	 * @param msg
-	 * @param command
+	 * @param base
 	 * @param map Optional results map
 	 *
 	 * @returns true if passed
 	 */
 	async checkForPermissions(
 		msg: BaseMessage,
-		command: BaseCommand,
-		map?: Map<string, boolean>
+		base: BasePluginObject,
+		map?: Map<string, boolean>,
+		pageRenderOptions?: BaseDiscordMenuFlowPageRenderOptions
 	): Promise<boolean> {
 		// Checks automatically for user permissions
-		if (command.userPermissions?.checkAutomatically != false) {
-			const data = command.checkUserPermissions(msg);
-			if (!data.success) {
-				const sent = await command.sendUserPermissionErrorMessage(
+		if (base.userPermissions?.checkAutomatically != false) {
+			let data: UserPermissionAllowedData | UserPermissionDeniedData;
+			if (
+				base instanceof BaseDiscordMenuFlow ||
+				base instanceof BaseDiscordMenuFlowPage
+			) {
+				data = base.checkUserPermissions(
 					msg,
-					command.userPermissions,
+					base.userPermissions,
+					pageRenderOptions
+				);
+			} else {
+				data = base.checkUserPermissions(msg);
+			}
+			if (!data.success) {
+				const sent = await base.sendUserPermissionErrorMessage(
+					msg,
+					base.userPermissions,
 					data
 				);
 				if (!sent) {
-					Logger.error(oneLine`"${command.id}" tried to send
+					Logger.error(oneLine`"${base.id}" tried to send
 					a user permission error message, but something went wrong!`);
 				}
-				map?.set(command.fullId, false);
+				map?.set(base.fullId, false);
 				return false;
 			}
 		}
 
 		// Checks automatically for bot permissions
-		if (command.botPermissions?.checkAutomatically != false) {
-			const data = await command.checkBotPermissions(msg);
+		if (base.botPermissions?.checkAutomatically != false) {
+			const data = await base.checkBotPermissions(msg);
 			if (!data.success) {
 				let sent = false;
 				let sentError: Error | undefined;
 				try {
-					sent = await command.sendBotPermissionErrorMessage(
+					sent = await base.sendBotPermissionErrorMessage(
 						msg,
-						command.botPermissions,
+						base.botPermissions,
 						data
 					);
 				} catch (error) {
@@ -672,11 +851,11 @@ export class CommandManager extends Base {
 				if (sentError) {
 					Logger.error(sentError);
 				} else if (!sent) {
-					Logger.error(oneLine`"${command.id}" tried to send
+					Logger.error(oneLine`"${base.id}" tried to send
 					a user permission error message, but something went wrong!`);
 				}
 
-				map?.set(command.fullId, false);
+				map?.set(base.fullId, false);
 				return false;
 			}
 		}
@@ -818,13 +997,14 @@ export class CommandManager extends Base {
 	/**
 	 * Sends error message
 	 *
+	 * @param msg
 	 * @param friendlyError
-	 * @param commandId Command ID for EmbedHelper.getTemplate
+	 * @param sendSeparateReply
 	 */
 	async sendErrorMessage(
 		msg: BaseMessage,
 		friendlyError: FriendlyError,
-		commandId?: string
+		sendSeparateReply?: boolean
 	): Promise<void> {
 		let embed: Discord.MessageEmbed | undefined;
 		let options:
@@ -837,7 +1017,7 @@ export class CommandManager extends Base {
 		if (msg.discord) {
 			embed = EmbedHelper.getTemplate(
 				msg.discord,
-				await EmbedHelper.getCheckOutFooter(msg, commandId)
+				await EmbedHelper.getCheckOutFooter(msg)
 			)
 				.setTitle(friendlyError.friendlyName)
 				.setDescription(friendlyError.message);
@@ -849,361 +1029,56 @@ export class CommandManager extends Base {
 			const useEmbedForFriendlyErrors =
 				process.env.FRAMED_USE_EMBED_FOR_FRIENDLY_ERRORS;
 			if (useEmbedForFriendlyErrors?.toLocaleLowerCase() != "true") {
-				options = { embeds: [embed], ephemeral: true };
+				options = {
+					content: "_ _",
+					embeds: [embed],
+					ephemeral: true,
+					components: [],
+				};
 			} else {
 				options = {
 					content: `**${friendlyError.friendlyName}**\n${friendlyError.message}`,
+					components: [],
+					embeds: [],
 					ephemeral: true,
 				};
 			}
 		}
 
 		if (options) {
-			await msg.send(options);
+			let useDm = false;
+			if (
+				msg instanceof DiscordMessage ||
+				msg instanceof DiscordInteraction
+			) {
+				const missingPerms =
+					await BasePluginObject.getMissingDiscordMemberPermissions(
+						msg,
+						msg.discord.member,
+						["SEND_MESSAGES", "EMBED_LINKS"]
+					);
+
+				useDm =
+					msg instanceof DiscordMessage &&
+					missingPerms.includes("SEND_MESSAGES");
+			}
+
+			if (useDm && msg.discord) {
+				await msg.discord.author.send(options);
+			} else if (msg instanceof DiscordInteraction) {
+				const interaction = msg.discordInteraction.interaction;
+				if (interaction.isApplicationCommand() && sendSeparateReply) {
+					await interaction.reply(options);
+				} else {
+					await msg.send(options);
+				}
+			} else {
+				await msg.send(options);
+			}
 		} else {
 			await msg.send(
 				`${friendlyError.friendlyName}: ${friendlyError.message}`
 			);
-		}
-	}
-
-	/**
-	 * Sends an error message, with what permissions the user needs to work with.
-	 *
-	 * @param msg
-	 * @param command
-	 * @param permissions
-	 * @param deniedData
-	 * @returns
-	 */
-	async sendUserPermissionErrorMessage(
-		msg: BaseMessage,
-		command: BaseCommand,
-		permissions = command.userPermissions,
-		deniedData = command.checkUserPermissions(msg, permissions)
-	): Promise<boolean> {
-		if (deniedData.success) {
-			throw new Error(
-				"deniedData should have been denied; deniedData.success was true"
-			);
-		}
-
-		if (
-			msg instanceof DiscordMessage ||
-			msg instanceof DiscordInteraction
-		) {
-			const discord = msg.discord;
-			const embed = EmbedHelper.getTemplate(
-				discord,
-				await EmbedHelper.getCheckOutFooter(msg, command.id)
-			).setTitle("Permission Denied");
-
-			let useEmbed = true;
-			if (deniedData.reasons.includes("discordMissingPermissions")) {
-				if (permissions?.discord?.permissions) {
-					// Gets user's permissions and missing permissions
-					const userPerms = new Discord.Permissions(
-						msg.discord.member?.permissions
-					);
-					const missingPerms = userPerms.missing(
-						permissions.discord.permissions
-					);
-					useEmbed = !missingPerms.includes("EMBED_LINKS");
-				}
-			}
-
-			const notAllowed = `${discord.author}, you aren't allowed to do that!`;
-			const missingMessage = useEmbed
-				? `You are missing:`
-				: `You are missing (or aren't):`;
-			let addToDescription = "";
-			let exitForLoop = false;
-			let missingPerms: Discord.PermissionString[] = [];
-
-			for (const reason of deniedData.reasons) {
-				if (exitForLoop) break;
-
-				switch (reason) {
-					case "botOwnersOnly":
-						embed.setDescription(oneLine`
-							${notAllowed} Only the bot owner(s) are.`);
-						exitForLoop = true;
-						break;
-					case "discordNoData":
-						embed.setDescription(oneLine`User permissions were
-							specified, but there was no specific Discord
-							permission data entered. By default, this will deny
-							permissions to anyone but bot owners.`);
-						exitForLoop = true;
-						break;
-					case "discordMemberPermissions":
-						embed.setDescription(oneLine`
-							There are certain member permissions needed to run this.
-							Try running this command again, but on a Discord server.`);
-						exitForLoop = true;
-						break;
-					case "discordMissingPermissions":
-						if (permissions?.discord?.permissions) {
-							// Gets user's permissions and missing permissions
-							const userPerms = new Discord.Permissions(
-								discord.member?.permissions
-							);
-							missingPerms = userPerms.missing(
-								permissions.discord.permissions
-							);
-
-							// Puts all the missing permissions into a formatted string
-							let missingPermsString = "";
-							for (const perm of missingPerms) {
-								missingPermsString += `\`${perm}\` `;
-							}
-
-							// If it's empty, show an error
-							if (!missingPermsString) {
-								missingPermsString = oneLine`No missing
-									permissions found, something went wrong!`;
-							} else {
-								addToDescription = missingMessage;
-							}
-
-							embed.addField(
-								"Discord Permissions",
-								missingPermsString
-							);
-						} else {
-							addToDescription += oneLine`I think there are
-								missing permissions, but there are no permissions
-								to check with. Something went wrong!`;
-						}
-						break;
-					case "discordMissingRole":
-						// Goes through roles
-						if (permissions?.discord?.roles) {
-							const roles: string[] = [];
-							for (const role of permissions.discord.roles) {
-								// Correctly parses the resolvable
-								if (typeof role == "string") {
-									const newRole =
-										discord.guild?.roles.cache.get(role);
-									if (!newRole) {
-										Logger.error(oneLine`BaseCommand.ts:
-											Couldn't find role with role ID "${role}".`);
-										roles.push(`<@&${role}>`);
-									} else {
-										roles.push(`${newRole}`);
-									}
-								} else {
-									roles.push(`${role}`);
-								}
-							}
-
-							if (roles.length > 0) {
-								addToDescription = `${notAllowed} ${missingMessage}`;
-								embed.addField(
-									"Discord Roles",
-									oneLineInlineLists`${roles}`
-								);
-								break;
-							}
-						}
-
-						// If the above didn't set anything, show this instead
-						embed.setDescription(oneLine`I think you are missing a
-							role, but there's no roles for me to check with.
-							Something went wrong!`);
-
-						break;
-					case "discordUser":
-						if (permissions?.discord?.users) {
-							const listOfUsers: string[] = [];
-
-							for (const user of permissions.discord.users) {
-								listOfUsers.push(`<@!${user}>`);
-							}
-
-							embed
-								.setDescription(missingMessage)
-								.addField(
-									"Users",
-									oneLineCommaListsOr`${listOfUsers}`
-								);
-						}
-						break;
-					default:
-						embed.setDescription(oneLine`${notAllowed} ${missingMessage}
-							The specified reason is not known. Something went wrong!`);
-						exitForLoop = true;
-						break;
-				}
-			}
-
-			if (addToDescription) {
-				embed.setDescription(oneLine`${notAllowed} ${missingMessage}`);
-			}
-
-			if (msg instanceof DiscordMessage) {
-				if (missingPerms.includes("SEND_MESSAGES")) {
-					try {
-						if (
-							msg.prefix &&
-							msg.client.commands.defaultPrefixes.includes(
-								msg.prefix
-							)
-						) {
-							const dmChannel =
-								await msg.discord.author.createDM();
-							await dmChannel.send({ embeds: [embed] });
-							await dmChannel.send(oneLine`The bot couldn't send a message
-							in <#${msg.discord.channel.id}>, due to permissions. Please
-							report this to server staff, or if you are server staff,
-							please check the permissions in the channel.`);
-						} else {
-							throw new Error(
-								"Missing SEND_MESSAGES permission, cannot send error"
-							);
-						}
-					} catch (error) {
-						Logger.error((error as Error).stack);
-					}
-				} else if (missingPerms.includes("EMBED_LINKS")) {
-					await msg.send(
-						`**${embed.title}**\n${oneLine`Unfortunately, the
-							\`EMBED_LINKS\` permission is disabled, so I can't send any details.`}`
-					);
-				} else {
-					await msg.send({ embeds: [embed] });
-				}
-			} else {
-				await msg.send({ embeds: [embed], ephemeral: true });
-			}
-
-			return true;
-		} else {
-			await msg.send(
-				"Something went wrong when checking user permissions!"
-			);
-			return false;
-		}
-	}
-
-	/**
-	 * Sends an error message, with what permissions the bot needs to work with.
-	 *
-	 * @param msg
-	 * @param command
-	 * @param botPermissions
-	 * @param deniedData
-	 * @returns
-	 */
-	async sendBotPermissionErrorMessage(
-		msg: BaseMessage,
-		command: BaseCommand,
-		botPermissions = command.botPermissions,
-		deniedData: BotPermissionAllowedData | BotPermissionDeniedData
-	): Promise<boolean> {
-		if (deniedData.success) {
-			throw new Error(
-				"deniedData should have been denied; deniedData.success was true"
-			);
-		}
-
-		let missingPerms: Discord.PermissionString[] = [];
-		let description = "";
-		let permissionString = "";
-
-		if (
-			msg instanceof DiscordMessage ||
-			msg instanceof DiscordInteraction
-		) {
-			if (
-				!botPermissions?.discord ||
-				deniedData.reason.includes("discordNoData")
-			) {
-				description += oneLine`User permissions were
-					specified, but there was no specific Discord
-					permission data entered. By default, this will deny
-					permissions to anyone but bot owners.`;
-			} else {
-				// Finds all the missing permissions
-				missingPerms = await command.getMissingDiscordBotPermissions(
-					msg,
-					botPermissions.discord.permissions
-				);
-
-				// Puts all the missing permissions into a formatted string
-				let missingPermsString = "";
-				for (const perm of missingPerms) {
-					missingPermsString += `\`${perm}\` `;
-				}
-
-				// If it's empty, show an error
-				if (!missingPermsString) {
-					description = oneLine`No missing
-						permissions found, something went wrong!`;
-				} else {
-					description = `The bot is missing the following permissions:`;
-					permissionString = missingPermsString;
-				}
-			}
-
-			// eslint-disable-next-line no-inner-declarations
-			async function createMessageOptions(
-				msg: DiscordMessage | DiscordInteraction
-			): Promise<
-				| Discord.MessagePayload
-				| Discord.MessageOptions
-				| Discord.InteractionReplyOptions
-			> {
-				const embed = EmbedHelper.getTemplate(
-					msg.discord,
-					await EmbedHelper.getCheckOutFooter(msg, command.id)
-				)
-					.setTitle(title)
-					.setDescription(description);
-
-				if (permissionString) {
-					embed.addField("Discord Permissions", permissionString);
-				}
-
-				if (msg instanceof DiscordMessage) {
-					return { embeds: [embed] };
-				} else {
-					return { ephemeral: true, embeds: [embed] };
-				}
-			}
-
-			const title = "Bot Permissions Error";
-			if (
-				msg instanceof DiscordMessage &&
-				missingPerms.includes("SEND_MESSAGES")
-			) {
-				throw new Error(
-					"Missing SEND_MESSAGES permission, cannot send error"
-				);
-				// const dmChannel = await msg.discord.author.createDM();
-				// await dmChannel.send({ embeds: [embed] });
-				// await dmChannel.send(oneLine`The bot couldn't send a message
-				// in <#${msg.discord.channel.id}>, due to permissions. Please
-				// report this to server staff, or if you are server staff,
-				// please check the permissions in the channel.`);
-			} else if (
-				msg instanceof DiscordMessage &&
-				missingPerms.includes("EMBED_LINKS")
-			) {
-				await msg.send(
-					`**${title}**\n${description} ${permissionString}`
-				);
-			} else {
-				const options = await createMessageOptions(msg);
-				await msg.send(options);
-			}
-
-			return true;
-		} else {
-			await msg.send(
-				"Something went wrong when checking bot permissions!"
-			);
-			return false;
 		}
 	}
 }

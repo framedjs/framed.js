@@ -1,13 +1,12 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { Base } from "./Base";
 import { BaseEventOptions } from "../interfaces/BaseEventOptions";
 import { BasePlugin } from "./BasePlugin";
-import { Client } from "./Client";
 import Discord from "discord.js";
 import { Logger } from "@framedjs/logger";
 
-export abstract class BaseEvent {
-	readonly client: Client;
+export abstract class BaseEvent extends Base {
 	readonly plugin: BasePlugin;
 	discord?: {
 		client?: Discord.Client;
@@ -17,6 +16,8 @@ export abstract class BaseEvent {
 	readonly fullId: string;
 	readonly id: string;
 	readonly description?: string;
+
+	type: "event" = "event";
 
 	private readonly info: BaseEventOptions;
 
@@ -28,9 +29,9 @@ export abstract class BaseEvent {
 	 * @param info Event information
 	 */
 	constructor(plugin: BasePlugin, info: BaseEventOptions) {
-		this.client = plugin.client;
+		super(plugin.client);
 		this.plugin = plugin;
-		this.fullId = `${this.plugin.id}.event.${info.id}`;
+		this.fullId = `${this.plugin.id}.${this.type}.${info.id}`;
 		this.id = info.id;
 		this.description = info.description;
 		this.info = info;

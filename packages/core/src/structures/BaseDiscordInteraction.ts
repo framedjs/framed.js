@@ -13,6 +13,9 @@ export abstract class BaseDiscordInteraction
 {
 	readonly client: Client;
 
+	/** Indicates what kind of plugin object this is. */
+	type: "interaction" = "interaction";
+
 	//#region Duplication of interface
 
 	/** The ID of the interaction, or otherwise known as "commandName". */
@@ -44,7 +47,7 @@ export abstract class BaseDiscordInteraction
 		this.plugin = plugin;
 
 		this.id = info.id.toLocaleLowerCase();
-		this.fullId = `${this.plugin.id}.interaction.${this.id}`;
+		this.fullId = `${this.plugin.id}.${this.type}.${this.id}`;
 
 		this.notes = info.notes;
 		this.botPermissions = info.botPermissions;

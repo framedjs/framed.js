@@ -1,10 +1,10 @@
-import { Logger } from "@framedjs/logger";
 import { Client } from "../structures/Client";
-import { APIManagerOptions } from "../interfaces/APIManagerOptions";
-import { DiscordUtils } from "../utils/discord/DiscordUtils";
 import { BaseRouter } from "../structures/BaseRouter";
 import { Base } from "../structures/Base";
-import Options from "../interfaces/other/RequireAllOptions";
+import { Logger } from "@framedjs/logger";
+import { Utils } from "@framedjs/shared";
+import type { APIManagerOptions } from "../interfaces/APIManagerOptions";
+import type { RequireAllOptions } from "@framedjs/shared";
 import Koa from "koa";
 import Router from "koa-router";
 import util from "util";
@@ -51,8 +51,8 @@ export class APIManager extends Base {
 	 * Loads routes
 	 * @param options RequireAll options
 	 */
-	loadRoutesIn(options: Options): void {
-		const routes = DiscordUtils.importScripts(options) as (new (
+	loadRoutesIn(options: RequireAllOptions): void {
+		const routes = Utils.importScripts(options) as (new (
 			client: Client
 		) => BaseRouter)[];
 		Logger.silly(`Routers: ${util.inspect(routes)}`);

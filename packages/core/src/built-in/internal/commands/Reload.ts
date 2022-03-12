@@ -6,7 +6,7 @@ import InternalPlugin, {
 	InternalParseEverythingOptions,
 	InternalParsePluginCommandOptions,
 } from "../Internal.plugin";
-import { FriendlyError } from "../../..";
+import { FriendlyError } from "../../../structures/errors/FriendlyError";
 
 export default class extends BaseCommand {
 	constructor(plugin: BasePlugin) {

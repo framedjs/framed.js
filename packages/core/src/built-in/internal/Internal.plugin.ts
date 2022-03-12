@@ -5,7 +5,7 @@ import { BasePlugin } from "../../structures/BasePlugin";
 import HeapDump from "./commands/HeapDump";
 import Reload from "./commands/Reload";
 import Unload from "./commands/Unload";
-import { FriendlyError } from "../..";
+import { FriendlyError } from "../../structures/errors/FriendlyError";
 import { Logger } from "@framedjs/logger";
 
 export type InternalLoad = "unload" | "reload";

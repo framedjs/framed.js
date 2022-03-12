@@ -1,53 +1,24 @@
 /* eslint-disable no-mixed-spaces-and-tabs */
 import { BaseMessage } from "./BaseMessage";
+import { BasePluginObject } from "./BasePluginObject";
 import { BasePlugin } from "./BasePlugin";
-import { Client } from "./Client";
-import { DiscordMessage } from "./DiscordMessage";
-import { DiscordInteraction } from "./DiscordInteraction";
-import { TwitchMessage } from "./TwitchMessage";
-import { EmbedHelper } from "../utils/discord/EmbedHelper";
+import { BaseSubcommand } from "./BaseSubcommand";
+import Discord from "discord.js";
 import { Utils } from "@framedjs/shared";
 import { Logger } from "@framedjs/logger";
-import { DiscordUtils } from "../utils/discord/DiscordUtils";
-import { BaseSubcommand } from "./BaseSubcommand";
-import {
-	oneLine,
-	oneLineCommaListsOr,
-	oneLineInlineLists,
-	stripIndents,
-} from "common-tags";
-import Discord from "discord.js";
+import { oneLine, stripIndents } from "common-tags";
 
-import type Options from "../interfaces/other/RequireAllOptions";
 import type { BaseCommandOptions } from "../interfaces/BaseCommandOptions";
-import type { Prefixes } from "../interfaces/Prefixes";
-import type { InlineOptions } from "../interfaces/InlineOptions";
-import type { Place } from "../interfaces/Place";
-import type { UserPermissions } from "../interfaces/UserPermissions";
-import type {
-	UserPermissionAllowedData,
-	UserPermissionDeniedData,
-	UserPermissionDeniedReasons,
-} from "../interfaces/UserPermissionData";
-import type {
-	BotPermissionAllowedData,
-	BotPermissionDeniedData,
-} from "../interfaces/BotPermissionData";
-import type { BotPermissions } from "../interfaces/BotPermissions";
-import type { UniversalSlashCommandBuilder } from "../types/UniversalSlashCommandBuilder";
 import type { CooldownOptions } from "../interfaces/CooldownOptions";
 import type { CooldownData } from "../interfaces/CooldownData";
+import type { InlineOptions } from "../interfaces/InlineOptions";
+import type { Place } from "../interfaces/Place";
+import type { Prefixes } from "../interfaces/Prefixes";
+import type { RequireAllOptions } from "@framedjs/shared";
+import type { UniversalSlashCommandBuilder } from "../types/UniversalSlashCommandBuilder";
 
-export abstract class BaseCommand {
+export abstract class BaseCommand extends BasePluginObject {
 	// static readonly type: string = "BaseCommand";
-
-	readonly client: Client;
-
-	/** The plugin this command is attached to. */
-	plugin: BasePlugin;
-
-	/** * Stores an ID for the command that should be completely unique between plugins. */
-	fullId: string;
 
 	/**
 	 * The ID of the command, which cannot use spaces. All plugin IDs should try to be unique,
@@ -58,7 +29,16 @@ export abstract class BaseCommand {
 	 * For example, if the ID was "test", then one way to be able to trigger it would
 	 * be !test if the default prefix was "!".
 	 */
-	id: string;
+	id!: string;
+
+	/** Indicates what kind of plugin object this is. */
+	type: "command" | "subcommand" | "interaction" = "command";
+
+	/** Stores an ID for the command that should be completely unique between plugins. */
+	fullId: string;
+
+	/** The plugin this command is attached to. */
+	plugin: BasePlugin;
 
 	/** The command tries to import scripts from paths found in this object. */
 	paths?: {
@@ -111,12 +91,6 @@ export abstract class BaseCommand {
 	/** Extra notes about the command, that isn't in the description. */
 	notes?: string;
 
-	/** Bot permissions needed to run the command. */
-	botPermissions?: BotPermissions;
-
-	/** User permissions needed to run the command. */
-	userPermissions?: UserPermissions;
-
 	/**
 	 * Inline options for help embeds. There are individual settings for each element (ex. examples, usage).
 	 * However, you can set this as a boolean to make all fields be either inline or not.
@@ -146,12 +120,12 @@ export abstract class BaseCommand {
 	 * @param info Command information
 	 */
 	constructor(plugin: BasePlugin, info: BaseCommandOptions) {
-		this.client = plugin.client;
+		super(plugin, info);
+
 		this.plugin = plugin;
 		this.rawInfo = info;
 
-		this.id = info.id.toLocaleLowerCase();
-		this.fullId = `${this.plugin.id}.command.${this.id}`;
+		this.fullId = `${plugin.id}.${this.type}.${info.id}`;
 		this.paths = info.paths;
 		this.group = info.group
 			? info.group
@@ -179,7 +153,6 @@ export abstract class BaseCommand {
 			};
 		}
 
-		
 		this.about = info.about;
 		this.description = info.description;
 		this.cooldown = info.cooldown;
@@ -188,9 +161,6 @@ export abstract class BaseCommand {
 		this.inline = info.inline ?? false;
 		this.notes = info.notes;
 		this.usage = info.usage;
-
-		this.botPermissions = info.botPermissions;
-		this.userPermissions = info.userPermissions;
 
 		this.discordInteraction = {
 			global:
@@ -354,488 +324,6 @@ export abstract class BaseCommand {
 	}
 	//#endregion
 
-	//#region Permissions
-
-	/**
-	 * Shows data for if a user has a permission to do something.
-	 *
-	 * NOTE: If userPermissions is undefined, this will return a success.
-	 *
-	 * @param msg
-	 * @param userPermissions
-	 */
-	checkUserPermissions(
-		msg: BaseMessage,
-		userPermissions = this.userPermissions
-	): UserPermissionAllowedData | UserPermissionDeniedData {
-		return BaseCommand.checkUserPermissions(msg, userPermissions);
-	}
-
-	/**
-	 * Shows data for if a user has a permission to do something.
-	 *
-	 * NOTE: If userPermissions is undefined, this will return a success.
-	 *
-	 * @param msg
-	 * @param userPermissions
-	 */
-	static checkUserPermissions(
-		msg: BaseMessage,
-		userPermissions?: UserPermissions
-	): UserPermissionAllowedData | UserPermissionDeniedData {
-		// If the command doesn't specify permissions, assume it's fine
-		if (!userPermissions) {
-			return { success: true };
-		}
-
-		const interaction = msg.discordInteraction?.interaction;
-		const userId = msg.discord?.author.id ?? interaction?.user.id;
-
-		if (
-			userId &&
-			(msg instanceof DiscordMessage || msg instanceof DiscordInteraction)
-		) {
-			const reasons: UserPermissionDeniedReasons[] = [];
-
-			// Bot owners always have permission
-			if (msg.client.discord.botOwners.includes(userId)) {
-				return {
-					success: true,
-				};
-			}
-
-			// If the command can be used by bot owners only,
-			// they don't get permission since the check already failed above
-			if (userPermissions.botOwnersOnly) {
-				return {
-					success: false,
-					reasons: ["botOwnersOnly"],
-				};
-			}
-
-			// If there's no discord data/entry, block it for safety
-			if (!userPermissions.discord) {
-				return {
-					success: false,
-					reasons: ["discordNoData"],
-				};
-			}
-
-			// If a user is in the list, let them pass
-			const passedUserCheck =
-				userPermissions.discord.users?.includes(userId);
-			// Checks for false, not undefined
-			if (passedUserCheck == false) {
-				reasons.push("discordUser");
-			} else if (passedUserCheck == true) {
-				return { success: true };
-			}
-
-			const member = msg.discord?.member || interaction?.member;
-			if (member) {
-				if (!(member instanceof Discord.GuildMember)) {
-					Logger.error("member was expected to be a GuildMember");
-					Logger.error(Utils.util.inspect(member));
-					return { success: false, reasons: ["unknown"] };
-				}
-
-				// Stores if some checks has already passed
-				let hasRole = false;
-				let hasPermission = false;
-
-				const perms =
-					userPermissions.discord.permissions ??
-					new Discord.Permissions();
-
-				hasPermission = member.permissions.has(perms);
-
-				if (!hasPermission) {
-					reasons.push("discordMissingPermissions");
-				}
-
-				// Goes through Discord roles
-				if (userPermissions.discord.roles) {
-					userPermissions.discord.roles.every(role => {
-						let roleId = "";
-						if (role instanceof Discord.Role) {
-							roleId = role.id;
-						} else {
-							roleId = role;
-						}
-
-						hasRole = member.roles.cache.has(roleId);
-						if (hasRole) {
-							return;
-						}
-					});
-
-					if (!hasRole) {
-						reasons.push("discordMissingRole");
-					}
-				} else {
-					// Allow it to pass, if no roles specified
-					hasRole = true;
-				}
-
-				if (hasRole && hasPermission) {
-					return { success: true };
-				} else {
-					return { success: false, reasons: reasons };
-				}
-			} else {
-				return {
-					success: false,
-					reasons: ["discordMemberPermissions"],
-				};
-			}
-		} else if (msg instanceof TwitchMessage) {
-			// TODO: Twitch Message permissions
-			Logger.warn("Twitch user permissions haven't been implemented");
-			return { success: true };
-		}
-
-		// Return false by default, just in case
-		return { success: false, reasons: ["unknown"] };
-	}
-
-	/**
-	 * Checks for if a user has the permission to do something.
-	 *
-	 * NOTE: If userPermissions is undefined, this returns true.
-	 *
-	 * @param msg
-	 * @param userPermissions
-	 * @param checkAdmin
-	 * @param checkOwner
-	 */
-	hasUserPermission(
-		msg: BaseMessage,
-		userPermissions = this.userPermissions
-	): boolean {
-		return this.checkUserPermissions(msg, userPermissions).success;
-	}
-
-	async checkBotPermissions(
-		msg: BaseMessage,
-		botPermissions = this.botPermissions
-	): Promise<BotPermissionAllowedData | BotPermissionDeniedData> {
-		// If the command doesn't specify permissions, assume it's fine
-		if (!botPermissions) {
-			return { success: true };
-		}
-
-		if (
-			msg instanceof DiscordMessage ||
-			msg instanceof DiscordInteraction
-		) {
-			// If there's no discord data/entry, block it for safety
-			if (!botPermissions.discord) {
-				return {
-					success: false,
-					reason: "discordNoData",
-				};
-			}
-
-			// Finds all the missing permissions
-			const missingPerms = await this.getMissingDiscordBotPermissions(
-				msg,
-				botPermissions.discord.permissions
-			);
-
-			if (missingPerms.length > 0) {
-				return {
-					success: false,
-					reason: "discordMissingPermissions",
-				};
-			} else {
-				return {
-					success: true,
-				};
-			}
-		} else if (msg instanceof TwitchMessage) {
-			// TODO: Twitch Message permissions
-			// Logger.warn("Twitch bot permissions haven't been implemented");
-			return { success: true };
-		}
-
-		// Return true by default, to lean towards hitting API errors
-		// rather than having no output whatsoever
-		return { success: true };
-	}
-
-	async getMissingDiscordBotPermissions(
-		msg: DiscordMessage | DiscordInteraction,
-		permissions: Discord.PermissionResolvable = []
-	): Promise<Discord.PermissionString[]> {
-		// Gets the requested permisisons and actual permissions
-		const guild = msg.discord.guild;
-		const botMember = guild?.me;
-		const channel = msg.discord.channel.isThread()
-			? msg.discord.channel.parent ?? msg.discord.channel
-			: msg.discord.channel;
-		if (channel.partial) {
-			await channel.fetch();
-		}
-		const requestedBotPerms = new Discord.Permissions(permissions);
-		const actualBotPerms = new Discord.Permissions(
-			botMember && channel instanceof Discord.GuildChannel
-				? botMember.permissionsIn(channel)
-				: Discord.Permissions.DEFAULT
-		);
-
-		// Returns all the missing ones
-		return actualBotPerms.missing(requestedBotPerms);
-	}
-
-	/**
-	 * Checks for if the bot has the permission to do something.
-	 *
-	 * @param msg
-	 * @param botPermissions
-	 */
-	async hasBotPermissions(
-		msg: BaseMessage,
-		botPermissions = this.botPermissions
-	): Promise<boolean> {
-		return (await this.checkBotPermissions(msg, botPermissions)).success;
-	}
-
-	/**
-	 * Sends an error message, with what permissions the user needs to work with.
-	 *
-	 * @param msg
-	 * @param permissions
-	 * @param deniedData
-	 * @returns
-	 */
-	async sendUserPermissionErrorMessage(
-		msg: BaseMessage,
-		permissions = this.userPermissions,
-		deniedData = this.checkUserPermissions(msg, permissions)
-	): Promise<boolean> {
-		return BaseCommand.sendUserPermissionErrorMessage(
-			msg,
-			permissions,
-			deniedData
-		);
-	}
-
-	static async sendUserPermissionErrorMessage(
-		msg: BaseMessage,
-		permissions: UserPermissions | undefined,
-		deniedData = BaseCommand.checkUserPermissions(msg, permissions),
-		id?: string
-	): Promise<boolean> {
-		if (deniedData.success) {
-			throw new Error(
-				"deniedData should have been denied; deniedData.success was true"
-			);
-		}
-
-		if (
-			msg instanceof DiscordMessage ||
-			msg instanceof DiscordInteraction
-		) {
-			const discord = msg.discord;
-			const embed = EmbedHelper.getTemplate(
-				msg.discord,
-				await EmbedHelper.getCheckOutFooter(msg, id)
-			).setTitle("Permission Denied");
-
-			let useEmbed = true;
-			if (deniedData.reasons.includes("discordMissingPermissions")) {
-				if (permissions?.discord?.permissions) {
-					// Gets user's permissions and missing permissions
-					const userPerms = new Discord.Permissions(
-						msg.discord.member?.permissions
-					);
-					const missingPerms = userPerms.missing(
-						permissions.discord.permissions
-					);
-					useEmbed = !missingPerms.includes("EMBED_LINKS");
-				}
-			}
-
-			const notAllowed = `${msg.discord.author}, you aren't allowed to do that!`;
-			const missingMessage = useEmbed
-				? `You are missing:`
-				: `You are missing (or aren't):`;
-			let addToDescription = "";
-			let exitForLoop = false;
-			let missingPerms: Discord.PermissionString[] = [];
-
-			for (const reason of deniedData.reasons) {
-				if (exitForLoop) break;
-
-				switch (reason) {
-					case "botOwnersOnly":
-						embed.setDescription(oneLine`
-						${notAllowed} Only the bot owner(s) are.`);
-						exitForLoop = true;
-						break;
-					case "discordNoData":
-						embed.setDescription(oneLine`User permissions were
-						specified, but there was no specific Discord
-						permission data entered. By default, this will deny
-						permissions to anyone but bot owners.`);
-						exitForLoop = true;
-						break;
-					case "discordMemberPermissions":
-						embed.setDescription(oneLine`
-						There are certain member permissions needed to run this.
-						Try running this command again, but on a Discord server.`);
-						exitForLoop = true;
-						break;
-					case "discordMissingPermissions":
-						if (permissions?.discord?.permissions) {
-							// Gets user's permissions and missing permissions
-							const userPerms = new Discord.Permissions(
-								msg.discord.member?.permissions
-							);
-							missingPerms = userPerms.missing(
-								permissions.discord.permissions
-							);
-
-							// Puts all the missing permissions into a formatted string
-							let missingPermsString = "";
-							for (const perm of missingPerms) {
-								missingPermsString += `\`${perm}\` `;
-							}
-
-							// If it's empty, show an error
-							if (!missingPermsString) {
-								missingPermsString = oneLine`No missing
-								permissions found, something went wrong!`;
-							} else {
-								addToDescription = missingMessage;
-							}
-
-							embed.addField(
-								"Discord Permissions",
-								missingPermsString
-							);
-						} else {
-							addToDescription += oneLine`I think there are
-							missing permissions, but there are no permissions
-							to check with. Something went wrong!`;
-						}
-						break;
-					case "discordMissingRole":
-						// Goes through roles
-						if (permissions?.discord?.roles) {
-							const roles: string[] = [];
-							for (const role of permissions.discord.roles) {
-								// Correctly parses the resolvable
-								if (typeof role == "string") {
-									const newRole =
-										discord.guild?.roles.cache.get(role);
-									if (!newRole) {
-										Logger.error(oneLine`BaseCommand.ts:
-										Couldn't find role with role ID "${role}".`);
-										roles.push(`<@&${role}>`);
-									} else {
-										roles.push(`${newRole}`);
-									}
-								} else {
-									roles.push(`${role}`);
-								}
-							}
-
-							if (roles.length > 0) {
-								addToDescription = `${notAllowed} ${missingMessage}`;
-								embed.addField(
-									"Discord Roles",
-									oneLineInlineLists`${roles}`
-								);
-								break;
-							}
-						}
-
-						// If the above didn't set anything, show this instead
-						embed.setDescription(oneLine`I think you are missing a
-						role, but there's no roles for me to check with.
-						Something went wrong!`);
-
-						break;
-					case "discordUser":
-						if (permissions?.discord?.users) {
-							const listOfUsers: string[] = [];
-
-							for (const user of permissions.discord.users) {
-								listOfUsers.push(`<@!${user}>`);
-							}
-
-							embed
-								.setDescription(missingMessage)
-								.addField(
-									"Users",
-									oneLineCommaListsOr`${listOfUsers}`
-								);
-						}
-						break;
-					default:
-						embed.setDescription(oneLine`${notAllowed} ${missingMessage}
-						The specified reason is not known. Something went wrong!`);
-						exitForLoop = true;
-						break;
-				}
-			}
-
-			if (addToDescription) {
-				embed.setDescription(oneLine`${notAllowed} ${missingMessage}`);
-			}
-
-			if (
-				msg instanceof DiscordMessage &&
-				missingPerms.includes("SEND_MESSAGES")
-			) {
-				throw new Error(
-					"Missing SEND_MESSAGES permission, cannot send error"
-				);
-			} else if (
-				msg instanceof DiscordMessage &&
-				missingPerms.includes("EMBED_LINKS")
-			) {
-				await msg.discord.channel.send(
-					`**${embed.title}**\n${oneLine`Unfortunately, the
-					\`EMBED_LINKS\` permission is disabled, so I can't send any details.`}`
-				);
-			} else {
-				await msg.send({ embeds: [embed], ephemeral: true });
-			}
-
-			return true;
-		} else {
-			await msg.send(
-				"Something went wrong when checking user permissions!"
-			);
-			return false;
-		}
-	}
-
-	/**
-	 * Sends an error message, with what permissions the bot needs to work with.
-	 *
-	 * @param msg
-	 * @param botPermissions
-	 * @param deniedData
-	 * @returns
-	 */
-	async sendBotPermissionErrorMessage(
-		msg: BaseMessage,
-		botPermissions = this.botPermissions,
-		deniedData: BotPermissionAllowedData | BotPermissionDeniedData
-	): Promise<boolean> {
-		return this.client.commands.sendBotPermissionErrorMessage(
-			msg,
-			this,
-			botPermissions,
-			deniedData
-		);
-	}
-
-	//#endregion
-
 	async getCooldown(userId: string): Promise<CooldownData | undefined> {
 		return this.client.provider.cooldowns.get({
 			userId,
@@ -937,8 +425,8 @@ export abstract class BaseCommand {
 	 * Loads the plugins
 	 * @param options RequireAll options
 	 */
-	loadSubcommandsIn(options: Options): void {
-		const subcommands = DiscordUtils.importScripts(options) as (new (
+	loadSubcommandsIn(options: RequireAllOptions): void {
+		const subcommands = Utils.importScripts(options) as (new (
 			command: BaseCommand
 		) => BaseSubcommand)[];
 		this.loadSubcommands(subcommands);

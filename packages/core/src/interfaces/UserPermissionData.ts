@@ -18,4 +18,5 @@ export type UserPermissionDeniedReasons =
 	| "discordMissingRole"
 	| "discordNoData"
 	| "discordUser"
+	| "discordUserMenuFlow"
 	| "unknown";

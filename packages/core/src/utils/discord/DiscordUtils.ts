@@ -6,11 +6,13 @@ import { existsSync } from "fs";
 import RequireAll from "require-all";
 
 import { Utils } from "@framedjs/shared";
+import type { RequireAllOptions } from "@framedjs/shared";
 import { Logger } from "@framedjs/logger";
 
 import { BaseMessage } from "../../structures/BaseMessage";
 import { Client } from "../../structures/Client";
 import { DiscordCommandInteraction } from "../../structures/DiscordCommandInteraction";
+import { DiscordInteraction } from "../../structures/DiscordInteraction";
 import { FriendlyError } from "../../structures/errors/FriendlyError";
 import { InternalError } from "../../structures/errors/InternalError";
 import { InvalidError } from "../../structures/errors/InvalidError";
@@ -21,87 +23,14 @@ import type {
 	DiscohookOutputData,
 } from "../../interfaces/other/DiscohookOutputData";
 import type { Place } from "../../interfaces/Place";
-import type Options from "../../interfaces/other/RequireAllOptions";
-import { DiscordInteraction } from "../../structures/DiscordInteraction";
-
-interface RequireAllScriptData {
-	[key: string]: ScriptElement;
-}
-
-interface ScriptElement {
-	[key2: number]: {
-		default: unknown;
-	};
-}
 
 export class DiscordUtils {
-	/**
-	 * Imports scripts from a path, gets all the default exports, then puts it into an array
-	 * @param options RequireAll Options
-	 */
-	static importScripts(options: Options): unknown[] {
-		const scriptsList: unknown[] = [];
-
-		// Sanity check
-		if (!existsSync(options.dirname)) return scriptsList;
-
-		const requiredScripts: RequireAllScriptData = RequireAll(options);
-		// Logger.silly(`requiredScripts: ${util.inspect(requiredScripts)}`);
-
-		const requiredScriptsValues = Object.values(requiredScripts);
-		// Logger.silly(
-		// 	`requiredScriptsValues: ${util.inspect(requiredScriptsValues)}`
-		// );
-
-		for (const key in requiredScriptsValues) {
-			const script = requiredScriptsValues[key];
-			// Logger.silly(`Key1: ${key} | ${util.inspect(script)}`);
-
-			// Recursively gets scripts from the object, for nested folders
-			const values = Object.values(script);
-			scriptsList.push(...this.recursiveGetScript(values));
-		}
-
-		// Logger.silly(`Scripts: ${util.inspect(scriptsList)}`);
-
-		return scriptsList;
-	}
-
-	/**
-	 * Recursively returns an array of imported scripts
-	 *
-	 * @param values
-	 */
-	private static recursiveGetScript(values: ScriptElement): unknown[] {
-		const scripts: unknown[] = [];
-
-		for (const key in values) {
-			// Logger.silly(`Key2: ${key} | ${util.inspect(values)}`);
-
-			let exports = values[key];
-
-			// For some reason, TypeScript thinks this value can be a number
-			if (typeof exports == "object") {
-				if (typeof exports.default === "function") {
-					// Logger.silly("Exported default is a function");
-					exports = exports.default;
-				} else {
-					scripts.push(...this.recursiveGetScript(exports));
-					continue;
-				}
-			}
-
-			scripts.push(exports);
-		}
-
-		return scripts;
-	}
-
 	/**
 	 * Gets the user's display name on a guild. Contains a fallback to the user's username.
 	 *
 	 * @param msg - Discord Message
 	 * @param userId - Discord User ID
+	 * @deprecated Use getDisplayName instead.
 	 */
 	static getDisplayNameWithFallback(
 		msg: Discord.Message,
@@ -135,20 +64,60 @@ export class DiscordUtils {
 		}
 	}
 
+	static async getDisplayName(
+		user: Discord.User,
+		guild?: Discord.Guild | null
+	): Promise<string> {
+		// Gets the member's nickname
+		if (guild && guild.available) {
+			const member = await guild.members.fetch({
+				user: user.id,
+			});
+			if (member) return member.displayName;
+		}
+		return user.username;
+	}
+
+	static async getMessageFromId(
+		id: string,
+		channel: Discord.TextBasedChannel
+	): Promise<Discord.Message | undefined> {
+		const messages = await channel.messages.fetch({
+			around: id,
+			limit: 3,
+		});
+		for (const [, message] of messages) {
+			if (message.id == id) {
+				return message;
+			}
+		}
+	}
+
 	/**
 	 * Gets a Discord message object from a link.
 	 *
 	 * @param link Message link
 	 * @param client Discord client
-	 * @param guild Discord guild
+	 * @param guildChannelOrAuthor Discord guild, channel, or author
 	 *
 	 * @returns Discord message or an error message string
 	 */
 	static async getMessageFromLink(
 		link: string,
 		client: Discord.Client,
-		guildOrAuthor: Discord.Guild | Discord.User
+		guildChannelOrAuthor:
+			| Discord.Guild
+			| Discord.TextBasedChannel
+			| Discord.User
 	): Promise<Discord.Message | undefined> {
+		if (
+			guildChannelOrAuthor instanceof Discord.Channel &&
+			/^\d+$/.test(link)
+		) {
+			const channel = guildChannelOrAuthor;
+			return this.getMessageFromId(link, channel);
+		}
+
 		// If it's not an actual link, return undefined
 		if (!link.includes(".com")) {
 			return undefined;
@@ -165,14 +134,26 @@ export class DiscordUtils {
 			});
 		}
 
-		if (guildOrAuthor instanceof Discord.Guild) {
-			if (guildOrAuthor.id != args[0]) {
-				throw new InvalidError({
-					name: "Message Link",
-					input: args[0],
-					extraMessage:
-						"The message link cannot be from another server!",
-				});
+		if (guildChannelOrAuthor instanceof Discord.Guild) {
+			const botOwners = process.env.BOT_OWNERS?.split(",");
+			if (guildChannelOrAuthor.id != args[0]) {
+				// If user is the bot owner, they may bypass this restriction
+				let bypass = false;
+				if (guildChannelOrAuthor instanceof Discord.User) {
+					const author = guildChannelOrAuthor;
+					if (botOwners?.includes(author.id)) {
+						bypass = true;
+					}
+				}
+
+				if (!bypass) {
+					throw new InvalidError({
+						name: "Message Link",
+						input: args[0],
+						extraMessage:
+							"The message link cannot be from another server!",
+					});
+				}
 			}
 		}
 
@@ -1029,7 +1010,8 @@ export class DiscordUtils {
 	}
 
 	static async getMessageFromBaseMessage(
-		msg: BaseMessage
+		msg: BaseMessage,
+		silent = false
 	): Promise<Discord.Message | undefined> {
 		// Attempts to retrieve a link or ID from Discord
 		let messageLinkOrId = msg.args ? msg.args[0] : undefined;
@@ -1054,7 +1036,9 @@ export class DiscordUtils {
 		}
 
 		if (!messageLinkOrId) {
-			await msg.sendHelpForCommand();
+			if (!silent) {
+				await msg.sendHelpForCommand();
+			}
 			return;
 		}
 
