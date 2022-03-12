@@ -1,5 +1,11 @@
 # @framedjs/shared
 
+## 0.3.0-next.0
+
+### Minor Changes
+
+-   034f374: feat: Discord menu flows
+
 ## 0.2.1
 
 ### Patch Changes

@@ -1,5 +1,16 @@
 # @framedjs/core
 
+## 0.10.0-next.1
+
+### Minor Changes
+
+-   034f374: feat: Discord menu flows
+
+### Patch Changes
+
+-   Updated dependencies [034f374]
+    -   @framedjs/shared@0.3.0-next.0
+
 ## 0.10.0-next.0
 
 ### Minor Changes
