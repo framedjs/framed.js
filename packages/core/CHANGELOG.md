@@ -1,5 +1,11 @@
 # @framedjs/core
 
+## 0.10.0-next.2
+
+### Minor Changes
+
+-   1b9cbbf: feat: menu flow page types
+
 ## 0.10.0-next.1
 
 ### Minor Changes
