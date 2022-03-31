@@ -1,5 +1,4 @@
 // Managers
-export { APIManager } from "./managers/APIManager";
 // export { ArgumentManger } from "./managers/ArgumentManager";
 export { CommandManager } from "./managers/CommandManager";
 export { FormattingManager } from "./managers/FormattingManager";
@@ -10,12 +9,15 @@ export { Client } from "./structures/Client";
 export { BaseMessage } from "./structures/BaseMessage";
 export { Base } from "./structures/Base";
 export { BasePlugin } from "./structures/BasePlugin";
+export { BasePluginObject } from "./structures/BasePluginObject"
 export { BaseCommand } from "./structures/BaseCommand";
 export { BaseDiscordButtonInteraction } from "./structures/BaseDiscordButtonInteraction";
 export { BaseDiscordContextMenuInteraction } from "./structures/BaseDiscordContextMenuInteraction";
 export { BaseDiscordInteraction } from "./structures/BaseDiscordInteraction";
 export { BaseDiscordMenuFlow } from "./structures/BaseDiscordMenuFlow";
 export { BaseDiscordMenuFlowPage } from "./structures/BaseDiscordMenuFlowPage";
+export { BaseDiscordMenuFlowMsgPage } from "./structures/BaseDiscordMenuFlowMsgPage";
+export { BaseDiscordMenuFlowNumPage } from "./structures/BaseDiscordMenuFlowNumPage";
 export { BaseDiscordMenuFlowStartPage } from "./structures/BaseDiscordMenuFlowStartPage";
 export { BaseDiscordMessageComponentInteraction } from "./structures/BaseDiscordMessageComponentInteraction";
 export { BaseDiscordSelectMenuInteraction } from "./structures/BaseDiscordSelectMenuInteraction";
@@ -35,6 +37,8 @@ export type { ArgumentWrappedInQuotes } from "./interfaces/Argument";
 export type { BaseCommandOptions } from "./interfaces/BaseCommandOptions";
 export type { BaseDiscordInteractionOptions } from "./interfaces/BaseDiscordInteractionOptions";
 export type { BaseDiscordMenuFlowOptions } from "./interfaces/BaseDiscordMenuFlowOptions";
+export type { BaseDiscordMenuFlowMsgPageOptions } from "./interfaces/BaseDiscordMenuFlowMsgPageOptions";
+export type { BaseDiscordMenuFlowNumPageOptions } from "./interfaces/BaseDiscordMenuFlowNumPageOptions";
 export type { BaseDiscordMenuFlowPageOptions } from "./interfaces/BaseDiscordMenuFlowPageOptions";
 export type { BaseDiscordMenuFlowPageRenderOptions } from "./interfaces/BaseDiscordMenuFlowPageRenderOptions";
 export type { BotPermissions } from "./interfaces/BotPermissions";

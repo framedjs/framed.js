@@ -13,7 +13,6 @@ import { DiscordMessage } from "./DiscordMessage";
 import { DiscordInteraction } from "./DiscordInteraction";
 import { TwitchMessage } from "./TwitchMessage";
 
-import { APIManager } from "../managers/APIManager";
 import { FormattingManager } from "../managers/FormattingManager";
 import { PluginManager } from "../managers/PluginManager";
 
@@ -28,7 +27,6 @@ import { DiscordCommandInteraction } from "./DiscordCommandInteraction";
 const DEFAULT_PREFIX = "!";
 
 export class Client extends EventEmitter {
-	api?: APIManager;
 	commands!: CommandManager;
 	provider!: BaseProvider;
 	plugins!: PluginManager;
@@ -104,8 +102,6 @@ export class Client extends EventEmitter {
 		}
 
 		// Initializes managers and providers
-		if (!options.autoInitialize || options.autoInitialize.api != false)
-			this.api = new APIManager(this);
 		if (!options.autoInitialize || options.autoInitialize.commands != false)
 			this.commands = new CommandManager(this);
 		if (
@@ -203,9 +199,7 @@ export class Client extends EventEmitter {
 
 	async processMsg(msg: BaseMessage): Promise<void> {
 		if (msg.command != undefined) {
-			if (msg.discord) {
-				if (msg.discord.author.bot) return;
-			} else if (msg.twitch) {
+			if (msg.twitch) {
 				if (this.twitch.chat?.currentNick == msg.twitch.user) return;
 			}
 

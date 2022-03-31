@@ -18,7 +18,6 @@ export interface ClientOptions {
 	 * All nested options default to true if left undefined.
 	 */
 	autoInitialize?: {
-		api?: boolean;
 		commands?: boolean;
 		provider?: boolean;
 		plugins?: boolean;

@@ -377,36 +377,6 @@ export class CommandManager extends Base {
 		const startTime = process.hrtime();
 		const map = new Map<string, boolean>();
 
-		// If the author is a bot, we ignore their command.
-		/*
-		 * This is to patch any security exploits, such as using the Raw.ts command
-		 * to print out a plain message that contains a comamnd. Then, the command will
-		 * run with elevated permissions, as the bot likely has higher permissions than the user.
-		 */
-		if (
-			msg.discord?.author.bot &&
-			process.env.FRAMED_ALLOW_BOTS_TO_RUN_COMMANDS?.toLowerCase() !=
-				"true"
-		) {
-			Logger.warn(
-				`${msg.discord.author.tag} attempted to run a command, but was a bot!`
-			);
-			return map;
-		}
-
-		// If for some reason I see this, I'm going to
-		if (
-			msg.discordInteraction?.user.bot &&
-			process.env.FRAMED_ALLOW_BOTS_TO_RUN_COMMANDS?.toLowerCase() !=
-				"true"
-		) {
-			Logger.warn(
-				oneLine`${msg.discordInteraction.user.tag} (from discordInteraction)
-				attempted to run a command, but was a bot!`
-			);
-			return map;
-		}
-
 		if (msg instanceof DiscordInteraction) {
 			try {
 				await this.scanAndRunMenuFlowPages(msg, map, {
@@ -450,6 +420,41 @@ export class CommandManager extends Base {
 			);
 		}
 		return map;
+	}
+
+	private _checkForBot(msg: BaseMessage) {
+		/*
+		 * If the author is a bot, we ignore their command.
+		 *
+		 * This is to patch any security exploits, such as using the Raw.ts command
+		 * to print out a plain message that contains a comamnd. Then, the command will
+		 * run with elevated permissions, as the bot likely has higher permissions than the user.
+		 */
+		if (
+			msg.discord?.author.bot &&
+			process.env.FRAMED_ALLOW_BOTS_TO_RUN_COMMANDS?.toLowerCase() !=
+				"true"
+		) {
+			Logger.warn(
+				`${msg.discord.author.tag} attempted to run a command, but was a bot!`
+			);
+			return false;
+		}
+
+		// If for some reason I see this, I'm going to
+		if (
+			msg.discordInteraction?.user.bot &&
+			process.env.FRAMED_ALLOW_BOTS_TO_RUN_COMMANDS?.toLowerCase() !=
+				"true"
+		) {
+			Logger.warn(
+				oneLine`${msg.discordInteraction.user.tag} (from discordInteraction)
+				attempted to run a command, but was a bot!`
+			);
+			return false;
+		}
+
+		return true;
 	}
 
 	/**
@@ -496,6 +501,10 @@ export class CommandManager extends Base {
 		const data = await this.getFoundCommandData(msg, await msg.getPlace());
 
 		for await (const element of data) {
+			if (!this._checkForBot(msg)) {
+				break;
+			}
+
 			// Attempts to get the subcommand if it exists.
 			// If not, use the base command.
 			let command = element.command;
@@ -581,6 +590,10 @@ export class CommandManager extends Base {
 		const interactions = this.client.plugins.discordInteractionsArray;
 
 		for await (const command of interactions) {
+			if (!this._checkForBot(msg)) {
+				break;
+			}
+
 			if (msg.command && command.id != msg.command.toLocaleLowerCase()) {
 				continue;
 			}
@@ -647,7 +660,7 @@ export class CommandManager extends Base {
 					continue;
 				}
 
-				const data = menu.parseId(interaction.customId);
+				const data = menu.parseId(interaction.customId, true);
 				if (!data) {
 					continue;
 				}
@@ -664,15 +677,19 @@ export class CommandManager extends Base {
 
 				// Find a matching page
 				for (const [, page] of menu.pages) {
-					if (data.args[1] == page.id) {
+					if (
+						data.args[1] == page.id ||
+						data.args[1]?.split(".")[0] == page.id
+					) {
+						if (!this._checkForBot(msg)) {
+							continue;
+						}
+
 						foundPage = page;
 
 						const timestamp =
 							msg.discordInteraction.interaction.createdTimestamp;
-						const baseId = foundPage.menu.getDataId(
-							undefined,
-							foundPage.id
-						);
+						const baseId = foundPage.menu.getBaseId();
 						let doNotClose = false;
 
 						// Do permission checks
@@ -684,32 +701,40 @@ export class CommandManager extends Base {
 								userId: data.userId ?? msg.discord.author.id,
 								ephemeral: ephemeral,
 							};
-						const permCheck = await this.checkForPermissions(
-							msg,
-							page.menu,
-							map,
-							permCheckRenderOptions
-						);
-						const permCheckPage = await this.checkForPermissions(
-							msg,
-							foundPage,
-							map,
-							permCheckRenderOptions
-						);
-						if (!permCheck || !permCheckPage) {
-							continue;
+						if (foundPage.userPermissions) {
+							const permCheckPage =
+								await this.checkForPermissions(
+									msg,
+									foundPage,
+									map,
+									permCheckRenderOptions
+								);
+							if (!permCheckPage) continue;
+						} else if (page.menu.userPermissions) {
+							const permMenuCheck =
+								await this.checkForPermissions(
+									msg,
+									page.menu,
+									map,
+									permCheckRenderOptions
+								);
+							if (!permMenuCheck) continue;
 						}
 
 						try {
 							Logger.silly(
 								`${timestamp} baseId "${baseId}" has started`
 							);
-							flowPageResults = await page.render(msg, {
-								guildId: data.guildId,
-								messageId: data.messageId,
-								userId: data.userId,
-								ephemeral: ephemeral,
-							});
+
+							flowPageResults = await page.render(
+								msg,
+								await page.parse(msg, {
+									guildId: data.guildId,
+									messageId: data.messageId,
+									userId: data.userId,
+									ephemeral: ephemeral,
+								})
+							);
 						} catch (error) {
 							const err = error as Error;
 							if (
@@ -1007,7 +1032,7 @@ export class CommandManager extends Base {
 		sendSeparateReply?: boolean
 	): Promise<void> {
 		let embed: Discord.MessageEmbed | undefined;
-		let options:
+		let messageOptions:
 			| string
 			| Discord.MessagePayload
 			| Discord.MessageOptions
@@ -1021,7 +1046,7 @@ export class CommandManager extends Base {
 			)
 				.setTitle(friendlyError.friendlyName)
 				.setDescription(friendlyError.message);
-			options = { embeds: [embed] };
+			messageOptions = { embeds: [embed] };
 		}
 
 		// If it's an interaction, make it ephemeral
@@ -1029,15 +1054,19 @@ export class CommandManager extends Base {
 			const useEmbedForFriendlyErrors =
 				process.env.FRAMED_USE_EMBED_FOR_FRIENDLY_ERRORS;
 			if (useEmbedForFriendlyErrors?.toLocaleLowerCase() != "true") {
-				options = {
+				messageOptions = {
 					content: "_ _",
 					embeds: [embed],
 					ephemeral: true,
 					components: [],
 				};
 			} else {
-				options = {
-					content: `**${friendlyError.friendlyName}**\n${friendlyError.message}`,
+				const friendlyName =
+					friendlyError.friendlyName == "Something Went Wrong"
+						? ""
+						: `**${friendlyError.friendlyName}**`;
+				messageOptions = {
+					content: `${friendlyName}\n${friendlyError.message}`,
 					components: [],
 					embeds: [],
 					ephemeral: true,
@@ -1045,7 +1074,7 @@ export class CommandManager extends Base {
 			}
 		}
 
-		if (options) {
+		if (messageOptions) {
 			let useDm = false;
 			if (
 				msg instanceof DiscordMessage ||
@@ -1064,16 +1093,16 @@ export class CommandManager extends Base {
 			}
 
 			if (useDm && msg.discord) {
-				await msg.discord.author.send(options);
+				await msg.discord.author.send(messageOptions);
 			} else if (msg instanceof DiscordInteraction) {
 				const interaction = msg.discordInteraction.interaction;
 				if (interaction.isApplicationCommand() && sendSeparateReply) {
-					await interaction.reply(options);
+					await interaction.reply(messageOptions);
 				} else {
-					await msg.send(options);
+					await msg.send(messageOptions);
 				}
 			} else {
-				await msg.send(options);
+				await msg.send(messageOptions);
 			}
 		} else {
 			await msg.send(

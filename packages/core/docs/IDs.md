@@ -8,6 +8,4 @@ For example, `com.example.my_package` and `com.example.region.mypackage` are val
 
 For anything created by a user through the bot, these commands will generate as `user.username`.
 
-
-Second, it adds the
-
+This convention is broken with certain Discord interactions, like context menus.

@@ -5,16 +5,17 @@ import { BasePluginObject } from "./BasePluginObject";
 import { BasePlugin } from "./BasePlugin";
 import { DiscordInteraction } from "./DiscordInteraction";
 import Discord from "discord.js";
+import { ImportError } from "./errors/non-friendly/ImportError";
 
 import type { BaseDiscordMenuFlowPageOptions } from "../interfaces/BaseDiscordMenuFlowPageOptions";
 import type { BaseDiscordMenuFlowPageRenderOptions } from "../interfaces/BaseDiscordMenuFlowPageRenderOptions";
 import type { BotPermissions } from "../interfaces/BotPermissions";
+import type { DiscordMenuFlowIdData } from "../interfaces/DiscordMenuFlowIdData";
 import type { UserPermissionsMenuFlow } from "../interfaces/UserPermissionsMenuFlow";
 import type {
 	UserPermissionAllowedData,
 	UserPermissionDeniedData,
 } from "../interfaces/UserPermissionData";
-import { ImportError } from "./errors/non-friendly/ImportError";
 
 export abstract class BaseDiscordMenuFlowPage extends BasePluginObject {
 	plugin: BasePlugin;
@@ -43,6 +44,20 @@ export abstract class BaseDiscordMenuFlowPage extends BasePluginObject {
 		this.fullId = `${menu.plugin.id}.${this.type}.${menu.id}.${this.id}`;
 	}
 
+	async parse(
+		msg: DiscordInteraction,
+		options?: DiscordMenuFlowIdData
+	): Promise<BaseDiscordMenuFlowPageRenderOptions | undefined> {
+		if (!options && msg instanceof DiscordInteraction) {
+			const interaction = msg.discordInteraction.interaction;
+			if (interaction.isMessageComponent()) {
+				options = this.menu.parseId(interaction.customId);
+			}
+		}
+
+		return options;
+	}
+
 	abstract render(
 		msg: DiscordInteraction,
 		options?: BaseDiscordMenuFlowPageRenderOptions
@@ -59,7 +74,7 @@ export abstract class BaseDiscordMenuFlowPage extends BasePluginObject {
 	checkUserPermissions(
 		msg: BaseMessage,
 		userPermissions = this.userPermissions,
-		options?: BaseDiscordMenuFlowPageRenderOptions
+		options?: DiscordMenuFlowIdData
 	): UserPermissionAllowedData | UserPermissionDeniedData {
 		if (userPermissions?.discord?.checkOrignalUser != false) {
 			if (options?.userId != msg.discord?.author.id) {

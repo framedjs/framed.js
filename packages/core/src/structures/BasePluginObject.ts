@@ -488,11 +488,13 @@ export abstract class BasePluginObject extends Base {
 					: pluginObject?.type == "menuflow" ||
 					  pluginObject?.type == "menuflowpage";
 			let useDm = permissionMessage.discord.useDm;
+			let sent = false;
 			if (!useDm) {
 				try {
 					await msg.send(options, {
 						editReply: editReply,
 					});
+					sent = true;
 				} catch (error) {
 					Logger.error(error);
 					Logger.error(
@@ -502,7 +504,7 @@ export abstract class BasePluginObject extends Base {
 				}
 			}
 
-			if (useDm) {
+			if (useDm && !sent) {
 				try {
 					await msg.discord.author.send(options);
 					let newLine = "";
@@ -606,7 +608,10 @@ export abstract class BasePluginObject extends Base {
 					await BasePluginObject.checkBotPermissions(msg, {
 						discord: { permissions: ["EMBED_LINKS"] },
 					});
-				const useEmbed = embedPermsResults.success || dm;
+				const useEmbed =
+					(!(msg instanceof DiscordInteraction) &&
+						embedPermsResults.success) ||
+					dm;
 				const quote = useEmbed ? "" : "> ";
 				if (msg.discord.guild?.id) {
 					try {

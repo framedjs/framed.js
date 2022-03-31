@@ -15,11 +15,10 @@ export class NotFoundError extends FriendlyError {
 		name: string;
 
 		/**
-		 * Keep the upper and lower casing from the name inputted,
-		 * for when it goes into the message variable.
-		 * By default, this is set to false.
+		 * Lowercase version of the name. If the name must be
+		 * capitalized, pass in the name with capitals here.
 		 */
-		keepCasingInMessage?: boolean;
+		lowercaseName?: string;
 
 		/**
 		 * The message after the main not found message. This can be debug info.
@@ -33,9 +32,7 @@ export class NotFoundError extends FriendlyError {
 		}
 		this.friendlyName = `${options.name} ${this.friendlyName}`;
 		this.message = `The ${
-			options.keepCasingInMessage
-				? options.name
-				: options.name.toLocaleLowerCase()
+			options.lowercaseName ?? options.name.toLowerCase()
 		} \`${options.input}\` could not be found.`;
 		if (options.extraMessage) {
 			this.message += ` ${options.extraMessage}`;

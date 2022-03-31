@@ -145,17 +145,6 @@ export class PluginManager extends Base {
 			});
 		}
 
-		// Load API routes
-		if (plugin.paths.routes) {
-			this.client.api?.loadRoutesIn({
-				dirname: plugin.paths.routes,
-				filter: fileName => {
-					const success = importFilter.test(fileName);
-					return success ? fileName : false;
-				},
-			});
-		}
-
 		// Load menu flows
 		if (plugin.paths.discordMenuFlows) {
 			plugin.loadMenuFlowsIn({

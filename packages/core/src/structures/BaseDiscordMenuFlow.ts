@@ -14,6 +14,8 @@ import type {
 import type { DiscordMenuFlowIdData } from "../interfaces/DiscordMenuFlowIdData";
 import type { DiscordMenuFlowParseIdData } from "../interfaces/DiscordMenuFlowParseIdData";
 import type { RequireAllOptions } from "@framedjs/shared";
+import type { UserPermissionsMenuFlow } from "../interfaces/UserPermissionsMenuFlow";
+import { stripIndents } from "common-tags";
 
 export abstract class BaseDiscordMenuFlow extends BasePluginObject {
 	readonly rawId: string;
@@ -22,6 +24,9 @@ export abstract class BaseDiscordMenuFlow extends BasePluginObject {
 
 	/** Indicates what kind of plugin object this is. */
 	type: "menuflow" = "menuflow";
+
+	/** User permissions needed to run the menu flow page. */
+	userPermissions?: UserPermissionsMenuFlow;
 
 	pages = new Map<string, BaseDiscordMenuFlowPage>();
 	discordInteractions: BaseDiscordMenuFlowDiscordInteractionOptions[];
@@ -98,11 +103,32 @@ export abstract class BaseDiscordMenuFlow extends BasePluginObject {
 		return template;
 	}
 
-	parseId(customId: string): DiscordMenuFlowParseIdData | undefined {
+	parseId(customId: string): DiscordMenuFlowParseIdData;
+	parseId(
+		customId: string,
+		doNotCrashIfInvalidId: boolean
+	): DiscordMenuFlowParseIdData | undefined;
+
+	parseId(
+		customId: string,
+		doNotCrashIfInvalidId = false
+	): DiscordMenuFlowParseIdData | undefined {
 		const args = customId.split("_");
 		if (!args[0] || !args[0].startsWith(this.rawId)) {
-			return;
+			if (doNotCrashIfInvalidId) return;
+
+			throw new InternalError(
+				stripIndents`customID is invalid.
+				> customId: \`${customId}\`
+				> rawId: \`${this.rawId}\``
+			);
 		}
+
+		return BaseDiscordMenuFlow.parseId(customId);
+	}
+
+	static parseId(customId: string): DiscordMenuFlowParseIdData {
+		const args = customId.split("_");
 
 		let messageId: string | undefined;
 		let memberId: string | undefined;
@@ -142,6 +168,9 @@ export abstract class BaseDiscordMenuFlow extends BasePluginObject {
 
 		return {
 			args: filteredArgs,
+			ephemeral: filteredArgs[0]
+				? filteredArgs[0][filteredArgs[0].length - 1] == "i"
+				: false,
 			messageId,
 			guildId,
 			userId: memberId,

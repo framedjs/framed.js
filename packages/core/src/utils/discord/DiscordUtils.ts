@@ -2,11 +2,8 @@
 import Axios from "axios";
 import Discord from "discord.js";
 import { stripIndents } from "common-tags";
-import { existsSync } from "fs";
-import RequireAll from "require-all";
 
 import { Utils } from "@framedjs/shared";
-import type { RequireAllOptions } from "@framedjs/shared";
 import { Logger } from "@framedjs/logger";
 
 import { BaseMessage } from "../../structures/BaseMessage";
@@ -99,6 +96,8 @@ export class DiscordUtils {
 	 * @param link Message link
 	 * @param client Discord client
 	 * @param guildChannelOrAuthor Discord guild, channel, or author
+	 * @param author Discord message author, for allowing a bypass of
+	 * the message link being from a anotehr server.
 	 *
 	 * @returns Discord message or an error message string
 	 */
@@ -108,7 +107,8 @@ export class DiscordUtils {
 		guildChannelOrAuthor:
 			| Discord.Guild
 			| Discord.TextBasedChannel
-			| Discord.User
+			| Discord.User,
+		author?: Discord.User
 	): Promise<Discord.Message | undefined> {
 		if (
 			guildChannelOrAuthor instanceof Discord.Channel &&
@@ -130,58 +130,77 @@ export class DiscordUtils {
 		if (args.length != 3) {
 			throw new InvalidError({
 				name: "Message Link",
-				input: args[0],
+				input: link,
 			});
 		}
 
-		if (guildChannelOrAuthor instanceof Discord.Guild) {
+		// If user is the bot owner, they may bypass this restriction
+		let bypass = false;
+		if (author) {
 			const botOwners = process.env.BOT_OWNERS?.split(",");
-			if (guildChannelOrAuthor.id != args[0]) {
-				// If user is the bot owner, they may bypass this restriction
-				let bypass = false;
-				if (guildChannelOrAuthor instanceof Discord.User) {
-					const author = guildChannelOrAuthor;
-					if (botOwners?.includes(author.id)) {
-						bypass = true;
-					}
-				}
-
-				if (!bypass) {
-					throw new InvalidError({
-						name: "Message Link",
-						input: args[0],
-						extraMessage:
-							"The message link cannot be from another server!",
-					});
-				}
+			if (botOwners?.includes(author.id)) {
+				bypass = true;
 			}
 		}
 
-		const channel = (await client.channels.fetch(args[1])) as
-			| Discord.TextChannel
-			| Discord.NewsChannel
-			| Discord.DMChannel;
+		if (!bypass && guildChannelOrAuthor instanceof Discord.Guild) {
+			if (guildChannelOrAuthor.id != args[0]) {
+				throw new InvalidError({
+					name: "Message Link",
+					input: link,
+					extraMessage:
+						"The message link cannot be from another server!",
+				});
+			}
+		}
+
+		let channel: Discord.AnyChannel | null;
+		try {
+			if (guildChannelOrAuthor instanceof Discord.User) {
+				channel =
+					guildChannelOrAuthor.dmChannel ??
+					(await guildChannelOrAuthor.createDM());
+			} else {
+				channel = await client.channels.fetch(args[1]);
+			}
+		} catch (error) {
+			const err = error as Error;
+			if (err.message == "Missing Access") {
+				throw new NotFoundError({
+					input: link,
+					name: "Message",
+					extraMessage: "I can't access this!",
+				});
+			}
+			throw error;
+		}
+
 		if (!channel) {
 			throw new NotFoundError({
-				input: args[1],
+				input: link,
 				name: "Channel",
 				extraMessage: `I couldn't find the channel from the message link!`,
 			});
 		}
 
-		let message = channel.messages.cache.get(args[2]);
-		if (!message) {
-			try {
-				message = await channel.messages.fetch(args[2]);
-			} catch (error) {
-				throw new NotFoundError({
-					input: args[2],
-					name: "Message",
-				});
-			}
+		if (!channel.isText()) {
+			throw new InvalidError({
+				input: link,
+				name: "Channel",
+				extraMessage:
+					"The channel within the link isn't a text channel.",
+			});
 		}
 
-		return message;
+		try {
+			const message = await channel.messages.fetch(args[2]);
+			return message;
+		} catch (error) {
+			throw new NotFoundError({
+				input: args[2],
+				name: "Message",
+			});
+		}
 	}
 
 	//#region Resolver Functions
@@ -1060,7 +1079,8 @@ export class DiscordUtils {
 			discordMsg = await DiscordUtils.getMessageFromLink(
 				messageLinkOrId,
 				discordClient,
-				guildOrAuthor
+				guildOrAuthor,
+				msg.discord?.author
 			);
 
 			if (!discordMsg) {
