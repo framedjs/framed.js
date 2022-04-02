@@ -23,7 +23,6 @@ export { BaseDiscordMessageComponentInteraction } from "./structures/BaseDiscord
 export { BaseDiscordSelectMenuInteraction } from "./structures/BaseDiscordSelectMenuInteraction";
 export { BaseSubcommand } from "./structures/BaseSubcommand";
 export { BaseEvent } from "./structures/BaseEvent";
-export { BaseRouter } from "./structures/BaseRouter";
 export { DiscordMessage } from "./structures/DiscordMessage";
 export { DiscordInteraction } from "./structures/DiscordInteraction";
 export { DiscordCommandInteraction } from "./structures/DiscordCommandInteraction";

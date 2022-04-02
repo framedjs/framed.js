@@ -6,8 +6,9 @@ export interface HandleFriendlyErrorOptions {
 	catchSendMessage?: boolean;
 
 	/**
-	 * If true, the function will try to send an ephemeral reply,
+	 * If false, the function won't try to send an ephemeral reply,
 	 * and not edit the original message.
+	 * @default true
 	 */
 	sendSeparateReply?: boolean;
 }

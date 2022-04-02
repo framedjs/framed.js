@@ -383,7 +383,9 @@ export class CommandManager extends Base {
 					errorHandling: "sendAllErrors",
 				});
 			} catch (error) {
-				await this.handleFriendlyError(msg, error);
+				await this.handleFriendlyError(msg, error, {
+					sendSeparateReply: false,
+				});
 			}
 		}
 
@@ -405,7 +407,9 @@ export class CommandManager extends Base {
 						);
 					}
 				} catch (error) {
-					await this.handleFriendlyError(msg, error);
+					await this.handleFriendlyError(msg, error, {
+						sendSeparateReply: true,
+					});
 				}
 			}
 		} catch (error) {
@@ -748,7 +752,9 @@ export class CommandManager extends Base {
 								!options?.errorHandling ||
 								options?.errorHandling == "sendAllErrors"
 							) {
-								await this.handleFriendlyError(msg, err);
+								await this.handleFriendlyError(msg, err, {
+									sendSeparateReply: false,
+								});
 							} else {
 								throw err;
 							}
@@ -1029,7 +1035,7 @@ export class CommandManager extends Base {
 	async sendErrorMessage(
 		msg: BaseMessage,
 		friendlyError: FriendlyError,
-		sendSeparateReply?: boolean
+		sendSeparateReply = true
 	): Promise<void> {
 		let embed: Discord.MessageEmbed | undefined;
 		let messageOptions:
