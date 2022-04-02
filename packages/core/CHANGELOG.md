@@ -1,5 +1,14 @@
 # @framedjs/core
 
+## 0.10.0-next.3
+
+### Patch Changes
+
+-   b7b08ed: Various breaking refactors:
+
+    -   refactor!: remove koa and BaseRouter
+    -   refactor!: change sendSeparateReply default
+
 ## 0.10.0-next.2
 
 ### Minor Changes
