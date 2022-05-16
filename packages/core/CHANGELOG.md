@@ -1,5 +1,13 @@
 # @framedjs/core
 
+## 0.10.0-next.4
+
+### Patch Changes
+
+-   29a086e: fix: false emoji parses
+
+    fix: bot permission @everyone message
+
 ## 0.10.0-next.3
 
 ### Patch Changes
