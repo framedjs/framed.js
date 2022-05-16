@@ -714,15 +714,22 @@ export class BaseMessage extends Base {
 		const genericEmojiData = TwemojiParser.parse(newArgs[0]);
 
 		let newContent = argsContent;
-		const newEmote = markdownEmote
+		let newEmote = markdownEmote
 			? markdownEmote[0]
 			: genericEmojiData[0]
 			? genericEmojiData[0].text
 			: undefined;
 		if (newEmote) {
-			newContent = newEmote
-				? argsContent.replace(newEmote, "").trimLeft()
-				: argsContent;
+			// Checks if the emote is the first character(s).
+			// If so, remove it from the start of newContent.
+			// Else, do not use.
+			if (newContent.startsWith(newEmote)) {
+				newContent = newEmote
+					? argsContent.replace(newEmote, "").trimLeft()
+					: argsContent;
+			} else {
+				newEmote = undefined;
+			}
 		}
 
 		return {
