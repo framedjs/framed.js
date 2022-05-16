@@ -656,16 +656,21 @@ export abstract class BasePluginObject extends Base {
 					return { components: [], embeds: [embed] };
 				} else {
 					// Paranoid replacement
-					if (!dm) {
-						hint = hint.replace(
-							"@everyone",
-							`<@&${msg.discord.guild?.id}>`
-						);
-					}
+					// if (!dm) {
+					// 	hint = hint.replace(
+					// 		"@everyone",
+					// 		`<@&${msg.discord.guild?.id}>`
+					// 	);
+					// }
 					hint = hint
 						? `\n\n> **Hint for Server Staff**\n${hint}`
 						: "";
 					return {
+						allowedMentions: {
+							parse: [],
+							roles: [], // Paranoid
+							users: [], // Paranoid
+						},
 						content: stripIndents`**${embed.title}**
 						${embed.description} ${embed.fields[0].value}${hint}`,
 						components: [],
