@@ -32,7 +32,6 @@
 	},
 	"devDependencies": {
 		"@types/common-tags": "^1.8.1",
-		"@types/node-emoji": "^1.8.1",
 		"@types/require-all": "^3.0.3",
 		"@types/twemoji-parser": "^13.1.1",
 		"discord.js": "^13.7.0",
