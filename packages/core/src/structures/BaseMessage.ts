@@ -758,7 +758,7 @@ export class BaseMessage extends Base {
 	}
 
 	/**
-	 * Sends a message showing help for a command. This is a function shortcut to {@link CommandManger}.
+	 * Sends a message showing help for a command. This is a function shortcut to {@link CommandManager}.
 	 *
 	 * @param place Place
 	 *
