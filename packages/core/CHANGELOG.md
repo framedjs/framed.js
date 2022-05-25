@@ -1,5 +1,11 @@
 # @framedjs/core
 
+## 0.10.0-next.5
+
+### Minor Changes
+
+-   f4436ba: feat: add useful functions to menu flow system
+
 ## 0.10.0-next.4
 
 ### Patch Changes
