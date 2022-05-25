@@ -100,6 +100,7 @@ export class DiscordUtils {
 	 * the message link being from a anotehr server.
 	 *
 	 * @returns Discord message or an error message string
+	 * @deprecated Use DiscordUtils.getMessage() instead.
 	 */
 	static async getMessageFromLink(
 		link: string,
@@ -110,6 +111,12 @@ export class DiscordUtils {
 			| Discord.User,
 		author?: Discord.User
 	): Promise<Discord.Message | undefined> {
+		try {
+			throw new Error("DiscordUtils.getMessageFromLink() is deprecated!");
+		} catch (error) {
+			Logger.warn((error as Error).stack);
+		}
+
 		if (
 			guildChannelOrAuthor instanceof Discord.Channel &&
 			/^\d+$/.test(link)
@@ -186,6 +193,146 @@ export class DiscordUtils {
 		if (!channel.isText()) {
 			throw new InvalidError({
 				input: link,
+				name: "Channel",
+				extraMessage:
+					"The channel within the link isn't a text channel.",
+			});
+		}
+
+		try {
+			const message = await channel.messages.fetch(args[2]);
+			return message;
+		} catch (error) {
+			throw new NotFoundError({
+				input: args[2],
+				name: "Message",
+			});
+		}
+	}
+
+	/**
+	 * Gets a Discord message object from a link.
+	 *
+	 * @param linkOrId Message link
+	 * @param client Discord client
+	 * @param guildChannelOrAuthor Discord guild, channel, or author
+	 * @param author Discord message author, for allowing a bypass of
+	 * the message link being from a anotehr server.
+	 *
+	 * @returns Discord message or an error message string
+	 */
+	static async getMessage(
+		linkOrId: string,
+		options: {
+			/**
+			 * Required, if no client was set by any other object.
+			 */
+			client?: Discord.Client;
+			guild?: Discord.Guild | string;
+			channel?: Discord.TextBasedChannel;
+			requester?: Discord.User;
+			bypass?: boolean;
+		}
+	): Promise<Discord.Message | undefined> {
+		const client =
+			options.client ??
+			(options.guild instanceof Discord.Guild
+				? options.guild.client
+				: undefined) ??
+			options.channel?.client ??
+			options.requester?.client;
+		if (!client) {
+			throw new InternalError(
+				"Client object not found in DiscordUtils.getMessage() call."
+			);
+		}
+
+		if (
+			options.channel instanceof Discord.TextChannel &&
+			/^\d+$/.test(linkOrId)
+		) {
+			const messages = await options.channel.messages.fetch({
+				around: linkOrId,
+				limit: 3,
+			});
+			for (const [, message] of messages) {
+				if (message.id == linkOrId) {
+					return message;
+				}
+			}
+		}
+
+		// If it's not an actual link, return undefined
+		if (!linkOrId.includes(".com")) {
+			return undefined;
+		}
+
+		const args = linkOrId
+			.replace(/.*(discord|discordapp).com\/channels\//g, "")
+			.split("/");
+
+		if (args.length != 3) {
+			throw new InvalidError({
+				name: "Message Link",
+				input: linkOrId,
+			});
+		}
+
+		// If user is the bot owner, they may bypass this restriction
+		let bypass = options.bypass;
+		if (options.bypass == undefined && options.requester) {
+			const botOwners = process.env.BOT_OWNERS?.split(",");
+			if (botOwners?.includes(options.requester.id)) {
+				bypass = true;
+			}
+		}
+
+		if (
+			!bypass &&
+			options.guild &&
+			(options.guild instanceof Discord.Guild
+				? options.guild?.id != args[0]
+				: options.guild != args[0])
+		) {
+			throw new InvalidError({
+				name: "Message Link",
+				input: linkOrId,
+				extraMessage: "The message link cannot be from another server!",
+			});
+		}
+
+		let channel: Discord.AnyChannel | null;
+		try {
+			if (options.requester instanceof Discord.User) {
+				channel =
+					options.requester.dmChannel ??
+					(await options.requester.createDM());
+			} else {
+				channel = await client.channels.fetch(args[1]);
+			}
+		} catch (error) {
+			const err = error as Error;
+			if (err.message == "Missing Access") {
+				throw new NotFoundError({
+					input: linkOrId,
+					name: "Message",
+					extraMessage: "I can't access this!",
+				});
+			}
+			throw error;
+		}
+
+		if (!channel) {
+			throw new NotFoundError({
+				input: linkOrId,
+				name: "Channel",
+				extraMessage: `I couldn't find the channel from the message link!`,
+			});
+		}
+
+		if (!channel.isText()) {
+			throw new InvalidError({
+				input: linkOrId,
 				name: "Channel",
 				extraMessage:
 					"The channel within the link isn't a text channel.",

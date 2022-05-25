@@ -491,9 +491,21 @@ export abstract class BasePluginObject extends Base {
 			let sent = false;
 			if (!useDm) {
 				try {
-					await msg.send(options, {
-						editReply: editReply,
-					});
+					await msg.send(
+						options as (
+							| string
+							| Discord.MessagePayload
+							| Discord.InteractionReplyOptions
+						) &
+							(
+								| string
+								| Discord.MessagePayload
+								| Discord.MessageOptions
+							),
+						{
+							editReply: editReply,
+						}
+					);
 					sent = true;
 				} catch (error) {
 					Logger.error(error);
@@ -506,7 +518,11 @@ export abstract class BasePluginObject extends Base {
 
 			if (useDm && !sent) {
 				try {
-					await msg.discord.author.send(options);
+					await msg.discord.author.send(
+						options as
+							| Discord.MessagePayload
+							| Discord.MessageOptions
+					);
 					let newLine = "";
 					if (
 						"embeds" in options &&

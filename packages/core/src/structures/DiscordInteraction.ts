@@ -1,6 +1,7 @@
 import { oneLine } from "common-tags";
 import { BaseMessage } from "./BaseMessage";
 import Discord from "discord.js";
+import { Logger } from "@framedjs/logger";
 
 import type { DiscordInteractionData } from "../interfaces/DiscordInteractionData";
 import type { DiscordMessageData } from "../interfaces/DiscordMessageData";
@@ -179,11 +180,22 @@ export class DiscordInteraction extends BaseMessage {
 
 			if (shouldEditReply && (canEditReply || canUpdate)) {
 				if (canUpdate) {
-					await interaction.update(options);
+					await interaction.update(
+						options as Discord.InteractionUpdateOptions & {
+							fetchReply: true;
+						}
+					);
 				} else {
 					// Avoids empty message errors
-					if (typeof options != "string" && "ephemeral" in options) {
+					const forceFillInteractionContent =
+						process.env.FRAMED_DEBUG_FORCE_FILL_INTERACTION_CONTENT?.toLowerCase();
+					if (
+						typeof options != "string" &&
+						"ephemeral" in options &&
+						forceFillInteractionContent == "true"
+					) {
 						if (!options.content) {
+							Logger.error("Filled content");
 							options.content = "_ _";
 						}
 					}

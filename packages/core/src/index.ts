@@ -46,6 +46,7 @@ export type { CooldownOptions } from "./interfaces/CooldownOptions";
 export type { CooldownData } from "./interfaces/CooldownData";
 // export { DiscordMessageData } from "./interfaces/DiscordMessageData";
 // export { DiscordMessageDataOptions } from "./interfaces/DiscordMessageDataOptions";
+export type { DiscordMenuFlowIdData} from "./interfaces/DiscordMenuFlowIdData";
 export type { DiscordInteractionSendOptions } from "./interfaces/DiscordInteractionSendOptions";
 export type { DiscohookOutputData } from "./interfaces/other/DiscohookOutputData";
 export type { FoundCommandData } from "./interfaces/FoundCommandData";

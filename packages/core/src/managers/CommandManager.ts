@@ -474,15 +474,11 @@ export class CommandManager extends Base {
 		options?: HandleFriendlyErrorOptions
 	): Promise<void> {
 		if (error instanceof FriendlyError) {
-			Logger.warn(oneLine`The below warning is likely
-			safe to ignore, unless needed for debug purposes.`);
-			Logger.warn((error as Error).stack);
-
 			try {
 				await this.sendErrorMessage(
 					msg,
 					error,
-					options?.sendSeparateReply
+					options
 				);
 			} catch (error) {
 				if (options?.catchSendMessage != false) {
@@ -705,16 +701,16 @@ export class CommandManager extends Base {
 								userId: data.userId ?? msg.discord.author.id,
 								ephemeral: ephemeral,
 							};
-						if (foundPage.userPermissions) {
-							const permCheckPage =
-								await this.checkForPermissions(
-									msg,
-									foundPage,
-									map,
-									permCheckRenderOptions
-								);
-							if (!permCheckPage) continue;
-						} else if (page.menu.userPermissions) {
+
+						const permCheckPage =
+							await this.checkForPermissions(
+								msg,
+								foundPage,
+								map,
+								permCheckRenderOptions
+							);
+						if (!permCheckPage) continue;
+						if (!foundPage.userPermissions && page.menu.userPermissions) {
 							const permMenuCheck =
 								await this.checkForPermissions(
 									msg,
@@ -735,6 +731,7 @@ export class CommandManager extends Base {
 								await page.parse(msg, {
 									guildId: data.guildId,
 									messageId: data.messageId,
+									channelId: data.channelId,
 									userId: data.userId,
 									ephemeral: ephemeral,
 								})
@@ -1035,8 +1032,12 @@ export class CommandManager extends Base {
 	async sendErrorMessage(
 		msg: BaseMessage,
 		friendlyError: FriendlyError,
-		sendSeparateReply = true
+		options?: HandleFriendlyErrorOptions
 	): Promise<void> {
+		Logger.warn(oneLine`The below warning is likely
+		safe to ignore, unless needed for debug purposes.`);
+		Logger.warn(friendlyError.stack);
+
 		let embed: Discord.MessageEmbed | undefined;
 		let messageOptions:
 			| string
@@ -1059,7 +1060,7 @@ export class CommandManager extends Base {
 		if (msg instanceof DiscordInteraction && embed) {
 			const useEmbedForFriendlyErrors =
 				process.env.FRAMED_USE_EMBED_FOR_FRIENDLY_ERRORS;
-			if (useEmbedForFriendlyErrors?.toLocaleLowerCase() != "true") {
+			if (useEmbedForFriendlyErrors?.toLocaleLowerCase() == "true") {
 				messageOptions = {
 					content: "_ _",
 					embeds: [embed],
@@ -1072,7 +1073,7 @@ export class CommandManager extends Base {
 						? ""
 						: `**${friendlyError.friendlyName}**`;
 				messageOptions = {
-					content: `${friendlyName}\n${friendlyError.message}`,
+					content: `${friendlyName}\n${friendlyError.message}`.trim(),
 					components: [],
 					embeds: [],
 					ephemeral: true,
@@ -1099,13 +1100,30 @@ export class CommandManager extends Base {
 			}
 
 			if (useDm && msg.discord) {
-				await msg.discord.author.send(messageOptions);
+				await msg.discord.author.send(
+					messageOptions as
+						| string
+						| Discord.MessagePayload
+						| Discord.MessageOptions
+				);
 			} else if (msg instanceof DiscordInteraction) {
 				const interaction = msg.discordInteraction.interaction;
-				if (interaction.isApplicationCommand() && sendSeparateReply) {
-					await interaction.reply(messageOptions);
+				if (
+					interaction.isMessageComponent() &&
+					options?.sendSeparateReply != false
+				) {
+					await interaction.reply(
+						messageOptions as
+							| string
+							| Discord.InteractionReplyOptions
+					);
 				} else {
-					await msg.send(messageOptions);
+					await msg.send(
+						messageOptions as
+							| string
+							| Discord.MessagePayload
+							| Discord.InteractionReplyOptions
+					);
 				}
 			} else {
 				await msg.send(messageOptions);

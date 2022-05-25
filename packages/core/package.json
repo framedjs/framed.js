@@ -19,8 +19,8 @@
 	"dependencies": {
 		"@discordjs/builders": "^0.7.0",
 		"@discordjs/rest": "^0.1.0-canary.0",
-		"@framedjs/logger": "workspace:^0.1.0",
-		"@framedjs/shared": "workspace:^0.3.0-next.0",
+		"@framedjs/logger": "^0.1.0",
+		"@framedjs/shared": "^0.3.0-next.0",
 		"axios": "^0.22.0",
 		"common-tags": "^1.8.2",
 		"discord-api-types": "^0.22.0",

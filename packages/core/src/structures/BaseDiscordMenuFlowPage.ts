@@ -138,7 +138,7 @@ export abstract class BaseDiscordMenuFlowPage extends BasePluginObject {
 	): string {
 		const isProduction = process.env.NODE_ENV == "production";
 		const rawEnvShowDebugContent =
-			process.env.ERROR_TESTS_SHOW_DEBUG_INTERACTION_CONTENT?.toLowerCase();
+			process.env.FRAMED_SHOW_DEBUG_INTERACTION_CONTENT?.toLowerCase();
 		const envShowDebugContent =
 			rawEnvShowDebugContent == "true"
 				? true

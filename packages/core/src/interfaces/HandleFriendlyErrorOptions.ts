@@ -11,4 +11,10 @@ export interface HandleFriendlyErrorOptions {
 	 * @default true
 	 */
 	sendSeparateReply?: boolean;
+
+	/**
+	 * Is the error message ephemeral?
+	 * @default false
+	 */
+	ephemeral?: boolean;
 }

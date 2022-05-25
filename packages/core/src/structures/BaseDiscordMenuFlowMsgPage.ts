@@ -11,35 +11,6 @@ import type { DiscordMenuFlowIdData } from "../interfaces/DiscordMenuFlowIdData"
 import type { BaseDiscordMenuFlowMsgPageOptions } from "../interfaces/BaseDiscordMenuFlowMsgPageOptions";
 
 export abstract class BaseDiscordMenuFlowMsgPage extends BaseDiscordMenuFlowStartPage {
-	private static async _getMessage(
-		channel: Discord.TextBasedChannel,
-		options?: string | DiscordMenuFlowIdData
-	) {
-		let messageId: string | undefined;
-		if (typeof options == "string") {
-			messageId = options;
-		} else {
-			messageId = options?.messageId;
-		}
-
-		if (!messageId) {
-			throw new InternalError(
-				"The message wasn't found within interaction data!"
-			);
-		}
-
-		const pollMessage = await DiscordUtils.getMessageFromId(
-			messageId,
-			channel
-		);
-
-		if (!pollMessage) {
-			throw new FriendlyError(`The message wasn't able to be found!`);
-		}
-
-		return pollMessage;
-	}
-
 	async parse(
 		msg: DiscordMessage | DiscordInteraction,
 		options?: DiscordMenuFlowIdData
@@ -62,28 +33,28 @@ export abstract class BaseDiscordMenuFlowMsgPage extends BaseDiscordMenuFlowStar
 				}
 				message = newMessage;
 			} else if (interaction.isSelectMenu() || interaction.isButton()) {
-				message = await BaseDiscordMenuFlowMsgPage._getMessage(
-					msg.discord.channel,
-					options
-				);
+				message = await this.menu.getMessageWithRenderOptions({
+					...options,
+					channelId: options?.channelId ?? msg.discord.channel.id,
+				});
 			} else if (interaction.isCommand()) {
 				const messageLinkOrId = interaction.options.getString(
 					"message",
 					true
 				);
-				message = await BaseDiscordMenuFlowMsgPage._getMessage(
-					msg.discord.channel,
-					{ messageId: messageLinkOrId }
-				);
+				message = (
+					await this.menu.getMessage(msg, {
+						messageId: messageLinkOrId,
+					})
+				).message;
 			}
 		} else {
 			try {
-				message = await BaseDiscordMenuFlowMsgPage._getMessage(
-					msg.discord.channel,
-					{
+				message = (
+					await this.menu.getMessage(msg, {
 						messageId: msg.args ? msg.args[0] : undefined,
-					}
-				);
+					})
+				).message;
 			} catch (error) {
 				if (error instanceof FriendlyError) {
 					// Previous message logic

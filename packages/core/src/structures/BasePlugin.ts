@@ -181,8 +181,8 @@ export abstract class BasePlugin extends Base {
 				if (error instanceof ImportError) {
 					// Wrong import type was used
 					if (
-						process.env.FRAMED_HIDE_INSTANCE_IMPORT_ERROR?.toLocaleLowerCase() !=
-						"true"
+						process.env.FRAMED_HIDE_INSTANCE_IMPORT_ERROR?.toLocaleLowerCase() ==
+						"false"
 					) {
 						Logger.silly(
 							`~99% safe to ignore: ${(error as Error).stack}`

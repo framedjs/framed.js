@@ -1,6 +1,7 @@
 export interface DiscordMenuFlowIdData {
+	guildId?: string;
+	channelId?: string;
 	messageId?: string;
 	userId?: string;
-	guildId?: string;
 	ephemeral?: boolean;
 }

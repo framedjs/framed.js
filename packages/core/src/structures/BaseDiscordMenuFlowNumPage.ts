@@ -1,6 +1,7 @@
 import { BaseDiscordMenuFlowStartPage } from "./BaseDiscordMenuFlowStartPage";
 import { DiscordInteraction } from "./DiscordInteraction";
 import { DiscordMessage } from "./DiscordMessage";
+import Discord from "discord.js";
 
 import type { BaseDiscordMenuFlowNumPageOptions } from "../interfaces/BaseDiscordMenuFlowNumPageOptions";
 import type { DiscordMenuFlowIdData } from "../interfaces/DiscordMenuFlowIdData";
@@ -40,4 +41,29 @@ export abstract class BaseDiscordMenuFlowNumPage extends BaseDiscordMenuFlowStar
 		msg: DiscordMessage | DiscordInteraction,
 		options: BaseDiscordMenuFlowNumPageOptions
 	): Promise<boolean>;
+
+	
+	getPageButton(
+		customId: string,
+		pageNumber: number,
+		maxPages: number,
+		nextPage: boolean
+	): Discord.MessageButton {
+		return new Discord.MessageButton()
+			.setLabel(nextPage ? "Next Page" : "Previous Page")
+			.setStyle("SECONDARY")
+			.setCustomId(`${customId}.${pageNumber}`)
+			.setDisabled(pageNumber < 1 || pageNumber > maxPages);
+	}
+	
+	setPageFooter(
+		embed: Discord.MessageEmbed,
+		pageNumber: number,
+		maxPages: number
+	): Discord.MessageEmbed {
+		return embed.setFooter({
+			text: `Page ${pageNumber}/${maxPages}  •  ${embed.title}`,
+		});
+	}
+
 }
