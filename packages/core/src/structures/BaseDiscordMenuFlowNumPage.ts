@@ -12,7 +12,7 @@ export abstract class BaseDiscordMenuFlowNumPage extends BaseDiscordMenuFlowStar
 		options: DiscordMenuFlowIdData
 	): Promise<BaseDiscordMenuFlowNumPageOptions> {
 		let pageNumber = 1;
-		
+
 		if (msg instanceof DiscordInteraction) {
 			const interaction = msg.discordInteraction.interaction;
 			if (interaction.isMessageComponent()) {
@@ -30,10 +30,10 @@ export abstract class BaseDiscordMenuFlowNumPage extends BaseDiscordMenuFlowStar
 			}
 		}
 
-		const newOptions: BaseDiscordMenuFlowNumPageOptions = Object.assign(
-			options,
-			{ pageNumber } as BaseDiscordMenuFlowNumPageOptions
-		);
+		const newOptions: BaseDiscordMenuFlowNumPageOptions = {
+			...options,
+			pageNumber,
+		};
 		return newOptions;
 	}
 
@@ -42,7 +42,6 @@ export abstract class BaseDiscordMenuFlowNumPage extends BaseDiscordMenuFlowStar
 		options: BaseDiscordMenuFlowNumPageOptions
 	): Promise<boolean>;
 
-	
 	getPageButton(
 		customId: string,
 		pageNumber: number,
@@ -55,7 +54,7 @@ export abstract class BaseDiscordMenuFlowNumPage extends BaseDiscordMenuFlowStar
 			.setCustomId(`${customId}.${pageNumber}`)
 			.setDisabled(pageNumber < 1 || pageNumber > maxPages);
 	}
-	
+
 	setPageFooter(
 		embed: Discord.MessageEmbed,
 		pageNumber: number,
@@ -65,5 +64,4 @@ export abstract class BaseDiscordMenuFlowNumPage extends BaseDiscordMenuFlowStar
 			text: `Page ${pageNumber}/${maxPages}  •  ${embed.title}`,
 		});
 	}
-
 }
