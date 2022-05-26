@@ -8,10 +8,7 @@ import { InternalError } from "./errors/InternalError";
 import { Logger } from "@framedjs/logger";
 import Discord from "discord.js";
 
-import type {
-	BaseDiscordMenuFlowDiscordInteractionOptions,
-	BaseDiscordMenuFlowOptions,
-} from "../interfaces/BaseDiscordMenuFlowOptions";
+import type { BaseDiscordMenuFlowOptions } from "../interfaces/BaseDiscordMenuFlowOptions";
 import type { BaseDiscordMenuFlowPageRenderOptions } from "../interfaces/BaseDiscordMenuFlowPageRenderOptions";
 import type { DiscordMenuFlowIdData } from "../interfaces/DiscordMenuFlowIdData";
 import type { DiscordMenuFlowParseIdData } from "../interfaces/DiscordMenuFlowParseIdData";
@@ -20,7 +17,6 @@ import type { UserPermissionsMenuFlow } from "../interfaces/UserPermissionsMenuF
 import { oneLine, stripIndents } from "common-tags";
 import { DiscordUtils } from "../utils/discord/DiscordUtils";
 import { FriendlyError } from "./errors/FriendlyError";
-import { BaseDiscordMenuFlowNumPageOptions } from "../interfaces/BaseDiscordMenuFlowNumPageOptions";
 
 export abstract class BaseDiscordMenuFlow extends BasePluginObject {
 	readonly rawId: string;
@@ -34,7 +30,7 @@ export abstract class BaseDiscordMenuFlow extends BasePluginObject {
 	userPermissions?: UserPermissionsMenuFlow;
 
 	pages = new Map<string, BaseDiscordMenuFlowPage>();
-	discordInteractions: BaseDiscordMenuFlowDiscordInteractionOptions[];
+
 	/** The menu flow tries to import scripts from paths found in this object. */
 	paths: {
 		pages: string;
@@ -44,7 +40,6 @@ export abstract class BaseDiscordMenuFlow extends BasePluginObject {
 		super(plugin, options);
 
 		this.rawId = options.id;
-		this.discordInteractions = options.discordInteraction;
 		this.paths = options.paths;
 
 		this.fullId = `${plugin.id}.${this.type}.${this.id}`;
@@ -360,7 +355,7 @@ export abstract class BaseDiscordMenuFlow extends BasePluginObject {
 
 	async handleUserCheck(
 		msg: DiscordMessage | DiscordInteraction,
-		options: BaseDiscordMenuFlowNumPageOptions
+		options: DiscordMenuFlowIdData
 	): Promise<{
 		replyEphemeral: boolean;
 	}> {
