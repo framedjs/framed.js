@@ -76,7 +76,7 @@ export abstract class BaseDiscordMenuFlowPage extends BasePluginObject {
 		userPermissions = this.userPermissions,
 		options?: DiscordMenuFlowIdData
 	): UserPermissionAllowedData | UserPermissionDeniedData {
-		if (userPermissions?.discord?.checkOrignalUser != false) {
+		if (userPermissions?.discord?.checkOriginalUser != false) {
 			if (options?.userId != msg.discord?.author.id) {
 				return {
 					success: false,

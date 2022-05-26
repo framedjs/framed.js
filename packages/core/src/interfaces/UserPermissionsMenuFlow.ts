@@ -8,6 +8,6 @@ export interface UserPermissionsMenuFlow extends UserPermissions {
 		 * they're not allowed to do that.
 		 * @default true
 		 */
-		checkOrignalUser?: boolean;
+		checkOriginalUser?: boolean;
 	};
 }
