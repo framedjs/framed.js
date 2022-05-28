@@ -105,9 +105,8 @@ export class EmbedHelper {
 					"true"
 			) {
 				// Grabs the primary role's color the bot has
-				const member = guild.members.cache.get(client.user.id);
-				if (member) {
-					botColor = member.displayHexColor;
+				if (guild.me) {
+					botColor = guild.me.displayHexColor;
 				} else {
 					Logger.warn(`Unable to find member of self on guild?`);
 				}
