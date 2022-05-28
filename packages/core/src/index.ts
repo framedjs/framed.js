@@ -9,7 +9,7 @@ export { Client } from "./structures/Client";
 export { BaseMessage } from "./structures/BaseMessage";
 export { Base } from "./structures/Base";
 export { BasePlugin } from "./structures/BasePlugin";
-export { BasePluginObject } from "./structures/BasePluginObject"
+export { BasePluginObject } from "./structures/BasePluginObject";
 export { BaseCommand } from "./structures/BaseCommand";
 export { BaseDiscordButtonInteraction } from "./structures/BaseDiscordButtonInteraction";
 export { BaseDiscordContextMenuInteraction } from "./structures/BaseDiscordContextMenuInteraction";
@@ -46,7 +46,7 @@ export type { CooldownOptions } from "./interfaces/CooldownOptions";
 export type { CooldownData } from "./interfaces/CooldownData";
 // export { DiscordMessageData } from "./interfaces/DiscordMessageData";
 // export { DiscordMessageDataOptions } from "./interfaces/DiscordMessageDataOptions";
-export type { DiscordMenuFlowIdData} from "./interfaces/DiscordMenuFlowIdData";
+export type { DiscordMenuFlowIdData } from "./interfaces/DiscordMenuFlowIdData";
 export type { DiscordInteractionSendOptions } from "./interfaces/DiscordInteractionSendOptions";
 export type { DiscohookOutputData } from "./interfaces/other/DiscohookOutputData";
 export type { FoundCommandData } from "./interfaces/FoundCommandData";

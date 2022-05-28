@@ -4,4 +4,5 @@ export interface DiscordMenuFlowIdData {
 	messageId?: string;
 	userId?: string;
 	ephemeral?: boolean;
+	pageNumber?: number;
 }

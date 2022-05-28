@@ -1,3 +1,4 @@
+/* eslint-disable no-mixed-spaces-and-tabs */
 import { BaseDiscordMenuFlowStartPage } from "./BaseDiscordMenuFlowStartPage";
 import { DiscordInteraction } from "./DiscordInteraction";
 import { DiscordMessage } from "./DiscordMessage";
@@ -11,30 +12,13 @@ export abstract class BaseDiscordMenuFlowNumPage extends BaseDiscordMenuFlowStar
 		msg: DiscordMessage | DiscordInteraction,
 		options: DiscordMenuFlowIdData
 	): Promise<BaseDiscordMenuFlowNumPageOptions> {
-		let pageNumber = 1;
-
-		if (msg instanceof DiscordInteraction) {
-			const interaction = msg.discordInteraction.interaction;
-			if (interaction.isMessageComponent()) {
-				const parsedId = this.menu.parseId(interaction.customId);
-				const lastArg = parsedId.args[parsedId.args.length - 1];
-				if (lastArg) {
-					const args = lastArg.split(".");
-					if (args[1]) {
-						const newPageIndex = Number(args[1]);
-						if (!Number.isNaN(newPageIndex)) {
-							pageNumber = newPageIndex;
-						}
-					}
-				}
-			}
-		}
-
-		const newOptions: BaseDiscordMenuFlowNumPageOptions = {
+		return {
 			...options,
-			pageNumber,
+			pageNumber:
+				options.pageNumber ??
+				(await super.parse(msg, options))?.pageNumber ??
+				1,
 		};
-		return newOptions;
 	}
 
 	abstract render(
@@ -43,16 +27,32 @@ export abstract class BaseDiscordMenuFlowNumPage extends BaseDiscordMenuFlowStar
 	): Promise<boolean>;
 
 	getPageButton(
-		customId: string,
-		pageNumber: number,
-		maxPages: number,
-		nextPage: boolean
+		buttonOptions: {
+			pageNumber: number;
+			maxPages: number;
+			nextPage: boolean;
+		},
+		dataOptions?: DiscordMenuFlowIdData | string,
+		secondaryText?: string
 	): Discord.MessageButton {
+		const customId =
+			typeof dataOptions == "string"
+				? dataOptions
+				: this.menu.getDataId(
+						{
+							...dataOptions,
+							pageNumber: buttonOptions.pageNumber,
+						},
+						secondaryText
+				  );
 		return new Discord.MessageButton()
-			.setLabel(nextPage ? "Next Page" : "Previous Page")
+			.setLabel(buttonOptions.nextPage ? "Next Page" : "Previous Page")
 			.setStyle("SECONDARY")
-			.setCustomId(`${customId}.${pageNumber}`)
-			.setDisabled(pageNumber < 1 || pageNumber > maxPages);
+			.setCustomId(customId)
+			.setDisabled(
+				buttonOptions.pageNumber < 1 ||
+					buttonOptions.pageNumber > buttonOptions.maxPages
+			);
 	}
 
 	setPageFooter(

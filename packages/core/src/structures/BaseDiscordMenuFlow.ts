@@ -70,10 +70,10 @@ export abstract class BaseDiscordMenuFlow extends BasePluginObject {
 	/**
 	 * Creates a data ID string, used for customIds in Discord interactions.
 	 * @param options
-	 * @param secondaryId The ID to append to at the end of everything else.
+	 * @param secondaryText Base and arbitrary text to append to at the end of everything else.
 	 * @returns Data ID
 	 */
-	getDataId(options?: DiscordMenuFlowIdData, secondaryId?: string): string {
+	getDataId(options?: DiscordMenuFlowIdData, secondaryText?: string): string {
 		let template = `${this.getBaseId(options)}_`;
 
 		const letterTagData: string[] = [];
@@ -95,13 +95,21 @@ export abstract class BaseDiscordMenuFlow extends BasePluginObject {
 			const element = letterTagData[i];
 			template += `${element}`;
 
-			// Tries to make sure there is no trailing "_" char
-			if (i + 1 < letterTagData.length || secondaryId?.length != 0) {
+			// Make sure there is no trailing "_" char
+			if (i + 1 < letterTagData.length || secondaryText?.length != 0) {
 				template += `_`;
 			}
 		}
 
-		template += secondaryId;
+		if (secondaryText) {
+			const args = secondaryText.split("_");
+			if (options?.pageNumber) {
+				args[0] = `${args[0]}.${options.pageNumber}`;
+				template += args.join("_");
+			} else {
+				template += secondaryText;
+			}
+		}
 
 		return template;
 	}
@@ -172,9 +180,15 @@ export abstract class BaseDiscordMenuFlow extends BasePluginObject {
 		}
 
 		const filteredArgs = args.filter(Boolean);
+		const pageNumberString = filteredArgs[1]?.split(".")[1] ?? undefined;
+		const pageNumber =
+			pageNumberString && !Number.isNaN(Number(pageNumberString))
+				? Number(pageNumberString)
+				: undefined;
 
 		return {
 			args: filteredArgs,
+			pageNumber: pageNumber,
 			ephemeral: filteredArgs[0]
 				? filteredArgs[0][filteredArgs[0].length - 1] == "i"
 				: false,

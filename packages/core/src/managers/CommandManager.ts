@@ -475,11 +475,7 @@ export class CommandManager extends Base {
 	): Promise<void> {
 		if (error instanceof FriendlyError) {
 			try {
-				await this.sendErrorMessage(
-					msg,
-					error,
-					options
-				);
+				await this.sendErrorMessage(msg, error, options);
 			} catch (error) {
 				if (options?.catchSendMessage != false) {
 					Logger.error((error as Error).stack);
@@ -702,15 +698,17 @@ export class CommandManager extends Base {
 								ephemeral: ephemeral,
 							};
 
-						const permCheckPage =
-							await this.checkForPermissions(
-								msg,
-								foundPage,
-								map,
-								permCheckRenderOptions
-							);
+						const permCheckPage = await this.checkForPermissions(
+							msg,
+							foundPage,
+							map,
+							permCheckRenderOptions
+						);
 						if (!permCheckPage) continue;
-						if (!foundPage.userPermissions && page.menu.userPermissions) {
+						if (
+							!foundPage.userPermissions &&
+							page.menu.userPermissions
+						) {
 							const permMenuCheck =
 								await this.checkForPermissions(
 									msg,
@@ -734,6 +732,7 @@ export class CommandManager extends Base {
 									channelId: data.channelId,
 									userId: data.userId,
 									ephemeral: ephemeral,
+									pageNumber: data.pageNumber,
 								})
 							);
 						} catch (error) {
