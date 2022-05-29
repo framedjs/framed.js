@@ -1,5 +1,13 @@
 # @framedjs/core
 
+## 0.10.0-next.6
+
+### Minor Changes
+
+-   9becebb: feat: page number parse by default
+
+    -   fix!: "checkOriginalUser" typo
+
 ## 0.10.0-next.5
 
 ### Minor Changes
