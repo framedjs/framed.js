@@ -531,6 +531,13 @@ export class CommandManager extends Base {
 					oneLine`${displayTime}Running command "${msg.content}" from
 					user ${msg.discord.author.tag} (${msg.discord.author.id})`
 				);
+				if (msg.discord.msg?.url) {
+					Logger.verbose(
+						`URL: ${msg.discord.msg?.url} ${
+							msg.discord.channel.isThread() ? " (in thread)" : ""
+						}`
+					);
+				}
 			} else if (
 				msg instanceof DiscordInteraction &&
 				msg.discordInteraction.interaction.isCommand()
@@ -539,11 +546,19 @@ export class CommandManager extends Base {
 				const options = Utils.util.inspect(interaction.options);
 
 				Logger.verbose(
-					oneLine`${displayTime}Running
-					/${interaction.commandName}
-					from user ${interaction.user.tag}
-					(${msg.discordInteraction.user.id})`
+					oneLine`${displayTime}Running /${interaction.commandName}
+					from user ${interaction.user.tag} (${msg.discordInteraction.user.id})
+					`
 				);
+
+				if (msg.discordInteraction.interaction.inGuild()) {
+					Logger.verbose(oneLine`
+						URL: https://discord.com/channels/${msg.discord.guild?.id}/${
+						msg.discord.channel.id
+					}
+					${msg.discord.channel.isThread() ? " (is thread)" : ""}`);
+				}
+
 				if (options) {
 					Logger.verbose(options);
 				}
