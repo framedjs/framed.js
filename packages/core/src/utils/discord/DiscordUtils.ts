@@ -228,7 +228,7 @@ export class DiscordUtils {
 			 * Required, if no client was set by any other object.
 			 */
 			client?: Discord.Client;
-			guild?: Discord.Guild | string;
+			guild?: Discord.Guild | string | null;
 			channel?: Discord.TextBasedChannel;
 			requester?: Discord.User;
 			bypass?: boolean;
