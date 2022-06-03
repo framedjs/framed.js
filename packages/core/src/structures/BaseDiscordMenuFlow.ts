@@ -225,11 +225,28 @@ export abstract class BaseDiscordMenuFlow extends BasePluginObject {
 		msg: DiscordMessage | DiscordInteraction,
 		options?: BaseDiscordMenuFlowPageRenderOptions & {
 			useMessageHistory?: boolean;
+			scanMessage?(): Promise<Discord.Message | undefined>;
 		}
 	): Promise<{
 		message: Discord.Message | undefined;
 		usedMessageHistory: boolean;
 	}> {
+		if (!options?.scanMessage) {
+			if (!options) options = {};
+			options.scanMessage = async () => {
+				const messages = await msg.discord.channel.messages.fetch({
+					before: msg.discord.msg?.id,
+					limit: 10,
+				});
+				for (const [, message] of messages) {
+					if (message.content != msg.content) {
+						return message;
+					}
+				}
+				return undefined;
+			};
+		}
+
 		let discordMsg: Discord.Message | undefined;
 		let usedMessageHistory = false;
 
@@ -274,16 +291,7 @@ export abstract class BaseDiscordMenuFlow extends BasePluginObject {
 				} else if (options?.useMessageHistory) {
 					usedMessageHistory = true;
 					try {
-						const messages =
-							await msg.discord.channel.messages.fetch({
-								limit: 10,
-							});
-						for (const [, message] of messages) {
-							if (message.content != msg.content) {
-								discordMsg = message;
-								break;
-							}
-						}
+						discordMsg = await options.scanMessage();
 					} catch (error) {
 						Logger.error(
 							`Unable to fetch messages in channel\n${
