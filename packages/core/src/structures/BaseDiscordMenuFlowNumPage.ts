@@ -26,25 +26,30 @@ export abstract class BaseDiscordMenuFlowNumPage extends BaseDiscordMenuFlowStar
 		options: BaseDiscordMenuFlowNumPageOptions
 	): Promise<boolean>;
 
+	/**
+	 * Create a new Discord Message Button, used for making paginated menu flows.
+	 * @param buttonOptions
+	 * @param dataOptions Options used for creating a proper custom ID within the function.
+	 * @param optionsIdText Contains your page ID and other parameters,
+	 * so the custom ID gets formed corre.
+	 * @returns
+	 */
 	getPageButton(
 		buttonOptions: {
 			pageNumber: number;
 			maxPages: number;
 			nextPage: boolean;
 		},
-		dataOptions?: DiscordMenuFlowIdData | string,
-		secondaryText?: string
+		dataOptions: DiscordMenuFlowIdData,
+		optionsIdText: string
 	): Discord.MessageButton {
-		const customId =
-			typeof dataOptions == "string"
-				? dataOptions
-				: this.menu.getDataId(
-						{
-							...dataOptions,
-							pageNumber: buttonOptions.pageNumber,
-						},
-						secondaryText
-				  );
+		const customId = this.menu.getDataId(
+			{
+				...dataOptions,
+				pageNumber: buttonOptions.pageNumber,
+			},
+			optionsIdText
+		);
 		return new Discord.MessageButton()
 			.setLabel(buttonOptions.nextPage ? "Next Page" : "Previous Page")
 			.setStyle("SECONDARY")
