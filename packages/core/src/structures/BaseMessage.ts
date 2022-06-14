@@ -6,11 +6,12 @@ import type {
 import type { ArgumentOptions } from "../interfaces/ArgumentOptions";
 import type { DiscordMessageData } from "../interfaces/DiscordMessageData";
 import type { DiscordInteractionData } from "../interfaces/DiscordInteractionData";
-import type { TwitchMessageData } from "../interfaces/TwitchMessageData";
+import type { HandleFriendlyErrorOptions } from "../interfaces/HandleFriendlyErrorOptions";
 import type { MessageOptions } from "../interfaces/MessageOptions";
 import type { ParseEmojiAndStringData } from "../interfaces/ParseEmojiAndStringData";
 import type { Place } from "../interfaces/Place";
 import type { Platform } from "../types/Platform";
+import type { TwitchMessageData } from "../interfaces/TwitchMessageData";
 
 import { Base } from "./Base";
 import { Client } from "./Client";
@@ -772,8 +773,12 @@ export class BaseMessage extends Base {
 	 * Sends error message. This is a function shortcut to {@link CommandManger}.
 	 *
 	 * @param friendlyError
+	 * @param options
 	 */
-	async sendErrorMessage(friendlyError: FriendlyError): Promise<void> {
-		return this.client.commands.sendErrorMessage(this, friendlyError);
+	async sendErrorMessage(
+		friendlyError: FriendlyError,
+		options?: HandleFriendlyErrorOptions
+	): Promise<void> {
+		return this.client.commands.sendErrorMessage(this, friendlyError, options);
 	}
 }
