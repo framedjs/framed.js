@@ -1013,14 +1013,15 @@ export class DiscordUtils {
 	 *
 	 * @param newData Data
 	 * @param channelOrMessage Discord channel
-	 * @param client
-	 * @param place
+	 * @param options
 	 */
 	static async renderOutputData(
 		newData: DiscohookOutputData | DiscohookMessageData,
 		channelOrMessage: Discord.TextBasedChannel | Discord.Message,
-		client?: Client,
-		place?: Place
+		options?: {
+			client?: Client;
+			place?: Place;
+		}
 	): Promise<Discord.Message[]> {
 		Logger.silly(stripIndents`newEmbedData:
 		${Utils.util.inspect(newData, false, 7, true)}`);
@@ -1032,12 +1033,14 @@ export class DiscordUtils {
 				for (let i = 0; i < newData.messages.length; i++) {
 					const message = newData.messages[i];
 
-					const newMsg = await this.renderSingleMessage(
+					const newMsg = await this.renderMessageData(
 						message.data,
 						channelOrMessage,
-						client,
-						place,
-						i == 0
+						{
+							client: options?.client,
+							place: options?.place,
+							shouldEdit: i == 0,
+						}
 					);
 					if (!newMsg) {
 						throw new FriendlyError(
@@ -1047,12 +1050,14 @@ export class DiscordUtils {
 					newMsgs.push(newMsg);
 				}
 			} else {
-				const newMsg = await this.renderSingleMessage(
+				const newMsg = await this.renderMessageData(
 					newData,
 					channelOrMessage,
-					client,
-					place,
-					true
+					{
+						client: options?.client,
+						place: options?.place,
+						shouldEdit: true,
+					}
 				);
 				if (!newMsg) {
 					throw new FriendlyError("There wasn't anything to render.");
@@ -1065,7 +1070,7 @@ export class DiscordUtils {
 			} else {
 				Logger.error((error as Error).stack);
 				throw new FriendlyError(
-					"An unknown error happened while rendering"
+					"An unknown error happened while rendering. Check console logs for more info."
 				);
 			}
 		}
@@ -1078,18 +1083,20 @@ export class DiscordUtils {
 	 *
 	 * @param messageData
 	 * @param channelOrMessage
-	 * @param client
-	 * @param place
+	 * @param options
 	 */
-	static async renderSingleMessage(
+	static async renderMessageData(
 		messageData: DiscohookMessageData,
 		channelOrMessage: Discord.TextBasedChannel | Discord.Message,
-		client?: Client,
-		place?: Place,
-		shouldEdit = false
+		options?: {
+			client?: Client;
+			place?: Place;
+			shouldEdit: boolean;
+		}
 	): Promise<Discord.Message | undefined> {
-		let msgToReturn: Discord.Message | undefined;
-
+		const embeds: Discord.MessageEmbed[] = [];
+		let channel: Discord.TextChannel | undefined;
+		let msgToEdit: Discord.Message | undefined;
 		for (
 			let i = 0;
 			i < (messageData.embeds ? messageData.embeds.length : 1);
@@ -1108,71 +1115,58 @@ export class DiscordUtils {
 				: undefined;
 
 			// Format embed if it can
-			if (embed && client && place) {
-				embed = await client.formatting.formatEmbed(embed, place);
+			if (embed && options?.client && options?.place) {
+				embed = await options?.client.formatting.formatEmbed(
+					embed,
+					options?.place
+				);
 			}
 
-			// Content will only be used for the first embed
-			let content =
-				i == 0
-					? (Utils.turnUndefinedIfNull(messageData.content) as string)
-					: undefined;
-			if (content && client && place) {
-				content = await client.formatting.format(content, place);
-			}
-
-			let channel: Discord.TextChannel | undefined;
-			let msgToEdit: Discord.Message | undefined;
-			if (channelOrMessage instanceof Discord.Message) {
-				if (shouldEdit) {
-					msgToEdit = channelOrMessage;
-				} else {
-					channel = channelOrMessage.channel as Discord.TextChannel;
-				}
-			} else {
-				channel = channelOrMessage as Discord.TextChannel;
-			}
-
-			// Renders all the content with the retrieved data
-			if (content) {
-				if (embed) {
-					if (channel) {
-						msgToReturn = await channel.send({
-							content,
-							embeds: [embed],
-						});
-					} else if (msgToEdit) {
-						msgToReturn = await msgToEdit.edit({
-							content,
-							embeds: [embed],
-						});
-					}
-				} else {
-					if (channel) {
-						msgToReturn = await channel.send(content);
-					} else if (msgToEdit) {
-						msgToReturn = await msgToEdit.edit(content);
-					}
-				}
-			} else if (embed) {
-				if (channel) {
-					msgToReturn = await channel.send({
-						content: undefined,
-						embeds: [embed],
-					});
-				} else if (msgToEdit) {
-					msgToReturn = await msgToEdit.edit({
-						content: undefined,
-						embeds: [embed],
-					});
-				}
+			if (embed) {
+				embeds.push(embed);
 			}
 
 			// Makes sure the message never gets edited again
-			shouldEdit = false;
+			if (options?.shouldEdit) options.shouldEdit = false;
 		}
 
-		return msgToReturn;
+		if (channelOrMessage instanceof Discord.Message) {
+			if (options?.shouldEdit) {
+				msgToEdit = channelOrMessage;
+			} else {
+				channel = channelOrMessage.channel as Discord.TextChannel;
+			}
+		} else {
+			channel = channelOrMessage as Discord.TextChannel;
+		}
+
+		// Content will only be used for the first embed
+		let content = Utils.turnUndefinedIfNull(messageData.content) as string;
+		if (content && options?.client && options?.place) {
+			content = await options.client.formatting.format(
+				content,
+				options.place
+			);
+		}
+
+		if (!channel) {
+			throw new InternalError(
+				`Channel missing in \`DiscordUtils.renderMessageData()\``
+			);
+		}
+
+		const messageOptions:
+			| Discord.MessageOptions
+			| Discord.MessageEditOptions = {
+			content: content ?? undefined,
+			embeds: embeds,
+		};
+
+		if (msgToEdit) {
+			return msgToEdit.edit(messageOptions as Discord.MessageEditOptions);
+		} else {
+			return channel.send(messageOptions as Discord.MessageOptions);
+		}
 	}
 
 	static async getMessageFromBaseMessage(
