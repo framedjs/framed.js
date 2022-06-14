@@ -765,6 +765,9 @@ export class CommandManager extends Base {
 							) {
 								await this.handleFriendlyError(msg, err, {
 									sendSeparateReply: false,
+									ephemeral: page.menu.parseId(
+										interaction.customId
+									).ephemeral,
 								});
 							} else {
 								throw err;
@@ -1048,10 +1051,102 @@ export class CommandManager extends Base {
 		friendlyError: FriendlyError,
 		options?: HandleFriendlyErrorOptions
 	): Promise<void> {
-		Logger.warn(oneLine`The below warning is likely
-		safe to ignore, unless needed for debug purposes.`);
 		Logger.warn(friendlyError.stack);
 
+		const messageOptions =
+			msg instanceof DiscordMessage || msg instanceof DiscordInteraction
+				? await this._getMessageOptionsForErrorMsg(
+						msg,
+						friendlyError,
+						options
+				  )
+				: undefined;
+
+		async function sendMessageOptions() {
+			if (messageOptions) {
+				let useDm = false;
+				if (
+					msg instanceof DiscordMessage ||
+					msg instanceof DiscordInteraction
+				) {
+					const missingPerms =
+						await BasePluginObject.getMissingDiscordMemberPermissions(
+							msg,
+							msg.discord.member,
+							["SEND_MESSAGES", "EMBED_LINKS"]
+						);
+
+					useDm =
+						msg instanceof DiscordMessage &&
+						missingPerms.includes("SEND_MESSAGES");
+				}
+
+				if (useDm && msg.discord) {
+					await msg.discord.author.send(
+						messageOptions as
+							| string
+							| Discord.MessagePayload
+							| Discord.MessageOptions
+					);
+				} else if (msg instanceof DiscordInteraction) {
+					const interaction = msg.discordInteraction.interaction;
+					if (
+						interaction.isMessageComponent() &&
+						options?.sendSeparateReply != false
+					) {
+						await interaction.reply(
+							messageOptions as
+								| string
+								| Discord.InteractionReplyOptions
+						);
+					} else {
+						await msg.send(
+							messageOptions as
+								| string
+								| Discord.MessagePayload
+								| Discord.InteractionReplyOptions
+						);
+					}
+				} else {
+					await msg.send(messageOptions);
+				}
+			} else {
+				await msg.send(
+					`${friendlyError.friendlyName}: ${friendlyError.message}`
+				);
+			}
+		}
+
+		try {
+			await sendMessageOptions();
+		} catch (error) {
+			if (
+				typeof messageOptions != "string" &&
+				messageOptions &&
+				"content" in messageOptions &&
+				!messageOptions.content
+			) {
+				Logger.warn(error);
+				Logger.warn("Retrying send, with filled content");
+				messageOptions.content = "_ _";
+				await sendMessageOptions();
+			} else {
+				throw error;
+			}
+		}
+	}
+
+	protected async _getMessageOptionsForErrorMsg(
+		msg: DiscordMessage | DiscordInteraction,
+		friendlyError: FriendlyError,
+		options?: HandleFriendlyErrorOptions
+	): Promise<
+		| string
+		| Discord.MessagePayload
+		| Discord.MessageOptions
+		| Discord.InteractionReplyOptions
+		| undefined
+	> {
 		let embed: Discord.MessageEmbed | undefined;
 		let messageOptions:
 			| string
@@ -1076,7 +1171,6 @@ export class CommandManager extends Base {
 				process.env.FRAMED_USE_EMBED_FOR_FRIENDLY_ERRORS;
 			if (useEmbedForFriendlyErrors?.toLocaleLowerCase() == "true") {
 				messageOptions = {
-					content: "_ _",
 					embeds: [embed],
 					ephemeral: true,
 					components: [],
@@ -1095,57 +1189,6 @@ export class CommandManager extends Base {
 			}
 		}
 
-		if (messageOptions) {
-			let useDm = false;
-			if (
-				msg instanceof DiscordMessage ||
-				msg instanceof DiscordInteraction
-			) {
-				const missingPerms =
-					await BasePluginObject.getMissingDiscordMemberPermissions(
-						msg,
-						msg.discord.member,
-						["SEND_MESSAGES", "EMBED_LINKS"]
-					);
-
-				useDm =
-					msg instanceof DiscordMessage &&
-					missingPerms.includes("SEND_MESSAGES");
-			}
-
-			if (useDm && msg.discord) {
-				await msg.discord.author.send(
-					messageOptions as
-						| string
-						| Discord.MessagePayload
-						| Discord.MessageOptions
-				);
-			} else if (msg instanceof DiscordInteraction) {
-				const interaction = msg.discordInteraction.interaction;
-				if (
-					interaction.isMessageComponent() &&
-					options?.sendSeparateReply != false
-				) {
-					await interaction.reply(
-						messageOptions as
-							| string
-							| Discord.InteractionReplyOptions
-					);
-				} else {
-					await msg.send(
-						messageOptions as
-							| string
-							| Discord.MessagePayload
-							| Discord.InteractionReplyOptions
-					);
-				}
-			} else {
-				await msg.send(messageOptions);
-			}
-		} else {
-			await msg.send(
-				`${friendlyError.friendlyName}: ${friendlyError.message}`
-			);
-		}
+		return messageOptions;
 	}
 }
