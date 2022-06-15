@@ -20,5 +20,9 @@
   ],
   "dependencies": {
     "require-all": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^16",
+    "@types/require-all": "^3.0.3"
   }
 }

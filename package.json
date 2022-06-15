@@ -8,7 +8,7 @@
     "node:version": "which node && node --version",
     "clean": "pnpm recursive exec -- rimraf dist",
     "lint": "eslint --ext ts",
-    "build": "pnpm run build --sort -r",
+    "build": "pnpm recursive run build",
     "build:watch": "pnpm recursive run build:watch --sort",
     "test": "pnpm recursive run test",
     "test:watch": "pnpm recursive run test:watch"
