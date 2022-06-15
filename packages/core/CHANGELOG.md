@@ -1,5 +1,32 @@
 # @framedjs/core
 
+## 0.10.0
+
+### Minor Changes
+
+-   9becebb: feat: page number parse by default
+
+    -   fix!: "checkOriginalUser" typo
+
+-   1b9cbbf: feat: menu flow page types
+-   f5cb782: Add InternalError, and DiscordUtils.getMessageFromBaseMessage()
+-   f4436ba: feat: add useful functions to menu flow system
+-   034f374: feat: Discord menu flows
+
+### Patch Changes
+
+-   b7b08ed: Various breaking refactors:
+
+    -   refactor!: remove koa and BaseRouter
+    -   refactor!: change sendSeparateReply default
+
+-   29a086e: fix: false emoji parses
+
+    fix: bot permission @everyone message
+
+-   Updated dependencies [034f374]
+    -   @framedjs/shared@0.3.0
+
 ## 0.10.0-next.6
 
 ### Minor Changes
