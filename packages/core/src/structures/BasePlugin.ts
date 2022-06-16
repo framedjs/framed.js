@@ -181,8 +181,8 @@ export abstract class BasePlugin extends Base {
 				if (error instanceof ImportError) {
 					// Wrong import type was used
 					if (
-						process.env.FRAMED_HIDE_INSTANCE_IMPORT_ERROR?.toLocaleLowerCase() ==
-						"false"
+						process.env.FRAMED_SHOW_INSTANCE_IMPORT_ERROR?.toLocaleLowerCase() ==
+						"true"
 					) {
 						Logger.silly(
 							`~99% safe to ignore: ${(error as Error).stack}`
@@ -434,7 +434,7 @@ export abstract class BasePlugin extends Base {
 				if (error instanceof ImportError) {
 					// Wrong import type was used
 					if (
-						process.env.FRAMED_HIDE_INSTANCE_IMPORT_ERROR?.toLocaleLowerCase() ==
+						process.env.FRAMED_SHOW_INSTANCE_IMPORT_ERROR?.toLocaleLowerCase() ==
 						"true"
 					) {
 						Logger.silly(
@@ -495,8 +495,8 @@ export abstract class BasePlugin extends Base {
 				if (error instanceof ImportError) {
 					// Wrong import type was used
 					if (
-						process.env.FRAMED_HIDE_INSTANCE_IMPORT_ERROR?.toLocaleLowerCase() ==
-						"false"
+						process.env.FRAMED_SHOW_INSTANCE_IMPORT_ERROR?.toLocaleLowerCase() ==
+						"true"
 					) {
 						Logger.silly(
 							`~99% safe to ignore: ${(error as Error).stack}`
