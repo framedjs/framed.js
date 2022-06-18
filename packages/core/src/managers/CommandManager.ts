@@ -1053,6 +1053,17 @@ export class CommandManager extends Base {
 	): Promise<void> {
 		Logger.warn(friendlyError.stack);
 
+		if (
+			options?.ephemeral == undefined &&
+			msg instanceof DiscordInteraction
+		) {
+			const interaction = msg.discordInteraction.interaction;
+			if (interaction.isCommand() || interaction.isContextMenu()) {
+				options = {};
+				options.ephemeral = true;
+			}
+		}
+
 		const messageOptions =
 			msg instanceof DiscordMessage || msg instanceof DiscordInteraction
 				? await this._getMessageOptionsForErrorMsg(
