@@ -28,6 +28,7 @@ import type {
 } from "../interfaces/BotPermissionData";
 import type { BotPermissions } from "../interfaces/BotPermissions";
 import type { UserPermissions } from "../interfaces/UserPermissions";
+import { InternalError } from "./errors/InternalError";
 
 interface BasePluginObjectPermissionMessage {
 	discord?: {
@@ -320,11 +321,27 @@ export abstract class BasePluginObject extends Base {
 		permissions: Discord.PermissionResolvable = []
 	): Promise<Discord.PermissionString[]> {
 		// Gets the requested permisisons and actual permissions
-		return this.getMissingDiscordMemberPermissions(
-			msg,
-			msg.discord.guild?.me,
-			permissions
-		);
+		const guild =
+			msg.discord.guild || msg.discordInteraction?.interaction.guild;
+		let me = guild?.me;
+		if (!me && guild) {
+			Logger.debug("guild.me is missing on a guild");
+			try {
+				const id = msg.discord.client.user?.id;
+				if (id == undefined) {
+					throw new InternalError(
+						"msg.discord.client.user?.id is undefined"
+					);
+				}
+				me = await guild.members.fetch(id);
+				if (!me) {
+					Logger.debug("Tried to fetch me, but failed");
+				}
+			} catch (error) {
+				Logger.error((error as Error).stack);
+			}
+		}
+		return this.getMissingDiscordMemberPermissions(msg, me, permissions);
 	}
 
 	/**
