@@ -33,17 +33,20 @@ export abstract class BaseDiscordMenuFlowMsgPage extends BaseDiscordMenuFlowStar
 				}
 				message = newMessage;
 			} else if (interaction.isSelectMenu() || interaction.isButton()) {
-				message = await this.menu.getMessageWithRenderOptions({
-					...options,
-					channelId: options?.channelId ?? msg.discord.channel.id,
-				});
+				message = await DiscordUtils.getMessageWithRenderOptions(
+					msg.discord.client,
+					{
+						...options,
+						channelId: options?.channelId ?? msg.discord.channel.id,
+					}
+				);
 			} else if (interaction.isCommand()) {
 				const messageLinkOrId = interaction.options.getString(
 					"message",
 					true
 				);
 				message = (
-					await this.menu.getMessage(msg, {
+					await DiscordUtils.getMessageFromBaseMessage(msg, {
 						messageId: messageLinkOrId,
 					})
 				).message;
@@ -51,7 +54,7 @@ export abstract class BaseDiscordMenuFlowMsgPage extends BaseDiscordMenuFlowStar
 		} else {
 			try {
 				message = (
-					await this.menu.getMessage(msg, {
+					await DiscordUtils.getMessageFromBaseMessage(msg, {
 						messageId: msg.args ? msg.args[0] : undefined,
 					})
 				).message;
@@ -94,14 +97,11 @@ export abstract class BaseDiscordMenuFlowMsgPage extends BaseDiscordMenuFlowStar
 			throw new InternalError(`Message wasn't able to be found!`);
 		}
 
-		const newOptions: BaseDiscordMenuFlowMsgPageOptions = Object.assign(
-			options,
-			{
-				message: message,
-				usedMessageHistory: usedMessageHistory,
-			} as BaseDiscordMenuFlowMsgPageOptions
-		);
-		return newOptions;
+		return {
+			...options,
+			message: message,
+			usedMessageHistory: usedMessageHistory,
+		};
 	}
 
 	abstract render(

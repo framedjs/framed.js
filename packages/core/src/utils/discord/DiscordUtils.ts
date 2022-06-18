@@ -1,15 +1,15 @@
 /* eslint-disable no-mixed-spaces-and-tabs */
 import Axios from "axios";
 import Discord from "discord.js";
-import { stripIndents } from "common-tags";
+import { oneLine, stripIndents } from "common-tags";
 
 import { Utils } from "@framedjs/shared";
 import { Logger } from "@framedjs/logger";
 
 import { BaseMessage } from "../../structures/BaseMessage";
 import { Client } from "../../structures/Client";
-import { DiscordCommandInteraction } from "../../structures/DiscordCommandInteraction";
 import { DiscordInteraction } from "../../structures/DiscordInteraction";
+import { DiscordMessage } from "../../structures/DiscordMessage";
 import { FriendlyError } from "../../structures/errors/FriendlyError";
 import { InternalError } from "../../structures/errors/InternalError";
 import { InvalidError } from "../../structures/errors/InvalidError";
@@ -19,6 +19,7 @@ import type {
 	DiscohookMessageData,
 	DiscohookOutputData,
 } from "../../interfaces/other/DiscohookOutputData";
+import type { BaseDiscordMenuFlowPageRenderOptions } from "../../interfaces/BaseDiscordMenuFlowPageRenderOptions";
 import type { Place } from "../../interfaces/Place";
 
 export class DiscordUtils {
@@ -208,6 +209,177 @@ export class DiscordUtils {
 				name: "Message",
 			});
 		}
+	}
+
+	/**
+	 *
+	 * @param msg
+	 * @param options
+	 * @returns
+	 */
+	static async getMessageFromBaseMessage(
+		msg: DiscordMessage | DiscordInteraction,
+		options?: BaseDiscordMenuFlowPageRenderOptions & {
+			useMessageHistory?: boolean;
+			scanMessage?(): Promise<Discord.Message | undefined>;
+		}
+	): Promise<{
+		message: Discord.Message | undefined;
+		usedMessageHistory: boolean;
+	}> {
+		if (!options?.scanMessage) {
+			if (!options) options = {};
+			options.scanMessage = async () => {
+				const messages = await msg.discord.channel.messages.fetch({
+					before: msg.discord.msg?.id,
+					limit: 10,
+				});
+				for (const [, message] of messages) {
+					if (message.content != msg.content) {
+						return message;
+					}
+				}
+				return undefined;
+			};
+		}
+
+		let discordMsg: Discord.Message | undefined;
+		let usedMessageHistory = false;
+
+		if (msg instanceof DiscordInteraction) {
+			const interaction = msg.discordInteraction.interaction;
+			if (interaction.isContextMenu()) {
+				const newMessage = interaction.options.getMessage(
+					"message",
+					true
+				);
+				if (!(newMessage instanceof Discord.Message)) {
+					throw new InternalError(
+						`newMessage was not of type Discord.Message`
+					);
+				}
+				discordMsg = newMessage;
+			} else if (interaction.isSelectMenu() || interaction.isButton()) {
+				discordMsg = await this.getMessageWithRenderOptions(
+					msg.discord.client,
+					{
+						...options,
+						channelId: options?.channelId ?? msg.discord.channel.id,
+					}
+				);
+			} else if (interaction.isCommand()) {
+				const messageLinkOrId = interaction.options.getString(
+					"message",
+					true
+				);
+				discordMsg = await this.getMessageWithRenderOptions(
+					msg.discord.client,
+					{
+						messageId: messageLinkOrId,
+						channelId: msg.discord.channel.id,
+					}
+				);
+			}
+		} else {
+			const messageId = msg.args ? msg.args[0] : undefined;
+			try {
+				discordMsg = await this.getMessageWithRenderOptions(
+					msg.discord.client,
+					{
+						messageId: messageId,
+						channelId: options?.channelId ?? msg.discord.channel.id,
+					}
+				);
+			} catch (error) {
+				if (messageId) {
+					throw error;
+				} else if (options?.useMessageHistory) {
+					usedMessageHistory = true;
+					try {
+						discordMsg = await options.scanMessage();
+					} catch (error) {
+						Logger.error(
+							`Unable to fetch messages in channel\n${
+								(error as Error).stack
+							}`
+						);
+					}
+				}
+			}
+		}
+
+		return {
+			message: discordMsg,
+			usedMessageHistory: usedMessageHistory,
+		};
+	}
+
+	/**
+	 *
+	 * @param client
+	 * @param options
+	 * @returns
+	 */
+	static async getMessageWithRenderOptions(
+		client: Discord.Client,
+		options: BaseDiscordMenuFlowPageRenderOptions
+	): Promise<Discord.Message> {
+		let linkOrId: string | undefined;
+		if (typeof options == "string") {
+			linkOrId = options;
+		} else {
+			linkOrId = options?.messageId;
+		}
+
+		if (!linkOrId) {
+			throw new InternalError(
+				"The poll message wasn't found within interaction data!"
+			);
+		}
+
+		let user: Discord.User | undefined;
+		if (options.userId) {
+			try {
+				user = await client.users.fetch(options.userId);
+			} catch (error) {
+				Logger.warn(error);
+			}
+
+			if (!user) {
+				throw new FriendlyError(
+					`User with ID "${options.userId}" wasn't found! Did that user leave?`
+				);
+			}
+		}
+
+		let channel: Discord.AnyChannel | undefined;
+		if (/^\d+$/.test(linkOrId) && options.channelId) {
+			channel =
+				(await client.channels.fetch(options.channelId)) ?? undefined;
+			if (!channel) {
+				throw new FriendlyError(
+					oneLine`Channel with ID "${options.channelId}" <#${options.channelId}>
+					wasn't found! Did the channel get deleted?`
+				);
+			}
+		}
+
+		if (channel && !channel.isText()) {
+			throw new InternalError("Channel passed isn't a text channel.");
+		}
+
+		const message = await DiscordUtils.getMessage(linkOrId, {
+			client: client,
+			channel: channel,
+			requester: user,
+			guild: options.guildId,
+		});
+
+		if (!message) {
+			throw new FriendlyError(`The message couldn't be found!`);
+		}
+
+		return message;
 	}
 
 	/**
@@ -1167,93 +1339,5 @@ export class DiscordUtils {
 		} else {
 			return channel.send(messageOptions as Discord.MessageOptions);
 		}
-	}
-
-	static async getMessageFromBaseMessage(
-		msg: BaseMessage,
-		silent = false
-	): Promise<Discord.Message | undefined> {
-		// Attempts to retrieve a link or ID from Discord
-		let messageLinkOrId = msg.args ? msg.args[0] : undefined;
-		if (msg instanceof DiscordInteraction) {
-			const interaction = msg.discordInteraction.interaction;
-			if (msg instanceof DiscordCommandInteraction) {
-				const interaction = msg.discordInteraction.interaction;
-				messageLinkOrId = interaction.options.getString(
-					"message",
-					true
-				);
-			} else if (interaction.isContextMenu()) {
-				const newMessage = interaction.options.getMessage(
-					"message",
-					true
-				);
-				if (!(newMessage instanceof Discord.Message)) {
-					throw new Error(`Message is not of type "Discord.Message"`);
-				}
-				return newMessage;
-			}
-		}
-
-		if (!messageLinkOrId) {
-			if (!silent) {
-				await msg.sendHelpForCommand();
-			}
-			return;
-		}
-
-		const discordClient =
-			msg.discord?.client || msg.discordInteraction?.client;
-		if (!discordClient) {
-			throw new InternalError("There is no Discord client to be found!");
-		}
-
-		// If the link didn't all contain numbers
-		let discordMsg: Discord.Message | undefined;
-		if (!/^\d+$/.test(messageLinkOrId)) {
-			const guildOrAuthor = msg.discord?.guild ?? msg.discord?.author;
-
-			if (!guildOrAuthor) {
-				throw new InternalError(`Guild or author not found!`);
-			}
-
-			discordMsg = await DiscordUtils.getMessageFromLink(
-				messageLinkOrId,
-				discordClient,
-				guildOrAuthor,
-				msg.discord?.author
-			);
-
-			if (!discordMsg) {
-				throw new FriendlyError(
-					`The message linked couldn't be found!`
-				);
-			}
-		} else {
-			const channel =
-				msg.discord?.channel ?? msg.discordInteraction?.channel;
-
-			if (!channel) {
-				throw new InternalError(
-					`Channel not found! Please report this to the support server.`
-				);
-			}
-
-			try {
-				const newMsg = await channel.messages.fetch(messageLinkOrId);
-				discordMsg = newMsg;
-			} catch (error) {
-				Logger.error((error as Error).stack);
-				throw new FriendlyError(
-					`The bot couldn't find a message with the ID of \`${messageLinkOrId}\`.`
-				);
-			}
-		}
-
-		if (!discordMsg) {
-			throw new FriendlyError("Message not found!");
-		}
-
-		return discordMsg;
 	}
 }
