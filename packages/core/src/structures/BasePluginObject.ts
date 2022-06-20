@@ -160,68 +160,68 @@ export abstract class BasePluginObject extends Base {
 				return { success: true };
 			}
 
+			// Stores if some checks has already passed
+			let hasRole = false;
+			let hasPermission = false;
+
+			const perms =
+				userPermissions.discord.permissions ??
+				Discord.Permissions.DEFAULT;
+
 			const member = msg.discord?.member || interaction?.member;
-			if (member) {
-				if (!(member instanceof Discord.GuildMember)) {
-					Logger.error("member was expected to be a GuildMember");
-					Logger.error(Utils.util.inspect(member));
-					return { success: false, reasons: ["unknown"] };
-				}
+			if (member && !(member instanceof Discord.GuildMember)) {
+				Logger.error(
+					`Object member was expected to be a GuildMember: ${Utils.util.inspect(
+						member
+					)}`
+				);
+				return { success: false, reasons: ["unknown"] };
+			}
 
-				// Stores if some checks has already passed
-				let hasRole = false;
-				let hasPermission = false;
+			if (msg.discord.channel instanceof Discord.GuildChannel && member) {
+				const channel = msg.discord.channel;
+				hasPermission = channel.permissionsFor(member).has(perms);
+			} else if (msg.discord.channel.type == "DM") {
+				hasPermission = new Discord.Permissions(
+					Discord.Permissions.DEFAULT
+				).has(perms);
+			} else if (member) {
+				// Fallback, but this should never happen
+				hasPermission = member.permissions.has(perms);
+			}
 
-				const perms =
-					userPermissions.discord.permissions ??
-					new Discord.Permissions();
+			if (!hasPermission) {
+				reasons.push("discordMissingPermissions");
+			}
 
-				if (msg.discord.channel instanceof Discord.GuildChannel) {
-					const channel = msg.discord.channel;
-					hasPermission = channel.permissionsFor(member).has(perms);
-				} else {
-					// Fallback, but this should never happen
-					hasPermission = member.permissions.has(perms);
-				}
-
-				if (!hasPermission) {
-					reasons.push("discordMissingPermissions");
-				}
-
-				// Goes through Discord roles
-				if (userPermissions.discord.roles) {
-					userPermissions.discord.roles.every(role => {
-						let roleId = "";
-						if (role instanceof Discord.Role) {
-							roleId = role.id;
-						} else {
-							roleId = role;
-						}
-
-						hasRole = member.roles.cache.has(roleId);
-						if (hasRole) {
-							return;
-						}
-					});
-
-					if (!hasRole) {
-						reasons.push("discordMissingRole");
+			// Goes through Discord roles
+			if (userPermissions.discord.roles) {
+				userPermissions.discord.roles.every(role => {
+					let roleId = "";
+					if (role instanceof Discord.Role) {
+						roleId = role.id;
+					} else {
+						roleId = role;
 					}
-				} else {
-					// Allow it to pass, if no roles specified
-					hasRole = true;
-				}
 
-				if (hasRole && hasPermission) {
-					return { success: true };
-				} else {
-					return { success: false, reasons: reasons };
+					hasRole = member?.roles.cache.has(roleId) ?? false;
+					if (hasRole) {
+						return;
+					}
+				});
+
+				if (!hasRole) {
+					reasons.push("discordMissingRole");
 				}
 			} else {
-				return {
-					success: false,
-					reasons: ["discordMemberPermissions"],
-				};
+				// Allow it to pass, if no roles specified
+				hasRole = true;
+			}
+
+			if (hasRole && hasPermission) {
+				return { success: true };
+			} else {
+				return { success: false, reasons: reasons };
 			}
 		} else if (msg instanceof TwitchMessage) {
 			// TODO: Twitch Message permissions
