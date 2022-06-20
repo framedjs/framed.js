@@ -498,7 +498,8 @@ export abstract class BasePluginObject extends Base {
 				return false;
 			}
 
-			const options = permissionMessage.discord.options;
+			const options = permissionMessage.discord
+				.options as Discord.MessageOptions;
 			const editReply =
 				permissionMessage.discord.overrideEditReply != undefined
 					? permissionMessage.discord.overrideEditReply
@@ -506,6 +507,24 @@ export abstract class BasePluginObject extends Base {
 					  pluginObject?.type == "menuflowpage";
 			let useDm = permissionMessage.discord.useDm;
 			let sent = false;
+
+			if (options.embeds && options.embeds?.length > 0) {
+				for (let i = 0; i < options.embeds.length; i++) {
+					const embed = options.embeds[i];
+					const count = options.embeds.length == 1 ? "" : ` ${i}`;
+					let text = `Sending permission error${count}: ${embed.title}: ${embed.description}`;
+					if (embed.fields) {
+						text += "\n";
+						for (const field of embed.fields) {
+							text += `  \n${field.name}\n${field.value}`;
+						}
+					}
+					Logger.verbose(text);
+				}
+			} else {
+				Logger.verbose(`Sending permission error: ${options.content}`);
+			}
+
 			if (!useDm) {
 				try {
 					await msg.send(
@@ -525,11 +544,16 @@ export abstract class BasePluginObject extends Base {
 					);
 					sent = true;
 				} catch (error) {
-					Logger.error(error);
+					const err = error as Error;
 					Logger.error(
-						"Failed to send error message initially, trying again... (useDm flag was false)"
+						`Failed to send permission error - ${err.name}: ${err.message}`
 					);
-					useDm = true;
+					if (err.message != "Unknown interaction") {
+						Logger.error(
+							"Failed to send error message initially, trying again... (useDm flag was false)"
+						);
+						useDm = true;
+					}
 				}
 			}
 
@@ -559,10 +583,12 @@ export abstract class BasePluginObject extends Base {
 				}
 			}
 		} else {
-			await msg.send(
-				permissionMessage.default?.message ??
-					"An error occured when sending a permission error message."
-			);
+			const errorMsg =
+				"An error occured when sending a permission error message.";
+			if (!permissionMessage.default?.message) {
+				Logger.warn(errorMsg);
+			}
+			await msg.send(permissionMessage.default?.message ?? errorMsg);
 		}
 
 		return true;
@@ -777,7 +803,10 @@ export abstract class BasePluginObject extends Base {
 				}
 			}
 
-			const notAllowed = `${msg.discord.author}, you aren't allowed to do that!`;
+			const baseNotAllowed = `You aren't allowed to do that!`;
+			const notAllowed = `${
+				msg.discord.author
+			}, ${baseNotAllowed.toLocaleLowerCase()}`;
 			const missingMessage = useEmbed
 				? `You are missing:`
 				: `You are missing (or aren't):`;
@@ -923,11 +952,24 @@ export abstract class BasePluginObject extends Base {
 				(embed.fields.length == 0 ||
 					embed.fields[0]?.name == "Discord Permissions")
 			) {
+				let permissionString = "";
+				if (embed.fields[0]?.value) {
+					permissionString = ` ${embed.fields[0].value}`;
+				}
+
+				embed.description = embed.description
+					? embed.description.replace(notAllowed, baseNotAllowed)
+					: embed.description;
+
 				return {
 					discord: {
 						options: {
+							allowedMentions: {
+								parse: [],
+							},
 							components: [],
-							content: `**${embed.title}**\n${embed.description}`,
+							content: `**${embed.title}**\n${embed.description}${permissionString}`,
+							embeds: [],
 							ephemeral: true,
 						},
 						useDm: useDm,
@@ -943,11 +985,15 @@ export abstract class BasePluginObject extends Base {
 				return {
 					discord: {
 						options: {
+							allowedMentions: {
+								parse: [],
+							},
 							components: [],
 							content: `**${
 								embed.title
 							}**\n${oneLine`Unfortunately, the
 							\`EMBED_LINKS\` permission is disabled, so I can't send any details.`}`,
+							embeds: [],
 						},
 						useDm: useDm,
 						missingPerms: missingPerms,
@@ -959,6 +1005,9 @@ export abstract class BasePluginObject extends Base {
 			return {
 				discord: {
 					options: {
+						allowedMentions: {
+							parse: [],
+						},
 						components: [],
 						embeds: [embed],
 						ephemeral: true,
