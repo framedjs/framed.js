@@ -218,7 +218,7 @@ export abstract class BaseDiscordMenuFlow extends BasePluginObject {
 		return new Discord.MessageButton()
 			.setCustomId(newId)
 			.setLabel("Close")
-			.setStyle("DANGER");
+			.setStyle("SECONDARY");
 	}
 
 	async handleUserCheck(
