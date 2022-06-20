@@ -63,6 +63,7 @@ export type { InlineOptions } from "./interfaces/InlineOptions";
 // export { ResponseData } from "./managers/database/interfaces/ResponseData";
 export type { RequireAllOptions } from "@framedjs/shared";
 export type { UserPermissions } from "./interfaces/UserPermissions";
+export type { UserPermissionsMenuFlow } from "./interfaces/UserPermissionsMenuFlow";
 export type { Settings } from "./providers/interfaces/Settings";
 
 // Providers
