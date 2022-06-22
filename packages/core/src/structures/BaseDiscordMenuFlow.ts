@@ -7,6 +7,7 @@ import { Utils } from "@framedjs/shared";
 import { InternalError } from "./errors/InternalError";
 import { Logger } from "@framedjs/logger";
 import Discord from "discord.js";
+import lz4 from "lz-string";
 
 import type { BaseDiscordMenuFlowOptions } from "../interfaces/BaseDiscordMenuFlowOptions";
 import type { BaseDiscordMenuFlowPageRenderOptions } from "../interfaces/BaseDiscordMenuFlowPageRenderOptions";
@@ -14,14 +15,14 @@ import type { DiscordMenuFlowIdData } from "../interfaces/DiscordMenuFlowIdData"
 import type { DiscordMenuFlowParseIdData } from "../interfaces/DiscordMenuFlowParseIdData";
 import type { RequireAllOptions } from "@framedjs/shared";
 import type { UserPermissionsMenuFlow } from "../interfaces/UserPermissionsMenuFlow";
-import { oneLine, stripIndents } from "common-tags";
-import { DiscordUtils } from "../utils/discord/DiscordUtils";
-import { FriendlyError } from "./errors/FriendlyError";
+import { stripIndents } from "common-tags";
 
 export abstract class BaseDiscordMenuFlow extends BasePluginObject {
 	readonly rawId: string;
 	readonly idInteractionFlag = "i";
 	readonly idMessageFlag = "m";
+
+	static readonly lzStringFlag = "LZ-";
 
 	/** Indicates what kind of plugin object this is. */
 	type: "menuflow" = "menuflow";
@@ -111,6 +112,17 @@ export abstract class BaseDiscordMenuFlow extends BasePluginObject {
 			}
 		}
 
+		if (template.length > 100) {
+			const parseInto = `${
+				BaseDiscordMenuFlow.lzStringFlag
+			}${lz4.compressToUTF16(template)}`;
+			if (parseInto.length > 100) {
+				Logger.error(`customId is too big to compress: ${template}`);
+				throw new InternalError(`\`customId\` is too big to compress.`);
+			}
+			return parseInto;
+		}
+
 		return template;
 	}
 
@@ -125,7 +137,11 @@ export abstract class BaseDiscordMenuFlow extends BasePluginObject {
 		doNotCrashIfInvalidId = false
 	): DiscordMenuFlowParseIdData | undefined {
 		const args = customId.split("_");
-		if (!args[0] || !args[0].startsWith(this.rawId)) {
+		if (
+			!args[0] ||
+			(!customId.startsWith(BaseDiscordMenuFlow.lzStringFlag) &&
+				!args[0].startsWith(this.rawId))
+		) {
 			if (doNotCrashIfInvalidId) return;
 
 			throw new InternalError(
@@ -139,6 +155,19 @@ export abstract class BaseDiscordMenuFlow extends BasePluginObject {
 	}
 
 	static parseId(customId: string): DiscordMenuFlowParseIdData {
+		// If it starts with "LZ-", handle it with lz-string
+		if (customId.startsWith(this.lzStringFlag)) {
+			const parseOut = lz4.decompressFromUTF16(
+				customId.slice(3, customId.length)
+			);
+			if (parseOut == null) {
+				throw new InternalError(
+					"Failed to decompress customId string."
+				);
+			}
+			return this.parseId(parseOut);
+		}
+
 		const args = customId.split("_");
 
 		let guildId: string | undefined;

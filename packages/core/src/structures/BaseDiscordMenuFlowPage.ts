@@ -116,13 +116,15 @@ export abstract class BaseDiscordMenuFlowPage extends BasePluginObject {
 	async sendUserPermissionErrorMessage(
 		msg: BaseMessage,
 		permissions = this.userPermissions,
-		deniedData = this.checkUserPermissions(msg, permissions)
+		deniedData = this.checkUserPermissions(msg, permissions),
+		editReply?: boolean
 	): Promise<boolean> {
 		return BaseCommand.sendUserPermissionErrorMessage(
 			msg,
 			permissions,
 			deniedData,
-			this
+			this,
+			editReply
 		);
 	}
 

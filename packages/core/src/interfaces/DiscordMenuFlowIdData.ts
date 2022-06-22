@@ -1,4 +1,5 @@
 export interface DiscordMenuFlowIdData {
+	args?: string[];
 	guildId?: string;
 	channelId?: string;
 	messageId?: string;

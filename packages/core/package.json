@@ -25,6 +25,7 @@
 		"common-tags": "^1.8.2",
 		"discord-api-types": "^0.22.0",
 		"emoji-regex": "^9.2.2",
+		"lz-string": "^1.4.4",
 		"nanoid": "^3.3.4",
 		"reflect-metadata": "^0.1.13",
 		"require-all": "^3.0.0",
@@ -32,6 +33,7 @@
 	},
 	"devDependencies": {
 		"@types/common-tags": "^1.8.1",
+		"@types/lz-string": "^1.3.34",
 		"@types/require-all": "^3.0.3",
 		"@types/twemoji-parser": "^13.1.1",
 		"discord.js": "^13.7.0",

@@ -11,17 +11,19 @@ import { BaseDiscordMessageComponentInteraction } from "../structures/BaseDiscor
 import { BaseDiscordSelectMenuInteraction } from "../structures/BaseDiscordSelectMenuInteraction";
 import { BaseMessage } from "../structures/BaseMessage";
 import { BasePluginObject } from "../structures/BasePluginObject";
+import { Client } from "../structures/Client";
 import Discord from "discord.js";
 import { DiscordCommandInteraction } from "../structures/DiscordCommandInteraction";
 import { DiscordInteraction } from "../structures/DiscordInteraction";
 import { DiscordMessage } from "../structures/DiscordMessage";
-import { Client } from "../structures/Client";
 import { EmbedHelper } from "../utils/discord/EmbedHelper";
 import { FriendlyError } from "../structures/errors/FriendlyError";
+import { InternalError } from "../structures/errors/InternalError";
 import { Logger } from "@framedjs/logger";
 import { TwitchMessage } from "../structures/TwitchMessage";
 import { Utils } from "@framedjs/shared";
 import { oneLine, oneLineInlineLists } from "common-tags";
+import lz4 from "lz-string";
 
 import type { BaseDiscordMenuFlowPageRenderOptions } from "../interfaces/BaseDiscordMenuFlowPageRenderOptions";
 import type { FoundCommandData } from "../interfaces/FoundCommandData";
@@ -379,9 +381,14 @@ export class CommandManager extends Base {
 
 		if (msg instanceof DiscordInteraction) {
 			try {
-				await this.scanAndRunMenuFlowPages(msg, map, {
-					errorHandling: "sendAllErrors",
-				});
+				await this.scanAndRunMenuFlowPages(
+					msg,
+					map,
+					{
+						errorHandling: "sendAllErrors",
+					},
+					startTime
+				);
 			} catch (error) {
 				await this.handleFriendlyError(msg, error, {
 					sendSeparateReply: false,
@@ -551,13 +558,12 @@ export class CommandManager extends Base {
 					`
 				);
 
-				if (msg.discordInteraction.interaction.inGuild()) {
-					Logger.verbose(oneLine`
-						URL: https://discord.com/channels/${msg.discord.guild?.id}/${
-						msg.discord.channel.id
-					}
-					${msg.discord.channel.isThread() ? " (is thread)" : ""}`);
-				}
+				Logger.verbose(
+					oneLine`URL: https://discord.com/channels/${
+						interaction.inGuild() ? interaction.guildId : "@me"
+					}/${msg.discord.channel}
+					${msg.discord.channel.isThread() ? " (is thread)" : ""}`
+				);
 
 				if (options) {
 					Logger.verbose(options);
@@ -626,23 +632,41 @@ export class CommandManager extends Base {
 
 			if (Logger.isSillyEnabled()) {
 				let options = "";
-				if (
-					interaction.isApplicationCommand() ||
-					interaction.isContextMenu() ||
-					interaction.isCommand()
-				) {
+				if (interaction.isApplicationCommand()) {
 					options = Utils.util.inspect(interaction.options);
 				}
 
-				if (options) {
-					const displayTime = startTime
-						? `${Utils.hrTimeElapsed(startTime)}s - `
-						: "";
-					Logger.silly(oneLine`${displayTime}Running interaction
-						${interaction.id} from user ${interaction.user.tag}
+				const parsedId =
+					interaction.isMessageComponent() &&
+					interaction.customId.startsWith(
+						BaseDiscordMenuFlow.lzStringFlag
+					)
+						? lz4.decompressFromBase64(
+								interaction.customId.slice(
+									BaseDiscordMenuFlow.lzStringFlag.length,
+									interaction.customId.length
+								)
+						  )
+						: null;
+				const id = interaction.isApplicationCommand()
+					? `"${interaction.commandName}"`
+					: interaction.isMessageComponent()
+					? parsedId ?? interaction.customId
+					: `${interaction.type} (${interaction.id})`;
+				const displayTime = startTime
+					? `${Utils.hrTimeElapsed(startTime)}s - `
+					: "";
+				Logger.silly(oneLine`${displayTime}Running ${command.fullId} with ID
+						${id} from user ${interaction.user.tag}
 						(${interaction.user.id})`);
-					Logger.silly(options);
+				if (interaction.isMessageComponent()) {
+					Logger.silly(
+						oneLine`URL: https://discord.com/channels/${
+							interaction.inGuild() ? interaction.guildId : "@me"
+						}/${interaction.channelId}/${interaction.message.id}`
+					);
 				}
+				if (options) Logger.silly(options);
 			}
 
 			const success = await command.run(msg, interaction);
@@ -657,7 +681,8 @@ export class CommandManager extends Base {
 		map?: Map<string, boolean>,
 		options?: {
 			errorHandling?: "throw" | "sendAllErrors";
-		}
+		},
+		startTime: [number, number] = process.hrtime()
 	): Promise<Map<string, boolean>> {
 		if (!map) {
 			map = new Map<string, boolean>();
@@ -698,8 +723,6 @@ export class CommandManager extends Base {
 
 						foundPage = page;
 
-						const timestamp =
-							msg.discordInteraction.interaction.createdTimestamp;
 						const baseId = foundPage.menu.getBaseId();
 						let doNotClose = false;
 
@@ -735,19 +758,17 @@ export class CommandManager extends Base {
 						}
 
 						try {
-							Logger.silly(
-								`${timestamp} baseId "${baseId}" has started`
-							);
+							const displayTime = startTime
+								? `${Utils.hrTimeElapsed(startTime)}s - `
+								: "";
+							Logger.silly(oneLine`${displayTime}Running menu flow
+							"${baseId}" from user ${msg.discord.author.tag} (${msg.discord.author.id})`);
 
 							flowPageResults = await page.render(
 								msg,
 								await page.parse(msg, {
-									guildId: data.guildId,
-									messageId: data.messageId,
-									channelId: data.channelId,
-									userId: data.userId,
+									...data,
 									ephemeral: ephemeral,
-									pageNumber: data.pageNumber,
 								})
 							);
 						} catch (error) {
@@ -773,8 +794,11 @@ export class CommandManager extends Base {
 								throw err;
 							}
 						}
+						const displayTime = startTime
+							? `${Utils.hrTimeElapsed(startTime)}s - `
+							: "";
 						Logger.silly(
-							`${timestamp} baseId "${baseId}" has processed`
+							`${displayTime}Finished menu flow "${baseId}" - has processed`
 						);
 
 						/**
@@ -793,7 +817,7 @@ export class CommandManager extends Base {
 							: true;
 						if (!mapResults) {
 							Logger.silly(
-								`${timestamp} baseId "${baseId}" has closed`
+								`${displayTime}Finished menu flow "${baseId}" - has closed`
 							);
 						}
 						map.set(baseId, mapResults);
@@ -1051,7 +1075,11 @@ export class CommandManager extends Base {
 		friendlyError: FriendlyError,
 		options?: HandleFriendlyErrorOptions
 	): Promise<void> {
-		Logger.warn(friendlyError.stack);
+		if (friendlyError instanceof InternalError) {
+			Logger.error(friendlyError.stack);
+		} else {
+			Logger.verbose(friendlyError.stack);
+		}
 
 		if (
 			options?.ephemeral == undefined &&

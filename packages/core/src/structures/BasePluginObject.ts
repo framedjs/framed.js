@@ -180,7 +180,12 @@ export abstract class BasePluginObject extends Base {
 
 			if (msg.discord.channel instanceof Discord.GuildChannel && member) {
 				const channel = msg.discord.channel;
-				hasPermission = channel.permissionsFor(member).has(perms);
+				hasPermission = channel
+					.permissionsFor(member)
+					.has(
+						userPermissions.discord.permissions ??
+							new Discord.Permissions()
+					);
 			} else if (msg.discord.channel.type == "DM") {
 				hasPermission = new Discord.Permissions(
 					Discord.Permissions.DEFAULT
@@ -405,16 +410,18 @@ export abstract class BasePluginObject extends Base {
 	 * Sends an error message, with what permissions the user needs to work with.
 	 *
 	 * @param msg
-	 * @param userPermissions
+	 * @param permissions
 	 * @param deniedData
-	 * @param id
+	 * @param pluginObject
+	 * @param editReply
 	 * @returns
 	 */
 	static async sendUserPermissionErrorMessage(
 		msg: BaseMessage,
 		permissions: UserPermissions | undefined,
 		deniedData = BasePluginObject.checkUserPermissions(msg, permissions),
-		pluginObject?: BasePluginObject
+		pluginObject?: BasePluginObject,
+		editReply?: boolean
 	): Promise<boolean> {
 		const permissionMessage = await this.getUserPermissionErrorMessage(
 			msg,
@@ -424,7 +431,8 @@ export abstract class BasePluginObject extends Base {
 		return this.sendPermissionErrorMessage(
 			msg,
 			permissionMessage,
-			pluginObject
+			pluginObject,
+			editReply
 		);
 	}
 
@@ -487,7 +495,8 @@ export abstract class BasePluginObject extends Base {
 	static async sendPermissionErrorMessage(
 		msg: BaseMessage,
 		permissionMessage: BasePluginObjectPermissionMessage,
-		pluginObject?: BasePluginObject
+		pluginObject?: BasePluginObject,
+		editReply?: boolean
 	): Promise<boolean> {
 		if (
 			msg instanceof DiscordMessage ||
@@ -500,11 +509,12 @@ export abstract class BasePluginObject extends Base {
 
 			const options = permissionMessage.discord
 				.options as Discord.MessageOptions;
-			const editReply =
-				permissionMessage.discord.overrideEditReply != undefined
+			const parseEditReply =
+				editReply ??
+				(permissionMessage.discord.overrideEditReply != undefined
 					? permissionMessage.discord.overrideEditReply
 					: pluginObject?.type == "menuflow" ||
-					  pluginObject?.type == "menuflowpage";
+					  pluginObject?.type == "menuflowpage");
 			let useDm = permissionMessage.discord.useDm;
 			let sent = false;
 
@@ -539,7 +549,7 @@ export abstract class BasePluginObject extends Base {
 								| Discord.MessageOptions
 							),
 						{
-							editReply: editReply,
+							editReply: parseEditReply,
 						}
 					);
 					sent = true;

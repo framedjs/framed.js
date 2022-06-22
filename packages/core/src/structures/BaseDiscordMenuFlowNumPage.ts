@@ -12,12 +12,10 @@ export abstract class BaseDiscordMenuFlowNumPage extends BaseDiscordMenuFlowStar
 		msg: DiscordMessage | DiscordInteraction,
 		options: DiscordMenuFlowIdData
 	): Promise<BaseDiscordMenuFlowNumPageOptions> {
+		const parse = await super.parse(msg, options);
 		return {
 			...options,
-			pageNumber:
-				options.pageNumber ??
-				(await super.parse(msg, options))?.pageNumber ??
-				1,
+			pageNumber: options.pageNumber ?? parse?.pageNumber ?? 1,
 		};
 	}
 
