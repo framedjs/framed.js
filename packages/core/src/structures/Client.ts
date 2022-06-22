@@ -119,34 +119,35 @@ export class Client extends EventEmitter {
 	 * Login
 	 */
 	async login(
-		option: DiscordLoginOptions | TwitchLoginOptions
+		options: DiscordLoginOptions | TwitchLoginOptions
 	): Promise<void> {
 		// Loads the database
 		// await this.database.start();
 
 		// For types of platforms, we try and
-		switch (option.type) {
+		switch (options.type) {
 			case "discord":
 				// Sets up some Discord events and logs into Discord
 				this.discord.client = new Discord.Client(
-					option.clientOptions ?? {
+					options.clientOptions ?? {
 						intents: [Discord.Intents.FLAGS.GUILDS],
 					}
 				);
+				this.discord.client.token = options?.token ?? null;
 				this.setupDiscordEvents(this.discord.client);
 				break;
 			case "twitch":
 				this.twitch.auth = new TwitchAuth.RefreshableAuthProvider(
 					new TwitchAuth.StaticAuthProvider(
-						option.clientId,
-						option.accessToken
+						options.clientId,
+						options.accessToken
 						// onRefresh: (token: AccessToken) => {
 						// 	// do things with the new token data, e.g. save them in your database
 						// }
 					),
 					{
-						clientSecret: option.clientSecret,
-						refreshToken: option.refreshToken,
+						clientSecret: options.clientSecret,
+						refreshToken: options.refreshToken,
 					}
 				);
 				this.twitch.api = new Twitch.ApiClient({
@@ -154,13 +155,13 @@ export class Client extends EventEmitter {
 				});
 				this.twitch.chat = new TwitchChatClient.ChatClient(
 					this.twitch.auth,
-					option.clientOptions
+					options.clientOptions
 				);
 				this.setupTwitchEvents(this.twitch.chat);
 				break;
 			default:
 				// @ts-expect-error If more types are added, this will handle it correctly
-				throw new Error(`Platform "${option.type}" is invalid`);
+				throw new Error(`Platform "${options.type}" is invalid`);
 		}
 
 		await this.setupPluginEvents();
