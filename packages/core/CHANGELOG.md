@@ -1,5 +1,11 @@
 # @framedjs/core
 
+## 0.11.0
+
+### Minor Changes
+
+-   5c0d6b6: feat: pass args in menu flows, customId compression (via lz-string)
+
 ## 0.10.1
 
 ### Patch Changes
