@@ -23,7 +23,7 @@ import { Logger } from "@framedjs/logger";
 import { TwitchMessage } from "../structures/TwitchMessage";
 import { Utils } from "@framedjs/shared";
 import { oneLine, oneLineInlineLists } from "common-tags";
-import lz4 from "lz-string";
+import LZString from "lz-string";
 
 import type { BaseDiscordMenuFlowPageRenderOptions } from "../interfaces/BaseDiscordMenuFlowPageRenderOptions";
 import type { FoundCommandData } from "../interfaces/FoundCommandData";
@@ -641,7 +641,7 @@ export class CommandManager extends Base {
 					interaction.customId.startsWith(
 						BaseDiscordMenuFlow.lzStringFlag
 					)
-						? lz4.decompressFromBase64(
+						? LZString.decompressFromBase64(
 								interaction.customId.slice(
 									BaseDiscordMenuFlow.lzStringFlag.length,
 									interaction.customId.length
