@@ -406,6 +406,21 @@ export class DiscordUtils {
 			bypass?: boolean;
 		}
 	): Promise<Discord.Message | undefined> {
+		async function _fetchMessage(
+			channel: Discord.TextBasedChannel,
+			id: string
+		) {
+			try {
+				const message = await channel.messages.fetch(id);
+				return message;
+			} catch (error) {
+				throw new NotFoundError({
+					input: id,
+					name: "Message",
+				});
+			}
+		}
+
 		const client =
 			options.client ??
 			(options.guild instanceof Discord.Guild
@@ -419,19 +434,8 @@ export class DiscordUtils {
 			);
 		}
 
-		if (
-			options.channel instanceof Discord.TextChannel &&
-			/^\d+$/.test(linkOrId)
-		) {
-			const messages = await options.channel.messages.fetch({
-				around: linkOrId,
-				limit: 3,
-			});
-			for (const [, message] of messages) {
-				if (message.id == linkOrId) {
-					return message;
-				}
-			}
+		if (options.channel && /^\d+$/.test(linkOrId)) {
+			return _fetchMessage(options.channel, linkOrId);
 		}
 
 		// If it's not an actual link, return undefined
@@ -475,7 +479,7 @@ export class DiscordUtils {
 
 		let channel: Discord.AnyChannel | null;
 		try {
-			if (options.requester instanceof Discord.User) {
+			if (args[0] == "@me" && options.requester instanceof Discord.User) {
 				channel =
 					options.requester.dmChannel ??
 					(await options.requester.createDM());
@@ -511,15 +515,7 @@ export class DiscordUtils {
 			});
 		}
 
-		try {
-			const message = await channel.messages.fetch(args[2]);
-			return message;
-		} catch (error) {
-			throw new NotFoundError({
-				input: args[2],
-				name: "Message",
-			});
-		}
+		return _fetchMessage(channel, args[2]);
 	}
 
 	//#region Resolver Functions
