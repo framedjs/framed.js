@@ -561,7 +561,7 @@ export class CommandManager extends Base {
 				Logger.verbose(
 					oneLine`URL: https://discord.com/channels/${
 						interaction.inGuild() ? interaction.guildId : "@me"
-					}/${msg.discord.channel}
+					}/${interaction.channelId}
 					${msg.discord.channel.isThread() ? " (is thread)" : ""}`
 				);
 
