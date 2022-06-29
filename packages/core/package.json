@@ -17,8 +17,8 @@
 		"madge": "madge -c --warning ./"
 	},
 	"dependencies": {
-		"@discordjs/builders": "^0.7.0",
-		"@discordjs/rest": "^0.1.0-canary.0",
+		"@discordjs/builders": "^0.15.0",
+		"@discordjs/rest": "^0.5.0",
 		"@framedjs/logger": "^0.1.0",
 		"@framedjs/shared": "^0.3.0",
 		"axios": "^0.22.0",
