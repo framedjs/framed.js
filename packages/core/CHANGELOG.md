@@ -1,5 +1,11 @@
 # @framedjs/core
 
+## 0.11.1
+
+### Patch Changes
+
+-   c48b72b: Fix token in options, fetching messages by message link, and logging fixes
+
 ## 0.11.0
 
 ### Minor Changes
