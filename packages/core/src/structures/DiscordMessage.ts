@@ -35,16 +35,14 @@ export class DiscordMessage extends BaseMessage {
 		const discordBase =
 			options.discord instanceof Discord.Message
 				? options.discord
-				: options.discord?.base
-				? options.discord.base
-				: options.base?.discord
-				? options.base.discord
-				: options.discord;
+				: options.discord?.base ??
+				  options.base?.discord ??
+				  options.discord;
 
 		if (!discordBase) return;
 
 		this.platform = "discord";
-		let channel = discordBase?.channel;
+		let channel = options.discord?.channel ?? discordBase?.channel;
 		let id = discordBase?.id;
 
 		const msg =

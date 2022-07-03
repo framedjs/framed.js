@@ -1,3 +1,5 @@
+import type { BaseMessage } from "../structures/BaseMessage";
+
 export interface UserPermissionData {
 	success: boolean;
 }
@@ -8,10 +10,11 @@ export interface UserPermissionAllowedData {
 
 export interface UserPermissionDeniedData extends UserPermissionData {
 	success: false;
-	reasons: UserPermissionDeniedReasons[];
+	reasons: UserPermissionDeniedReason[];
+	msg: BaseMessage;
 }
 
-export type UserPermissionDeniedReasons =
+export type UserPermissionDeniedReason =
 	| "botOwnersOnly"
 	| "discordMemberPermissions"
 	| "discordMissingPermissions"

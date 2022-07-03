@@ -82,6 +82,7 @@ export abstract class BaseDiscordMenuFlowPage extends BasePluginObject {
 				return {
 					success: false,
 					reasons: ["discordUserMenuFlow"],
+					msg,
 				};
 			}
 		}
