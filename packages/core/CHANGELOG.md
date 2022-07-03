@@ -1,5 +1,11 @@
 # @framedjs/core
 
+## 0.12.0-next.0
+
+### Minor Changes
+
+-   0dc4216: Update @discordjs/builder and rest, two-channel permission handling
+
 ## 0.11.1
 
 ### Patch Changes
