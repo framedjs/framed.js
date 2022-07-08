@@ -112,7 +112,10 @@ export abstract class BaseDiscordMenuFlow extends BasePluginObject {
 			}
 		}
 
-		if (template.length > 100) {
+		const forceMenuFlowCustomIdCompression =
+			process.env.FRAMED_FORCE_MENU_FLOW_CUSTOM_ID_COMPRESSION?.toLowerCase() ==
+			"true";
+		if (forceMenuFlowCustomIdCompression || template.length > 100) {
 			const parseInto = `${
 				BaseDiscordMenuFlow.lzStringFlag
 			}${lz4.compressToUTF16(template)}`;
