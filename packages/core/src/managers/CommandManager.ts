@@ -433,21 +433,19 @@ export class CommandManager extends Base {
 		return map;
 	}
 
-	private _checkForBot(msg: BaseMessage) {
-		/*
-		 * If the author is a bot, we ignore their command.
-		 *
-		 * This is to patch any security exploits, such as using the Raw.ts command
-		 * to print out a plain message that contains a comamnd. Then, the command will
-		 * run with elevated permissions, as the bot likely has higher permissions than the user.
-		 */
+	/**
+	 * Should the user be allowed to run a command?
+	 * @param msg
+	 * @returns `true` if it'll allow the user to run a command, else `false`.
+	 */
+	shouldAllowUser(msg: BaseMessage) {
 		if (
 			msg.discord?.author.bot &&
 			process.env.FRAMED_ALLOW_BOTS_TO_RUN_COMMANDS?.toLowerCase() !=
 				"true"
 		) {
 			Logger.warn(
-				`${msg.discord.author.tag} attempted to run a command, but was a bot!`
+				`${msg.discord.author.tag} attempted to run a command, but was a bot! (${msg.content})`
 			);
 			return false;
 		}
@@ -504,7 +502,7 @@ export class CommandManager extends Base {
 		const data = await this.getFoundCommandData(msg, await msg.getPlace());
 
 		for await (const element of data) {
-			if (!this._checkForBot(msg)) {
+			if (!this.shouldAllowUser(msg)) {
 				break;
 			}
 
@@ -607,7 +605,7 @@ export class CommandManager extends Base {
 		const interactions = this.client.plugins.discordInteractionsArray;
 
 		for await (const command of interactions) {
-			if (!this._checkForBot(msg)) {
+			if (!this.shouldAllowUser(msg)) {
 				break;
 			}
 
@@ -630,6 +628,11 @@ export class CommandManager extends Base {
 				continue;
 			}
 
+			let logs: string[] = [];
+			const showUnusedButtonInteractionsInLogs =
+				process.env.FRAMED_SHOW_UNUSED_BUTTON_INTERACTIONS_IN_LOGS?.toLowerCase() ==
+				"true";
+
 			if (Logger.isSillyEnabled()) {
 				let options = "";
 				if (interaction.isApplicationCommand()) {
@@ -641,7 +644,7 @@ export class CommandManager extends Base {
 					interaction.customId.startsWith(
 						BaseDiscordMenuFlow.lzStringFlag
 					)
-						? LZString.decompressFromBase64(
+						? LZString.decompressFromUTF16(
 								interaction.customId.slice(
 									BaseDiscordMenuFlow.lzStringFlag.length,
 									interaction.customId.length
@@ -649,28 +652,63 @@ export class CommandManager extends Base {
 						  )
 						: null;
 				const id = interaction.isApplicationCommand()
-					? `"${interaction.commandName}"`
-					: interaction.isMessageComponent()
-					? parsedId ?? interaction.customId
-					: `${interaction.type} (${interaction.id})`;
+					? ` with ID "${interaction.commandName}" `
+					: "";
 				const displayTime = startTime
 					? `${Utils.hrTimeElapsed(startTime)}s - `
 					: "";
-				Logger.silly(oneLine`${displayTime}Running ${command.fullId} with ID
-						${id} from user ${interaction.user.tag}
+				const runText = showUnusedButtonInteractionsInLogs
+					? "Running"
+					: "Finished";
+				logs.push(oneLine`${displayTime}${runText} ${command.fullId}
+						${id}from user ${interaction.user.tag}
 						(${interaction.user.id})`);
 				if (interaction.isMessageComponent()) {
-					Logger.silly(
-						oneLine`URL: https://discord.com/channels/${
+					logs.push(
+						oneLine`${displayTime}URL: https://discord.com/channels/${
 							interaction.inGuild() ? interaction.guildId : "@me"
 						}/${interaction.channelId}/${interaction.message.id}`
 					);
+					logs.push(
+						`${displayTime}${interaction.componentType} - ${
+							parsedId ?? interaction.customId
+						}`
+					);
+				} else {
+					let newType = interaction.isMessageContextMenu()
+						? `${interaction.type} ${interaction.targetType}`
+						: interaction.type;
+					logs.push(`${displayTime}${newType} (${interaction.id})`);
 				}
-				if (options) Logger.silly(options);
+				if (options) logs.push(options);
 			}
 
-			const success = await command.run(msg, interaction);
+			if (showUnusedButtonInteractionsInLogs) {
+				for (const log of logs) {
+					Logger.silly(log);
+				}
+			}
+
+			let success = false;
+			let threwError = false;
+			try {
+				success = await command.run(msg, interaction);
+			} catch (error) {
+				threwError = true;
+				await this.handleFriendlyError(msg, error, {
+					sendSeparateReply: true,
+				});
+			}
 			map.set(command.fullId, success);
+
+			if (
+				!showUnusedButtonInteractionsInLogs &&
+				(success || threwError)
+			) {
+				for (const log of logs) {
+					Logger.silly(log);
+				}
+			}
 		}
 
 		return map;
@@ -717,13 +755,13 @@ export class CommandManager extends Base {
 						data.args[1] == page.id ||
 						data.args[1]?.split(".")[0] == page.id
 					) {
-						if (!this._checkForBot(msg)) {
+						if (!this.shouldAllowUser(msg)) {
 							continue;
 						}
 
 						foundPage = page;
 
-						const baseId = foundPage.menu.getBaseId();
+						const baseId = foundPage.menu.rawId;
 						let doNotClose = false;
 
 						// Do permission checks
@@ -763,6 +801,18 @@ export class CommandManager extends Base {
 								: "";
 							Logger.silly(oneLine`${displayTime}Running menu flow
 							"${baseId}" from user ${msg.discord.author.tag} (${msg.discord.author.id})`);
+							const parsedId = interaction.customId.startsWith(
+								BaseDiscordMenuFlow.lzStringFlag
+							)
+								? LZString.decompressFromUTF16(
+										interaction.customId.slice(
+											BaseDiscordMenuFlow.lzStringFlag
+												.length,
+											interaction.customId.length
+										)
+								  )
+								: interaction.customId;
+							Logger.silly(`${displayTime}${parsedId}`);
 
 							flowPageResults = await page.render(
 								msg,
@@ -798,7 +848,8 @@ export class CommandManager extends Base {
 							? `${Utils.hrTimeElapsed(startTime)}s - `
 							: "";
 						Logger.silly(
-							`${displayTime}Finished menu flow "${baseId}" - has processed`
+							oneLine`${displayTime}Finished processing menu flow "${baseId}"
+							from user ${msg.discord.author.tag} (${msg.discord.author.id})`
 						);
 
 						/**
@@ -817,7 +868,8 @@ export class CommandManager extends Base {
 							: true;
 						if (!mapResults) {
 							Logger.silly(
-								`${displayTime}Finished menu flow "${baseId}" - has closed`
+								oneLine`${displayTime}Finished closing menu flow "${baseId}"
+								from user ${msg.discord.author.tag} (${msg.discord.author.id})`
 							);
 						}
 						map.set(baseId, mapResults);
