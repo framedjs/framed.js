@@ -220,6 +220,10 @@ export class DiscordUtils {
 	static async getMessageFromBaseMessage(
 		msg: DiscordMessage | DiscordInteraction,
 		options?: BaseDiscordMenuFlowPageRenderOptions & {
+			/**
+			 * Defaults to msg.args[0] if left undefined.
+			 */
+			messageArgument?: string;
 			useMessageHistory?: boolean;
 			scanMessage?(): Promise<Discord.Message | undefined>;
 		}
@@ -281,7 +285,8 @@ export class DiscordUtils {
 				);
 			}
 		} else {
-			const messageId = msg.args ? msg.args[0] : undefined;
+			const messageId =
+				options.messageArgument ?? (msg.args ? msg.args[0] : undefined);
 			try {
 				discordMsg = await this.getMessageWithRenderOptions(
 					msg.discord.client,
