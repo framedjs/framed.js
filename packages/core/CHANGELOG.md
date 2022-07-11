@@ -1,5 +1,11 @@
 # @framedjs/core
 
+## 0.12.0-next.1
+
+### Minor Changes
+
+-   0e48f08: Debug env vars, better logs, specify message args in getMessageWithRenderOptions()
+
 ## 0.12.0-next.0
 
 ### Minor Changes
