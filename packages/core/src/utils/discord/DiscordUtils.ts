@@ -329,11 +329,9 @@ export class DiscordUtils {
 		client: Discord.Client,
 		options: BaseDiscordMenuFlowPageRenderOptions
 	): Promise<Discord.Message> {
-		let linkOrId: string | undefined;
-		if (typeof options == "string") {
-			linkOrId = options;
-		} else {
-			linkOrId = options?.messageId;
+		let linkOrId = options?.messageId;
+		if (!linkOrId) {
+			throw new InternalError("No messageId was found!");
 		}
 
 		if (!linkOrId) {
