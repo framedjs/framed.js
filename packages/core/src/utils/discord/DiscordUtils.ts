@@ -285,18 +285,17 @@ export class DiscordUtils {
 				);
 			}
 		} else {
-			const messageId =
-				options.messageArgument ?? (msg.args ? msg.args[0] : undefined);
+			const messageId = msg.args ? msg.args[0] : undefined;
 			try {
 				discordMsg = await this.getMessageWithRenderOptions(
 					msg.discord.client,
 					{
-						messageId: messageId,
+						messageId: options.messageArgument ?? messageId,
 						channelId: options?.channelId ?? msg.discord.channel.id,
 					}
 				);
 			} catch (error) {
-				if (messageId) {
+				if (options.messageArgument) {
 					throw error;
 				} else if (options?.useMessageHistory) {
 					usedMessageHistory = true;
