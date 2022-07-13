@@ -1,5 +1,11 @@
 # @framedjs/core
 
+## 0.12.0-next.2
+
+### Patch Changes
+
+-   1f45700: fix: message find regression
+
 ## 0.12.0-next.1
 
 ### Minor Changes
