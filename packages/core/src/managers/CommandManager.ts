@@ -199,13 +199,10 @@ export class CommandManager extends Base {
 		}
 
 		for (const command of commandList) {
-			const element: FoundCommandData = {
+			data.push({
 				command: command,
-				subcommands: [],
-			};
-
-			element.subcommands = command.getSubcommandChain(args);
-			data.push(element);
+				subcommands: command.getSubcommandChain(args),
+			});
 		}
 
 		return data;
