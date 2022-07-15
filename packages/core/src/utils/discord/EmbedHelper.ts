@@ -75,12 +75,13 @@ export interface ObjectTemplateSettings {
  * Discord Embed helper function class
  */
 export class EmbedHelper {
-	static defaultColor: Discord.ColorResolvable = process.env
-		.DEFAULT_EMBED_COLOR
-		? process.env.DEFAULT_EMBED_COLOR[0] == "#"
-			? (process.env.DEFAULT_EMBED_COLOR as Discord.ColorResolvable)
-			: `#${process.env.DEFAULT_EMBED_COLOR}`
-		: "#ffffff";
+	static get defaultColor(): Discord.ColorResolvable {
+		return process.env.DEFAULT_EMBED_COLOR
+			? process.env.DEFAULT_EMBED_COLOR[0] == "#"
+				? (process.env.DEFAULT_EMBED_COLOR as Discord.ColorResolvable)
+				: `#${process.env.DEFAULT_EMBED_COLOR}`
+			: "#ffffff";
+	}
 
 	/**
 	 * Gets a color for generating embeds
