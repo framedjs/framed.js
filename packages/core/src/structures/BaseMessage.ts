@@ -74,18 +74,15 @@ export class BaseMessage extends Base {
 		place?: Place | null,
 		guild?: Discord.Guild | null
 	): Promise<{
-		prefix: string | undefined;
-		args: string[] | undefined;
-		command: string;
+		prefix?: string;
+		args?: string[];
+		command?: string;
 	}> {
 		place = place ?? (await this.getPlace());
 
-		this.prefix =
-			this.discordInteraction != null
-				? "/"
-				: this.getPrefix(place, guild);
-		this.args = this.getArgs();
-		this.command = this.getCommand() ?? "";
+		this.prefix = this._getPrefix(place, guild);
+		this.args = this._getArgs();
+		this.command = this._getCommand();
 
 		return { prefix: this.prefix, args: this.args, command: this.command };
 	}
@@ -98,7 +95,7 @@ export class BaseMessage extends Base {
 	 *
 	 * @returns prefix
 	 */
-	private getPrefix(
+	protected _getPrefix(
 		place: Place,
 		guild?: Discord.Guild | null
 	): string | undefined {
@@ -123,48 +120,44 @@ export class BaseMessage extends Base {
 	/**
 	 * Gets the command of the message.
 	 */
-	private getCommand(): string | undefined {
-		// Discord slash command specific code
-		if (this.discordInteraction) {
-			const interaction = this.discordInteraction.interaction;
-			if (interaction.isApplicationCommand())
-				return interaction.commandName;
-			return;
-		}
-
-		// Gets the first arg from args, and sets it to all lowercase
-		let command = this.args?.shift()?.toLocaleLowerCase();
+	protected _getCommand(): string | undefined {
+		// Gets the first arg from base args, get the first element,
+		// and sets it to lowercase for case insensitivity.
+		let command = this._getBaseArgs()[0]?.toLocaleLowerCase();
 
 		// Normally, args don't split on \n so we do that here
 		if (command != undefined) {
 			command = command.split("\n")[0];
 		}
 
-		// If there was a prefix, and there was args, we can
-		return this.prefix != undefined && this.args ? command : undefined;
+		return command;
 	}
 
 	/**
-	 * Gets the arguments of the message.
+	 * Internally gets the arguments of the message.
 	 *
-	 * Example: `.test "woah spaces" that is 2 cool "aaaa"`
+	 * Example: `!test "woah spaces" that is 2 cool "aaaa"`
 	 * would return the following arguments:
 	 *
 	 * ```ts
 	 * ["test", "woah spaces", "that", "is", "2", "cool", "aaa"]
 	 * ```
+	 *
+	 * Note that this content will still include the command inside
+	 * the arguments, and will be removed when _getCommand() is called.
 	 */
-	private getArgs(): string[] | undefined {
-		if (this.prefix != undefined && !this.discordInteraction) {
-			// Note that this content will still include the command inside
-			// the arguments, and will be removed when getCommand() is called
-			const content = this.content.slice(this.prefix.length).trim();
-			const args = BaseMessage.getArgs(content);
-			// Logger.debug(`Args -> ${args}`);
-			return args;
-		} else {
-			return undefined;
-		}
+	protected _getArgs(): string[] {
+		return this._getBaseArgs().splice(1);
+	}
+
+	/**
+	 * Internally gets base arguments, for BaseMessage._getArgs()
+	 * and BaseMessage._getCommand().
+	 */
+	protected _getBaseArgs() {
+		const newContent = this.content.slice(this.prefix?.length).trim();
+		const args = BaseMessage.getArgs(newContent);
+		return args;
 	}
 
 	//#endregion
@@ -779,6 +772,10 @@ export class BaseMessage extends Base {
 		friendlyError: FriendlyError,
 		options?: HandleFriendlyErrorOptions
 	): Promise<void> {
-		return this.client.commands.sendErrorMessage(this, friendlyError, options);
+		return this.client.commands.sendErrorMessage(
+			this,
+			friendlyError,
+			options
+		);
 	}
 }

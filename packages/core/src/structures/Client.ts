@@ -199,13 +199,11 @@ export class Client extends EventEmitter {
 	}
 
 	async processMsg(msg: BaseMessage): Promise<void> {
-		if (msg.command != undefined) {
-			if (msg.twitch) {
-				if (this.twitch.chat?.currentNick == msg.twitch.user) return;
-			}
-
-			await this.commands.run(msg);
+		if (msg.twitch) {
+			if (this.twitch.chat?.currentNick == msg.twitch.user) return;
 		}
+
+		await this.commands.run(msg);
 	}
 
 	setupDiscordEvents(client: Discord.Client): void {
@@ -245,8 +243,6 @@ export class Client extends EventEmitter {
 
 		client.on("messageUpdate", async (partialOld, partialNew) => {
 			try {
-				Logger.silly(`Message Update`);
-
 				// Attempts to fetch a partial message, if the bot has permission to do so
 				let newMessage: Discord.Message;
 				if (partialNew.partial) {

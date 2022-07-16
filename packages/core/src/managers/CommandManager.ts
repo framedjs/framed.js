@@ -161,18 +161,14 @@ export class CommandManager extends Base {
 		place?: Place,
 		prefix?: string
 	): Promise<FoundCommandData[]> {
-		let command: string;
+		let command = "";
 		let args: string[];
 
 		if (msgOrCommand instanceof BaseMessage) {
-			if (msgOrCommand.command != undefined) {
-				prefix = msgOrCommand.prefix;
-				command = msgOrCommand.command;
-				args = msgOrCommand.args ? msgOrCommand.args : [];
-				place = place ? place : await msgOrCommand.getPlace();
-			} else {
-				throw new Error(`Command parameter in Message was undefined`);
-			}
+			prefix = msgOrCommand.prefix;
+			command = msgOrCommand.command ?? command;
+			args = msgOrCommand.args ?? [];
+			place = place ? place : await msgOrCommand.getPlace();
 		} else {
 			if (!(argsOrPlace instanceof Array)) {
 				throw new Error(
@@ -303,14 +299,12 @@ export class CommandManager extends Base {
 	): BaseCommand[] {
 		const commandList: BaseCommand[] = [];
 
-		let commandString: string;
+		let commandString = "";
 
 		if (msgOrCommand instanceof BaseMessage) {
 			if (msgOrCommand.command != undefined) {
 				prefix = msgOrCommand.prefix;
 				commandString = msgOrCommand.command;
-			} else {
-				throw new Error(`Command parameter in Message was undefined`);
 			}
 		} else if (typeof msgOrCommand == "string") {
 			commandString = msgOrCommand;
@@ -394,9 +388,7 @@ export class CommandManager extends Base {
 		}
 
 		try {
-			if (msg.prefix != undefined && msg.command != undefined) {
-				// Logger.silly(`Checking for commands for "${msg.content}"`);
-
+			if (msg.prefix != undefined || msg instanceof DiscordInteraction) {
 				try {
 					if (
 						!(msg instanceof DiscordInteraction) ||
@@ -606,7 +598,10 @@ export class CommandManager extends Base {
 				break;
 			}
 
-			if (msg.command && command.id != msg.command.toLocaleLowerCase()) {
+			if (
+				msg.command != undefined &&
+				command.id != msg.command.toLocaleLowerCase()
+			) {
 				continue;
 			}
 

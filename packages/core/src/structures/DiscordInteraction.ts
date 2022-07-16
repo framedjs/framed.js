@@ -4,12 +4,12 @@ import Discord from "discord.js";
 import { Logger } from "@framedjs/logger";
 
 import type { DiscordInteractionData } from "../interfaces/DiscordInteractionData";
+import type { DiscordInteractionSendOptions } from "../interfaces/DiscordInteractionSendOptions";
 import type { DiscordMessageData } from "../interfaces/DiscordMessageData";
 import type { MessageOptions } from "../interfaces/MessageOptions";
-import { DiscordInteractionSendOptions } from "../interfaces/DiscordInteractionSendOptions";
+import { Place } from "../interfaces/Place";
 
 export class DiscordInteraction extends BaseMessage {
-	args: undefined;
 	discord!: DiscordMessageData;
 	discordInteraction!: DiscordInteractionData;
 
@@ -65,11 +65,6 @@ export class DiscordInteraction extends BaseMessage {
 				: discordInteractionBase.base;
 
 		if (!interaction) return;
-
-		// Redundant code, if getMessageElements is ran
-		if (interaction.isApplicationCommand()) {
-			this.command = interaction.commandName;
-		}
 
 		const channel =
 			options.discordInteraction?.channel ??
@@ -149,6 +144,34 @@ export class DiscordInteraction extends BaseMessage {
 			member,
 			guild,
 		};
+
+		if (interaction.isApplicationCommand()) {
+			this.command = this.content = interaction.commandName;
+			this.args = this._getArgs();
+		}
+	}
+
+	protected _getPrefix(
+		place: Place,
+		guild?: Discord.Guild | null | undefined
+	): string | undefined {
+		return;
+	}
+
+	protected _getCommand(): string | undefined {
+		return this.command;
+	}
+
+	protected _getArgs(): string[] {
+		if (
+			// Note that context menus are considered commands, however
+			// can't be interpreted as having args like normal commands.
+			this.discordInteraction.interaction.isCommand() &&
+			!this.discordInteraction.interaction.isContextMenu()
+		) {
+			return super._getArgs();
+		}
+		return [];
 	}
 
 	/**
@@ -166,11 +189,8 @@ export class DiscordInteraction extends BaseMessage {
 		const interaction = this.discordInteraction.interaction;
 		if (
 			interaction.isApplicationCommand() ||
-			interaction.isButton() ||
-			interaction.isCommand() ||
 			interaction.isContextMenu() ||
-			interaction.isMessageComponent() ||
-			interaction.isSelectMenu()
+			interaction.isMessageComponent()
 		) {
 			const canEditReply = interaction.deferred || interaction.replied;
 			const canUpdate =
