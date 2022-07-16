@@ -722,7 +722,7 @@ export class CommandManager extends Base {
 		for (const plugin of this.client.plugins.pluginsArray) {
 			for (const [, menu] of plugin.discordMenuFlows) {
 				const interaction = msg.discordInteraction.interaction;
-				if (!interaction.isButton() && !interaction.isSelectMenu()) {
+				if (!interaction.isMessageComponent()) {
 					continue;
 				}
 
