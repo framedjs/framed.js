@@ -1,5 +1,11 @@
 # @framedjs/core
 
+## 0.12.0-next.3
+
+### Minor Changes
+
+-   c90e307: dynamic EmbedHelper.defaultColor, via always reading the environment variable. Also includes future subcommand fixes.
+
 ## 0.12.0-next.2
 
 ### Patch Changes
