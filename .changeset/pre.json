@@ -7,6 +7,7 @@
     "@framedjs/shared": "0.3.0"
   },
   "changesets": [
+    "curvy-emus-boil",
     "dull-shirts-hunt",
     "tough-toes-wait",
     "weak-ears-matter"
