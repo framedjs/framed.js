@@ -1,5 +1,11 @@
 # @framedjs/core
 
+## 0.12.0-next.4
+
+### Patch Changes
+
+-   b686c5a: Updated dependencies
+
 ## 0.12.0-next.3
 
 ### Minor Changes
