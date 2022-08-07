@@ -1125,14 +1125,16 @@ export class DiscordUtils {
 		// Embed data
 		let newEmbedData;
 
-		// Link and domain found
+		// URL parms found
 		let link = "";
 		let domain = "";
+		let path = "";
 
 		if (matches) {
 			for (const match of matches) {
 				link = match[0];
 				domain = match[2];
+				path = match[4];
 				break;
 			}
 		}
@@ -1144,22 +1146,37 @@ export class DiscordUtils {
 			domain.length > 0 &&
 			jsonOrLink.split(" ")[0].trim() == link
 		) {
-			const response = await Axios.get(link);
 			try {
-				if (response.request.path) {
-					const path = response.request.path as string;
-					const base64 = Buffer.from(
-						path.replace("/?data=", ""),
-						"base64"
-					);
-					const newString = base64.toString("utf-8");
-					newEmbedData = JSON.parse(newString);
-				} else {
-					throw new Error("No request path");
+				if (!path.startsWith("/?data=")) {
+					const response = await Axios.get(link);
+					if (response.request.path) {
+						path = response.request.path as string;
+					} else {
+						throw new Error("No request path");
+					}
 				}
+				parsePath();
 			} catch (error) {
 				if (!suppressWarnings) Logger.warn((error as Error).stack);
 				throw new FriendlyError("The link couldn't be read!");
+			}
+
+			function parsePath() {
+				try {
+					if (path) {
+						const base64 = Buffer.from(
+							path.replace("/?data=", ""),
+							"base64"
+						);
+						const newString = base64.toString("utf-8");
+						newEmbedData = JSON.parse(newString);
+					} else {
+						throw new Error("No request path");
+					}
+				} catch (error) {
+					if (!suppressWarnings) Logger.warn((error as Error).stack);
+					throw new FriendlyError("The link couldn't be read!");
+				}
 			}
 		} else {
 			// The contents are JSON, and should attempt to be parsed
@@ -1295,22 +1312,8 @@ export class DiscordUtils {
 			if (embed) {
 				embeds.push(embed);
 			}
-
-			// Makes sure the message never gets edited again
-			if (options?.shouldEdit) options.shouldEdit = false;
 		}
 
-		if (channelOrMessage instanceof Discord.Message) {
-			if (options?.shouldEdit) {
-				msgToEdit = channelOrMessage;
-			} else {
-				channel = channelOrMessage.channel as Discord.TextChannel;
-			}
-		} else {
-			channel = channelOrMessage as Discord.TextChannel;
-		}
-
-		// Content will only be used for the first embed
 		let content = Utils.turnUndefinedIfNull(messageData.content) as string;
 		if (content && options?.client && options?.place) {
 			content = await options.client.formatting.format(
@@ -1319,10 +1322,13 @@ export class DiscordUtils {
 			);
 		}
 
-		if (!channel) {
-			throw new InternalError(
-				`Channel missing in \`DiscordUtils.renderMessageData()\``
-			);
+		if (channelOrMessage instanceof Discord.Message) {
+			channel = channelOrMessage.channel as Discord.TextChannel;
+			if (options?.shouldEdit) {
+				msgToEdit = channelOrMessage;
+			}
+		} else {
+			channel = channelOrMessage as Discord.TextChannel;
 		}
 
 		const messageOptions:
