@@ -547,7 +547,7 @@ export class CommandManager extends Base {
 
 				Logger.verbose(
 					oneLine`URL: https://discord.com/channels/${
-						interaction.inGuild() ? interaction.guildId : "@me"
+						interaction.guildId ?? "@me"
 					}/${interaction.channelId}
 					${msg.discord.channel.isThread() ? " (is thread)" : ""}`
 				);
@@ -658,7 +658,7 @@ export class CommandManager extends Base {
 				if (interaction.isMessageComponent()) {
 					logs.push(
 						oneLine`${displayTime}URL: https://discord.com/channels/${
-							interaction.inGuild() ? interaction.guildId : "@me"
+							interaction.guildId ?? "@me"
 						}/${interaction.channelId}/${interaction.message.id}`
 					);
 					logs.push(
