@@ -736,11 +736,17 @@ export abstract class BasePluginObject extends Base {
 					.setDescription(description);
 
 				if (permissionString) {
-					embed.addField("Discord Permissions", permissionString);
+					embed.addFields({
+						name: "Discord Permissions",
+						value: permissionString,
+					});
 				}
 
 				if (hint) {
-					embed.addField("Hint for Server Staff", hint);
+					embed.addFields({
+						name: "Hint for Server Staff",
+						value: hint,
+					});
 				}
 
 				if (useEmbed) {
@@ -885,10 +891,10 @@ export abstract class BasePluginObject extends Base {
 								addToDescription = missingMessage;
 							}
 
-							embed.addField(
-								"Discord Permissions",
-								missingPermsString
-							);
+							embed.addFields({
+								name: "Discord Permissions",
+								value: missingPermsString,
+							});
 						} else {
 							addToDescription += oneLine`I think there are
 							missing permissions, but there are no permissions
@@ -918,10 +924,10 @@ export abstract class BasePluginObject extends Base {
 
 							if (roles.length > 0) {
 								addToDescription = `${notAllowed} ${missingMessage}`;
-								embed.addField(
-									"Discord Roles",
-									oneLineInlineLists`${roles}`
-								);
+								embed.addFields({
+									name: "Discord Roles",
+									value: oneLineInlineLists`${roles}`,
+								});
 								break;
 							}
 						}
@@ -942,10 +948,10 @@ export abstract class BasePluginObject extends Base {
 
 							embed
 								.setDescription(missingMessage)
-								.addField(
-									"Users",
-									oneLineCommaListsOr`${listOfUsers}`
-								);
+								.addFields({
+									name: "Users",
+									value: oneLineCommaListsOr`${listOfUsers}`
+								});
 						}
 						break;
 					case "discordUserMenuFlow":
