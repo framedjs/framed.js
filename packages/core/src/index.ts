@@ -106,7 +106,7 @@ export { Discord };
 // Slash commands
 export * as DiscordJsBuilders from "@discordjs/builders";
 export { REST as DiscordJsREST } from "@discordjs/rest";
-export * as DiscordJsApi from "discord-api-types/v9";
+export * as DiscordJsApi from "discord-api-types/v10";
 
 // Twitch exports because things will probably go wrong without it, like with Discord.js
 import * as Twitch from "twitch";

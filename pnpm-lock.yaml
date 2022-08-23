@@ -46,7 +46,7 @@ importers:
       '@types/twemoji-parser': ^13.1.1
       axios: ^0.22.0
       common-tags: ^1.8.2
-      discord-api-types: ^0.22.0
+      discord-api-types: ^0.37.4
       discord.js: ^13.9.2
       emoji-regex: ^9.2.2
       lz-string: ^1.4.4
@@ -66,7 +66,7 @@ importers:
       '@framedjs/shared': link:../shared
       axios: 0.22.0
       common-tags: 1.8.2
-      discord-api-types: 0.22.0
+      discord-api-types: 0.37.4
       emoji-regex: 9.2.2
       lz-string: 1.4.4
       nanoid: 3.3.4
@@ -2367,18 +2367,16 @@ packages:
       path-type: 4.0.0
     dev: true
 
-  /discord-api-types/0.22.0:
-    resolution: {integrity: sha512-l8yD/2zRbZItUQpy7ZxBJwaLX/Bs2TGaCthRppk8Sw24LOIWg12t9JEreezPoYD0SQcC2htNNo27kYEpYW/Srg==}
-    engines: {node: '>=12'}
-    deprecated: No longer supported. Install the latest release!
-    dev: false
-
   /discord-api-types/0.33.5:
     resolution: {integrity: sha512-dvO5M52v7m7Dy96+XUnzXNsQ/0npsYpU6dL205kAtEDueswoz3aU3bh1UMoK4cQmcGtB1YRyLKqp+DXi05lzFg==}
     dev: true
 
   /discord-api-types/0.36.3:
     resolution: {integrity: sha512-bz/NDyG0KBo/tY14vSkrwQ/n3HKPf87a0WFW/1M9+tXYK+vp5Z5EksawfCWo2zkAc6o7CClc0eff1Pjrqznlwg==}
+
+  /discord-api-types/0.37.4:
+    resolution: {integrity: sha512-QgqYlUokWM++hdwvAtgVNLjmFumPBzFy+uWnnfVDiwBXKm+5jXHJPk2lx2eilkv/706UpAJPLSk/uVCY9NocjA==}
+    dev: false
 
   /discord.js/13.9.2:
     resolution: {integrity: sha512-wShFlyAyxgQcWzINeufUoT1U0fmju+pPCRzPfJB7CaA0V1tQHc4e0PpO4NQif8sLfZvrQmEILBaIJ0G5I32OxQ==}
