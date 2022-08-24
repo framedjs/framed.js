@@ -1,6 +1,7 @@
 import { oneLine } from "common-tags";
 import { BaseMessage } from "./BaseMessage";
 import { Utils } from "@framedjs/shared";
+import { Logger } from "@framedjs/logger";
 import Discord from "discord.js";
 import type { DiscordMessageData } from "../interfaces/DiscordMessageData";
 import type { MessageOptions } from "../interfaces/MessageOptions";
@@ -136,22 +137,26 @@ export class DiscordMessage extends BaseMessage {
 			showTimer: true,
 		}
 	): Promise<void> {
-		let startTime: [number, number];
-		let content = "";
-		for (let i = options.seconds; i > 0; i--) {
-			startTime = process.hrtime();
+		try {
+			let startTime: [number, number];
+			let content = "";
+			for (let i = options.seconds; i > 0; i--) {
+				startTime = process.hrtime();
 
-			if (!content) {
-				content = msg.content;
+				if (!content) {
+					content = msg.content;
+				}
+
+				if (options.showTimer && msg) {
+					await msg.edit(`${content} (Hiding message in ${i}...)`);
+				}
+
+				const stopTime = Math.round(process.hrtime(startTime)[1] / 1e6);
+				await Utils.sleep(1000 - stopTime);
 			}
-
-			if (options.showTimer && msg) {
-				await msg.edit(`${content} (Hiding message in ${i}...)`);
-			}
-
-			const stopTime = Math.round(process.hrtime(startTime)[1] / 1e6);
-			await Utils.sleep(1000 - stopTime);
+			await msg.delete();
+		} catch (error) {
+			Logger.error(error as Error);
 		}
-		await msg.delete();
 	}
 }
