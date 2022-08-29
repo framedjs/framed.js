@@ -1,5 +1,11 @@
 # @framedjs/core
 
+## 0.12.0-next.6
+
+### Patch Changes
+
+-   62b796f: update discord-api-types to v10, fix crash on hiding msg countdown deletion
+
 ## 0.12.0-next.5
 
 ### Patch Changes
