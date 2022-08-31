@@ -107,6 +107,10 @@ export abstract class BaseDiscordMenuFlow extends BasePluginObject {
 
 		if (secondaryText) {
 			const args = secondaryText.split("_");
+			if (options?.args) {
+				args.push(...options?.args);
+			}
+			
 			if (options?.pageNumber != undefined) {
 				args[0] = `${args[0]}.${options.pageNumber}`;
 				template += args.join("_");
