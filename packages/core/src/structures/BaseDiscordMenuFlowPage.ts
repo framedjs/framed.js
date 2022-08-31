@@ -142,7 +142,7 @@ export abstract class BaseDiscordMenuFlowPage extends BasePluginObject {
 			| Discord.MessageActionRowComponent[]
 			| Discord.MessageActionRow[]
 			| Discord.MessageActionRow
-	): string {
+	): string | undefined {
 		const isProduction = process.env.NODE_ENV == "production";
 		const rawEnvShowDebugContent =
 			process.env.FRAMED_SHOW_DEBUG_INTERACTION_CONTENT?.toLowerCase();
@@ -154,7 +154,7 @@ export abstract class BaseDiscordMenuFlowPage extends BasePluginObject {
 				: undefined;
 
 		const showDebugContent = envShowDebugContent && !isProduction;
-		if (!showDebugContent) return "";
+		if (!showDebugContent) return undefined;
 
 		function getIdRender(id: string, type = "for customId") {
 			let base = `\n\`${id}\`, ${id.length} char(s) ${type}`;
