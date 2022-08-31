@@ -1,7 +1,7 @@
 import { FriendlyError } from "./FriendlyError";
 import { oneLine, stripIndents } from "common-tags";
 
-export class DMError extends FriendlyError {
+export class DiscordUnableToDMError extends FriendlyError {
 	static instructionsToSolve = stripIndents`
 		Please change your privacy settings.
 		
@@ -12,7 +12,7 @@ export class DMError extends FriendlyError {
 	constructor(message?: string) {
 		super(
 			message ??
-				`I'm unable to send you a DM! ${DMError.instructionsToSolve}`
+				`I'm unable to send you a DM! ${DiscordUnableToDMError.instructionsToSolve}`
 		);
 	}
 }
