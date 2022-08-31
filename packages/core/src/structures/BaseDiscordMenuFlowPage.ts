@@ -138,7 +138,10 @@ export abstract class BaseDiscordMenuFlowPage extends BasePluginObject {
 	 */
 	getDebugContent(
 		id: string,
-		components?: Discord.MessageActionRowComponent[]
+		components?:
+			| Discord.MessageActionRowComponent[]
+			| Discord.MessageActionRow[]
+			| Discord.MessageActionRow
 	): string {
 		const isProduction = process.env.NODE_ENV == "production";
 		const rawEnvShowDebugContent =
@@ -172,7 +175,19 @@ export abstract class BaseDiscordMenuFlowPage extends BasePluginObject {
 			process.env.FRAMED_SHOW_COMPONENT_DEBUG_INTERACTION_CONTENT?.toLowerCase() ==
 				"true"
 		) {
-			for (const component of components) {
+			let parsableComponents: Discord.MessageActionRowComponent[] = [];
+
+			if (components instanceof Discord.MessageActionRow) {
+				parsableComponents.push(...components.components);
+			} else {
+				for (const component of components) {
+					component.type == "ACTION_ROW"
+						? parsableComponents.push(...component.components)
+						: parsableComponents.push(component);
+				}
+			}
+
+			for (const component of parsableComponents) {
 				if (component.customId == null) continue;
 				base += getIdRender(component.customId, `- ${component.type}`);
 			}
