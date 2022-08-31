@@ -6,16 +6,19 @@ import { DiscordMessage } from "../structures/DiscordMessage";
 import { Utils } from "@framedjs/shared";
 import { InternalError } from "./errors/InternalError";
 import { Logger } from "@framedjs/logger";
+import { PageNotFoundError } from "./errors/PageNotFoundError";
+import { stripIndents } from "common-tags";
 import Discord from "discord.js";
 import lz4 from "lz-string";
 
 import type { BaseDiscordMenuFlowOptions } from "../interfaces/BaseDiscordMenuFlowOptions";
 import type { BaseDiscordMenuFlowPageRenderOptions } from "../interfaces/BaseDiscordMenuFlowPageRenderOptions";
+import type { BaseDiscordMenuFlowSelectMenuHandleOptions } from "../interfaces/BaseDiscordMenuFlowSelectMenuHandleOptions";
+import type { BaseDiscordMenuFlowSelectMenuReturnOptions } from "../interfaces/BaseDiscordMenuFlowSelectMenuReturnOptions";
 import type { DiscordMenuFlowIdData } from "../interfaces/DiscordMenuFlowIdData";
 import type { DiscordMenuFlowParseIdData } from "../interfaces/DiscordMenuFlowParseIdData";
 import type { RequireAllOptions } from "@framedjs/shared";
 import type { UserPermissionsMenuFlow } from "../interfaces/UserPermissionsMenuFlow";
-import { stripIndents } from "common-tags";
 
 export abstract class BaseDiscordMenuFlow extends BasePluginObject {
 	readonly rawId: string;
@@ -161,7 +164,10 @@ export abstract class BaseDiscordMenuFlow extends BasePluginObject {
 		// If it starts with "LZ-", handle it with lz-string
 		if (customId.startsWith(this.lzStringFlag)) {
 			const parseOut = lz4.decompressFromUTF16(
-				customId.slice(3, customId.length)
+				customId.slice(
+					BaseDiscordMenuFlow.lzStringFlag.length,
+					customId.length
+				)
 			);
 			if (parseOut == null) {
 				throw new InternalError(
@@ -261,6 +267,74 @@ export abstract class BaseDiscordMenuFlow extends BasePluginObject {
 	}> {
 		return {
 			replyEphemeral: msg.discord.author.id != options.userId,
+		};
+	}
+
+	async handleSelectMenu(
+		msg: DiscordMessage | DiscordInteraction,
+		customId: string,
+		options: BaseDiscordMenuFlowPageRenderOptions,
+		handleOptions: BaseDiscordMenuFlowSelectMenuHandleOptions
+	): Promise<BaseDiscordMenuFlowSelectMenuReturnOptions> {
+		let passthrough = true;
+		let error: PageNotFoundError | undefined;
+
+		const handlePage = async (
+			page: BaseDiscordMenuFlowPage,
+			msg: DiscordInteraction,
+			interaction: Discord.SelectMenuInteraction
+		) => {
+			const args = interaction.values[0].split("_");
+			if (args[0] != customId) {
+				return {
+					renderResult: await page.render(
+						msg,
+						await page.parse(msg, { ...options, pageNumber: 1 })
+					),
+				};
+			}
+
+			return {
+				passthrough: true,
+			};
+		};
+
+		if (msg instanceof DiscordInteraction) {
+			const interaction = msg.discordInteraction.interaction;
+			if (interaction.isSelectMenu()) {
+				passthrough = false;
+
+				const args = interaction.values[0].split("_");
+				const foundPage = this.pages.get(args[0]);
+
+				if (!foundPage) {
+					if (handleOptions.returnPageNotFoundError) {
+						error = new PageNotFoundError(
+							`The page with ID "${interaction.values[0]}" wasn't found.`
+						);
+					} else {
+						await msg.send({
+							content:
+								`**Internal Error**\n` +
+								`The page with ID "${interaction.values[0]}" wasn't found.`,
+							components: [
+								new Discord.MessageActionRow().addComponents(
+									this.getBackButton(options)
+								),
+							],
+							embeds: [],
+							ephemeral: true,
+						});
+					}
+				} else {
+					return handlePage(foundPage, msg, interaction);
+				}
+			}
+		}
+
+		return {
+			pageNotFoundError: error,
+			passthrough: error != undefined ? false : passthrough,
 		};
 	}
 
