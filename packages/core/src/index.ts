@@ -40,6 +40,8 @@ export type { BaseDiscordMenuFlowMsgPageOptions } from "./interfaces/BaseDiscord
 export type { BaseDiscordMenuFlowNumPageOptions } from "./interfaces/BaseDiscordMenuFlowNumPageOptions";
 export type { BaseDiscordMenuFlowPageOptions } from "./interfaces/BaseDiscordMenuFlowPageOptions";
 export type { BaseDiscordMenuFlowPageRenderOptions } from "./interfaces/BaseDiscordMenuFlowPageRenderOptions";
+export type { BaseDiscordMenuFlowSelectMenuHandleOptions } from "./interfaces/BaseDiscordMenuFlowSelectMenuHandleOptions";
+export type { BaseDiscordMenuFlowSelectMenuReturnOptions } from "./interfaces/BaseDiscordMenuFlowSelectMenuReturnOptions";
 export type { BotPermissions } from "./interfaces/BotPermissions";
 export type { ClientOptions } from "./interfaces/ClientOptions";
 export type { CooldownOptions } from "./interfaces/CooldownOptions";
@@ -84,13 +86,14 @@ export { EmbedHelper } from "./utils/discord/EmbedHelper";
 export { Platform } from "./types/Platform";
 
 // Friendly Errors
-export { DMError } from "./structures/errors/DMError";
+export { DiscordBotMissingPermissionsError } from "./structures/errors/DiscordBotMissingPermissionsError";
+export { DiscordDMIncompatibleError } from "./structures/errors/DiscordDMIncompatibleError";
+export { DiscordUnableToDMError } from "./structures/errors/DiscordUnableToDMError";
 export { FriendlyError } from "./structures/errors/FriendlyError";
 export { InternalError } from "./structures/errors/InternalError";
 export { InvalidError } from "./structures/errors/InvalidError";
 export { NotFoundError } from "./structures/errors/NotFoundError";
 export { PermissionDeniedError } from "./structures/errors/PermissionDeniedError";
-export { DiscordBotMissingPermissionsError } from "./structures/errors/DiscordBotMissingPermissionsError";
 
 // Version
 export { version } from "./utils/Version";
