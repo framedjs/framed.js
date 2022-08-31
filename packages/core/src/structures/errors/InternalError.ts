@@ -1,7 +1,7 @@
 import { FriendlyError } from "./FriendlyError";
 
 export class InternalError extends FriendlyError {
-	friendlyName = "An Internal Error Occured";
+	friendlyName = "An Internal Error Occurred";
 
 	constructor(message: string) {
 		super(message);
