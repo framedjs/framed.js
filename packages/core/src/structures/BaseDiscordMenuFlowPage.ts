@@ -132,52 +132,61 @@ export abstract class BaseDiscordMenuFlowPage extends BasePluginObject {
 
 	/**
 	 * Generates debug text, containing info about custom IDs
-	 * @param id - Custom ID
-	 * @param components - Discord components
-	 * @returns
+	 * @param id Custom ID
+	 * @param components Discord components
+	 * @param showDebugInteractionContent Defaults to FRAMED_SHOW_DEBUG_INTERACTION_CONTENT environment variable being "true".
 	 */
 	getDebugContent(
-		id: string,
+		id: string | DiscordMenuFlowIdData,
 		components?:
 			| Discord.MessageActionRowComponent[]
 			| Discord.MessageActionRow[]
-			| Discord.MessageActionRow
+			| Discord.MessageActionRow,
+		showDebugInteractionContent = process.env.FRAMED_SHOW_DEBUG_INTERACTION_CONTENT?.toLocaleLowerCase() ==
+			"true"
 	): string | undefined {
 		const isProduction = process.env.NODE_ENV == "production";
-		const rawEnvShowDebugContent =
-			process.env.FRAMED_SHOW_DEBUG_INTERACTION_CONTENT?.toLowerCase();
-		const envShowDebugContent =
-			rawEnvShowDebugContent == "true"
-				? true
-				: rawEnvShowDebugContent == "false"
-				? false
-				: undefined;
-
-		const showDebugContent = envShowDebugContent && !isProduction;
+		const showDebugContent = showDebugInteractionContent && !isProduction;
 		if (!showDebugContent) return undefined;
 
-		function getIdRender(id: string, type = "for customId") {
-			let base = `\n\`${id}\`, ${id.length} char(s) ${type}`;
-			if (id.startsWith(BaseDiscordMenuFlow.lzStringFlag)) {
-				const newId = LZString.decompressFromUTF16(
-					id.slice(BaseDiscordMenuFlow.lzStringFlag.length, id.length)
-				);
-				if (newId) {
-					base += `\n\`${newId}\`, ${newId.length} char(s) for lz-string decompress`;
-				}
-			}
-			return `${base}\n`;
-		}
+		const newId =
+			typeof id == "string" ? id : this.menu.getDataId(id, this.id);
+		const debugIdRender = this._getDebugIdRender(newId).trim();
+		const componentRender = this._getDebugContentFromComponents(components);
 
-		let base = `${getIdRender(id).trim()}\n`;
-		if (
-			components &&
-			process.env.FRAMED_SHOW_COMPONENT_DEBUG_INTERACTION_CONTENT?.toLowerCase() ==
-				"true"
-		) {
+		let base = `${debugIdRender}\n${componentRender}`;
+		return `${base}\n`;
+	}
+
+	private _getDebugIdRender(id: string, type = "for customId") {
+		let base = `\n\`${id}\`, ${id.length} char(s) ${type}`;
+		if (id.startsWith(BaseDiscordMenuFlow.lzStringFlag)) {
+			const newId = LZString.decompressFromUTF16(
+				id.slice(BaseDiscordMenuFlow.lzStringFlag.length, id.length)
+			);
+			if (newId) {
+				base += `\n\`${newId}\`, ${newId.length} char(s) for lz-string decompress`;
+			}
+		}
+		return `${base}\n`;
+	}
+
+	private _getDebugContentFromComponents(
+		components?:
+			| Discord.MessageActionRowComponent[]
+			| Discord.MessageActionRow[]
+			| Discord.MessageActionRow,
+		showDebugInteractionContent = process.env.FRAMED_SHOW_COMPONENT_DEBUG_INTERACTION_CONTENT?.toLocaleLowerCase() ==
+			"true"
+	) {
+		let base = "";
+		if (components && showDebugInteractionContent) {
 			let parsableComponents: Discord.MessageActionRowComponent[] = [];
 
-			if (components instanceof Discord.MessageActionRow) {
+			if (
+				components instanceof Discord.MessageActionRow ||
+				"components" in components
+			) {
 				parsableComponents.push(...components.components);
 			} else {
 				for (const component of components) {
@@ -189,9 +198,16 @@ export abstract class BaseDiscordMenuFlowPage extends BasePluginObject {
 
 			for (const component of parsableComponents) {
 				if (component.customId == null) continue;
-				base += getIdRender(component.customId, `- ${component.type}`);
+				base += this._getDebugIdRender(
+					component.customId,
+					`- ${component.type}`
+				);
 			}
 		}
-		return `${base}\n`;
+		if (base) {
+			return `${base}\n`;
+		} else {
+			return "";
+		}
 	}
 }

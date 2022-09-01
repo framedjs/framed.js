@@ -74,7 +74,7 @@ export abstract class BaseDiscordMenuFlow extends BasePluginObject {
 	/**
 	 * Creates a data ID string, used for customIds in Discord interactions.
 	 * @param options
-	 * @param secondaryText Base and arbitrary text to append to at the end of everything else.
+	 * @param secondaryText Arguments after the ID, which are separated by "_" characters.
 	 * @returns Data ID
 	 */
 	getDataId(options?: DiscordMenuFlowIdData, secondaryText?: string): string {
@@ -106,17 +106,11 @@ export abstract class BaseDiscordMenuFlow extends BasePluginObject {
 		}
 
 		if (secondaryText) {
-			const args = secondaryText.split("_");
-			if (options?.args) {
-				args.push(...options?.args);
-			}
-			
+			const args = secondaryText?.split("_") ?? [];
 			if (options?.pageNumber != undefined) {
 				args[0] = `${args[0]}.${options.pageNumber}`;
-				template += args.join("_");
-			} else {
-				template += secondaryText;
 			}
+			template += args.join("_");
 		}
 
 		const forceMenuFlowCustomIdCompression =
@@ -263,6 +257,9 @@ export abstract class BaseDiscordMenuFlow extends BasePluginObject {
 			.setStyle("SECONDARY");
 	}
 
+	/**
+	 * @deprecated
+	 */
 	async handleUserCheck(
 		msg: DiscordMessage | DiscordInteraction,
 		options: DiscordMenuFlowIdData
@@ -317,18 +314,22 @@ export abstract class BaseDiscordMenuFlow extends BasePluginObject {
 							`The page with ID "${interaction.values[0]}" wasn't found.`
 						);
 					} else {
-						await msg.send({
-							content:
-								`**Internal Error**\n` +
-								`The page with ID "${interaction.values[0]}" wasn't found.`,
-							components: [
-								new Discord.MessageActionRow().addComponents(
-									this.getBackButton(options)
-								),
-							],
-							embeds: [],
-							ephemeral: true,
-						});
+						await this.send(
+							msg,
+							{
+								content:
+									`**Internal Error**\n` +
+									`The page with ID "${interaction.values[0]}" wasn't found.`,
+								components: [
+									new Discord.MessageActionRow().addComponents(
+										this.getBackButton(options)
+									),
+								],
+								embeds: [],
+								ephemeral: true,
+							},
+							msg.discord.author.id != options.userId
+						);
 					}
 				} else {
 					return handlePage(foundPage, msg, interaction);
@@ -340,6 +341,64 @@ export abstract class BaseDiscordMenuFlow extends BasePluginObject {
 			pageNotFoundError: error,
 			passthrough: error != undefined ? false : passthrough,
 		};
+	}
+
+	/**
+	 * A message send helper.
+	 * @param msg
+	 * @param messageOptions
+	 * @param replyEphemeral
+	 */
+	async send(
+		msg: DiscordMessage | DiscordInteraction,
+		messageOptions:
+			| string
+			| Discord.MessageOptions
+			| Discord.MessagePayload
+			| Discord.InteractionReplyOptions,
+		replyEphemeral: boolean,
+		debugData?: {
+			page: BaseDiscordMenuFlowPage;
+			dataOptions: DiscordMenuFlowIdData;
+		}
+	) {
+		// Get debug text
+		let debugContent: string | undefined;
+		if (
+			!(typeof messageOptions == "string") &&
+			"components" in messageOptions &&
+			debugData
+		) {
+			messageOptions.content = debugContent =
+				debugData.page.getDebugContent(
+					debugData.dataOptions,
+					messageOptions.components as any,
+					true
+				);
+		}
+
+		try {
+			if (
+				msg instanceof DiscordInteraction &&
+				msg.discordInteraction.interaction.isMessageComponent() &&
+				replyEphemeral
+			) {
+				await msg.discordInteraction.interaction.reply(
+					messageOptions as any
+				);
+			} else {
+				await msg.send(messageOptions as any);
+			}
+		} catch (error) {
+			const err = error as Error;
+			if (
+				err.message.startsWith("Invalid Form Body\ncomponents") &&
+				debugContent
+			) {
+				Logger.error(`Form Body Data:\n${debugContent.trim()}`);
+			}
+			throw error;
+		}
 	}
 
 	//#region Loading pages
