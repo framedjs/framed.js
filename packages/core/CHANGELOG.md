@@ -1,5 +1,11 @@
 # @framedjs/core
 
+## 0.12.0-next.7
+
+### Minor Changes
+
+-   6fc8794: send helper function
+
 ## 0.12.0-next.6
 
 ### Patch Changes
