@@ -156,7 +156,7 @@ export class DiscordMessage extends BaseMessage {
 			}
 			await msg.delete();
 		} catch (error) {
-			Logger.error(error as Error);
+			Logger.error((error as Error).stack);
 		}
 	}
 }
