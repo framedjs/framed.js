@@ -372,8 +372,7 @@ export abstract class BaseDiscordMenuFlow extends BasePluginObject {
 			messageOptions.content = debugContent =
 				debugData.page.getDebugContent(
 					debugData.dataOptions,
-					messageOptions.components as any,
-					true
+					messageOptions.components
 				);
 		}
 
