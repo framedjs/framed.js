@@ -356,7 +356,7 @@ export abstract class BaseDiscordMenuFlow extends BasePluginObject {
 			| Discord.MessageOptions
 			| Discord.MessagePayload
 			| Discord.InteractionReplyOptions,
-		replyEphemeral: boolean,
+		replyEphemeral?: boolean,
 		debugData?: {
 			page: BaseDiscordMenuFlowPage;
 			dataOptions: DiscordMenuFlowIdData;
