@@ -140,7 +140,11 @@ export abstract class BaseDiscordMenuFlowPage extends BasePluginObject {
 		id: string | DiscordMenuFlowIdData,
 		components?:
 			| Discord.MessageActionRowComponent[]
-			| Discord.MessageActionRow[]
+			| (
+					| Discord.MessageActionRow
+					| (Required<Discord.BaseMessageComponentOptions> &
+							Discord.MessageActionRowOptions)
+			  )[]
 			| Discord.MessageActionRow,
 		showDebugInteractionContent = process.env.FRAMED_SHOW_DEBUG_INTERACTION_CONTENT?.toLocaleLowerCase() ==
 			"true"
@@ -174,19 +178,23 @@ export abstract class BaseDiscordMenuFlowPage extends BasePluginObject {
 	private _getDebugContentFromComponents(
 		components?:
 			| Discord.MessageActionRowComponent[]
-			| Discord.MessageActionRow[]
+			| (
+					| Discord.MessageActionRow
+					| (Required<Discord.BaseMessageComponentOptions> &
+							Discord.MessageActionRowOptions)
+			  )[]
 			| Discord.MessageActionRow,
 		showDebugInteractionContent = process.env.FRAMED_SHOW_COMPONENT_DEBUG_INTERACTION_CONTENT?.toLocaleLowerCase() ==
 			"true"
 	) {
 		let base = "";
 		if (components && showDebugInteractionContent) {
-			let parsableComponents: Discord.MessageActionRowComponent[] = [];
+			let parsableComponents: (
+				| Discord.MessageActionRowComponent
+				| Discord.MessageActionRowComponentResolvable
+			)[] = [];
 
-			if (
-				components instanceof Discord.MessageActionRow ||
-				"components" in components
-			) {
+			if ("components" in components) {
 				parsableComponents.push(...components.components);
 			} else {
 				for (const component of components) {
@@ -197,11 +205,13 @@ export abstract class BaseDiscordMenuFlowPage extends BasePluginObject {
 			}
 
 			for (const component of parsableComponents) {
-				if (component.customId == null) continue;
-				base += this._getDebugIdRender(
-					component.customId,
-					`- ${component.type}`
-				);
+				if ("customId" in component) {
+					if (component.customId == null) continue;
+					base += this._getDebugIdRender(
+						component.customId,
+						`- ${component.type}`
+					);
+				}
 			}
 		}
 		if (base) {
