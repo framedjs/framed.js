@@ -159,11 +159,13 @@ export abstract class BaseDiscordMenuFlowPage extends BasePluginObject {
 		const componentRender = this._getDebugContentFromComponents(components);
 
 		let base = `${debugIdRender}\n${componentRender}`;
-		return `${base}\n`;
+		return base;
 	}
 
 	private _getDebugIdRender(id: string, type = "for customId") {
-		let base = `\n\`${id}\`, ${id.length} char(s) ${type}`;
+		let base = `\n\`${id.replace(/`/g, "\\`")}\`, ${
+			id.length
+		} char(s) ${type}`;
 		if (id.startsWith(BaseDiscordMenuFlow.lzStringFlag)) {
 			const newId = LZString.decompressFromUTF16(
 				id.slice(BaseDiscordMenuFlow.lzStringFlag.length, id.length)

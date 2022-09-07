@@ -347,7 +347,7 @@ export abstract class BaseDiscordMenuFlow extends BasePluginObject {
 	 * A message send helper.
 	 * @param msg
 	 * @param messageOptions
-	 * @param replyEphemeral
+	 * @param reply If true, replies instead of edits
 	 */
 	async send(
 		msg: DiscordMessage | DiscordInteraction,
@@ -356,7 +356,7 @@ export abstract class BaseDiscordMenuFlow extends BasePluginObject {
 			| Discord.MessageOptions
 			| Discord.MessagePayload
 			| Discord.InteractionReplyOptions,
-		replyEphemeral?: boolean,
+		reply?: boolean,
 		debugData?: {
 			page: BaseDiscordMenuFlowPage;
 			dataOptions: DiscordMenuFlowIdData;
@@ -369,22 +369,41 @@ export abstract class BaseDiscordMenuFlow extends BasePluginObject {
 			"components" in messageOptions &&
 			debugData
 		) {
-			messageOptions.content = debugContent =
-				debugData.page.getDebugContent(
-					debugData.dataOptions,
-					messageOptions.components
-				);
+			debugContent = debugData.page.getDebugContent(
+				debugData.dataOptions,
+				messageOptions.components
+			);
+			messageOptions.content = `${debugContent ?? ""}${
+				messageOptions.content ?? ""
+			}`;
+
+			if (messageOptions.content.length == 0) {
+				messageOptions.content = undefined;
+			}
 		}
 
 		try {
-			if (
-				msg instanceof DiscordInteraction &&
-				msg.discordInteraction.interaction.isMessageComponent() &&
-				replyEphemeral
-			) {
-				await msg.discordInteraction.interaction.reply(
-					messageOptions as any
-				);
+			if (reply) {
+				if (
+					msg instanceof DiscordInteraction &&
+					msg.discordInteraction.interaction.isRepliable()
+				) {
+					await msg.discordInteraction.interaction.followUp(
+						messageOptions as any
+					);
+				} else if (msg instanceof DiscordMessage) {
+					if (msg.discord.msg) {
+						await msg.discord.msg.reply(messageOptions as any);
+					} else {
+						await msg.discord.channel.send(messageOptions as any);
+					}
+				} else {
+					Logger.warn(
+						new Error("Using fallback to output repliable message")
+							.stack
+					);
+					await msg.send(messageOptions as any);
+				}
 			} else {
 				await msg.send(messageOptions as any);
 			}
