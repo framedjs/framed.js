@@ -1,5 +1,11 @@
 # @framedjs/core
 
+## 0.12.0-next.8
+
+### Minor Changes
+
+-   2b42ba0: menu send function tweaks and fixes
+
 ## 0.12.0-next.7
 
 ### Minor Changes
