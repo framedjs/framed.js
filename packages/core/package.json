@@ -17,31 +17,31 @@
 		"madge": "madge -c --warning ./"
 	},
 	"dependencies": {
-		"@discordjs/builders": "^1.1.0",
-		"@discordjs/rest": "^1.0.1",
+		"@discordjs/builders": "^1.2.0",
+		"@discordjs/rest": "^1.1.0",
 		"@framedjs/logger": "workspace:^0.1.0",
 		"@framedjs/shared": "workspace:^0.3.0",
 		"axios": "^0.22.0",
 		"common-tags": "^1.8.2",
-		"discord-api-types": "^0.37.4",
+		"discord-api-types": "^0.37.7",
 		"emoji-regex": "^9.2.2",
 		"lz-string": "^1.4.4",
 		"nanoid": "^3.3.4",
 		"reflect-metadata": "^0.1.13",
 		"require-all": "^3.0.0",
-		"twemoji-parser": "^13.1.0"
+		"twemoji-parser": "^14.0.0"
 	},
 	"devDependencies": {
 		"@types/common-tags": "^1.8.1",
 		"@types/lz-string": "^1.3.34",
 		"@types/require-all": "^3.0.3",
 		"@types/twemoji-parser": "^13.1.1",
-		"discord.js": "^13.9.2",
+		"discord.js": "^13.10.3",
 		"madge": "^5.0.1",
 		"twitch": "^4.6.7",
 		"twitch-auth": "^4.6.7",
 		"twitch-chat-client": "^4.6.7",
-		"typescript": "^4.7.4"
+		"typescript": "^4.8.2"
 	},
 	"peerDependencies": {
 		"discord.js": "^13.8.0",
