@@ -1,5 +1,11 @@
 # @framedjs/core
 
+## 0.12.0-next.9
+
+### Patch Changes
+
+-   0ac829c: update deps
+
 ## 0.12.0-next.8
 
 ### Minor Changes
