@@ -1180,6 +1180,16 @@ export class CommandManager extends Base {
 				} else if (msg instanceof DiscordInteraction) {
 					const interaction = msg.discordInteraction.interaction;
 					if (
+						interaction.isCommand() &&
+						interaction.replied &&
+						options?.sendSeparateReply != false
+					) {
+						await interaction.followUp(
+							messageOptions as
+								| string
+								| Discord.InteractionReplyOptions
+						);
+					} else if (
 						interaction.isMessageComponent() &&
 						options?.sendSeparateReply != false
 					) {
