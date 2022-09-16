@@ -43,6 +43,12 @@ export type { BaseDiscordMenuFlowPageRenderOptions } from "./interfaces/BaseDisc
 export type { BaseDiscordMenuFlowSelectMenuHandleOptions } from "./interfaces/BaseDiscordMenuFlowSelectMenuHandleOptions";
 export type { BaseDiscordMenuFlowSelectMenuReturnOptions } from "./interfaces/BaseDiscordMenuFlowSelectMenuReturnOptions";
 export type { BotPermissions } from "./interfaces/BotPermissions";
+export type {
+	BotPermissionData,
+	BotPermissionAllowedData,
+	BotPermissionDeniedData,
+	BotPermissionDeniedReasons,
+} from "./interfaces/BotPermissionData";
 export type { ClientOptions } from "./interfaces/ClientOptions";
 export type { CooldownOptions } from "./interfaces/CooldownOptions";
 export type { CooldownData } from "./interfaces/CooldownData";
