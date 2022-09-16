@@ -946,7 +946,13 @@ export class CommandManager extends Base {
 		}
 
 		// Checks automatically for bot permissions
-		if (base.botPermissions?.checkAutomatically != false) {
+		if (
+			!(
+				base instanceof BaseDiscordButtonInteraction ||
+				base instanceof BaseDiscordSelectMenuInteraction
+			) &&
+			base.botPermissions?.checkAutomatically != false
+		) {
 			const data = await base.checkBotPermissions(msg);
 			if (!data.success) {
 				let sent = false;
