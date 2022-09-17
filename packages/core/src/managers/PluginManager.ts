@@ -181,8 +181,8 @@ export class PluginManager extends Base {
 	}
 
 	/**
-	 * BaseEvent array
-	 * @returns List of all the base arrays from all plugins
+	 * List of all the base arrays from all plugins
+	 * @returns BaseEvent array
 	 */
 	get eventsArray(): BaseEvent[] {
 		const events: BaseEvent[] = [];
@@ -193,9 +193,9 @@ export class PluginManager extends Base {
 	}
 
 	/**
-	 * BaseDiscordInteraction array.
-	 * @returns List of all the base Discord interactions,
-	 * excluding slash commands.
+	 * List of all the base Discord interactions,
+	 * excluding slash commands
+	 * @returns BaseDiscordInteraction array
 	 */
 	get discordInteractionsArray(): BaseDiscordInteraction[] {
 		const discordInteractions: BaseDiscordInteraction[] = [];
@@ -207,6 +207,10 @@ export class PluginManager extends Base {
 		return discordInteractions;
 	}
 
+	/**
+	 * List of all the discord menu flows from all plugins
+	 * @returns BaseDiscordMenuFlow array
+	 */
 	get discordMenuFlowArray(): BaseDiscordMenuFlow[] {
 		const discordMenuFlows: BaseDiscordMenuFlow[] = [];
 		this.map.forEach(plugin => {

@@ -55,9 +55,8 @@ export class CommandManager extends Base {
 	}
 
 	/**
-	 * BaseCommand array
-	 *
-	 * @returns List of all the base commands from all plugins
+	 * List of all the base commands from all plugins
+	 * @returns BaseCommand array
 	 */
 	get commandsArray(): BaseCommand[] {
 		const commands: BaseCommand[] = [];
