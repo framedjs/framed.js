@@ -719,7 +719,7 @@ export class BaseMessage extends Base {
 			// Else, do not use.
 			if (newContent.startsWith(newEmote)) {
 				newContent = newEmote
-					? argsContent.replace(newEmote, "").trimLeft()
+					? argsContent.replace(newEmote, "").trimStart()
 					: argsContent;
 			} else {
 				newEmote = undefined;
