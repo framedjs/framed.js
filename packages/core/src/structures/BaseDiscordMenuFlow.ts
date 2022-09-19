@@ -258,7 +258,7 @@ export abstract class BaseDiscordMenuFlow extends BasePluginObject {
 	}
 
 	/**
-	 * @deprecated
+	 * @deprecated Use msg.discord.author.id != options.userId instead.
 	 */
 	async handleUserCheck(
 		msg: DiscordMessage | DiscordInteraction,
@@ -273,7 +273,7 @@ export abstract class BaseDiscordMenuFlow extends BasePluginObject {
 
 	async handleSelectMenu(
 		msg: DiscordMessage | DiscordInteraction,
-		customId: string,
+		page: BaseDiscordMenuFlowPage,
 		options: BaseDiscordMenuFlowPageRenderOptions,
 		handleOptions: BaseDiscordMenuFlowSelectMenuHandleOptions
 	): Promise<BaseDiscordMenuFlowSelectMenuReturnOptions> {
@@ -281,16 +281,19 @@ export abstract class BaseDiscordMenuFlow extends BasePluginObject {
 		let error: PageNotFoundError | undefined;
 
 		const handlePage = async (
-			page: BaseDiscordMenuFlowPage,
+			pageToCheck: BaseDiscordMenuFlowPage,
 			msg: DiscordInteraction,
 			interaction: Discord.SelectMenuInteraction
 		) => {
 			const args = interaction.values[0].split("_");
-			if (args[0] != customId) {
+			if (args[0] != page.id) {
 				return {
-					renderResult: await page.render(
+					renderResult: await pageToCheck.render(
 						msg,
-						await page.parse(msg, { ...options, pageNumber: 1 })
+						await pageToCheck.parse(msg, {
+							...options,
+							pageNumber: 1,
+						})
 					),
 				};
 			}
@@ -314,7 +317,7 @@ export abstract class BaseDiscordMenuFlow extends BasePluginObject {
 							`The page with ID "${interaction.values[0]}" wasn't found.`
 						);
 					} else {
-						await this.send(
+						await page.send(
 							msg,
 							{
 								content:
@@ -328,6 +331,7 @@ export abstract class BaseDiscordMenuFlow extends BasePluginObject {
 								embeds: [],
 								ephemeral: true,
 							},
+							options,
 							msg.discord.author.id != options.userId
 						);
 					}
@@ -348,6 +352,8 @@ export abstract class BaseDiscordMenuFlow extends BasePluginObject {
 	 * @param msg
 	 * @param messageOptions
 	 * @param reply If true, replies instead of edits
+	 * @param debugData
+	 * @deprecated use BaseDiscordMenuFlowPage.send() instead.
 	 */
 	async send(
 		msg: DiscordMessage | DiscordInteraction,
