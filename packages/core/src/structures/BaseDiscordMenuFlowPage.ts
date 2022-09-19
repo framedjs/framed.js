@@ -4,9 +4,11 @@ import { BaseMessage } from "./BaseMessage";
 import { BasePluginObject } from "./BasePluginObject";
 import { BasePlugin } from "./BasePlugin";
 import { DiscordInteraction } from "./DiscordInteraction";
+import { DiscordMessage } from "./DiscordMessage";
 import Discord from "discord.js";
 import { ImportError } from "./errors/non-friendly/ImportError";
 import LZString from "lz-string";
+import { Logger } from "@framedjs/logger";
 
 import type { BaseDiscordMenuFlowPageOptions } from "../interfaces/BaseDiscordMenuFlowPageOptions";
 import type { BaseDiscordMenuFlowPageRenderOptions } from "../interfaces/BaseDiscordMenuFlowPageRenderOptions";
@@ -128,6 +130,89 @@ export abstract class BaseDiscordMenuFlowPage extends BasePluginObject {
 			this,
 			editReply
 		);
+	}
+
+	/**
+	 * A message send helper.
+	 * @param msg
+	 * @param messageOptions
+	 * @param dataOptions
+	 * @param reply If true, replies instead of edits
+	 */
+	async send(
+		msg: DiscordMessage | DiscordInteraction,
+		messageOptions:
+			| string
+			| Discord.MessageOptions
+			| Discord.MessagePayload
+			| Discord.InteractionReplyOptions,
+		dataOptions: DiscordMenuFlowIdData,
+		reply?: boolean
+	) {
+		// Get debug text
+		let debugContent: string | undefined;
+		if (
+			!(typeof messageOptions == "string") &&
+			"components" in messageOptions
+		) {
+			debugContent = this.getDebugContent(
+				dataOptions,
+				messageOptions.components
+			);
+			messageOptions.content = `${debugContent ?? ""}${
+				messageOptions.content ?? ""
+			}`;
+
+			if (messageOptions.content.length == 0) {
+				messageOptions.content = undefined;
+			}
+		}
+
+		try {
+			if (reply) {
+				if (
+					msg instanceof DiscordInteraction &&
+					msg.discordInteraction.interaction.isRepliable()
+				) {
+					if (
+						(!msg.discordInteraction.interaction.replied ||
+							msg.discordInteraction.interaction.deferred) &&
+						dataOptions.ephemeral
+					) {
+						await msg.discordInteraction.interaction.followUp(
+							messageOptions as any
+						);
+					} else {
+						await msg.discordInteraction.interaction.reply(
+							messageOptions as any
+						);
+					}
+				} else if (msg instanceof DiscordMessage) {
+					if (msg.discord.msg) {
+						await msg.discord.msg.reply(messageOptions as any);
+					} else {
+						await msg.discord.channel.send(messageOptions as any);
+					}
+				} else {
+					Logger.warn(
+						new Error("Using fallback to output repliable message")
+							.stack
+					);
+					await msg.send(messageOptions as any);
+				}
+			} else {
+				await msg.send(messageOptions as any);
+			}
+		} catch (error) {
+			const err = error as Error;
+			if (
+				err.message.startsWith("Invalid Form Body\ncomponents") &&
+				debugContent
+			) {
+				Logger.error(`Form Body Data:\n${debugContent.trim()}`);
+			}
+			throw error;
+		}
 	}
 
 	/**
