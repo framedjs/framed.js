@@ -5,6 +5,7 @@ import { Logger } from "@framedjs/logger";
 import Discord from "discord.js";
 import type { DiscordMessageData } from "../interfaces/DiscordMessageData";
 import type { MessageOptions } from "../interfaces/MessageOptions";
+import type { UserPermissions } from "../interfaces/UserPermissions";
 
 export class DiscordMessage extends BaseMessage {
 	discord!: DiscordMessageData;
@@ -125,6 +126,118 @@ export class DiscordMessage extends BaseMessage {
 		options: string | Discord.MessagePayload | Discord.MessageOptions
 	): Promise<Discord.Message> {
 		return this.discord.channel.send(options);
+	}
+
+	async getPermissionsForApplicationCommand(options: {
+		commandName: string;
+	}): Promise<UserPermissions | undefined> {
+		if (this.discord.member && this.discord.msg) {
+			function matchingCommandsFilter(
+				commands: Discord.Collection<
+					string,
+					Discord.ApplicationCommand<{
+						guild: Discord.GuildResolvable;
+					}>
+				>,
+				name = options.commandName
+			) {
+				return commands.filter(c => c.name == name);
+			}
+
+			// Saves on checking, as admins will always be
+			// able to use slash commands
+			if (this.discord.member.permissions.has("ADMINISTRATOR")) {
+				return;
+			}
+
+			const client = this.discord.client;
+			const guild = this.discord.member.guild;
+			// let matchingCommandGuildCache = matchingCommandsFilter(
+			// 	guild.commands.cache
+			// );
+			// matchingCommandGuildCache =
+			// 	matchingCommandGuildCache.size == 0
+			// 		? matchingCommandsFilter(await guild.commands.fetch())
+			// 		: matchingCommandGuildCache;
+			let matchingCommandsGlobalCache = client.application
+				? matchingCommandsFilter(client.application.commands.cache)
+				: new Discord.Collection<
+						string,
+						Discord.ApplicationCommand<{
+							guild: Discord.GuildResolvable;
+						}>
+				  >();
+
+			if (
+				client.application &&
+				client.application.commands.cache.size == 0
+			) {
+				Logger.silly(
+					"Fetching application commands for permission check"
+				);
+				matchingCommandsGlobalCache = matchingCommandsFilter(
+					await client.application.commands.fetch()
+				);
+			}
+
+			const applicationCommand = matchingCommandsGlobalCache.first();
+			if (applicationCommand) {
+				const perms = await applicationCommand.permissions.fetch({
+					guild: guild,
+				});
+				let rolesBlacklist: string[] = [];
+				let rolesWhitelist: string[] = [];
+				let channelsWhitelist: string[] = [];
+				let channelsBlacklist: string[] = [];
+
+				for (const perm of perms.values()) {
+					// discord.js doesn't fill CHANNEL as a proper type
+					// @ts-ignore
+					if (!perm.type || perm.type == "CHANNEL") {
+						perm.permission
+							? channelsWhitelist.push(perm.id)
+							: channelsBlacklist.push(perm.id);
+					} else if (perm.type == "ROLE") {
+						perm.permission
+							? rolesWhitelist.push(perm.id)
+							: rolesBlacklist.push(perm.id);
+					} else if (
+						perm.type == "USER" &&
+						perm.id == this.discord.author.id &&
+						!perm.permission
+					) {
+						return {
+							discord: {
+								usersBlacklist: [this.discord.author.id],
+							},
+						};
+					}
+
+					return {
+						discord: {
+							roles:
+								rolesWhitelist.length > 0
+									? rolesWhitelist
+									: undefined,
+							rolesBlacklist:
+								rolesBlacklist.length > 0
+									? rolesBlacklist
+									: undefined,
+							channels:
+								channelsWhitelist.length > 0
+									? channelsWhitelist
+									: undefined,
+							channelsBlacklist:
+								channelsBlacklist.length > 0
+									? channelsBlacklist
+									: undefined,
+						},
+					};
+				}
+			} else {
+				Logger.warn("No Discord command found");
+			}
+		}
 	}
 
 	static async startCountdownBeforeDeletion(
