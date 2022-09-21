@@ -47,10 +47,14 @@ export interface UserPermissions {
 	discord?: {
 		/**
 		 * Checks if the user matches one of these IDs in the list.
-		 * If you need a blacklist rather than a whitelist,
-		 * you'll need to check for this manually for now.
 		 */
 		users?: Discord.UserResolvable[];
+
+		/**
+		 * Checks if the user doesn't match one of these in the list.
+		 * Excludes will take priority over default.
+		 */
+		usersBlacklist?: Discord.UserResolvable[];
 
 		/**
 		 * Checks if the user can match these permissions.
@@ -59,9 +63,24 @@ export interface UserPermissions {
 
 		/**
 		 * Checks if the user has one of the roles in the list.
-		 * If you need more control over these checks,
-		 * you'll need to check for this manually for now.
 		 */
 		roles?: Discord.RoleResolvable[];
+
+		/**
+		 * Checks if the user doesn't have one of the roles in the list.
+		 * Excludes will take priority over default.
+		 */
+		rolesBlacklist?: Discord.RoleResolvable[];
+
+		/**
+		 * Checks if the message was sent in one of these channel in the list.
+		 */
+		channels?: Discord.ChannelResolvable[];
+
+		/**
+		 * Checks if the message wasn't sent in one of these channel in the list.
+		 * Excludes will take priority over default.
+		 */
+		channelsBlacklist?: Discord.ChannelResolvable[];
 	};
 }

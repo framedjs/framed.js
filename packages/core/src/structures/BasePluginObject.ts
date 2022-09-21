@@ -118,13 +118,12 @@ export abstract class BasePluginObject extends Base {
 			return { success: true };
 		}
 
-		const interaction = msg.discordInteraction?.interaction;
-		const userId = msg.discord?.author.id ?? interaction?.user.id;
-
 		if (
-			userId &&
-			(msg instanceof DiscordMessage || msg instanceof DiscordInteraction)
+			msg instanceof DiscordMessage ||
+			msg instanceof DiscordInteraction
 		) {
+			const interaction = msg.discordInteraction?.interaction;
+			const userId = msg.discord.author.id;
 			const reasons: UserPermissionDeniedReason[] = [];
 
 			// Bot owners always have permission
@@ -163,8 +162,19 @@ export abstract class BasePluginObject extends Base {
 				return { success: true };
 			}
 
+			// If a user is NOT in the blacklist, let them pass
+			const failedUserBlacklistCheck =
+				userPermissions.discord.usersBlacklist?.includes(userId);
+			// Checks for false, not undefined
+			if (failedUserBlacklistCheck) {
+				reasons.push("discordBlacklistUser");
+			}
+
 			// Stores if some checks has already passed
 			let hasRole = false;
+			let hasNoBlacklistedRole = false;
+			let isInChannel = false;
+			let isNotInBlacklistedChannel = false;
 			let hasPermission = false;
 
 			const perms =
@@ -212,19 +222,11 @@ export abstract class BasePluginObject extends Base {
 
 			// Goes through Discord roles
 			if (userPermissions.discord.roles) {
-				userPermissions.discord.roles.every(role => {
-					let roleId = "";
-					if (role instanceof Discord.Role) {
-						roleId = role.id;
-					} else {
-						roleId = role;
-					}
-
-					hasRole = member?.roles.cache.has(roleId) ?? false;
-					if (hasRole) {
-						return;
-					}
-				});
+				hasRole = userPermissions.discord.roles.some(role =>
+					member?.roles.cache.has(
+						typeof role == "string" ? role : role.id
+					)
+				);
 
 				if (!hasRole) {
 					reasons.push("discordMissingRole");
@@ -234,7 +236,53 @@ export abstract class BasePluginObject extends Base {
 				hasRole = true;
 			}
 
-			if (hasRole && hasPermission) {
+			// Goes through Discord role blacklist
+			if (userPermissions.discord.rolesBlacklist) {
+				hasNoBlacklistedRole =
+					userPermissions.discord.rolesBlacklist.every(
+						role =>
+							!member ||
+							!member.roles.cache.has(
+								role instanceof Discord.Role ? role.id : role
+							)
+					);
+			} else {
+				// Allow it to pass, if no roles specified
+				hasNoBlacklistedRole = true;
+			}
+
+			// Goes through Discord channels
+			if (userPermissions.discord.channels) {
+				isInChannel = userPermissions.discord.channels.some(channel =>
+					typeof channel == "string"
+						? msg.discord.channel.id == channel
+						: msg.discord.channel.id == channel.id
+				);
+			} else {
+				// Allow it to pass, if no channels specified
+				isInChannel = true;
+			}
+
+			// Goes through Discord channels blacklist
+			if (userPermissions.discord.channelsBlacklist) {
+				isNotInBlacklistedChannel =
+					userPermissions.discord.channelsBlacklist.every(channel =>
+						typeof channel == "string"
+							? msg.discord.channel.id != channel
+							: msg.discord.channel.id != channel.id
+					);
+			} else {
+				// Allow it to pass, if no channels specified
+				isNotInBlacklistedChannel = true;
+			}
+
+			if (
+				hasRole &&
+				hasNoBlacklistedRole &&
+				hasPermission &&
+				isInChannel &&
+				isNotInBlacklistedChannel
+			) {
 				return { success: true };
 			} else {
 				return {
@@ -342,7 +390,7 @@ export abstract class BasePluginObject extends Base {
 		msg: DiscordMessage | DiscordInteraction,
 		permissions: Discord.PermissionResolvable = []
 	): Promise<Discord.PermissionString[]> {
-		// Gets the requested permisisons and actual permissions
+		// Gets the requested permissions and actual permissions
 		const guild =
 			msg.discord.guild || msg.discordInteraction?.interaction.guild;
 		let me = guild?.me;
@@ -389,7 +437,7 @@ export abstract class BasePluginObject extends Base {
 				? msg.discord
 				: msg;
 
-		// Gets the requested permisisons and actual permissions
+		// Gets the requested permissions and actual permissions
 		const channel = discord.channel.isThread()
 			? discord.channel.parent ?? discord.channel
 			: discord.channel;
@@ -616,7 +664,7 @@ export abstract class BasePluginObject extends Base {
 			}
 		} else {
 			const errorMsg =
-				"An error occured when sending a permission error message.";
+				"An error occurred when sending a permission error message.";
 			if (!permissionMessage.default?.message) {
 				Logger.warn(errorMsg);
 			}
@@ -793,7 +841,7 @@ export abstract class BasePluginObject extends Base {
 		return {
 			default: {
 				message:
-					"An error occured when getting the bot permission error message.",
+					"An error occurred when getting the bot permission error message.",
 			},
 		};
 	}
@@ -812,12 +860,10 @@ export abstract class BasePluginObject extends Base {
 		deniedData = BasePluginObject.checkUserPermissions(msg, permissions)
 	): Promise<BasePluginObjectPermissionMessage> {
 		if (deniedData.success) {
-			throw new Error(
-				"deniedData should have been denied; deniedData.success was true"
+			throw new InternalError(
+				"`deniedData.success` was `true`, despite sending permission error message."
 			);
-		}
-
-		if (
+		} else if (
 			msg instanceof DiscordMessage ||
 			msg instanceof DiscordInteraction
 		) {
@@ -841,9 +887,13 @@ export abstract class BasePluginObject extends Base {
 			const missingMessage = specifyChannel
 				? `${specifyChannel}, ${baseMissingMessage.toLocaleLowerCase()}`
 				: baseMissingMessage;
-			let addToDescription = "";
 			let exitForLoop = false;
 			let missingPerms: Discord.PermissionString[] = [];
+			// Assumes possible non-singular reasons
+			let reasonsWithFieldData: UserPermissionDeniedReason[] = [
+				"discordMemberPermissions",
+				"discordMissingPermissions",
+			];
 
 			for (const reason of deniedData.reasons) {
 				if (exitForLoop) break;
@@ -852,6 +902,7 @@ export abstract class BasePluginObject extends Base {
 					case "botOwnersOnly":
 						embed.setDescription(oneLine`
 						${notAllowed} Only the bot owner(s) are.`);
+						embed.fields = [];
 						exitForLoop = true;
 						break;
 					case "discordNoData":
@@ -859,14 +910,47 @@ export abstract class BasePluginObject extends Base {
 						specified, but there was no specific Discord
 						permission data entered. By default, this will deny
 						permissions to anyone but bot owners.`);
+						embed.fields = [];
 						exitForLoop = true;
 						break;
 					case "discordMemberPermissions":
 						embed.setDescription(oneLine`
 						There are certain member permissions needed to run this.
 						Try running this command again, but on a Discord server.`);
+						embed.fields = [];
 						exitForLoop = true;
 						break;
+					case "discordUserMenuFlow":
+						embed.setDescription(oneLine`You're not allowed
+						to interact with someone else's menu flow.`);
+						embed.fields = [];
+						exitForLoop = true;
+						break;
+					case "discordUser":
+					case "discordBlacklistUser":
+						if (
+							!reasonsWithFieldData.some(r =>
+								deniedData.reasons.includes(r)
+							)
+						) {
+							let extraText =
+								reason == "discordUser"
+									? "Your user account isn't included by permissions."
+									: "Your user account is excluded by permissions.";
+							embed.setDescription(`${notAllowed} ${extraText}`);
+							embed.fields = [];
+							exitForLoop = true;
+						}
+						break;
+					case "discordChannel":
+					case "discordBlacklistChannel": {
+						embed.setDescription(
+							`You're not allowed to do that in this channel.`
+						);
+						embed.fields = [];
+						exitForLoop = true;
+						break;
+					}
 					case "discordMissingPermissions":
 						if (permissions?.discord?.permissions) {
 							// Gets user's permissions and missing permissions
@@ -887,25 +971,30 @@ export abstract class BasePluginObject extends Base {
 							if (!missingPermsString) {
 								missingPermsString = oneLine`No missing
 								permissions found, something went wrong!`;
-							} else {
-								addToDescription = missingMessage;
 							}
 
 							embed.addFields({
 								name: "Discord Permissions",
 								value: missingPermsString,
 							});
-						} else {
-							addToDescription += oneLine`I think there are
-							missing permissions, but there are no permissions
-							to check with. Something went wrong!`;
+							break;
 						}
+
+						embed.setDescription(`I think there are
+							missing permissions, but there are no permissions
+							to check with. Something went wrong!`);
+						exitForLoop = true;
 						break;
 					case "discordMissingRole":
+					case "discordBlacklistRole":
 						// Goes through roles
-						if (permissions?.discord?.roles) {
+						const isMissingRole = reason == "discordMissingRole";
+						let arr = isMissingRole
+							? permissions?.discord?.roles
+							: permissions?.discord?.rolesBlacklist;
+						if (arr) {
 							const roles: string[] = [];
-							for (const role of permissions.discord.roles) {
+							for (const role of arr) {
 								// Correctly parses the resolvable
 								if (typeof role == "string") {
 									const newRole =
@@ -923,51 +1012,37 @@ export abstract class BasePluginObject extends Base {
 							}
 
 							if (roles.length > 0) {
-								addToDescription = `${notAllowed} ${missingMessage}`;
-								embed.addFields({
-									name: "Discord Roles",
-									value: oneLineInlineLists`${roles}`,
-								});
+								embed
+									.setDescription(
+										`${notAllowed} ${missingMessage}`
+									)
+									.addFields({
+										name: isMissingRole
+											? "Roles"
+											: "Disallowed Roles",
+										value: oneLineInlineLists`${roles}`,
+									});
 								break;
 							}
 						}
 
 						// If the above didn't set anything, show this instead
-						embed.setDescription(oneLine`I think you are missing a
-						role, but there's no roles for me to check with.
+						embed.setDescription(oneLine`You are missing a
+						role, but there's no roles to check with.
 						Something went wrong!`);
-
-						break;
-					case "discordUser":
-						if (permissions?.discord?.users) {
-							const listOfUsers: string[] = [];
-
-							for (const user of permissions.discord.users) {
-								listOfUsers.push(`<@!${user}>`);
-							}
-
-							embed
-								.setDescription(missingMessage)
-								.addFields({
-									name: "Users",
-									value: oneLineCommaListsOr`${listOfUsers}`
-								});
-						}
-						break;
-					case "discordUserMenuFlow":
-						embed.setDescription(oneLine`You're not allowed to interact
-						with someone else's menu flow.`);
+						exitForLoop = true;
 						break;
 					default:
-						embed.setDescription(oneLine`${notAllowed} ${missingMessage}
-						The specified reason is not known. Something went wrong!`);
+						embed.setDescription(oneLine`${notAllowed}
+						The specified reason is unknown. Something went wrong!`);
 						exitForLoop = true;
 						break;
 				}
 			}
 
-			if (addToDescription) {
-				embed.setDescription(oneLine`${notAllowed} ${missingMessage}`);
+			if (deniedData.reasons.length == 0) {
+				embed.setDescription(oneLine`${notAllowed}
+				The specified reason is unknown. Something went wrong!`);
 			}
 
 			const overrideEditReply = deniedData.reasons.includes(
@@ -1060,7 +1135,7 @@ export abstract class BasePluginObject extends Base {
 		return {
 			default: {
 				message:
-					"An error occured when getting the user permission error message.",
+					"An error occurred when getting the user permission error message.",
 			},
 		};
 	}

@@ -19,7 +19,11 @@ export type UserPermissionDeniedReason =
 	| "discordMemberPermissions"
 	| "discordMissingPermissions"
 	| "discordMissingRole"
-	| "discordNoData"
+	| "discordBlacklistRole"
 	| "discordUser"
+	| "discordBlacklistUser"
+	| "discordChannel"
+	| "discordBlacklistChannel"
 	| "discordUserMenuFlow"
+	| "discordNoData"
 	| "unknown";
