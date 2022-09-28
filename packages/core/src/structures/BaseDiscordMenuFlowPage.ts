@@ -174,11 +174,7 @@ export abstract class BaseDiscordMenuFlowPage extends BasePluginObject {
 					msg instanceof DiscordInteraction &&
 					msg.discordInteraction.interaction.isRepliable()
 				) {
-					if (
-						(!msg.discordInteraction.interaction.replied ||
-							msg.discordInteraction.interaction.deferred) &&
-						dataOptions.ephemeral
-					) {
+					if (msg.discordInteraction.interaction.replied) {
 						await msg.discordInteraction.interaction.followUp(
 							messageOptions as any
 						);
