@@ -1,5 +1,29 @@
 # @framedjs/core
 
+## 0.12.0
+
+### Minor Changes
+
+-   c90e307: dynamic EmbedHelper.defaultColor, via always reading the environment variable. Also includes future subcommand fixes.
+-   0e48f08: Debug env vars, better logs, specify message args in getMessageWithRenderOptions()
+-   2cdf366: export bot permission types, change message component interaction permission behavio by not checking automatically
+-   6fc8794: send helper function
+-   b6e381d: BaseDiscordMenuFlowPage.send(), permission helpers
+-   0dc4216: Update @discordjs/builder and rest, two-channel permission handling
+-   2b42ba0: menu send function tweaks and fixes
+
+### Patch Changes
+
+-   b686c5a: Updated dependencies
+-   9845e9f: fix!: render edit regression
+
+    BREAKING CHANGE: Also skips a get request, if the URL starts with the
+    data parameter on the URL is there.
+
+-   62b796f: update discord-api-types to v10, fix crash on hiding msg countdown deletion
+-   1f45700: fix: message find regression
+-   0ac829c: update deps
+
 ## 0.12.0-next.9
 
 ### Patch Changes
