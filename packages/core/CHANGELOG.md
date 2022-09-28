@@ -1,5 +1,11 @@
 # @framedjs/core
 
+## 0.12.1
+
+### Patch Changes
+
+-   5562eaa: bad check for sending menu flow page
+
 ## 0.12.0
 
 ### Minor Changes
