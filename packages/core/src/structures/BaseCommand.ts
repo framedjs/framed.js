@@ -360,15 +360,23 @@ export abstract class BaseCommand extends BasePluginObject {
 			);
 		}
 
-		if (msg.discord?.guild?.me) {
-			const me = msg.discord.guild.me;
+		if (msg.discord) {
 			const channel = msg.discord.channel;
 			if (channel instanceof Discord.TextChannel) {
-				const perms = channel.permissionsFor(me);
+				const perms = msg.discord.guild
+					? channel.permissionsFor(
+							await msg.discord.guild?.members.fetchMe()
+					  )
+					: new Discord.PermissionsBitField(
+							Discord.PermissionsBitField.Default
+					  );
 				const canSend =
 					channel instanceof Discord.ThreadChannel
-						? perms.has("SEND_MESSAGES_IN_THREADS")
-						: perms.has("SEND_MESSAGES");
+						? perms.has(
+								Discord.PermissionFlagsBits
+									.SendMessagesInThreads
+						  )
+						: perms.has(Discord.PermissionFlagsBits.SendMessages);
 
 				if (!canSend) {
 					if (channel instanceof Discord.ThreadChannel) {

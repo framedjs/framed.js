@@ -66,6 +66,6 @@ export abstract class BaseDiscordInteraction
 	 */
 	abstract run(
 		msg: DiscordInteraction,
-		interaction: Discord.Interaction
+		interaction: Discord.BaseInteraction
 	): Promise<boolean>;
 }

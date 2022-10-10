@@ -26,11 +26,12 @@ export abstract class BaseDiscordMenuFlowNumPage extends BaseDiscordMenuFlowStar
 
 	/**
 	 * Create a new Discord Message Button, used for making paginated menu flows.
-	 * @param buttonOptions
+	 *
+	 * @param buttonOptions Button options
 	 * @param dataOptions Options used for creating a proper custom ID within the function.
-	 * @param optionsIdText Contains your page ID and other parameters,
-	 * so the custom ID gets formed corre.
-	 * @returns
+	 * @param optionsIdText Contains your page ID and other
+	 * parameters, so the custom ID gets formed correctly.
+	 * @returns Page button
 	 */
 	getPageButton(
 		buttonOptions: {
@@ -40,7 +41,7 @@ export abstract class BaseDiscordMenuFlowNumPage extends BaseDiscordMenuFlowStar
 		},
 		dataOptions: DiscordMenuFlowIdData,
 		optionsIdText: string
-	): Discord.MessageButton {
+	): Discord.ButtonBuilder {
 		const customId = this.menu.getDataId(
 			{
 				...dataOptions,
@@ -48,9 +49,9 @@ export abstract class BaseDiscordMenuFlowNumPage extends BaseDiscordMenuFlowStar
 			},
 			optionsIdText
 		);
-		return new Discord.MessageButton()
+		return new Discord.ButtonBuilder()
 			.setLabel(buttonOptions.nextPage ? "Next Page" : "Previous Page")
-			.setStyle("SECONDARY")
+			.setStyle(Discord.ButtonStyle.Secondary)
 			.setCustomId(customId)
 			.setDisabled(
 				buttonOptions.pageNumber < 1 ||
@@ -58,13 +59,23 @@ export abstract class BaseDiscordMenuFlowNumPage extends BaseDiscordMenuFlowStar
 			);
 	}
 
+	/**
+	 * Sets an embed's footer to have a page display.
+	 *
+	 * @param embed Embed builder
+	 * @param pageNumber Page number
+	 * @param maxPages Max pages number
+	 * @returns Embed builder that was passed in
+	 */
 	setPageFooter(
-		embed: Discord.MessageEmbed,
+		embed: Discord.EmbedBuilder,
 		pageNumber: number,
 		maxPages: number
-	): Discord.MessageEmbed {
+	): Discord.EmbedBuilder {
 		return embed.setFooter({
-			text: `Page ${pageNumber}/${maxPages}  •  ${embed.title}`,
+			text: `Page ${pageNumber}/${maxPages}${
+				embed.data.title ? `  •  ${embed.data.title}` : ""
+			}`,
 		});
 	}
 }

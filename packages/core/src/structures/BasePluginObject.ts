@@ -35,9 +35,9 @@ interface BasePluginObjectPermissionMessage {
 	discord?: {
 		options:
 			| Discord.MessagePayload
-			| Discord.MessageOptions
+			| Discord.BaseMessageOptions
 			| Discord.InteractionReplyOptions;
-		missingPerms: Discord.PermissionString[];
+		missingPerms: Discord.PermissionsString[];
 		useDm: boolean;
 		overrideEditReply?: boolean;
 	};
@@ -179,7 +179,7 @@ export abstract class BasePluginObject extends Base {
 
 			const perms =
 				userPermissions.discord.permissions ??
-				Discord.Permissions.DEFAULT;
+				Discord.PermissionsBitField.Default;
 
 			const member = msg.discord?.member || interaction?.member;
 			if (member && !(member instanceof Discord.GuildMember)) {
@@ -205,11 +205,11 @@ export abstract class BasePluginObject extends Base {
 					.permissionsFor(member)
 					.has(
 						userPermissions.discord.permissions ??
-							new Discord.Permissions()
+							new Discord.PermissionsBitField()
 					);
-			} else if (msg.discord.channel.type == "DM") {
-				hasPermission = new Discord.Permissions(
-					Discord.Permissions.DEFAULT
+			} else if (msg.discord.channel.type == Discord.ChannelType.DM) {
+				hasPermission = new Discord.PermissionsBitField(
+					Discord.PermissionsBitField.Default
 				).has(perms);
 			} else if (member) {
 				// Fallback, but this should never happen
@@ -379,7 +379,7 @@ export abstract class BasePluginObject extends Base {
 	async getMissingDiscordBotPermissions(
 		msg: DiscordMessage | DiscordInteraction,
 		permissions: Discord.PermissionResolvable = []
-	): Promise<Discord.PermissionString[]> {
+	): Promise<Discord.PermissionsString[]> {
 		return BasePluginObject.getMissingDiscordBotPermissions(
 			msg,
 			permissions
@@ -389,28 +389,11 @@ export abstract class BasePluginObject extends Base {
 	static async getMissingDiscordBotPermissions(
 		msg: DiscordMessage | DiscordInteraction,
 		permissions: Discord.PermissionResolvable = []
-	): Promise<Discord.PermissionString[]> {
+	): Promise<Discord.PermissionsString[]> {
 		// Gets the requested permissions and actual permissions
 		const guild =
 			msg.discord.guild || msg.discordInteraction?.interaction.guild;
-		let me = guild?.me;
-		if (!me && guild) {
-			Logger.debug("guild.me is missing on a guild");
-			try {
-				const id = msg.discord.client.user?.id;
-				if (id == undefined) {
-					throw new InternalError(
-						"msg.discord.client.user?.id is undefined"
-					);
-				}
-				me = await guild.members.fetch(id);
-				if (!me) {
-					Logger.debug("Tried to fetch me, but failed");
-				}
-			} catch (error) {
-				Logger.error((error as Error).stack);
-			}
-		}
+		const me = await guild?.members.fetchMe();
 		return this.getMissingDiscordMemberPermissions(msg, me, permissions);
 	}
 
@@ -431,7 +414,7 @@ export abstract class BasePluginObject extends Base {
 		msg: DiscordMessageData | DiscordMessage | DiscordInteraction,
 		member?: Discord.GuildMember | null,
 		permissions: Discord.PermissionResolvable = []
-	): Promise<Discord.PermissionString[]> {
+	): Promise<Discord.PermissionsString[]> {
 		const discord =
 			msg instanceof DiscordMessage || msg instanceof DiscordInteraction
 				? msg.discord
@@ -444,11 +427,11 @@ export abstract class BasePluginObject extends Base {
 		if (channel.partial) {
 			await channel.fetch();
 		}
-		const requestedBotPerms = new Discord.Permissions(permissions);
-		const actualMemberPerms = new Discord.Permissions(
+		const requestedBotPerms = new Discord.PermissionsBitField(permissions);
+		const actualMemberPerms = new Discord.PermissionsBitField(
 			member && channel instanceof Discord.GuildChannel
 				? member.permissionsIn(channel)
-				: Discord.Permissions.DEFAULT
+				: Discord.PermissionsBitField.Default
 		);
 
 		// Returns all the missing ones
@@ -557,9 +540,9 @@ export abstract class BasePluginObject extends Base {
 	 * Sends an error message, with what permissions are required for something to work.
 	 *
 	 * @param msg
-	 * @param permissions
-	 * @param deniedData
+	 * @param permissionMessage
 	 * @param pluginObject
+	 * @param editReply
 	 * @returns
 	 */
 	static async sendPermissionErrorMessage(
@@ -578,7 +561,7 @@ export abstract class BasePluginObject extends Base {
 			}
 
 			const options = permissionMessage.discord
-				.options as Discord.MessageOptions;
+				.options as Discord.BaseMessageOptions;
 			const parseEditReply =
 				editReply ??
 				(permissionMessage.discord.overrideEditReply != undefined
@@ -590,8 +573,11 @@ export abstract class BasePluginObject extends Base {
 
 			if (options.embeds && options.embeds?.length > 0) {
 				for (let i = 0; i < options.embeds.length; i++) {
-					const embed = options.embeds[i];
+					const rawEmbed = options.embeds[i];
 					const count = options.embeds.length == 1 ? "" : ` ${i}`;
+					const embed =
+						"toJSON" in rawEmbed ? rawEmbed.toJSON() : rawEmbed;
+
 					let text = `Sending permission error${count}: ${embed.title}: ${embed.description}`;
 					if (embed.fields) {
 						text += "\n";
@@ -616,7 +602,7 @@ export abstract class BasePluginObject extends Base {
 								| Discord.MessagePayload
 								| Discord.InteractionReplyOptions
 							) &
-								Discord.MessageOptions,
+								Discord.MessageCreateOptions,
 							{
 								editReply: parseEditReply,
 							}
@@ -640,9 +626,7 @@ export abstract class BasePluginObject extends Base {
 			if (useDm && !sent) {
 				try {
 					await msg.discord.author.send(
-						options as
-							| Discord.MessagePayload
-							| Discord.MessageOptions
+						options as Discord.MessageCreateOptions
 					);
 					let newLine = "";
 					if (
@@ -693,7 +677,7 @@ export abstract class BasePluginObject extends Base {
 			);
 		}
 
-		let missingPerms: Discord.PermissionString[] = [];
+		let missingPerms: Discord.PermissionsString[] = [];
 		let description = "";
 		let permissionString = "";
 
@@ -739,13 +723,17 @@ export abstract class BasePluginObject extends Base {
 				dm?: boolean
 			): Promise<
 				| Discord.MessagePayload
-				| Discord.MessageOptions
+				| Discord.BaseMessageOptions
 				| Discord.InteractionReplyOptions
 			> {
 				let hint = "";
 				const embedPermsResults =
 					await BasePluginObject.checkBotPermissions(msg, {
-						discord: { permissions: ["EMBED_LINKS"] },
+						discord: {
+							permissions: [
+								Discord.PermissionFlagsBits.EmbedLinks,
+							],
+						},
 					});
 				const useEmbed =
 					(!(msg instanceof DiscordInteraction) &&
@@ -776,9 +764,11 @@ export abstract class BasePluginObject extends Base {
 					}
 				}
 
-				const embed = EmbedHelper.getTemplate(
-					msg.discord,
-					await EmbedHelper.getCheckOutFooter(msg)
+				const embed = (
+					await EmbedHelper.getTemplate(
+						msg.discord,
+						await EmbedHelper.getCheckOutFooter(msg)
+					)
 				)
 					.setTitle(title)
 					.setDescription(description);
@@ -816,8 +806,8 @@ export abstract class BasePluginObject extends Base {
 							roles: [], // Paranoid
 							users: [], // Paranoid
 						},
-						content: stripIndents`**${embed.title}**
-						${embed.description} ${embed.fields[0].value}${hint}`,
+						content: stripIndents`**${embed.data.title}**
+						${embed.data.description} ${permissionString}${hint}`,
 						components: [],
 						embeds: [],
 						ephemeral: true,
@@ -828,7 +818,7 @@ export abstract class BasePluginObject extends Base {
 			const title = "Bot Permissions Error";
 			const useDm =
 				msg instanceof DiscordMessage &&
-				missingPerms.includes("SEND_MESSAGES");
+				missingPerms.includes("SendMessages");
 			return {
 				discord: {
 					options: await createMessageOptions(msg, useDm),
@@ -872,9 +862,11 @@ export abstract class BasePluginObject extends Base {
 				deniedData.msg instanceof DiscordInteraction
 					? deniedData.msg.discord
 					: msg.discord;
-			const embed = EmbedHelper.getTemplate(
-				msg.discord,
-				await EmbedHelper.getCheckOutFooter(msg)
+			const embed = (
+				await EmbedHelper.getTemplate(
+					msg.discord,
+					await EmbedHelper.getCheckOutFooter(msg)
+				)
 			).setTitle("Permission Denied");
 
 			const notAllowed = `You aren't allowed to do that!`;
@@ -888,7 +880,7 @@ export abstract class BasePluginObject extends Base {
 				? `${specifyChannel}, ${baseMissingMessage.toLocaleLowerCase()}`
 				: baseMissingMessage;
 			let exitForLoop = false;
-			let missingPerms: Discord.PermissionString[] = [];
+			let missingPerms: Discord.PermissionsString[] = [];
 			// Assumes possible non-singular reasons
 			let reasonsWithFieldData: UserPermissionDeniedReason[] = [
 				"discordMemberPermissions",
@@ -902,7 +894,7 @@ export abstract class BasePluginObject extends Base {
 					case "botOwnersOnly":
 						embed.setDescription(oneLine`
 						${notAllowed} Only the bot owner(s) are.`);
-						embed.fields = [];
+						embed.setFields([]);
 						exitForLoop = true;
 						break;
 					case "discordNoData":
@@ -910,20 +902,20 @@ export abstract class BasePluginObject extends Base {
 						specified, but there was no specific Discord
 						permission data entered. By default, this will deny
 						permissions to anyone but bot owners.`);
-						embed.fields = [];
+						embed.setFields([]);
 						exitForLoop = true;
 						break;
 					case "discordMemberPermissions":
 						embed.setDescription(oneLine`
 						There are certain member permissions needed to run this.
 						Try running this command again, but on a Discord server.`);
-						embed.fields = [];
+						embed.setFields([]);
 						exitForLoop = true;
 						break;
 					case "discordUserMenuFlow":
 						embed.setDescription(oneLine`You're not allowed
 						to interact with someone else's menu flow.`);
-						embed.fields = [];
+						embed.setFields([]);
 						exitForLoop = true;
 						break;
 					case "discordUser":
@@ -938,7 +930,7 @@ export abstract class BasePluginObject extends Base {
 									? "Your user account isn't included by permissions."
 									: "Your user account is excluded by permissions.";
 							embed.setDescription(`${notAllowed} ${extraText}`);
-							embed.fields = [];
+							embed.setFields([]);
 							exitForLoop = true;
 						}
 						break;
@@ -947,7 +939,7 @@ export abstract class BasePluginObject extends Base {
 						embed.setDescription(
 							`You're not allowed to do that in this channel.`
 						);
-						embed.fields = [];
+						embed.setFields([]);
 						exitForLoop = true;
 						break;
 					}
@@ -1061,17 +1053,18 @@ export abstract class BasePluginObject extends Base {
 						discord.member,
 						permissions.discord.permissions
 					);
-				useDm = missingPerms.includes("SEND_MESSAGES");
+				useDm = missingPerms.includes("SendMessages");
 			}
 
 			if (
 				msg instanceof DiscordInteraction &&
-				(embed.fields.length == 0 ||
-					embed.fields[0]?.name == "Discord Permissions")
+				(embed.data.fields?.length == 0 ||
+					(embed.data.fields &&
+						embed.data.fields[0]?.name == "Discord Permissions"))
 			) {
 				let permissionString = "";
-				if (embed.fields[0]?.value) {
-					permissionString = ` ${embed.fields[0].value}`;
+				if (embed.data.fields[0]?.value) {
+					permissionString = ` ${embed.data.fields[0].value}`;
 				}
 
 				return {
@@ -1081,7 +1074,7 @@ export abstract class BasePluginObject extends Base {
 								parse: [],
 							},
 							components: [],
-							content: `**${embed.title}**\n${embed.description}${permissionString}`,
+							content: `**${embed.data.title}**\n${embed.data.description}${permissionString}`,
 							embeds: [],
 							ephemeral: true,
 						},
@@ -1092,7 +1085,7 @@ export abstract class BasePluginObject extends Base {
 				};
 			} else if (
 				msg instanceof DiscordMessage &&
-				missingPerms.includes("EMBED_LINKS") &&
+				missingPerms.includes("EmbedLinks") &&
 				!useDm
 			) {
 				return {
@@ -1103,7 +1096,7 @@ export abstract class BasePluginObject extends Base {
 							},
 							components: [],
 							content: `**${
-								embed.title
+								embed.data.title
 							}**\n${oneLine`Unfortunately, the
 							\`EMBED_LINKS\` permission is disabled, so I can't send any details.`}`,
 							embeds: [],

@@ -232,8 +232,8 @@ export class PluginManager extends Base {
 	async createHelpFields(
 		helpList: HelpData[],
 		place: Place
-	): Promise<Discord.EmbedFieldData[]> {
-		const fields: Discord.EmbedFieldData[] = [];
+	): Promise<Discord.EmbedField[]> {
+		const fields: Discord.EmbedField[] = [];
 		const entries = new Map<
 			/** Command ID */
 			string,
@@ -353,6 +353,7 @@ export class PluginManager extends Base {
 			fields.push({
 				name: `${icon} ${helpElement.group}`,
 				value: `${description}${smallCommands}`,
+				inline: false,
 			});
 		}
 

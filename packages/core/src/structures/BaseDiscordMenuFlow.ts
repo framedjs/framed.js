@@ -238,37 +238,23 @@ export abstract class BaseDiscordMenuFlow extends BasePluginObject {
 	getBackButton(
 		options?: BaseDiscordMenuFlowPageRenderOptions,
 		secondaryId = "base"
-	): Discord.MessageButton {
+	): Discord.ButtonBuilder {
 		const newId = this.getDataId(options, secondaryId);
-		return new Discord.MessageButton()
+		return new Discord.ButtonBuilder()
 			.setCustomId(newId)
 			.setLabel("Back")
-			.setStyle("SECONDARY");
+			.setStyle(Discord.ButtonStyle.Secondary);
 	}
 
 	getCloseButton(
 		options?: BaseDiscordMenuFlowPageRenderOptions,
 		secondaryId = "close"
-	): Discord.MessageButton {
+	): Discord.ButtonBuilder {
 		const newId = this.getDataId(options, secondaryId);
-		return new Discord.MessageButton()
+		return new Discord.ButtonBuilder()
 			.setCustomId(newId)
 			.setLabel("Close")
-			.setStyle("SECONDARY");
-	}
-
-	/**
-	 * @deprecated Use msg.discord.author.id != options.userId instead.
-	 */
-	async handleUserCheck(
-		msg: DiscordMessage | DiscordInteraction,
-		options: DiscordMenuFlowIdData
-	): Promise<{
-		replyEphemeral: boolean;
-	}> {
-		return {
-			replyEphemeral: msg.discord.author.id != options.userId,
-		};
+			.setStyle(Discord.ButtonStyle.Secondary);
 	}
 
 	async handleSelectMenu(
@@ -324,7 +310,7 @@ export abstract class BaseDiscordMenuFlow extends BasePluginObject {
 									`**Internal Error**\n` +
 									`The page with ID "${interaction.values[0]}" wasn't found.`,
 								components: [
-									new Discord.MessageActionRow().addComponents(
+									new Discord.ActionRowBuilder<Discord.ButtonBuilder>().addComponents(
 										this.getBackButton(options)
 									),
 								],
@@ -359,7 +345,7 @@ export abstract class BaseDiscordMenuFlow extends BasePluginObject {
 		msg: DiscordMessage | DiscordInteraction,
 		messageOptions:
 			| string
-			| Discord.MessageOptions
+			| Discord.BaseMessageOptions
 			| Discord.MessagePayload
 			| Discord.InteractionReplyOptions,
 		reply?: boolean,

@@ -98,7 +98,7 @@ export class DiscordUtils {
 	 * @param client Discord client
 	 * @param guildChannelOrAuthor Discord guild, channel, or author
 	 * @param author Discord message author, for allowing a bypass of
-	 * the message link being from a anotehr server.
+	 * the message link being from a another server.
 	 *
 	 * @returns Discord message or an error message string
 	 * @deprecated Use DiscordUtils.getMessage() instead.
@@ -119,7 +119,7 @@ export class DiscordUtils {
 		}
 
 		if (
-			guildChannelOrAuthor instanceof Discord.Channel &&
+			guildChannelOrAuthor instanceof Discord.BaseChannel &&
 			/^\d+$/.test(link)
 		) {
 			const channel = guildChannelOrAuthor;
@@ -162,7 +162,7 @@ export class DiscordUtils {
 			}
 		}
 
-		let channel: Discord.AnyChannel | null;
+		let channel: Discord.Channel | null;
 		try {
 			if (guildChannelOrAuthor instanceof Discord.User) {
 				channel =
@@ -191,7 +191,7 @@ export class DiscordUtils {
 			});
 		}
 
-		if (!channel.isText()) {
+		if (!channel.isTextBased()) {
 			throw new InvalidError({
 				input: link,
 				name: "Channel",
@@ -252,7 +252,7 @@ export class DiscordUtils {
 
 		if (msg instanceof DiscordInteraction) {
 			const interaction = msg.discordInteraction.interaction;
-			if (interaction.isContextMenu()) {
+			if (interaction.isContextMenuCommand()) {
 				const newMessage = interaction.options.getMessage(
 					"message",
 					true
@@ -354,7 +354,7 @@ export class DiscordUtils {
 			}
 		}
 
-		let channel: Discord.AnyChannel | undefined;
+		let channel: Discord.Channel | undefined;
 		if (/^\d+$/.test(linkOrId) && options.channelId) {
 			channel =
 				(await client.channels.fetch(options.channelId)) ?? undefined;
@@ -366,7 +366,7 @@ export class DiscordUtils {
 			}
 		}
 
-		if (channel && !channel.isText()) {
+		if (channel && !channel.isTextBased()) {
 			throw new InternalError("Channel passed isn't a text channel.");
 		}
 
@@ -388,10 +388,8 @@ export class DiscordUtils {
 	 * Gets a Discord message object from a link.
 	 *
 	 * @param linkOrId Message link
-	 * @param client Discord client
-	 * @param guildChannelOrAuthor Discord guild, channel, or author
-	 * @param author Discord message author, for allowing a bypass of
-	 * the message link being from a anotehr server.
+	 * @param options Get message options
+	 * the message link being from a another server.
 	 *
 	 * @returns Discord message or an error message string
 	 */
@@ -479,7 +477,7 @@ export class DiscordUtils {
 			});
 		}
 
-		let channel: Discord.AnyChannel | null;
+		let channel: Discord.Channel | null;
 		try {
 			if (args[0] == "@me" && options.requester instanceof Discord.User) {
 				channel =
@@ -508,7 +506,7 @@ export class DiscordUtils {
 			});
 		}
 
-		if (!channel.isText()) {
+		if (!channel.isTextBased()) {
 			throw new InvalidError({
 				input: linkOrId,
 				name: "Channel",
@@ -540,8 +538,8 @@ export class DiscordUtils {
 	static resolveChannel(
 		channel: Discord.ChannelResolvable,
 		channels: Discord.ChannelManager
-	): Discord.AnyChannel | undefined {
-		let newChannel: Discord.AnyChannel | null | undefined =
+	): Discord.Channel | undefined {
+		let newChannel: Discord.Channel | null | undefined =
 			channels.resolve(channel);
 
 		if (!newChannel && typeof channel == "string") {
@@ -557,7 +555,7 @@ export class DiscordUtils {
 		if (!newChannel) {
 			// Gets name
 			newChannel = channels.cache.find(cachedChannels => {
-				if (cachedChannels.isText()) {
+				if (cachedChannels.isTextBased()) {
 					const textChannel = cachedChannels as Discord.TextChannel;
 
 					const parse = BaseMessage.parseEmojiAndString(
@@ -618,7 +616,7 @@ export class DiscordUtils {
 		if (!newChannel) {
 			// Gets name
 			const resolveChannel = channels.cache.find(cachedChannels => {
-				if (cachedChannels.isText()) {
+				if (cachedChannels.isTextBased()) {
 					const textChannel = cachedChannels as Discord.TextChannel;
 
 					const parse = BaseMessage.parseEmojiAndString(
@@ -675,7 +673,7 @@ export class DiscordUtils {
 
 		if (!newChannel) {
 			newChannel = channels.cache.find(cachedChannel => {
-				if (cachedChannel.isText()) {
+				if (cachedChannel.isTextBased()) {
 					const parse = BaseMessage.parseEmojiAndString(
 						cachedChannel.name
 					);
@@ -1281,7 +1279,7 @@ export class DiscordUtils {
 			shouldEdit: boolean;
 		}
 	): Promise<Discord.Message | undefined> {
-		const embeds: Discord.MessageEmbed[] = [];
+		const embeds: Discord.EmbedBuilder[] = [];
 		let channel: Discord.TextChannel | undefined;
 		let msgToEdit: Discord.Message | undefined;
 		for (
@@ -1294,10 +1292,10 @@ export class DiscordUtils {
 				? messageData.embeds[i]
 				: undefined;
 			let embed = embedData
-				? new Discord.MessageEmbed(
+				? new Discord.EmbedBuilder(
 						Utils.turnUndefinedIfNull(
 							embedData
-						) as Discord.MessageEmbedOptions
+						) as Discord.EmbedData
 				  )
 				: undefined;
 
@@ -1331,17 +1329,15 @@ export class DiscordUtils {
 			channel = channelOrMessage as Discord.TextChannel;
 		}
 
-		const messageOptions:
-			| Discord.MessageOptions
-			| Discord.MessageEditOptions = {
+		const messageOptions: Discord.BaseMessageOptions = {
 			content: content ?? undefined,
 			embeds: embeds,
 		};
 
 		if (msgToEdit) {
-			return msgToEdit.edit(messageOptions as Discord.MessageEditOptions);
+			return msgToEdit.edit(messageOptions);
 		} else {
-			return channel.send(messageOptions as Discord.MessageOptions);
+			return channel.send(messageOptions);
 		}
 	}
 }

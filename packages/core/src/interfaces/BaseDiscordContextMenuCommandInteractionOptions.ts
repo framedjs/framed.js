@@ -1,7 +1,7 @@
 import type { BaseDiscordInteractionOptions } from "./BaseDiscordInteractionOptions";
-import type { ContextMenuCommandBuilder } from "@discordjs/builders";
+import type { ContextMenuCommandBuilder } from "discord.js";
 
-export interface BaseDiscordContextMenuInteractionOptions
+export interface BaseDiscordContextMenuCommandInteractionOptions
 	extends BaseDiscordInteractionOptions {
 	/** Discord context menu builder */
 	contextMenuBuilder: ContextMenuCommandBuilder;

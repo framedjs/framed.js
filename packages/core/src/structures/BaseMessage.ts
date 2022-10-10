@@ -69,6 +69,8 @@ export class BaseMessage extends Base {
 	 *
 	 * @param place Place data
 	 * @param guild Discord Guild, for the role prefix
+	 *
+	 * @returns Message elements
 	 */
 	async getMessageElements(
 		place?: Place | null,
@@ -80,7 +82,7 @@ export class BaseMessage extends Base {
 	}> {
 		place = place ?? (await this.getPlace());
 
-		this.prefix = this._getPrefix(place, guild);
+		this.prefix = await this._getPrefix(place, guild);
 		this.args = this._getArgs();
 		this.command = this._getCommand();
 
@@ -91,20 +93,20 @@ export class BaseMessage extends Base {
 	 * Gets the prefix of the message.
 	 *
 	 * @param place Place data
-	 * @param guild Discord Guild, for the role prefix
+	 * @param guild Discord guild, for the role prefix
 	 *
-	 * @returns prefix
+	 * @returns Prefix
 	 */
-	protected _getPrefix(
+	protected async _getPrefix(
 		place: Place,
 		guild?: Discord.Guild | null
-	): string | undefined {
+	): Promise<string | undefined> {
 		// Gets the prefixes and sorts them from longest to shortest
 		// This is so if there are multiple matching prefixes,
 		// the longest one of them all should be checked first.
-		const prefixes = this.client.commands
-			.getPossiblePrefixes(place, guild)
-			.sort((a, b) => b.length - a.length);
+		const prefixes = (
+			await this.client.commands.getPossiblePrefixes(place, guild)
+		).sort((a, b) => b.length - a.length);
 
 		// Finds a matching prefix and returns it
 		let prefix: string | undefined;
@@ -119,6 +121,7 @@ export class BaseMessage extends Base {
 
 	/**
 	 * Gets the command of the message.
+	 * @returns string
 	 */
 	protected _getCommand(): string | undefined {
 		// Gets the first arg from base args, get the first element,
@@ -145,6 +148,8 @@ export class BaseMessage extends Base {
 	 *
 	 * Note that this content will still include the command inside
 	 * the arguments, and will be removed when _getCommand() is called.
+	 *
+	 * @returns Arguments
 	 */
 	protected _getArgs(): string[] {
 		return this._getBaseArgs().splice(1);
@@ -153,6 +158,7 @@ export class BaseMessage extends Base {
 	/**
 	 * Internally gets base arguments, for BaseMessage._getArgs()
 	 * and BaseMessage._getCommand().
+	 * @returns Base arguments for internal processing
 	 */
 	protected _getBaseArgs() {
 		const newContent = this.content.slice(this.prefix?.length).trim();
@@ -166,10 +172,8 @@ export class BaseMessage extends Base {
 
 	/**
 	 * Get the command arguments from a string
-	 *
 	 * @param content Message content
 	 * @param settings Argument parse settings
-	 *
 	 * @returns Command arguments
 	 */
 	static getArgs(content: string, settings?: ArgumentOptions): string[] {
@@ -183,7 +187,6 @@ export class BaseMessage extends Base {
 	 * Turn Argument[] array into a string[] array, containing the Argument arguments
 	 *
 	 * @param detailedArgs Framed arguments
-	 *
 	 * @returns Argument arguments in a string[] (Command arguments)
 	 */
 	static simplifyArgs(detailedArgs: Argument[]): string[] {
@@ -442,7 +445,6 @@ export class BaseMessage extends Base {
 	 * In other words, this gets the contents after the `!command`.
 	 *
 	 * @param argsToTrim Optional arguments to trim out.
-	 *
 	 * @returns Contents after the `!command`
 	 */
 	getArgsContent(argsToTrim?: string[]): string {
@@ -490,6 +492,9 @@ export class BaseMessage extends Base {
 	 *
 	 * @param client Framed client
 	 * @param guild Discord Guild
+	 * @param createNewPlace
+	 *
+	 * @returns Place
 	 */
 	static async discordGetPlace(
 		client: Client,
@@ -524,8 +529,13 @@ export class BaseMessage extends Base {
 	}
 
 	/**
+	 * Gets the place data, using Twitch data.
 	 *
-	 * @param client
+	 * @param client Framed client
+	 * @param channel Twitch channel name
+	 * @param createNewPlace
+	 *
+	 * @returns Place
 	 */
 	static async twitchGetPlace(
 		client: Client,
@@ -564,11 +574,14 @@ export class BaseMessage extends Base {
 	}
 
 	/**
+	 * Create a new place
 	 *
 	 * @param client
 	 * @param platformId
 	 * @param platform
 	 * @param newId
+	 *
+	 * @returns Created place
 	 */
 	static async createPlace(
 		client: Client,
@@ -594,6 +607,8 @@ export class BaseMessage extends Base {
 	 *
 	 * @param createNewPlaceIfNone Creates a new place, if there's no specific place entry.
 	 * @param forceNoCache Forces to not use the Message's cache for the place data.
+	 *
+	 * @returns Place
 	 */
 	async getPlace(
 		createNewPlaceIfNone = false,
@@ -677,6 +692,8 @@ export class BaseMessage extends Base {
 	 * @param msgOrString Framed Message object or string to parse from
 	 * @param parseOut String array to parse out. Only needed if prefix
 	 * and command are still inside the msg string.
+	 *
+	 * @returns Emoji and string data
 	 */
 	static parseEmojiAndString(
 		msgOrString: BaseMessage | string,
@@ -734,6 +751,12 @@ export class BaseMessage extends Base {
 
 	/**
 	 * Parses custom $() formatting
+	 *
+	 * @param arg String to process
+	 * @param client Framed client
+	 * @param place Place
+	 *
+	 * @returns Processed string
 	 */
 	static async format(
 		arg: string,
@@ -747,14 +770,13 @@ export class BaseMessage extends Base {
 	 * Sends a message, regardless of platform.
 	 */
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	async send(..._parms: unknown[]): Promise<unknown> {
+	async send(..._params: unknown[]): Promise<unknown> {
 		throw new Error("There was no valid platform!");
 	}
 
 	/**
-	 * Sends a message showing help for a command. This is a function shortcut to {@link CommandManager}.
-	 *
-	 * @param place Place
+	 * Sends a message showing help for a command. This is a
+	 * function shortcut to {@link CommandManager}.
 	 *
 	 * @returns boolean value `true` if help is shown.
 	 */

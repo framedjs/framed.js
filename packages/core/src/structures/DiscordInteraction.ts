@@ -1,13 +1,13 @@
 import { oneLine } from "common-tags";
 import { BaseMessage } from "./BaseMessage";
-import Discord from "discord.js";
 import { Logger } from "@framedjs/logger";
+import Discord from "discord.js";
 
 import type { DiscordInteractionData } from "../interfaces/DiscordInteractionData";
 import type { DiscordInteractionSendOptions } from "../interfaces/DiscordInteractionSendOptions";
 import type { DiscordMessageData } from "../interfaces/DiscordMessageData";
 import type { MessageOptions } from "../interfaces/MessageOptions";
-import { Place } from "../interfaces/Place";
+import type { Place } from "../interfaces/Place";
 
 export class DiscordInteraction extends BaseMessage {
 	discord!: DiscordMessageData;
@@ -44,7 +44,7 @@ export class DiscordInteraction extends BaseMessage {
 		// Gets the Discord Base for elements such as author, channel, etc.
 		// First check for any entries in info.discordInteraction.base
 		const discordInteractionBase =
-			options.discordInteraction instanceof Discord.Interaction
+			options.discordInteraction instanceof Discord.BaseInteraction
 				? options.discordInteraction
 				: options.discordInteraction?.base
 				? options.discordInteraction.base
@@ -58,7 +58,7 @@ export class DiscordInteraction extends BaseMessage {
 
 		// Gets a Discord Interaction object
 		const interaction =
-			discordInteractionBase instanceof Discord.Interaction
+			discordInteractionBase instanceof Discord.BaseInteraction
 				? discordInteractionBase
 				: discordInteractionBase.type == "data"
 				? discordInteractionBase.interaction
@@ -86,7 +86,7 @@ export class DiscordInteraction extends BaseMessage {
 			undefined;
 
 		// Make sure it's a GuildMember object, else it's null
-		// NOTE: DiscordJsApi.APIInteractionGuildMember would work, if not for discord-api-types being outdated,
+		// NOTE: Discord.APIInteractionGuildMember would work, if not for discord-api-types being outdated,
 		// compared to discord.js(?) - 0.22.0 vs 0.24.0
 		const tempMember =
 			options.discordInteraction?.member ??
@@ -145,16 +145,16 @@ export class DiscordInteraction extends BaseMessage {
 			guild,
 		};
 
-		if (interaction.isApplicationCommand()) {
+		if (interaction.isCommand()) {
 			this.command = this.content = interaction.commandName;
 			this.args = this._getArgs();
 		}
 	}
 
-	protected _getPrefix(
+	protected async _getPrefix(
 		place: Place,
 		guild?: Discord.Guild | null | undefined
-	): string | undefined {
+	): Promise<undefined> {
 		return;
 	}
 
@@ -167,7 +167,7 @@ export class DiscordInteraction extends BaseMessage {
 			// Note that context menus are considered commands, however
 			// can't be interpreted as having args like normal commands.
 			this.discordInteraction.interaction.isCommand() &&
-			!this.discordInteraction.interaction.isContextMenu()
+			!this.discordInteraction.interaction.isContextMenuCommand()
 		) {
 			return super._getArgs();
 		}
@@ -187,11 +187,7 @@ export class DiscordInteraction extends BaseMessage {
 		extraOptions?: DiscordInteractionSendOptions
 	): Promise<void> {
 		const interaction = this.discordInteraction.interaction;
-		if (
-			interaction.isApplicationCommand() ||
-			interaction.isContextMenu() ||
-			interaction.isMessageComponent()
-		) {
+		if (interaction.isCommand() || interaction.isMessageComponent()) {
 			const canEditReply = interaction.deferred || interaction.replied;
 			const canUpdate =
 				(interaction.isButton() || interaction.isSelectMenu()) &&

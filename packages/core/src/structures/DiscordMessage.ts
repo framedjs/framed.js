@@ -123,7 +123,7 @@ export class DiscordMessage extends BaseMessage {
 	 * @param options
 	 */
 	async send(
-		options: string | Discord.MessagePayload | Discord.MessageOptions
+		options: string | Discord.MessagePayload | Discord.MessageCreateOptions
 	): Promise<Discord.Message> {
 		return this.discord.channel.send(options);
 	}
@@ -146,7 +146,11 @@ export class DiscordMessage extends BaseMessage {
 
 			// Saves on checking, as admins will always be
 			// able to use slash commands
-			if (this.discord.member.permissions.has("ADMINISTRATOR")) {
+			if (
+				this.discord.member.permissions.has(
+					Discord.PermissionFlagsBits.Administrator
+				)
+			) {
 				return;
 			}
 
@@ -197,12 +201,16 @@ export class DiscordMessage extends BaseMessage {
 						perm.permission
 							? channelsWhitelist.push(perm.id)
 							: channelsBlacklist.push(perm.id);
-					} else if (perm.type == "ROLE") {
+					} else if (
+						perm.type ==
+						Discord.ApplicationCommandPermissionType.Role
+					) {
 						perm.permission
 							? rolesWhitelist.push(perm.id)
 							: rolesBlacklist.push(perm.id);
 					} else if (
-						perm.type == "USER" &&
+						perm.type ==
+							Discord.ApplicationCommandPermissionType.User &&
 						perm.id == this.discord.author.id &&
 						!perm.permission
 					) {

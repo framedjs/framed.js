@@ -2,11 +2,10 @@ import type { UserPermissions } from "./UserPermissions";
 import type { Prefixes } from "./Prefixes";
 import type { InlineOptions } from "./InlineOptions";
 import type { BotPermissions } from "./BotPermissions";
-import {
-	SlashCommandBuilder,
+import type {
 	SlashCommandSubcommandBuilder,
 	SlashCommandSubcommandGroupBuilder,
-} from "@discordjs/builders";
+} from "discord.js";
 
 export interface BaseDiscordSlashSubcommandOptions {
 	/**

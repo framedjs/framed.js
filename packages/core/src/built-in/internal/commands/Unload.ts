@@ -6,16 +6,17 @@ import InternalPlugin, {
 	InternalParseEverythingOptions,
 	InternalParsePluginCommandOptions,
 } from "../Internal.plugin";
+import Discord from "discord.js";
 
 export default class extends BaseCommand {
 	constructor(plugin: BasePlugin) {
 		super(plugin, {
 			id: "unload",
-			about: "Unload framed.js commands and events.",
+			about: "Unload Framed.js commands and events.",
 			usage: "[everything]",
 			botPermissions: {
 				discord: {
-					permissions: ["SEND_MESSAGES"],
+					permissions: [Discord.PermissionFlagsBits.SendMessages],
 				},
 			},
 			userPermissions: {

@@ -147,17 +147,16 @@ export class FormattingManager extends Base {
 	 * Formats an entire Discord embed
 	 *
 	 * @param embed Discord Embed
-	 *
 	 * @returns Formatted Discord embed
 	 */
 	async formatEmbed(
-		embed: Discord.MessageEmbed | Discord.MessageEmbedOptions,
+		embed: Discord.EmbedBuilder,
 		place: Place
-	): Promise<Discord.MessageEmbed> {
-		if (embed.description) {
+	): Promise<Discord.EmbedBuilder> {
+		if (embed.data.description) {
 			try {
-				embed.description = await BaseMessage.format(
-					embed.description,
+				embed.data.description = await BaseMessage.format(
+					embed.data.description,
 					this.client,
 					place
 				);
@@ -166,8 +165,8 @@ export class FormattingManager extends Base {
 			}
 		}
 
-		if (embed.fields) {
-			for await (const field of embed.fields) {
+		if (embed.data.fields) {
+			for await (const field of embed.data.fields) {
 				try {
 					field.name = await BaseMessage.format(
 						field.name,
@@ -189,10 +188,10 @@ export class FormattingManager extends Base {
 			}
 		}
 
-		if (embed.footer?.text) {
+		if (embed.data.footer?.text) {
 			try {
-				embed.footer.text = await BaseMessage.format(
-					embed.footer.text,
+				embed.data.footer.text = await BaseMessage.format(
+					embed.data.footer.text,
 					this.client,
 					place
 				);
@@ -201,11 +200,7 @@ export class FormattingManager extends Base {
 			}
 		}
 
-		if (embed instanceof Discord.MessageEmbed) {
-			return embed;
-		} else {
-			return new Discord.MessageEmbed(embed);
-		}
+		return embed;
 	}
 
 	/**

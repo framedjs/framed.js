@@ -143,7 +143,8 @@ export abstract class BaseDiscordMenuFlowPage extends BasePluginObject {
 		msg: DiscordMessage | DiscordInteraction,
 		messageOptions:
 			| string
-			| Discord.MessageOptions
+			| Discord.MessageReplyOptions
+			| Discord.MessageCreateOptions
 			| Discord.MessagePayload
 			| Discord.InteractionReplyOptions,
 		dataOptions: DiscordMenuFlowIdData,
@@ -220,13 +221,21 @@ export abstract class BaseDiscordMenuFlowPage extends BasePluginObject {
 	getDebugContent(
 		id: string | DiscordMenuFlowIdData,
 		components?:
-			| Discord.MessageActionRowComponent[]
+			| Discord.ActionRowBuilder
+			| Discord.ActionRowBuilder[]
+			// | Discord.MessageActionRowComponent[]
+			// | Discord.ComponentBuilder[]
+			// | Discord.ActionRowComponent
 			| (
-					| Discord.MessageActionRow
-					| (Required<Discord.BaseMessageComponentOptions> &
-							Discord.MessageActionRowOptions)
-			  )[]
-			| Discord.MessageActionRow,
+					| Discord.JSONEncodable<
+							Discord.APIActionRowComponent<Discord.APIMessageActionRowComponent>
+					  >
+					| Discord.ActionRowData<
+							| Discord.MessageActionRowComponentData
+							| Discord.MessageActionRowComponentBuilder
+					  >
+					| Discord.APIActionRowComponent<Discord.APIMessageActionRowComponent>
+			  )[],
 		showDebugInteractionContent = process.env.FRAMED_SHOW_DEBUG_INTERACTION_CONTENT?.toLocaleLowerCase() ==
 			"true"
 	): string | undefined {
@@ -237,7 +246,13 @@ export abstract class BaseDiscordMenuFlowPage extends BasePluginObject {
 		const newId =
 			typeof id == "string" ? id : this.menu.getDataId(id, this.id);
 		const debugIdRender = this._getDebugIdRender(newId).trim();
-		const componentRender = this._getDebugContentFromComponents(components);
+
+		let tempComponents = components;
+		if (tempComponents instanceof Discord.ActionRowBuilder) {
+			tempComponents = [tempComponents];
+		}
+		const componentRender =
+			this._getDebugContentFromComponents(tempComponents);
 
 		let base = `${debugIdRender}\n${componentRender}`;
 		return base;
@@ -252,47 +267,77 @@ export abstract class BaseDiscordMenuFlowPage extends BasePluginObject {
 				id.slice(BaseDiscordMenuFlow.lzStringFlag.length, id.length)
 			);
 			if (newId) {
-				base += `\n\`${newId}\`, ${newId.length} char(s) for lz-string decompress`;
+				base += `\n\`${newId}\`, ${newId.length} char(s) for lz-string decompress\n`;
 			}
 		}
-		return `${base}\n`;
+		return base;
 	}
 
 	private _getDebugContentFromComponents(
 		components?:
-			| Discord.MessageActionRowComponent[]
+			| Discord.ActionRowBuilder[]
+			// | Discord.MessageActionRowComponent[]
 			| (
-					| Discord.MessageActionRow
-					| (Required<Discord.BaseMessageComponentOptions> &
-							Discord.MessageActionRowOptions)
-			  )[]
-			| Discord.MessageActionRow,
+					| Discord.JSONEncodable<
+							Discord.APIActionRowComponent<Discord.APIMessageActionRowComponent>
+					  >
+					| Discord.ActionRowData<
+							| Discord.MessageActionRowComponentData
+							| Discord.MessageActionRowComponentBuilder
+					  >
+					| Discord.APIActionRowComponent<Discord.APIMessageActionRowComponent>
+			  )[],
 		showDebugInteractionContent = process.env.FRAMED_SHOW_COMPONENT_DEBUG_INTERACTION_CONTENT?.toLocaleLowerCase() ==
 			"true"
 	) {
 		let base = "";
 		if (components && showDebugInteractionContent) {
-			let parsableComponents: (
-				| Discord.MessageActionRowComponent
-				| Discord.MessageActionRowComponentResolvable
+			let parsableComponents: // From first if statement in for loop
+			(
+				| Discord.APIButtonComponentWithCustomId
+				// | Discord.MessageActionRowComponentData
+				// | Discord.MessageActionRowComponentBuilder
+				// From second if statement
+				| Discord.APIButtonComponentWithCustomId
+				| Discord.APISelectMenuComponent
+				| Discord.APITextInputComponent
 			)[] = [];
 
-			if ("components" in components) {
-				parsableComponents.push(...components.components);
-			} else {
-				for (const component of components) {
-					component.type == "ACTION_ROW"
-						? parsableComponents.push(...component.components)
-						: parsableComponents.push(component);
+			// if ("toJSON" in components) {
+			// 	parsableComponents.push(...components.components);
+			// } else {
+			for (const component of components) {
+				// component.type == Discord.ComponentType.ActionRow
+				// 	? parsableComponents.push(...component.components)
+				// 	: parsableComponents.push(component);
+				if ("components" in component) {
+					for (const rawComponent of component.components) {
+						if ("toJSON" in rawComponent) {
+							const jsonData = rawComponent.toJSON();
+							if ("custom_id" in jsonData) {
+								parsableComponents.push(jsonData);
+							}
+						} else if ("custom_id" in rawComponent) {
+							parsableComponents.push(rawComponent);
+						}
+					}
+				} else {
+					const jsonData = component.toJSON();
+					for (const component of jsonData.components) {
+						if ("custom_id" in component) {
+							parsableComponents.push(component);
+						}
+					}
 				}
 			}
+			// }
 
 			for (const component of parsableComponents) {
-				if ("customId" in component) {
-					if (component.customId == null) continue;
+				if ("custom_id" in component) {
+					if (component.custom_id == null) continue;
 					base += this._getDebugIdRender(
-						component.customId,
-						`- ${component.type}`
+						component.custom_id,
+						`- type ${component.type}`
 					);
 				}
 			}

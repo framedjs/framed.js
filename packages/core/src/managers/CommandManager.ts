@@ -4,7 +4,7 @@ import { BaseCommand } from "../structures/BaseCommand";
 import { BaseDiscordInteraction } from "../structures/BaseDiscordInteraction";
 import { BaseDiscordAutocompleteInteraction } from "../structures/BaseDiscordAutocompleteInteraction";
 import { BaseDiscordButtonInteraction } from "../structures/BaseDiscordButtonInteraction";
-import { BaseDiscordContextMenuInteraction } from "../structures/BaseDiscordContextMenuInteraction";
+import { BaseDiscordContextMenuCommandInteraction } from "../structures/BaseDiscordContextMenuCommandInteraction";
 import { BaseDiscordMenuFlow } from "../structures/BaseDiscordMenuFlow";
 import { BaseDiscordMenuFlowPage } from "../structures/BaseDiscordMenuFlowPage";
 import { BaseDiscordMessageComponentInteraction } from "../structures/BaseDiscordMessageComponentInteraction";
@@ -12,8 +12,8 @@ import { BaseDiscordSelectMenuInteraction } from "../structures/BaseDiscordSelec
 import { BaseMessage } from "../structures/BaseMessage";
 import { BasePluginObject } from "../structures/BasePluginObject";
 import { Client } from "../structures/Client";
-import Discord from "discord.js";
-import { DiscordCommandInteraction } from "../structures/DiscordCommandInteraction";
+import Discord, { PermissionFlagsBits } from "discord.js";
+import { DiscordChatInputInteraction } from "../structures/DiscordChatInputInteraction";
 import { DiscordInteraction } from "../structures/DiscordInteraction";
 import { DiscordMessage } from "../structures/DiscordMessage";
 import { EmbedHelper } from "../utils/discord/EmbedHelper";
@@ -23,7 +23,8 @@ import { Logger } from "@framedjs/logger";
 import { TwitchMessage } from "../structures/TwitchMessage";
 import { Utils } from "@framedjs/shared";
 import { oneLine, oneLineInlineLists } from "common-tags";
-import LZString from "lz-string";
+import lzstring from "lz-string";
+import util from "util";
 
 import type { BaseDiscordMenuFlowPageRenderOptions } from "../interfaces/BaseDiscordMenuFlowPageRenderOptions";
 import type { FoundCommandData } from "../interfaces/FoundCommandData";
@@ -41,7 +42,6 @@ export class CommandManager extends Base {
 
 	/**
 	 * List of all the default prefixes
-	 *
 	 * @returns String array of default prefixes
 	 */
 	get defaultPrefixes(): string[] {
@@ -74,8 +74,11 @@ export class CommandManager extends Base {
 	 *
 	 * @returns String array of all possible prefixes
 	 */
-	getPossiblePrefixes(place: Place, guild?: Discord.Guild | null): string[] {
-		// const startTime = process.hrtime();
+	async getPossiblePrefixes(
+		place: Place,
+		guild?: Discord.Guild | null
+	): Promise<string[]> {
+		const startTime = process.hrtime();
 		const prefixes = this.defaultPrefixes;
 
 		// From commands: adds to the list of potential prefixes (also removes duplicates)
@@ -90,9 +93,24 @@ export class CommandManager extends Base {
 		}
 
 		if (guild && guild.available) {
-			const rolePrefix = guild.me?.roles.botRole?.toString();
-			if (rolePrefix) {
-				prefixes.push(rolePrefix);
+			try {
+				let shouldLog = !guild.members.me;
+				const me = await guild.members.fetchMe();
+
+				const rolePrefix = me.roles.botRole?.toString();
+				if (rolePrefix) {
+					prefixes.push(rolePrefix);
+				}
+
+				if (shouldLog && Logger.isSillyEnabled()) {
+					Logger.silly(
+						`${Utils.hrTimeElapsed(
+							startTime
+						)}s - Fetched role when getting possible prefixes.`
+					);
+				}
+			} catch (error) {
+				Logger.error((error as Error).stack);
 			}
 		}
 
@@ -106,29 +124,15 @@ export class CommandManager extends Base {
 		return prefixes;
 	}
 
-	/**
-	 * Retrieves the bot's automatic role for a prefix
-	 *
-	 * @param guild Discord Guild
-	 *
-	 * @deprecated Use guild.me.roles.botRole.toString() instead.
-	 */
-	getBotRolePrefix(guild: Discord.Guild): string | undefined {
-		const roles = guild.roles;
-		const botRole = roles.cache.find(
-			a => a.name === guild.me?.user.username
-		);
-
-		if (botRole) {
-			return botRole.toString();
-		}
-	}
-
 	//#region Getting commands
 
 	/**
+	 * Get command data from what was found
 	 *
-	 * @param msg Framed message
+	 * @param msg BaseMessage object
+	 * @param place Place data
+	 *
+	 * @returns Found command data
 	 */
 	async getFoundCommandData(
 		msg: BaseMessage,
@@ -136,10 +140,13 @@ export class CommandManager extends Base {
 	): Promise<FoundCommandData[]>;
 
 	/**
+	 * Get command data from what was found
 	 *
-	 * @param prefix
-	 * @param command
-	 * @param args
+	 * @param prefix Prefix string
+	 * @param command Command ID
+	 * @param args Arguments
+	 *
+	 * @returns Found command data
 	 */
 	async getFoundCommandData(
 		command: string,
@@ -149,10 +156,14 @@ export class CommandManager extends Base {
 	): Promise<FoundCommandData[]>;
 
 	/**
+	 * Get command data from what was found
 	 *
-	 * @param msgOrCommand
-	 * @param args
-	 * @param prefix
+	 * @param msgOrCommand BaseMessage object, or command ID
+	 * @param argsOrPlace Arguments or place data
+	 * @param place Place data
+	 * @param prefix Prefix string
+	 *
+	 * @returns Found command data
 	 */
 	async getFoundCommandData(
 		msgOrCommand: BaseMessage | string,
@@ -171,7 +182,7 @@ export class CommandManager extends Base {
 		} else {
 			if (!(argsOrPlace instanceof Array)) {
 				throw new Error(
-					`argsOrPlace must be an Array, if msgOrComamnd is a string`
+					`argsOrPlace must be an Array, if msgOrCommand is a string`
 				);
 			}
 
@@ -204,11 +215,11 @@ export class CommandManager extends Base {
 	}
 
 	/**
-	 * Gets a command
+	 * Finds a command, matching a command ID.
 	 *
 	 * @param command Command ID
 	 * @param place Place data
-	 * @param prefix Prefix
+	 * @param prefix Prefix string
 	 *
 	 * @returns BaseCommand or undefined
 	 */
@@ -219,9 +230,9 @@ export class CommandManager extends Base {
 	): BaseCommand | undefined;
 
 	/**
-	 * Gets a command
+	 * Finds a command, matching a message.
 	 *
-	 * @param msg Framed Message
+	 * @param msg BaseMessage object
 	 * @param place Place data
 	 *
 	 * @returns BaseCommand or undefined
@@ -229,11 +240,11 @@ export class CommandManager extends Base {
 	getCommand(msg: BaseMessage, place?: Place): BaseCommand | undefined;
 
 	/**
-	 * Gets a command
+	 * Finds a command, matching a message or command ID.
 	 *
-	 * @param msgOrCommand Framed Message or command string
+	 * @param msgOrCommand BaseMessage or command string
 	 * @param place Place data
-	 * @param prefix Prefix
+	 * @param prefix Prefix string
 	 *
 	 * @returns BaseCommand or undefined
 	 */
@@ -258,7 +269,7 @@ export class CommandManager extends Base {
 	 *
 	 * @param command Command ID
 	 * @param place Place data
-	 * @param prefix Prefix
+	 * @param prefix Prefix string
 	 *
 	 * @returns List of commands with the same ID.
 	 */
@@ -271,7 +282,7 @@ export class CommandManager extends Base {
 	 * Optimally, there should be only one command but will allow
 	 * overlapping commands from different plugins.
 	 *
-	 * @param msg Framed message
+	 * @param msg BaseMessage object
 	 * @param place Place data
 	 *
 	 * @returns List of commands with the same ID.
@@ -285,7 +296,7 @@ export class CommandManager extends Base {
 	 * Optimally, there should be only one command but will allow
 	 * overlapping commands from different plugins.
 	 *
-	 * @param msgOrCommand Framed Message or command
+	 * @param msgOrCommand BaseMessage object or command
 	 * @param place Place data
 	 * @param prefix Prefix string
 	 *
@@ -336,15 +347,6 @@ export class CommandManager extends Base {
 					const commandPrefixes = command.getPrefixes(place);
 					commandPrefixes.push(...this.defaultPrefixes);
 
-					if (
-						msgOrCommand instanceof DiscordMessage &&
-						msgOrCommand.discord.guild
-					) {
-						const rolePrefix =
-							msgOrCommand.discord.guild.me?.roles.botRole?.toString();
-						if (rolePrefix) commandPrefixes.push(rolePrefix);
-					}
-
 					// Gets the base command's prefixes or default prefixes, and see if they match.
 					// If there was no prefix defined, ignore prefix checks.
 					commandUsesPrefix = commandPrefixes.includes(prefix);
@@ -363,7 +365,9 @@ export class CommandManager extends Base {
 
 	/**
 	 * Runs a command, based on the Message parameters
-	 * @param msg Message object
+	 *
+	 * @param msg BaseMessage object
+	 * @returns Map of all commands by their IDs, and whether they succeeded execution
 	 */
 	async run(msg: BaseMessage): Promise<Map<string, boolean>> {
 		const startTime = process.hrtime();
@@ -391,7 +395,7 @@ export class CommandManager extends Base {
 				try {
 					if (
 						!(msg instanceof DiscordInteraction) ||
-						msg instanceof DiscordCommandInteraction
+						msg instanceof DiscordChatInputInteraction
 					) {
 						await this.scanAndRunCommands(msg, map, startTime);
 					} else {
@@ -457,9 +461,9 @@ export class CommandManager extends Base {
 	/**
 	 * If a non-friendly error was passed, it'll be outputted to console
 	 *
-	 * @param msg
-	 * @param error
-	 * @param options
+	 * @param msg BaseMessage object
+	 * @param error An Error or FriendlyError object
+	 * @param options Friendly error display options
 	 */
 	async handleFriendlyError(
 		msg: BaseMessage,
@@ -477,10 +481,24 @@ export class CommandManager extends Base {
 				}
 			}
 		} else {
-			Logger.error((error as Error).stack);
+			if ("errors" in (error as any)) {
+				Logger.error(util.inspect(error, undefined, undefined, true));
+			} else {
+				Logger.error((error as Error).stack);
+			}
 		}
 	}
 
+	/**
+	 * Scans for if the BaseMessage object would trigger a command,
+	 * and runs those respective commands.
+	 *
+	 * @param msg BaseMessage object
+	 * @param map Map of command IDs as keys, and whether they succeeded execution
+	 * @param startTime
+	 *
+	 * @returns Modified map of what was passed into
+	 */
 	async scanAndRunCommands(
 		msg: BaseMessage,
 		map: Map<string, boolean>,
@@ -585,6 +603,16 @@ export class CommandManager extends Base {
 		return map;
 	}
 
+	/**
+	 * Scans for if the DiscordInteraction object would trigger a command,
+	 * and runs those respective commands.
+	 *
+	 * @param msg DiscordInteraction object
+	 * @param map Map of command IDs as keys, and whether they succeeded execution
+	 * @param startTime
+	 *
+	 * @returns Modified map of what was passed into
+	 */
 	async scanAndRunDiscordInteractions(
 		msg: DiscordInteraction,
 		map: Map<string, boolean>,
@@ -626,7 +654,7 @@ export class CommandManager extends Base {
 
 			if (Logger.isSillyEnabled()) {
 				let options = "";
-				if (interaction.isApplicationCommand()) {
+				if (interaction.isCommand()) {
 					options = Utils.util.inspect(interaction.options);
 				}
 
@@ -635,14 +663,14 @@ export class CommandManager extends Base {
 					interaction.customId.startsWith(
 						BaseDiscordMenuFlow.lzStringFlag
 					)
-						? LZString.decompressFromUTF16(
+						? lzstring.decompressFromUTF16(
 								interaction.customId.slice(
 									BaseDiscordMenuFlow.lzStringFlag.length,
 									interaction.customId.length
 								)
 						  )
 						: null;
-				const id = interaction.isApplicationCommand()
+				const id = interaction.isCommand()
 					? ` with ID "${interaction.commandName}" `
 					: "";
 				const displayTime = startTime
@@ -666,10 +694,9 @@ export class CommandManager extends Base {
 						}`
 					);
 				} else {
-					let newType = interaction.isMessageContextMenu()
-						? `${interaction.type} ${interaction.targetType}`
-						: interaction.type;
-					logs.push(`${displayTime}${newType} (${interaction.id})`);
+					logs.push(
+						`${displayTime}${interaction.type} (${interaction.id})`
+					);
 				}
 				if (options) logs.push(options);
 			}
@@ -705,6 +732,16 @@ export class CommandManager extends Base {
 		return map;
 	}
 
+	/**
+	 * Scans and runs menu flow pages.
+	 *
+	 * @param msg DiscordInteraction object
+	 * @param map Map of command IDs as keys, and whether they succeeded execution
+	 * @param options Function options
+	 * @param startTime
+	 *
+	 * @returns Modified map of what was passed into
+	 */
 	async scanAndRunMenuFlowPages(
 		msg: DiscordInteraction,
 		map?: Map<string, boolean>,
@@ -795,7 +832,7 @@ export class CommandManager extends Base {
 							const parsedId = interaction.customId.startsWith(
 								BaseDiscordMenuFlow.lzStringFlag
 							)
-								? LZString.decompressFromUTF16(
+								? lzstring.decompressFromUTF16(
 										interaction.customId.slice(
 											BaseDiscordMenuFlow.lzStringFlag
 												.length,
@@ -890,8 +927,8 @@ export class CommandManager extends Base {
 				command instanceof BaseDiscordButtonInteraction) ||
 			(interaction.isCommand() &&
 				command instanceof BaseDiscordInteraction) ||
-			(interaction.isContextMenu() &&
-				command instanceof BaseDiscordContextMenuInteraction) ||
+			(interaction.isContextMenuCommand() &&
+				command instanceof BaseDiscordContextMenuCommandInteraction) ||
 			(interaction.isMessageComponent() &&
 				command instanceof BaseDiscordMessageComponentInteraction) ||
 			(interaction.isSelectMenu() &&
@@ -900,10 +937,10 @@ export class CommandManager extends Base {
 	}
 
 	/**
-	 * Checks for permission, and sends an error message
+	 * Checks for permission, and sends an error message.
 	 *
-	 * @param msg
-	 * @param base
+	 * @param msg BaseMessage object
+	 * @param base BasePluginObject
 	 * @param map Optional results map
 	 *
 	 * @returns true if passed
@@ -1048,8 +1085,7 @@ export class CommandManager extends Base {
 	/**
 	 * Sends a message showing help for a command.
 	 *
-	 * @param msg Framed Message containing command that needs to be shown help for
-	 *
+	 * @param msg BaseMessage object
 	 * @returns boolean value `true` if help is shown.
 	 */
 	async sendHelpForCommand(msg: BaseMessage): Promise<boolean> {
@@ -1099,7 +1135,7 @@ export class CommandManager extends Base {
 				throw new Error("Unknown message class");
 			}
 
-			await newMsg.getMessageElements(place, guild);
+			await newMsg.getMessageElements(place);
 			const success = await helpCommand.run(newMsg);
 			if (success) {
 				return true;
@@ -1113,11 +1149,11 @@ export class CommandManager extends Base {
 	}
 
 	/**
-	 * Sends error message
+	 * Sends an error message for friendly errors.
 	 *
-	 * @param msg
-	 * @param friendlyError
-	 * @param sendSeparateReply
+	 * @param msg BaseMessage object
+	 * @param friendlyError Friendly error to show
+	 * @param options Friendly error display options
 	 */
 	async sendErrorMessage(
 		msg: BaseMessage,
@@ -1135,7 +1171,7 @@ export class CommandManager extends Base {
 			msg instanceof DiscordInteraction
 		) {
 			const interaction = msg.discordInteraction.interaction;
-			if (interaction.isCommand() || interaction.isContextMenu()) {
+			if (interaction.isCommand() || interaction.isContextMenuCommand()) {
 				options = {};
 				options.ephemeral = true;
 			}
@@ -1161,12 +1197,15 @@ export class CommandManager extends Base {
 						await BasePluginObject.getMissingDiscordMemberPermissions(
 							msg,
 							msg.discord.member,
-							["SEND_MESSAGES", "EMBED_LINKS"]
+							[
+								PermissionFlagsBits.SendMessages,
+								PermissionFlagsBits.EmbedLinks,
+							]
 						);
 
 					useDm =
 						msg instanceof DiscordMessage &&
-						missingPerms.includes("SEND_MESSAGES");
+						missingPerms.includes("SendMessages");
 				}
 
 				if (useDm && msg.discord) {
@@ -1174,7 +1213,7 @@ export class CommandManager extends Base {
 						messageOptions as
 							| string
 							| Discord.MessagePayload
-							| Discord.MessageOptions
+							| Discord.BaseMessageOptions
 					);
 				} else if (msg instanceof DiscordInteraction) {
 					const interaction = msg.discordInteraction.interaction;
@@ -1241,22 +1280,24 @@ export class CommandManager extends Base {
 	): Promise<
 		| string
 		| Discord.MessagePayload
-		| Discord.MessageOptions
+		| Discord.BaseMessageOptions
 		| Discord.InteractionReplyOptions
 		| undefined
 	> {
-		let embed: Discord.MessageEmbed | undefined;
+		let embed: Discord.EmbedBuilder | undefined;
 		let messageOptions:
 			| string
 			| Discord.MessagePayload
-			| Discord.MessageOptions
+			| Discord.BaseMessageOptions
 			| Discord.InteractionReplyOptions
 			| undefined;
 
 		if (msg.discord) {
-			embed = EmbedHelper.getTemplate(
-				msg.discord,
-				await EmbedHelper.getCheckOutFooter(msg)
+			embed = (
+				await EmbedHelper.getTemplate(
+					msg.discord,
+					await EmbedHelper.getCheckOutFooter(msg)
+				)
 			)
 				.setTitle(friendlyError.friendlyName)
 				.setDescription(friendlyError.message);

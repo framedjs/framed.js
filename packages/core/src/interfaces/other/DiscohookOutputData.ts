@@ -10,7 +10,7 @@ export interface DiscohookOutputData {
 
 export interface DiscohookMessageData {
 	content: string | null;
-	embeds: Discord.MessageEmbedOptions[];
+	embeds: Discord.EmbedData[];
 	username?: string;
 	avatar_url?: string;
 }

@@ -14,7 +14,7 @@ export interface MessageOptions {
 	/**
 	 * The object the message data will be based off of.
 	 *
-	 * The base itself shouldnt be modified, but the rest of the Discord data
+	 * The base itself shouldn't be modified, but the rest of the Discord data
 	 * should be changed to fake a command, and override the base.
 	 */
 	base?: MessageOptions | BaseMessage;

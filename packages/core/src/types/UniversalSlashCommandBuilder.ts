@@ -3,7 +3,7 @@ import type {
 	SlashCommandSubcommandBuilder,
 	SlashCommandSubcommandGroupBuilder,
 	SlashCommandSubcommandsOnlyBuilder,
-} from "@discordjs/builders";
+} from "discord.js";
 
 export type UniversalSlashCommandBuilder =
 	| SlashCommandBuilder

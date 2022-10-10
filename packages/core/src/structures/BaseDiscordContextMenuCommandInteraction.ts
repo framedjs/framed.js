@@ -1,14 +1,14 @@
 import { BaseDiscordInteraction } from "./BaseDiscordInteraction";
 import { BasePlugin } from "./BasePlugin";
-import { ContextMenuCommandBuilder } from "@discordjs/builders";
+import { ContextMenuCommandBuilder } from "discord.js";
 import { DiscordInteraction } from "./DiscordInteraction";
 
-import type { BaseDiscordContextMenuInteractionOptions } from "../interfaces/BaseDiscordContextMenuInteractionOptions";
+import type { BaseDiscordContextMenuCommandInteractionOptions } from "../interfaces/BaseDiscordContextMenuCommandInteractionOptions";
 import type Discord from "discord.js";
 
-export abstract class BaseDiscordContextMenuInteraction
+export abstract class BaseDiscordContextMenuCommandInteraction
 	extends BaseDiscordInteraction
-	implements BaseDiscordContextMenuInteractionOptions
+	implements BaseDiscordContextMenuCommandInteractionOptions
 {
 	contextMenuBuilder: ContextMenuCommandBuilder;
 
@@ -16,7 +16,7 @@ export abstract class BaseDiscordContextMenuInteraction
 
 	constructor(
 		plugin: BasePlugin,
-		info: BaseDiscordContextMenuInteractionOptions
+		info: BaseDiscordContextMenuCommandInteractionOptions
 	) {
 		super(plugin, info);
 		this.contextMenuBuilder = info.contextMenuBuilder;
@@ -29,11 +29,10 @@ export abstract class BaseDiscordContextMenuInteraction
 	 *
 	 * @param msg Framed Discord interaction
 	 * @param interaction Discord.Interaction
-	 *
-	 * @returns true if successful
+	 * @returns `true` if successful
 	 */
 	abstract run(
 		msg: DiscordInteraction,
-		interaction: Discord.ContextMenuInteraction
+		interaction: Discord.ContextMenuCommandInteraction
 	): Promise<boolean>;
 }

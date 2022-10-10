@@ -1,12 +1,12 @@
 import type Discord from "discord.js";
 
-export interface DiscordCommandInteractionData {
+export interface DiscordChatInputInteractionData {
 	readonly type: "data";
 
 	/**
 	 * The Discord interaction object.
 	 */
-	readonly interaction: Discord.CommandInteraction;
+	readonly interaction: Discord.ChatInputCommandInteraction;
 
 	/**
 	 * The Discord client object.

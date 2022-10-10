@@ -1,5 +1,4 @@
 // Managers
-// export { ArgumentManger } from "./managers/ArgumentManager";
 export { CommandManager } from "./managers/CommandManager";
 export { FormattingManager } from "./managers/FormattingManager";
 export { PluginManager } from "./managers/PluginManager";
@@ -12,7 +11,7 @@ export { BasePlugin } from "./structures/BasePlugin";
 export { BasePluginObject } from "./structures/BasePluginObject";
 export { BaseCommand } from "./structures/BaseCommand";
 export { BaseDiscordButtonInteraction } from "./structures/BaseDiscordButtonInteraction";
-export { BaseDiscordContextMenuInteraction } from "./structures/BaseDiscordContextMenuInteraction";
+export { BaseDiscordContextMenuCommandInteraction } from "./structures/BaseDiscordContextMenuCommandInteraction";
 export { BaseDiscordInteraction } from "./structures/BaseDiscordInteraction";
 export { BaseDiscordMenuFlow } from "./structures/BaseDiscordMenuFlow";
 export { BaseDiscordMenuFlowPage } from "./structures/BaseDiscordMenuFlowPage";
@@ -24,8 +23,8 @@ export { BaseDiscordSelectMenuInteraction } from "./structures/BaseDiscordSelect
 export { BaseSubcommand } from "./structures/BaseSubcommand";
 export { BaseEvent } from "./structures/BaseEvent";
 export { DiscordMessage } from "./structures/DiscordMessage";
+export { DiscordChatInputInteraction } from "./structures/DiscordChatInputInteraction";
 export { DiscordInteraction } from "./structures/DiscordInteraction";
-export { DiscordCommandInteraction } from "./structures/DiscordCommandInteraction";
 export { TwitchMessage } from "./structures/TwitchMessage";
 
 // Interfaces
@@ -107,15 +106,10 @@ export { version } from "./utils/Version";
 // Logger
 export { Logger, defaultLevels, defaultFormat } from "@framedjs/logger";
 
-// Discord export to avoid MessageEmbed empty message bugs, since
+// Discord export to avoid Embed empty message bugs, since
 // checking instanceof classes doesn't work without the internal Discord module
 import * as Discord from "discord.js";
 export { Discord };
-
-// Slash commands
-export * as DiscordJsBuilders from "@discordjs/builders";
-export { REST as DiscordJsREST } from "@discordjs/rest";
-export * as DiscordJsApi from "discord-api-types/v10";
 
 // Twitch exports because things will probably go wrong without it, like with Discord.js
 import * as Twitch from "twitch";

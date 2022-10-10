@@ -2,6 +2,7 @@ import { Logger } from "@framedjs/logger";
 import { BaseCommand } from "../../../structures/BaseCommand";
 import { BaseMessage } from "../../../structures/BaseMessage";
 import { BasePlugin } from "../../../structures/BasePlugin";
+import Discord from "discord.js";
 import v8 from "v8";
 import fs from "fs";
 import path from "path";
@@ -19,7 +20,7 @@ export default class HeapDump extends BaseCommand {
 			about: "Creates a heap dump in the data/dumps folder",
 			botPermissions: {
 				discord: {
-					permissions: ["SEND_MESSAGES"],
+					permissions: [Discord.PermissionFlagsBits.SendMessages],
 				},
 			},
 			userPermissions: {

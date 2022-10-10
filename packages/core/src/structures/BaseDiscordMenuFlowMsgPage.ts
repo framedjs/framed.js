@@ -2,10 +2,10 @@ import { BaseDiscordMenuFlowStartPage } from "./BaseDiscordMenuFlowStartPage";
 import { DiscordInteraction } from "./DiscordInteraction";
 import { DiscordMessage } from "./DiscordMessage";
 import { DiscordUtils } from "../utils/discord/DiscordUtils";
-import Discord from "discord.js";
 import { FriendlyError } from "./errors/FriendlyError";
 import { InternalError } from "./errors/InternalError";
 import { Logger } from "@framedjs/logger";
+import Discord from "discord.js";
 
 import type { DiscordMenuFlowIdData } from "../interfaces/DiscordMenuFlowIdData";
 import type { BaseDiscordMenuFlowMsgPageOptions } from "../interfaces/BaseDiscordMenuFlowMsgPageOptions";
@@ -21,7 +21,7 @@ export abstract class BaseDiscordMenuFlowMsgPage extends BaseDiscordMenuFlowStar
 		let usedMessageHistory = false;
 		if (msg instanceof DiscordInteraction) {
 			const interaction = msg.discordInteraction.interaction;
-			if (interaction.isContextMenu()) {
+			if (interaction.isContextMenuCommand()) {
 				const newMessage = interaction.options.getMessage(
 					"message",
 					true
@@ -40,7 +40,7 @@ export abstract class BaseDiscordMenuFlowMsgPage extends BaseDiscordMenuFlowStar
 						channelId: options?.channelId ?? msg.discord.channel.id,
 					}
 				);
-			} else if (interaction.isCommand()) {
+			} else if (interaction.isChatInputCommand()) {
 				const messageLinkOrId = interaction.options.getString(
 					"message",
 					true

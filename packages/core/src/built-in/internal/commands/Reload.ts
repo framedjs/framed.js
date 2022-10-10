@@ -7,6 +7,7 @@ import InternalPlugin, {
 	InternalParsePluginCommandOptions,
 } from "../Internal.plugin";
 import { FriendlyError } from "../../../structures/errors/FriendlyError";
+import Discord from "discord.js";
 
 export default class extends BaseCommand {
 	constructor(plugin: BasePlugin) {
@@ -16,7 +17,7 @@ export default class extends BaseCommand {
 			usage: "[all]",
 			botPermissions: {
 				discord: {
-					permissions: ["SEND_MESSAGES"],
+					permissions: [Discord.PermissionFlagsBits.SendMessages],
 				},
 			},
 			userPermissions: {
