@@ -7,7 +7,7 @@ export abstract class Provider extends Base {
 
 	constructor(baseProvider: BaseProvider) {
 		super(baseProvider.client);
-		this.baseProvider = baseProvider;	
+		this.baseProvider = baseProvider;
 	}
 
 	/**

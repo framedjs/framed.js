@@ -28,7 +28,7 @@ export class DiscordBotMissingPermissionsError extends FriendlyError {
 		if (!options.action) {
 			options.action = "command";
 		}
-		
+
 		this.message = `The bot is missing some permissions.`;
 		if (options.extraMessage) {
 			this.message += ` ${options.extraMessage}`;

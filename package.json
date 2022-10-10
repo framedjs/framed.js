@@ -11,7 +11,8 @@
     "build": "pnpm recursive run build",
     "build:watch": "pnpm recursive run build:watch --sort",
     "test": "pnpm recursive run test",
-    "test:watch": "pnpm recursive run test:watch"
+    "test:watch": "pnpm recursive run test:watch",
+    "prettier": "prettier --write \"packages/**/src/**/*.ts\""
   },
   "devDependencies": {
     "@changesets/cli": "^2.23.2",

@@ -1,11 +1,11 @@
 import type Discord from "discord.js";
 
 export interface DiscordInteractionDataOptions {
-	readonly type: 'dataOptions';
+	readonly type: "dataOptions";
 
 	/**
 	 * The object the interaction data will be based off of.
-	 * 
+	 *
 	 * The base itself shouldn't be modified, but the rest of the Discord data
 	 * should be changed to fake a command, and override the base.
 	 */

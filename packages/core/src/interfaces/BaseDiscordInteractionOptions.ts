@@ -10,7 +10,7 @@ export interface BaseDiscordInteractionOptions {
 	paths?: {
 		subcommands?: string;
 	};
-	
+
 	/** Extra notes about the command, that isn't in the description. */
 	notes?: string;
 

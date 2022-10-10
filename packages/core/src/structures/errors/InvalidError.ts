@@ -19,7 +19,7 @@ export class InvalidError extends FriendlyError {
 		 * capitalized, pass in the name with capitals here.
 		 */
 		lowercaseName?: string;
-		
+
 		/**
 		 * The message after the main not found message. This can be debug info.
 		 */

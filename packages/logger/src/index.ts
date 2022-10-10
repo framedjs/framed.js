@@ -1,7 +1,7 @@
-import Colors from "colors";
-import Winston from "winston";
+import colors from "colors";
+import winston from "winston";
 
-const format = Winston.format;
+const format = winston.format;
 
 /**
  * Customized default levels (npm) and their respective colors.
@@ -38,7 +38,7 @@ export const defaultFormat = format.combine(
 		format: "HH:mm:ss",
 	}),
 	format.printf(info => {
-		const timestamp = Colors.gray(`[${info.timestamp}]`);
+		const timestamp = colors.gray(`[${info.timestamp}]`);
 		return `${timestamp} ${info.level}: ${info.message}`;
 	})
 );
@@ -47,9 +47,9 @@ export const defaultFormat = format.combine(
  * The default Logger.
  * @see https://github.com/winstonjs/winston
  */
-export const Logger = Winston.createLogger({
+export const Logger = winston.createLogger({
 	level: "silly",
 	levels: defaultLevels.levels,
 	format: defaultFormat,
-	transports: [new Winston.transports.Console()],
+	transports: [new winston.transports.Console()],
 });

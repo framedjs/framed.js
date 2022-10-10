@@ -9,6 +9,7 @@ import type {
 	TwitchLoginOptions,
 } from "../interfaces/LoginOptions";
 import { BaseMessage } from "./BaseMessage";
+import { DiscordChatInputInteraction } from "./DiscordChatInputInteraction";
 import { DiscordMessage } from "./DiscordMessage";
 import { DiscordInteraction } from "./DiscordInteraction";
 import { TwitchMessage } from "./TwitchMessage";
@@ -22,7 +23,6 @@ import { version } from "../utils/Version";
 
 import { CommandManager } from "../managers/CommandManager";
 import { BaseProvider } from "../providers/BaseProvider";
-import { DiscordCommandInteraction } from "./DiscordCommandInteraction";
 
 const DEFAULT_PREFIX = "!";
 
@@ -130,7 +130,7 @@ export class Client extends EventEmitter {
 				// Sets up some Discord events and logs into Discord
 				this.discord.client = new Discord.Client(
 					options.clientOptions ?? {
-						intents: [Discord.Intents.FLAGS.GUILDS],
+						intents: [Discord.IntentsBitField.Flags.Guilds],
 					}
 				);
 				this.discord.client.token = options?.token ?? null;
@@ -249,17 +249,20 @@ export class Client extends EventEmitter {
 					try {
 						if (
 							partialOld.guild?.available &&
-							partialOld.guild?.me &&
+							partialOld.guild?.members.me &&
 							partialOld.channel instanceof Discord.GuildChannel
 						) {
-							const requestedBotPerms = new Discord.Permissions([
-								"READ_MESSAGE_HISTORY",
-							]);
-							const actualBotPerms = new Discord.Permissions(
-								partialOld.guild.me.permissionsIn(
-									partialOld.channel
-								)
-							);
+							const requestedBotPerms =
+								new Discord.PermissionsBitField([
+									Discord.PermissionFlagsBits
+										.ReadMessageHistory,
+								]);
+							const actualBotPerms =
+								new Discord.PermissionsBitField(
+									partialOld.guild.members.me.permissionsIn(
+										partialOld.channel
+									)
+								);
 
 							if (
 								actualBotPerms.missing(requestedBotPerms)
@@ -286,7 +289,7 @@ export class Client extends EventEmitter {
 				}
 
 				// Edge case: pinned uncached messages could still go through.
-				// Pins shouldn't be treated as retriggering of commands
+				// Pins shouldn't be treated as re-triggering of commands
 				if (
 					!partialOld.partial &&
 					!partialOld.pinned &&
@@ -314,7 +317,7 @@ export class Client extends EventEmitter {
 		client.on("interactionCreate", async interaction => {
 			let msg: DiscordInteraction;
 			if (interaction.isCommand()) {
-				msg = new DiscordCommandInteraction({
+				msg = new DiscordChatInputInteraction({
 					client: this,
 					discordInteraction: interaction,
 				});
