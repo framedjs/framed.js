@@ -1,5 +1,11 @@
 # @framedjs/core
 
+## 0.13.0-next.0
+
+### Minor Changes
+
+-   4d7a92a: update to discord.js v14
+
 ## 0.12.1
 
 ### Patch Changes
