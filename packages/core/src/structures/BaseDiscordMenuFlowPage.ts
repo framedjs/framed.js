@@ -343,7 +343,7 @@ export abstract class BaseDiscordMenuFlowPage extends BasePluginObject {
 			}
 		}
 		if (base) {
-			return `${base}\n`;
+			return `${base}\n_ _`;
 		} else {
 			return "";
 		}
