@@ -316,7 +316,7 @@ export class Client extends EventEmitter {
 
 		client.on("interactionCreate", async interaction => {
 			let msg: DiscordInteraction;
-			if (interaction.isCommand()) {
+			if (interaction.isChatInputCommand()) {
 				msg = new DiscordChatInputInteraction({
 					client: this,
 					discordInteraction: interaction,
