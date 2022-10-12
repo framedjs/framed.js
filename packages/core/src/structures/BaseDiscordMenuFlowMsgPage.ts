@@ -32,7 +32,10 @@ export abstract class BaseDiscordMenuFlowMsgPage extends BaseDiscordMenuFlowStar
 					);
 				}
 				message = newMessage;
-			} else if (interaction.isSelectMenu() || interaction.isButton()) {
+			} else if (
+				interaction.isMessageComponent() ||
+				interaction.isModalSubmit()
+			) {
 				message = await DiscordUtils.getMessageWithRenderOptions(
 					msg.discord.client,
 					{
