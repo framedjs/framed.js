@@ -7,15 +7,13 @@ import { DiscordMessage } from "./DiscordMessage";
 import { DiscordInteraction } from "./DiscordInteraction";
 import { TwitchMessage } from "./TwitchMessage";
 import { EmbedHelper } from "../utils/discord/EmbedHelper";
+import { InternalError } from "./errors/InternalError";
 import { Logger } from "@framedjs/logger";
 import { Utils } from "@framedjs/shared";
-import {
-	oneLine,
-	oneLineCommaListsOr,
-	oneLineInlineLists,
-	stripIndents,
-} from "common-tags";
+import { oneLine, oneLineInlineLists, stripIndents } from "common-tags";
 
+import type { BaseDiscordMenuFlowPageRenderOptions } from "../interfaces/BaseDiscordMenuFlowPageRenderOptions";
+import type { BasePluginObjectHandlePermissionChecksOptions } from "../interfaces/BasePluginObjectHandlePermissionChecksOptions";
 import type { BasePluginObjectOptions } from "../interfaces/BasePluginObjectOptions";
 import type {
 	UserPermissionAllowedData,
@@ -29,7 +27,6 @@ import type {
 import type { BotPermissions } from "../interfaces/BotPermissions";
 import type { UserPermissions } from "../interfaces/UserPermissions";
 import type { DiscordMessageData } from "../interfaces/DiscordMessageData";
-import { InternalError } from "./errors/InternalError";
 
 interface BasePluginObjectPermissionMessage {
 	discord?: {
@@ -1131,5 +1128,54 @@ export abstract class BasePluginObject extends Base {
 					"An error occurred when getting the user permission error message.",
 			},
 		};
+	}
+
+	/**
+	 * Handles permission checking if both the user and bot can run a command.
+	 *
+	 * @param msg BaseMessage object
+	 * @param options Options for handling
+	 * @returns `true` if passed permission checks
+	 */
+	async handlePermissionChecks(
+		msg: BaseMessage,
+		options?: BasePluginObjectHandlePermissionChecksOptions,
+		pageRenderOptions?: BaseDiscordMenuFlowPageRenderOptions
+	) {
+		if (options?.checkBotPermissions != false) {
+			const data = await this.checkBotPermissions(msg);
+			if (!data.success) {
+				const sent =
+					await BasePluginObject.sendBotPermissionErrorMessage(
+						msg,
+						this.botPermissions,
+						data
+					);
+				if (!sent) {
+					Logger.error(oneLine`"${this.id}" tried to send
+					a user permission error message, but something went wrong!`);
+				}
+				return false;
+			}
+		}
+
+		if (options?.checkUserPermissions != false) {
+			const data = this.checkUserPermissions(msg);
+			if (!data.success) {
+				const sent =
+					await BasePluginObject.sendUserPermissionErrorMessage(
+						msg,
+						this.userPermissions,
+						data
+					);
+				if (!sent) {
+					Logger.error(oneLine`"${this.id}" tried to send
+					a user permission error message, but something went wrong!`);
+				}
+				return false;
+			}
+		}
+
+		return true;
 	}
 }

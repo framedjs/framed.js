@@ -1,6 +1,6 @@
+import { BaseDiscordMenuFlowBase } from "./BaseDiscordMenuFlowBase";
 import { BaseDiscordMenuFlowPage } from "../structures/BaseDiscordMenuFlowPage";
 import { BasePlugin } from "../structures/BasePlugin";
-import { BasePluginObject } from "./BasePluginObject";
 import { DiscordInteraction } from "../structures/DiscordInteraction";
 import { DiscordMessage } from "../structures/DiscordMessage";
 import { Utils } from "@framedjs/shared";
@@ -18,9 +18,8 @@ import type { BaseDiscordMenuFlowSelectMenuReturnOptions } from "../interfaces/B
 import type { DiscordMenuFlowIdData } from "../interfaces/DiscordMenuFlowIdData";
 import type { DiscordMenuFlowParseIdData } from "../interfaces/DiscordMenuFlowParseIdData";
 import type { RequireAllOptions } from "@framedjs/shared";
-import type { UserPermissionsMenuFlow } from "../interfaces/UserPermissionsMenuFlow";
 
-export abstract class BaseDiscordMenuFlow extends BasePluginObject {
+export abstract class BaseDiscordMenuFlow extends BaseDiscordMenuFlowBase {
 	readonly rawId: string;
 	readonly idInteractionFlag = "i";
 	readonly idMessageFlag = "m";
@@ -29,9 +28,6 @@ export abstract class BaseDiscordMenuFlow extends BasePluginObject {
 
 	/** Indicates what kind of plugin object this is. */
 	type: "menuflow" = "menuflow";
-
-	/** User permissions needed to run the menu flow page. */
-	userPermissions?: UserPermissionsMenuFlow;
 
 	pages = new Map<string, BaseDiscordMenuFlowPage>();
 

@@ -945,8 +945,7 @@ export class CommandManager extends Base {
 	 * @param msg BaseMessage object
 	 * @param base BasePluginObject
 	 * @param map Optional results map
-	 *
-	 * @returns true if passed
+	 * @returns `true` if passed
 	 */
 	async checkForPermissions(
 		msg: BaseMessage,
@@ -954,71 +953,18 @@ export class CommandManager extends Base {
 		map?: Map<string, boolean>,
 		pageRenderOptions?: BaseDiscordMenuFlowPageRenderOptions
 	): Promise<boolean> {
-		// Checks automatically for user permissions
-		if (base.userPermissions?.checkAutomatically != false) {
-			let data: UserPermissionAllowedData | UserPermissionDeniedData;
-			if (
-				base instanceof BaseDiscordMenuFlow ||
-				base instanceof BaseDiscordMenuFlowPage
-			) {
-				data = base.checkUserPermissions(
-					msg,
-					base.userPermissions,
-					pageRenderOptions
-				);
-			} else {
-				data = base.checkUserPermissions(msg);
-			}
-			if (!data.success) {
-				const sent = await base.sendUserPermissionErrorMessage(
-					msg,
-					base.userPermissions,
-					data
-				);
-				if (!sent) {
-					Logger.error(oneLine`"${base.id}" tried to send
-					a user permission error message, but something went wrong!`);
-				}
-				map?.set(base.fullId, false);
-				return false;
-			}
-		}
-
-		// Checks automatically for bot permissions
-		if (
-			!(
-				base instanceof BaseDiscordButtonInteraction ||
-				base instanceof BaseDiscordSelectMenuInteraction
-			) &&
-			base.botPermissions?.checkAutomatically != false
-		) {
-			const data = await base.checkBotPermissions(msg);
-			if (!data.success) {
-				let sent = false;
-				let sentError: Error | undefined;
-				try {
-					sent = await base.sendBotPermissionErrorMessage(
-						msg,
-						base.botPermissions,
-						data
-					);
-				} catch (error) {
-					sentError = error as Error;
-				}
-
-				if (sentError) {
-					Logger.error(sentError);
-				} else if (!sent) {
-					Logger.error(oneLine`"${base.id}" tried to send
-					a user permission error message, but something went wrong!`);
-				}
-
-				map?.set(base.fullId, false);
-				return false;
-			}
-		}
-
-		return true;
+		const results = await base.handlePermissionChecks(
+			msg,
+			{
+				checkUserPermissions:
+					base.userPermissions?.checkAutomatically != false,
+				checkBotPermissions:
+					base.botPermissions?.checkAutomatically != false,
+			},
+			pageRenderOptions
+		);
+		map?.set(base.fullId, results);
+		return results;
 	}
 
 	async processCooldownCheck(

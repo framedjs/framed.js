@@ -1,36 +1,22 @@
 import { BaseCommand } from "./BaseCommand";
 import { BaseDiscordMenuFlow } from "./BaseDiscordMenuFlow";
+import { BaseDiscordMenuFlowBase } from "./BaseDiscordMenuFlowBase";
 import { BaseMessage } from "./BaseMessage";
-import { BasePluginObject } from "./BasePluginObject";
 import { BasePlugin } from "./BasePlugin";
 import { DiscordInteraction } from "./DiscordInteraction";
 import { DiscordMessage } from "./DiscordMessage";
-import Discord from "discord.js";
 import { ImportError } from "./errors/non-friendly/ImportError";
-import LZString from "lz-string";
 import { Logger } from "@framedjs/logger";
+import Discord from "discord.js";
+import lz4 from "lz-string";
 
 import type { BaseDiscordMenuFlowPageOptions } from "../interfaces/BaseDiscordMenuFlowPageOptions";
 import type { BaseDiscordMenuFlowPageRenderOptions } from "../interfaces/BaseDiscordMenuFlowPageRenderOptions";
-import type { BotPermissions } from "../interfaces/BotPermissions";
 import type { DiscordMenuFlowIdData } from "../interfaces/DiscordMenuFlowIdData";
-import type { UserPermissionsMenuFlow } from "../interfaces/UserPermissionsMenuFlow";
-import type {
-	UserPermissionAllowedData,
-	UserPermissionDeniedData,
-} from "../interfaces/UserPermissionData";
 
-export abstract class BaseDiscordMenuFlowPage extends BasePluginObject {
-	plugin: BasePlugin;
-
+export abstract class BaseDiscordMenuFlowPage extends BaseDiscordMenuFlowBase {
 	/** Indicates what kind of plugin object this is. */
 	type: "menuflowpage" = "menuflowpage";
-
-	/** Bot permissions needed to run the menu flow page. */
-	botPermissions?: BotPermissions;
-
-	/** User permissions needed to run the menu flow page. */
-	userPermissions?: UserPermissionsMenuFlow;
 
 	constructor(
 		readonly menu: BaseDiscordMenuFlow,
@@ -67,40 +53,12 @@ export abstract class BaseDiscordMenuFlowPage extends BasePluginObject {
 	): Promise<boolean>;
 
 	/**
-	 * Shows data for if a user has a permission to do something.
-	 *
-	 * NOTE: If userPermissions is undefined, this will return a success.
-	 *
-	 * @param msg
-	 * @param userPermissions
-	 */
-	checkUserPermissions(
-		msg: BaseMessage,
-		userPermissions = this.userPermissions,
-		options?: DiscordMenuFlowIdData
-	): UserPermissionAllowedData | UserPermissionDeniedData {
-		if (userPermissions?.discord?.checkOriginalUser != false) {
-			if (options?.userId != msg.discord?.author.id) {
-				return {
-					success: false,
-					reasons: ["discordUserMenuFlow"],
-					msg,
-				};
-			}
-		}
-
-		return BaseCommand.checkUserPermissions(msg, userPermissions);
-	}
-
-	/**
 	 * Checks for if a user has the permission to do something.
 	 *
 	 * NOTE: If userPermissions is undefined, this returns true.
 	 *
 	 * @param msg
 	 * @param userPermissions
-	 * @param checkAdmin
-	 * @param checkOwner
 	 */
 	hasUserPermission(
 		msg: BaseMessage,
@@ -263,7 +221,7 @@ export abstract class BaseDiscordMenuFlowPage extends BasePluginObject {
 			id.length
 		} char(s) ${type}`;
 		if (id.startsWith(BaseDiscordMenuFlow.lzStringFlag)) {
-			const newId = LZString.decompressFromUTF16(
+			const newId = lz4.decompressFromUTF16(
 				id.slice(BaseDiscordMenuFlow.lzStringFlag.length, id.length)
 			);
 			if (newId) {
