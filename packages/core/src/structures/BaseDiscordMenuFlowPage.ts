@@ -301,7 +301,7 @@ export abstract class BaseDiscordMenuFlowPage extends BaseDiscordMenuFlowBase {
 			}
 		}
 		if (base) {
-			return `${base}\n_ _`;
+			return `${base}\n_ _\n`;
 		} else {
 			return "";
 		}
