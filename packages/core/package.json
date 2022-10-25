@@ -18,10 +18,10 @@
 	},
 	"dependencies": {
 		"@framedjs/logger": "workspace:^0.1.0",
-		"@framedjs/shared": "workspace:^0.3.0",
+		"@framedjs/shared": "workspace:^0.4.0",
 		"axios": "^0.22.0",
 		"common-tags": "^1.8.2",
-		"discord-api-types": "^0.37.12",
+		"discord-api-types": "^0.37.14",
 		"emoji-regex": "^9.2.2",
 		"lz-string": "^1.4.4",
 		"nanoid": "^3.3.4",

@@ -6,6 +6,13 @@
 
 -   4d7a92a: update to discord.js v14
 
+## 0.12.2
+
+### Patch Changes
+
+-   Updated dependencies [34c9908]
+    -   @framedjs/shared@0.4.0
+
 ## 0.12.1
 
 ### Patch Changes

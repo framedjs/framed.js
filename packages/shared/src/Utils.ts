@@ -57,7 +57,7 @@ export class Utils {
 	 * Generates a random number, as an integer
 	 *
 	 * @param min Minimum number
-	 * @param max Maxiumum number (inclusive)
+	 * @param max Maximum number (inclusive)
 	 */
 	static randomNumber(min: number, max: number): number {
 		if (max < min) {
@@ -100,46 +100,37 @@ export class Utils {
 	/**
 	 * Gets the time elapsed between high-resolution times with `process.hrtime()`
 	 * @param startTime The start high-resolution time
+	 * @param sendSeconds Send the "s" character after the number.
+	 * @returns string
 	 */
 	static hrTimeElapsed(
-		startTime: [number, number],
+		startTime: [number, number] | bigint,
 		sendSeconds = false
-	): string {
+	) {
 		// Gets the difference between the start time, and now
-		const diffTime = process.hrtime(startTime);
+		const diffTime =
+			typeof startTime == "bigint"
+				? process.hrtime.bigint() - startTime
+				: process.hrtime(startTime);
 		return this.formatHrTime(diffTime, sendSeconds);
 	}
-
+	
 	/**
-	 * The diffTime
+	 * Get the difference in seconds.
+	 * @param diffTime The difference between a start time, and now.
+	 * @param sendSeconds Send the "s" character after the number.
+	 * @returns string
 	 */
 	static formatHrTime(
-		diffTime: [number, number],
+		diffTime: [number, number] | bigint,
 		sendSeconds = false
-	): string {
+	) {
 		const secondStr = sendSeconds ? "s" : "";
-
-		// Gets the seconds value
-		const s = diffTime[0];
-
-		// Gets the ms value
-		/**
-		 * First, the process.hrtime value is divided by 1.0*10^6 (1000000)
-		 * and is used to get the proper millisecond value.
-		 *
-		 * We can't use this number value immediately, as there's decimals.
-		 * To change that, we round the value.
-		 *
-		 * Now, we need it to be a string for padding zeros.
-		 *
-		 * Finally, we add extra zeros at the start of our new number string.
-		 * It's set to have 3 zeros at most.
-		 */
-		const ms = Math.round(diffTime[1] / 1e6)
-			.toString()
-			.padStart(3, "0");
-
-		return `${s}.${ms}${secondStr}`;
+		const bigIntRep =
+			typeof diffTime == "bigint"
+				? diffTime
+				: BigInt(diffTime[0]) * BigInt(1e9) + BigInt(diffTime[1]);
+		return `${(Number(bigIntRep) / 1e9).toFixed(3)}${secondStr}`;
 	}
 
 	//#endregion
