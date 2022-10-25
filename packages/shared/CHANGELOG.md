@@ -1,5 +1,11 @@
 # @framedjs/shared
 
+## 0.4.0
+
+### Minor Changes
+
+-   34c9908: Take bigint in hrTime functions, fixes x.1000 rendering bug
+
 ## 0.3.0
 
 ### Minor Changes
