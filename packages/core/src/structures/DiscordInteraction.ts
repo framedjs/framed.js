@@ -1,5 +1,6 @@
 import { oneLine } from "common-tags";
 import { BaseMessage } from "./BaseMessage";
+import { InternalError } from "./errors/InternalError";
 import { Logger } from "@framedjs/logger";
 import Discord from "discord.js";
 
@@ -187,10 +188,16 @@ export class DiscordInteraction extends BaseMessage {
 		extraOptions?: DiscordInteractionSendOptions
 	): Promise<void> {
 		const interaction = this.discordInteraction.interaction;
-		if (interaction.isCommand() || interaction.isMessageComponent()) {
+		if (
+			interaction.isCommand() ||
+			interaction.isMessageComponent() ||
+			interaction.isModalSubmit()
+		) {
 			const canEditReply = interaction.deferred || interaction.replied;
 			const canUpdate =
-				(interaction.isButton() || interaction.isSelectMenu()) &&
+				(interaction.isMessageComponent() ||
+					(interaction.isModalSubmit() &&
+						interaction.isFromMessage())) &&
 				!interaction.replied;
 			const shouldEditReply = extraOptions?.editReply != false;
 
@@ -220,6 +227,10 @@ export class DiscordInteraction extends BaseMessage {
 			} else {
 				await interaction.reply(options);
 			}
+		} else {
+			throw new InternalError(
+				`Can't send a response, as this interaction isn't able to do so.`
+			);
 		}
 	}
 }
