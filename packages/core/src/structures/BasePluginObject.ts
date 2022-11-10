@@ -835,11 +835,10 @@ export abstract class BasePluginObject extends Base {
 
 	/**
 	 * Sends an error message, with what permissions the user needs to work with.
-	 *
 	 * @param msg
-	 * @param userPermissions
+	 * @param permissions
 	 * @param deniedData
-	 * @returns
+	 * @returns BasePluginObjectPermissionMessage
 	 */
 	static async getUserPermissionErrorMessage(
 		msg: BaseMessage,
