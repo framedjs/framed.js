@@ -314,7 +314,10 @@ export abstract class BaseDiscordMenuFlow extends BaseDiscordMenuFlowBase {
 								ephemeral: true,
 							},
 							options,
-							msg.discord.author.id != options.userId
+							{
+								editReply:
+									msg.discord.author.id != options.userId,
+							}
 						);
 					}
 				} else {

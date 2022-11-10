@@ -13,6 +13,7 @@ import lz4 from "lz-string";
 import type { BaseDiscordMenuFlowPageOptions } from "../interfaces/BaseDiscordMenuFlowPageOptions";
 import type { BaseDiscordMenuFlowPageRenderOptions } from "../interfaces/BaseDiscordMenuFlowPageRenderOptions";
 import type { DiscordMenuFlowIdData } from "../interfaces/DiscordMenuFlowIdData";
+import type { DiscordInteractionSendOptions } from "../interfaces/DiscordInteractionSendOptions";
 
 export abstract class BaseDiscordMenuFlowPage extends BaseDiscordMenuFlowBase {
 	/** Indicates what kind of plugin object this is. */
@@ -95,7 +96,7 @@ export abstract class BaseDiscordMenuFlowPage extends BaseDiscordMenuFlowBase {
 	 * @param msg
 	 * @param messageOptions
 	 * @param dataOptions
-	 * @param reply If true, replies instead of edits
+	 * @param extraOptions
 	 */
 	async send(
 		msg: DiscordMessage | DiscordInteraction,
@@ -106,7 +107,7 @@ export abstract class BaseDiscordMenuFlowPage extends BaseDiscordMenuFlowBase {
 			| Discord.MessagePayload
 			| Discord.InteractionReplyOptions,
 		dataOptions: DiscordMenuFlowIdData,
-		reply?: boolean
+		extraOptions?: DiscordInteractionSendOptions
 	) {
 		// Get debug text
 		let debugContent: string | undefined;
@@ -128,7 +129,7 @@ export abstract class BaseDiscordMenuFlowPage extends BaseDiscordMenuFlowBase {
 		}
 
 		try {
-			if (reply) {
+			if (extraOptions?.editReply == false) {
 				if (
 					msg instanceof DiscordInteraction &&
 					msg.discordInteraction.interaction.isRepliable()
@@ -181,9 +182,6 @@ export abstract class BaseDiscordMenuFlowPage extends BaseDiscordMenuFlowBase {
 		components?:
 			| Discord.ActionRowBuilder
 			| Discord.ActionRowBuilder[]
-			// | Discord.MessageActionRowComponent[]
-			// | Discord.ComponentBuilder[]
-			// | Discord.ActionRowComponent
 			| (
 					| Discord.JSONEncodable<
 							Discord.APIActionRowComponent<Discord.APIMessageActionRowComponent>
@@ -234,7 +232,6 @@ export abstract class BaseDiscordMenuFlowPage extends BaseDiscordMenuFlowBase {
 	private _getDebugContentFromComponents(
 		components?:
 			| Discord.ActionRowBuilder[]
-			// | Discord.MessageActionRowComponent[]
 			| (
 					| Discord.JSONEncodable<
 							Discord.APIActionRowComponent<Discord.APIMessageActionRowComponent>
