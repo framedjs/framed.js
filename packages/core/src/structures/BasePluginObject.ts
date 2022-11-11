@@ -591,7 +591,19 @@ export abstract class BasePluginObject extends Base {
 			if (!useDm) {
 				try {
 					if (msg.discord.msg?.reference) {
-						await msg.discord.msg.reply(options);
+						let replied = false;
+						if (msg instanceof DiscordInteraction) {
+							const interaction =
+								msg.discordInteraction.interaction;
+							if ("reply" in interaction) {
+								await interaction.reply(options);
+								replied = true;
+							}
+						}
+
+						if (!replied) {
+							await msg.discord.msg.reply(options);
+						}
 					} else {
 						await msg.send(
 							options as (
