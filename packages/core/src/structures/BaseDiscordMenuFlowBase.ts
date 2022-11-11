@@ -63,7 +63,8 @@ export abstract class BaseDiscordMenuFlowBase extends BasePluginObject {
 					await BasePluginObject.sendUserPermissionErrorMessage(
 						msg,
 						this.userPermissions,
-						data
+						data,
+						this
 					);
 				if (!sent) {
 					Logger.error(oneLine`"${this.id}" tried to send
