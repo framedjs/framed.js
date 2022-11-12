@@ -119,12 +119,17 @@ export abstract class BaseDiscordMenuFlowPage extends BaseDiscordMenuFlowBase {
 				dataOptions,
 				messageOptions.components
 			);
-			messageOptions.content = `${debugContent ?? ""}${
-				messageOptions.content ?? ""
-			}`;
 
-			if (messageOptions.content.length == 0) {
-				messageOptions.content = undefined;
+			// If there's no debug content, don't
+			// mess with message contents
+			if (debugContent) {
+				messageOptions.content = `${debugContent ?? ""}${
+					messageOptions.content ?? ""
+				}`;
+
+				if (messageOptions.content.length == 0) {
+					messageOptions.content = undefined;
+				}
 			}
 		}
 
