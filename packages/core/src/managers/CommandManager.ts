@@ -29,10 +29,6 @@ import util from "util";
 import type { BaseDiscordMenuFlowPageRenderOptions } from "../interfaces/BaseDiscordMenuFlowPageRenderOptions";
 import type { FoundCommandData } from "../interfaces/FoundCommandData";
 import type { HandleFriendlyErrorOptions } from "../interfaces/HandleFriendlyErrorOptions";
-import type {
-	UserPermissionAllowedData,
-	UserPermissionDeniedData,
-} from "../interfaces/UserPermissionData";
 import type { Place } from "../interfaces/Place";
 
 export class CommandManager extends Base {
