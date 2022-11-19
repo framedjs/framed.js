@@ -177,8 +177,8 @@ export class DiscordInteraction extends BaseMessage {
 
 	/**
 	 * Sends a message on Discord, through interactions.
-	 *
 	 * @param options
+	 * @param extraOptions
 	 */
 	async send(
 		options:
@@ -198,7 +198,7 @@ export class DiscordInteraction extends BaseMessage {
 				(interaction.isMessageComponent() ||
 					(interaction.isModalSubmit() &&
 						interaction.isFromMessage())) &&
-				!interaction.replied;
+				!canEditReply;
 			const shouldEditReply = extraOptions?.editReply != false;
 
 			if (shouldEditReply && (canEditReply || canUpdate)) {
