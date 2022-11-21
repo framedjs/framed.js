@@ -5,6 +5,7 @@ import { BaseMessage } from "./BaseMessage";
 import { BasePlugin } from "./BasePlugin";
 import { DiscordInteraction } from "./DiscordInteraction";
 import { DiscordMessage } from "./DiscordMessage";
+import { FriendlyError } from "./errors/FriendlyError";
 import { ImportError } from "./errors/non-friendly/ImportError";
 import { Logger } from "@framedjs/logger";
 import Discord from "discord.js";
@@ -14,6 +15,7 @@ import type { BaseDiscordMenuFlowPageOptions } from "../interfaces/BaseDiscordMe
 import type { BaseDiscordMenuFlowPageRenderOptions } from "../interfaces/BaseDiscordMenuFlowPageRenderOptions";
 import type { DiscordMenuFlowIdData } from "../interfaces/DiscordMenuFlowIdData";
 import type { DiscordInteractionSendOptions } from "../interfaces/DiscordInteractionSendOptions";
+import type { HandleFriendlyErrorOptions } from "../interfaces/HandleFriendlyErrorOptions";
 
 export abstract class BaseDiscordMenuFlowPage extends BaseDiscordMenuFlowBase {
 	/** Indicates what kind of plugin object this is. */
@@ -174,6 +176,75 @@ export abstract class BaseDiscordMenuFlowPage extends BaseDiscordMenuFlowBase {
 			}
 			throw error;
 		}
+	}
+
+	/**
+	 * Handles errors and {@link FriendlyError}s.
+	 *
+	 * @remarks handleOptions.ephemeral will default to dataOptions.ephemeral
+	 *
+	 * @param msg
+	 * @param error
+	 * @param handleOptions
+	 * @param dataOptions
+	 * @returns
+	 */
+	async handleError(
+		msg: DiscordMessage | DiscordInteraction,
+		error: unknown,
+		handleOptions?: HandleFriendlyErrorOptions,
+		dataOptions?: BaseDiscordMenuFlowPageRenderOptions & {
+			backButtonId?: string;
+		}
+	) {
+		if (
+			error instanceof FriendlyError &&
+			msg instanceof DiscordInteraction &&
+			dataOptions
+		) {
+			const newHandleOptions = {
+				...handleOptions,
+				ephemeral:
+					"customId" in msg.discordInteraction.interaction
+						? this.menu.parseId(
+								msg.discordInteraction.interaction.customId
+						  ).ephemeral
+						: handleOptions?.ephemeral,
+			};
+			const messageOptions =
+				await msg.client.commands.getFriendlyErrorMessageOptions(
+					msg,
+					error,
+					newHandleOptions
+				);
+			if (messageOptions) {
+				if (!messageOptions.components) {
+					messageOptions.components = [];
+				}
+				messageOptions.components.push(
+					new Discord.ActionRowBuilder<Discord.ButtonBuilder>().addComponents(
+						this.menu.getBackButton(
+							dataOptions,
+							dataOptions.backButtonId
+						)
+					)
+				);
+			}
+			await msg.client.commands.sendErrorMessage(msg, error, {
+				...newHandleOptions,
+				messageOptions,
+			});
+			return;
+		} else if (
+			error instanceof FriendlyError &&
+			msg instanceof DiscordInteraction
+		) {
+			Logger.warn(
+				`No dataOptions passed, defaulting to base handleError()...`
+			);
+		}
+
+		await msg.client.commands.handleError(msg, error, handleOptions);
 	}
 
 	/**

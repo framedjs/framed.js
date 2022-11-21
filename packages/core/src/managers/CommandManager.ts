@@ -380,7 +380,7 @@ export class CommandManager extends Base {
 					startTime
 				);
 			} catch (error) {
-				await this.handleFriendlyError(msg, error, {
+				await this.handleError(msg, error, {
 					sendSeparateReply: false,
 				});
 			}
@@ -402,7 +402,7 @@ export class CommandManager extends Base {
 						);
 					}
 				} catch (error) {
-					await this.handleFriendlyError(msg, error, {
+					await this.handleError(msg, error, {
 						sendSeparateReply: true,
 					});
 				}
@@ -455,13 +455,13 @@ export class CommandManager extends Base {
 	}
 
 	/**
-	 * If a non-friendly error was passed, it'll be outputted to console
-	 *
+	 * If a non-friendly error was passed, it'll be outputted
+	 * to console. If friendly, it will also send it to the user.
 	 * @param msg BaseMessage object
 	 * @param error An Error or FriendlyError object
 	 * @param options Friendly error display options
 	 */
-	async handleFriendlyError(
+	async handleError(
 		msg: BaseMessage,
 		error: unknown,
 		options?: HandleFriendlyErrorOptions
@@ -709,7 +709,7 @@ export class CommandManager extends Base {
 				success = await command.run(msg, interaction);
 			} catch (error) {
 				threwError = true;
-				await this.handleFriendlyError(msg, error, {
+				await this.handleError(msg, error, {
 					sendSeparateReply: true,
 				});
 			}
@@ -861,7 +861,7 @@ export class CommandManager extends Base {
 								!options?.errorHandling ||
 								options?.errorHandling == "sendAllErrors"
 							) {
-								await this.handleFriendlyError(msg, err, {
+								await this.handleError(msg, err, {
 									sendSeparateReply: false,
 									ephemeral: page.menu.parseId(
 										interaction.customId
@@ -1098,12 +1098,12 @@ export class CommandManager extends Base {
 	 *
 	 * @param msg BaseMessage object
 	 * @param friendlyError Friendly error to show
-	 * @param options Friendly error display options
+	 * @param handleOptions Friendly error display options
 	 */
 	async sendErrorMessage(
 		msg: BaseMessage,
 		friendlyError: FriendlyError,
-		options?: HandleFriendlyErrorOptions
+		handleOptions?: HandleFriendlyErrorOptions
 	): Promise<void> {
 		if (friendlyError instanceof InternalError) {
 			Logger.error(friendlyError.stack);
@@ -1112,24 +1112,25 @@ export class CommandManager extends Base {
 		}
 
 		if (
-			options?.ephemeral == undefined &&
+			handleOptions?.ephemeral == undefined &&
 			msg instanceof DiscordInteraction
 		) {
 			const interaction = msg.discordInteraction.interaction;
 			if (interaction.isCommand() || interaction.isContextMenuCommand()) {
-				options = {};
-				options.ephemeral = true;
+				handleOptions = {};
+				handleOptions.ephemeral = true;
 			}
 		}
 
 		const messageOptions =
-			msg instanceof DiscordMessage || msg instanceof DiscordInteraction
-				? await this._getMessageOptionsForErrorMsg(
+			handleOptions?.messageOptions ??
+			(msg instanceof DiscordMessage || msg instanceof DiscordInteraction
+				? await this.getFriendlyErrorMessageOptions(
 						msg,
 						friendlyError,
-						options
+						handleOptions
 				  )
-				: undefined;
+				: undefined);
 
 		async function sendMessageOptions() {
 			if (messageOptions) {
@@ -1165,7 +1166,7 @@ export class CommandManager extends Base {
 					if (
 						interaction.isCommand() &&
 						interaction.replied &&
-						options?.sendSeparateReply != false
+						handleOptions?.sendSeparateReply != false
 					) {
 						await interaction.followUp(
 							messageOptions as
@@ -1174,7 +1175,7 @@ export class CommandManager extends Base {
 						);
 					} else if (
 						interaction.isMessageComponent() &&
-						options?.sendSeparateReply != false
+						handleOptions?.sendSeparateReply != false
 					) {
 						await interaction.reply(
 							messageOptions as
@@ -1218,21 +1219,23 @@ export class CommandManager extends Base {
 		}
 	}
 
-	protected async _getMessageOptionsForErrorMsg(
+	/**
+	 * Generates message options for displaying
+	 * a FriendlyError message to a user.
+	 * @param msg
+	 * @param friendlyError
+	 * @param handleOptions
+	 * @returns Message options
+	 */
+	async getFriendlyErrorMessageOptions(
 		msg: DiscordMessage | DiscordInteraction,
 		friendlyError: FriendlyError,
-		options?: HandleFriendlyErrorOptions
+		handleOptions?: HandleFriendlyErrorOptions
 	): Promise<
-		| string
-		| Discord.MessagePayload
-		| Discord.BaseMessageOptions
-		| Discord.InteractionReplyOptions
-		| undefined
+		Discord.BaseMessageOptions | Discord.InteractionReplyOptions | undefined
 	> {
 		let embed: Discord.EmbedBuilder | undefined;
 		let messageOptions:
-			| string
-			| Discord.MessagePayload
 			| Discord.BaseMessageOptions
 			| Discord.InteractionReplyOptions
 			| undefined;

@@ -1,3 +1,5 @@
+import type Discord from "discord.js";
+
 export interface HandleFriendlyErrorOptions {
 	/**
 	 * Should this function catch all errors by default?
@@ -17,4 +19,12 @@ export interface HandleFriendlyErrorOptions {
 	 * @default false
 	 */
 	ephemeral?: boolean;
+
+	/**
+	 * Optional message options override
+	 */
+	messageOptions?:
+		| Discord.BaseMessageOptions
+		| Discord.InteractionReplyOptions
+		| undefined;
 }
