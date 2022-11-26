@@ -6,5 +6,7 @@
     "@framedjs/logger": "0.1.0",
     "@framedjs/shared": "0.3.0"
   },
-  "changesets": []
+  "changesets": [
+    "heavy-oranges-arrive"
+  ]
 }
