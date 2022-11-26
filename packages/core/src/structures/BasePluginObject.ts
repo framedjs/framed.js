@@ -762,11 +762,14 @@ export abstract class BasePluginObject extends Base {
 								?.has(permissionMissing)
 						) {
 							hint = stripIndents`
-								${quote}@everyone in this channel doesn't have \`${permissionMissing}\` permissions.
+								${quote}${oneLine`Check this channel's permission settings first
+								to see if the permissions have been denied. Then, check the bot's
+								roles, then check those role permissions in server settings,
+								to see if they've been granted or not.`}
 								${quote}
-								${quote}${oneLine`If you have to disable \`${permissionMissing}\` here, try adding
+								${quote}${oneLine`If you can't find the issue, try adding
 								${msg.discord.client.user} to the list of Roles/Members,
-								and explicity giving \`${permissionMissing}\` permission there.`}`;
+								and explicity give those permissions there.`}`;
 						}
 					} catch (error) {
 						Logger.error(error);
@@ -799,13 +802,6 @@ export abstract class BasePluginObject extends Base {
 				if (useEmbed) {
 					return { components: [], embeds: [embed] };
 				} else {
-					// Paranoid replacement
-					// if (!dm) {
-					// 	hint = hint.replace(
-					// 		"@everyone",
-					// 		`<@&${msg.discord.guild?.id}>`
-					// 	);
-					// }
 					hint = hint
 						? `\n\n> **Hint for Server Staff**\n${hint}`
 						: "";
