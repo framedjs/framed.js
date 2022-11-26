@@ -179,7 +179,9 @@ export abstract class BaseDiscordMenuFlowPage extends BaseDiscordMenuFlowBase {
 	}
 
 	/**
-	 * Handles errors and {@link FriendlyError}s.
+	 * If a non-friendly error was passed, it'll be outputted
+	 * to console. If a {@link FriendlyError}, it will also send
+	 * it to the user.
 	 *
 	 * @remarks handleOptions.ephemeral will default to dataOptions.ephemeral
 	 *
