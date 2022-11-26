@@ -27,4 +27,12 @@ export interface HandleFriendlyErrorOptions {
 		| Discord.BaseMessageOptions
 		| Discord.InteractionReplyOptions
 		| undefined;
+
+	/**
+	 * Manual override for how newlines work for message content.
+	 * Useful for custom command managers * which adds fields
+	 * to embeds, then gets converted to text, but then looks misaligned
+	 * once message components gets introduced.
+	 */
+	newLineOverride?: string;
 }
