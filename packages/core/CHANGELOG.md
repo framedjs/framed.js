@@ -1,5 +1,11 @@
 # @framedjs/core
 
+## 0.13.0-next.1
+
+### Minor Changes
+
+-   2f1cd75: modal fixes, send options, handleError() & messageOptions argument
+
 ## 0.13.0-next.0
 
 ### Minor Changes
