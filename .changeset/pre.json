@@ -7,6 +7,7 @@
     "@framedjs/shared": "0.3.0"
   },
   "changesets": [
-    "heavy-oranges-arrive"
+    "heavy-oranges-arrive",
+    "soft-humans-confess"
   ]
 }
