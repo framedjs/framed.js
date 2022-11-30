@@ -405,7 +405,7 @@ export class DiscordUtils {
 			requester?: Discord.User;
 			bypass?: boolean;
 		}
-	): Promise<Discord.Message | undefined> {
+	): Promise<Discord.Message> {
 		async function _fetchMessage(
 			channel: Discord.TextBasedChannel,
 			id: string
@@ -438,16 +438,10 @@ export class DiscordUtils {
 			return _fetchMessage(options.channel, linkOrId);
 		}
 
-		// If it's not an actual link, return undefined
-		if (!linkOrId.includes(".com")) {
-			return undefined;
-		}
-
-		const args = linkOrId
-			.replace(/.*(discord|discordapp).com\/channels\//g, "")
-			.split("/");
-
-		if (args.length != 3) {
+		// If it's not an actual link, throw
+		const regex = /.*(discord|discordapp).com\/channels\//g;
+		const args = linkOrId.replace(regex, "").split("/");
+		if (!linkOrId.match(regex) || args.length != 3) {
 			throw new InvalidError({
 				name: "Message Link",
 				input: linkOrId,
