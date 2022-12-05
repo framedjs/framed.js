@@ -151,7 +151,8 @@ export abstract class BasePlugin extends Base {
 		const commands = Utils.importScripts(options) as (new (
 			plugin: BasePlugin
 		) => BaseCommand)[];
-		Logger.silly(`Commands: ${util.inspect(commands)}`);
+		if (process.env.FRAMED_SKIP_IMPORT_LOGS?.toLowerCase() != "true")
+			Logger.silly(`Commands: ${util.inspect(commands)}`);
 		this.loadCommands(commands);
 	}
 
@@ -228,7 +229,8 @@ export abstract class BasePlugin extends Base {
 			);
 		}
 
-		Logger.debug(`Loaded command "${command.id}"`);
+		if (process.env.FRAMED_SKIP_IMPORT_LOGS?.toLowerCase() != "true")
+			Logger.debug(`Loaded command "${command.id}"`);
 	}
 
 	unloadCommands(): void {
@@ -275,7 +277,8 @@ export abstract class BasePlugin extends Base {
 		// 	});
 		// }
 
-		Logger.debug(`Unloaded command "${command.id}"`);
+		if (process.env.FRAMED_SKIP_IMPORT_LOGS?.toLowerCase() != "true")
+			Logger.debug(`Unloaded command "${command.id}"`);
 	}
 
 	//#endregion
@@ -290,7 +293,8 @@ export abstract class BasePlugin extends Base {
 		const events = Utils.importScripts(options) as (new (
 			plugin: BasePlugin
 		) => BaseEvent)[];
-		Logger.silly(`Events: ${util.inspect(events)}`);
+		if (process.env.FRAMED_SKIP_IMPORT_LOGS?.toLowerCase() != "true")
+			Logger.silly(`Events: ${util.inspect(events)}`);
 		this.loadEvents(events);
 	}
 
@@ -342,9 +346,10 @@ export abstract class BasePlugin extends Base {
 				throw new Error(`Discord client doesn't exist!`);
 			}
 			event.init();
-			Logger.debug(
-				`Loaded event with ID "${event.id}" (${event.plugin.id})`
-			);
+			if (process.env.FRAMED_SKIP_IMPORT_LOGS?.toLowerCase() != "true")
+				Logger.debug(
+					`Loaded event with ID "${event.id}" (${event.plugin.id})`
+				);
 		} else {
 			Logger.warn(
 				`There was an imported event with no Discord event! Only Discord is supported currently.`
@@ -407,7 +412,8 @@ export abstract class BasePlugin extends Base {
 		const interactions = Utils.importScripts(options) as (new (
 			plugin: BasePlugin
 		) => BaseDiscordInteraction)[];
-		Logger.silly(`Interactions: ${util.inspect(interactions)}`);
+		if (process.env.FRAMED_SKIP_IMPORT_LOGS?.toLowerCase() != "true")
+			Logger.silly(`Interactions: ${util.inspect(interactions)}`);
 		this.loadDiscordInteractions(interactions);
 	}
 
@@ -462,8 +468,8 @@ export abstract class BasePlugin extends Base {
 			return;
 		}
 		this.discordInteractions.set(command.fullId, command);
-
-		Logger.debug(`Loaded Discord interaction "${command.fullId}"`);
+		if (process.env.FRAMED_SKIP_IMPORT_LOGS?.toLowerCase() != "true")
+			Logger.debug(`Loaded Discord interaction "${command.fullId}"`);
 	}
 	//#endregion
 
@@ -478,7 +484,8 @@ export abstract class BasePlugin extends Base {
 		const menuFlows = Utils.importScripts(options) as (new (
 			plugin: BasePlugin
 		) => BaseDiscordMenuFlow)[];
-		Logger.silly(`Menu Flows: ${util.inspect(menuFlows)}`);
+		if (process.env.FRAMED_SKIP_IMPORT_LOGS?.toLowerCase() != "true")
+			Logger.silly(`Menu Flows: ${util.inspect(menuFlows)}`);
 		this.loadMenuFlows(menuFlows);
 	}
 
@@ -520,8 +527,8 @@ export abstract class BasePlugin extends Base {
 
 		// Load pages from script
 		menu.loadPagesIn(this.discordMenuFlowLoadOptions(menu.paths.pages));
-
-		Logger.debug(`Loaded menu flow "${menu.rawId}"`);
+		if (process.env.FRAMED_SKIP_IMPORT_LOGS?.toLowerCase() != "true")
+			Logger.debug(`Loaded menu flow "${menu.rawId}"`);
 	}
 
 	unloadMenuFlows(): void {

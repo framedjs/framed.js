@@ -77,7 +77,8 @@ export class PluginManager extends Base {
 		const plugins = Utils.importScripts(options) as (new (
 			client: Client
 		) => BasePlugin)[];
-		Logger.silly(`Plugins: ${util.inspect(plugins)}`);
+		if (process.env.FRAMED_SKIP_IMPORT_LOGS?.toLowerCase() != "true")
+			Logger.silly(`Plugins: ${util.inspect(plugins)}`);
 		return this.loadPlugins(plugins);
 	}
 
@@ -156,7 +157,8 @@ export class PluginManager extends Base {
 			});
 		}
 
-		Logger.verbose(`Loaded plugin ${plugin.name} v${plugin.version}`);
+		if (process.env.FRAMED_SKIP_IMPORT_LOGS?.toLowerCase() != "true")
+			Logger.verbose(`Loaded plugin ${plugin.name} v${plugin.version}`);
 		return plugin;
 	}
 

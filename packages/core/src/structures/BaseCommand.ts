@@ -477,7 +477,8 @@ export abstract class BaseCommand extends BasePluginObject {
 			}
 		}
 
-		Logger.debug(`Loaded subcommand ${subcommand.id}`);
+		if (process.env.FRAMED_SKIP_IMPORT_LOGS?.toLowerCase() != "true")
+			Logger.debug(`Loaded subcommand ${subcommand.id}`);
 	}
 
 	//#endregion

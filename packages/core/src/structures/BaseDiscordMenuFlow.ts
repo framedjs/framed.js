@@ -436,7 +436,8 @@ export abstract class BaseDiscordMenuFlow extends BaseDiscordMenuFlowBase {
 		}
 		this.pages.set(page.id, page);
 
-		Logger.debug(`Loaded page "${page.id}"`);
+		if (process.env.FRAMED_SKIP_IMPORT_LOGS?.toLowerCase() != "true")
+			Logger.debug(`Loaded page "${page.id}"`);
 	}
 
 	//#endregion
