@@ -287,7 +287,7 @@ export abstract class BaseDiscordMenuFlow extends BaseDiscordMenuFlowBase {
 
 		if (msg instanceof DiscordInteraction) {
 			const interaction = msg.discordInteraction.interaction;
-			if (interaction.isSelectMenu()) {
+			if (interaction.isStringSelectMenu()) {
 				passthrough = false;
 
 				const args = interaction.values[0].split("_");

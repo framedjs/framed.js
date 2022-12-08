@@ -263,7 +263,7 @@ export class DiscordUtils {
 					);
 				}
 				discordMsg = newMessage;
-			} else if (interaction.isSelectMenu() || interaction.isButton()) {
+			} else if (interaction.isStringSelectMenu() || interaction.isButton()) {
 				discordMsg = await this.getMessageWithRenderOptions(
 					msg.discord.client,
 					{

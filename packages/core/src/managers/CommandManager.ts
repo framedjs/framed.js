@@ -930,7 +930,7 @@ export class CommandManager extends Base {
 				command instanceof BaseDiscordContextMenuCommandInteraction) ||
 			(interaction.isMessageComponent() &&
 				command instanceof BaseDiscordMessageComponentInteraction) ||
-			(interaction.isSelectMenu() &&
+			(interaction.isStringSelectMenu() &&
 				command instanceof BaseDiscordSelectMenuInteraction)
 		);
 	}
