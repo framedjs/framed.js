@@ -1,5 +1,11 @@
 # @framedjs/core
 
+## 0.13.0-next.2
+
+### Minor Changes
+
+-   a91cca1: feat: getMessage() no longer returns undefined
+
 ## 0.13.0-next.1
 
 ### Minor Changes
