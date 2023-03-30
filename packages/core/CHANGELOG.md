@@ -1,5 +1,11 @@
 # @framedjs/core
 
+## 0.13.0-next.3
+
+### Patch Changes
+
+-   c283c73: update deps
+
 ## 0.13.0-next.2
 
 ### Minor Changes
