@@ -1083,6 +1083,10 @@ export class DiscordUtils {
 	 * @param argument Text to see if it has a discriminator
 	 *
 	 * @returns Discriminator or undefined
+	 * 
+	 * @deprecated Discriminators are getting removed, and thus this function
+	 * will no longer be useful once the rollout is complete.
+	 * https://discord.com/blog/usernames
 	 */
 	static getDiscriminator(argument: string): string | undefined {
 		const discriminator = argument.split("#")[1];
