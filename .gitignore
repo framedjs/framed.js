@@ -17,8 +17,8 @@ src/**/*.js
 
 docker-compose.yml
 
-# Ignore React build directory
-packages/front-end/build/
+# VS Code Counter
+.VSCodeCounter
 
 ## START https://github.com/github/gitignore/blob/master/Node.gitignore
 
